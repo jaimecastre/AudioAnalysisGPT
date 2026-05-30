@@ -40,41 +40,42 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
     clearUploadedFile();
   };
 
-  if (!uploadedFile && !showDropzone) {
-    return (
-      <div className={styles.workspace}>
-        <div className={styles.emptyState}>
-          <p>Select Import from the sidebar to upload an audio file</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!uploadedFile && showDropzone) {
-    return (
-      <div className={styles.workspace}>
-        <AudioFileDropzone onFileSelected={uploadFile} isUploading={isUploading} />
-      </div>
-    );
-  }
+  const shouldShowEmptyState = !uploadedFile && !showDropzone;
+  const shouldShowDropzone = !uploadedFile && showDropzone;
 
   return (
     <div className={styles.workspaceWithFileList}>
-      <div className={styles.mainArea}>
-        <TransportUI
-          isPlaying={isPlaying}
-          currentTime={currentTime}
-          duration={duration}
-          isLoading={isAudioLoading}
-          onPlay={play}
-          onPause={pause}
-          onSeek={seek}
-        />
-        <FileListPanel
-          uploadedFile={uploadedFile}
-          onClearFile={handleClearFile}
-        />
-      </div>
+      {shouldShowEmptyState && (
+        <div className={styles.workspace}>
+          <div className={styles.emptyState}>
+            <p>Select Import from the sidebar to upload an audio file</p>
+          </div>
+        </div>
+      )}
+
+      {shouldShowDropzone && (
+        <div className={styles.workspace}>
+          <AudioFileDropzone onFileSelected={uploadFile} isUploading={isUploading} />
+        </div>
+      )}
+
+      {uploadedFile && (
+        <div className={styles.mainArea}>
+          <TransportUI
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            duration={duration}
+            isLoading={isAudioLoading}
+            onPlay={play}
+            onPause={pause}
+            onSeek={seek}
+          />
+          <FileListPanel
+            uploadedFile={uploadedFile}
+            onClearFile={handleClearFile}
+          />
+        </div>
+      )}
     </div>
   );
 };

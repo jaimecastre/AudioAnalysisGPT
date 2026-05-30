@@ -19,18 +19,45 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
   const [isLoading, setIsLoading] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const isPlayingRef = useRef(false);
+  const updateTimeRef = useRef<() => void>(() => {});
+
+  const updateTimeSmoothly = useCallback(() => {
+    if (!isPlayingRef.current || !audioRef.current) return;
+    setCurrentTime(audioRef.current.currentTime);
+    animationFrameRef.current = requestAnimationFrame(() => updateTimeRef.current());
+  }, []);
+
+  useEffect(() => {
+    updateTimeRef.current = updateTimeSmoothly;
+  }, [updateTimeSmoothly]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+    if (isPlaying) {
+      animationFrameRef.current = requestAnimationFrame(() => updateTimeRef.current());
+    } else {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    }
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isPlaying]);
 
   useEffect(() => {
     const audio = new Audio();
     audioRef.current = audio;
 
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
     const handleDurationChange = () => setDuration(audio.duration);
     const handleEnded = () => setIsPlaying(false);
     const handleCanPlay = () => setIsLoading(false);
     const handleLoadStart = () => setIsLoading(true);
 
-    audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('durationchange', handleDurationChange);
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('canplay', handleCanPlay);
@@ -38,11 +65,13 @@ export const useAudioPlayer = (): UseAudioPlayerReturn => {
 
     return () => {
       audio.pause();
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('durationchange', handleDurationChange);
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('loadstart', handleLoadStart);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
       audioRef.current = null;
     };
   }, []);

@@ -29,9 +29,12 @@ public class ServeAudioFileEndpoint(UploadAudioHandler audioHandler)
         }
 
         var fileName = Path.GetFileName(filePath);
+        var fileInfo = new FileInfo(filePath);
 
         HttpContext.Response.ContentType = "audio/wav";
         HttpContext.Response.Headers.Append("Content-Disposition", $"inline; filename=\"{fileName}\"");
+        HttpContext.Response.ContentLength = fileInfo.Length;
+        HttpContext.Response.Headers.Append("Accept-Ranges", "bytes");
 
         await using var fileStream = File.OpenRead(filePath);
         await fileStream.CopyToAsync(HttpContext.Response.Body, cancellationToken);
