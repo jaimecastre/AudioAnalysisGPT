@@ -1,3 +1,5 @@
+export type ProjectStatus = 'no-project' | 'ready' | 'loading' | 'error';
+
 export type AudioFileId = string;
 export type RegionId = string;
 export type MarkerId = string;
@@ -40,6 +42,8 @@ export interface AnalysisResult {
 }
 
 export interface ProjectState {
+  projectName: string | null;
+  status: ProjectStatus;
   files: AudioFile[];
   regions: Region[];
   markers: Marker[];
@@ -49,6 +53,8 @@ export interface ProjectState {
 }
 
 export const initialProjectState: ProjectState = {
+  projectName: null,
+  status: 'no-project',
   files: [],
   regions: [],
   markers: [],

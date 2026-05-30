@@ -47,4 +47,49 @@
   .spacer {
     flex: 1;
   }
+
+  .projectName {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  .projectNamePlaceholder {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    font-style: italic;
+    white-space: nowrap;
+  }
+
+  .statusMuted {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .statusReady {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--ok);
+    white-space: nowrap;
+  }
+
+  .statusLoading {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--warn);
+    white-space: nowrap;
+  }
+
+  .statusError {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--error);
+    white-space: nowrap;
+  }
 }

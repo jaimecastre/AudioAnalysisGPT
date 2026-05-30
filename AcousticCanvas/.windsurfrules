@@ -19,6 +19,9 @@ This provides persistent access to Mantine component documentation, hooks, and s
 - Use long, descriptive names for variables, functions, and components that make intent obvious without needing comments
 - Avoid one-liners, nested ternaries, and complex chaining — prefer explicit steps
 - Keep functions short and single-purpose; if a function does two things, split it
+- All React components must be declared as `export const ComponentName = (): JSX.Element => {` — always const arrow functions, never `function` declarations
+- Always use `import type { JSX } from 'react'` at the top of every `.tsx` file — never import the default React object
+- Import other React types explicitly: e.g. `import type { JSX, ReactNode } from 'react'`
 
 ## Architecture: Frontend vs Backend
 

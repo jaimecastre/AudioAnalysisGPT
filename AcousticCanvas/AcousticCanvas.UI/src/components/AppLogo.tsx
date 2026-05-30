@@ -1,4 +1,6 @@
-export function AppLogo() {
+import type { JSX } from 'react';
+
+export const AppLogo = (): JSX.Element => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
       <AppLogoIcon />
@@ -7,7 +9,7 @@ export function AppLogo() {
   );
 }
 
-function AppLogoIcon() {
+const AppLogoIcon = (): JSX.Element => {
   return (
     <img
       src="/logo.svg"
@@ -18,7 +20,7 @@ function AppLogoIcon() {
   );
 }
 
-function AppLogoText() {
+const AppLogoText = (): JSX.Element => {
   return (
     <div style={{ textAlign: 'center' }}>
       <div
