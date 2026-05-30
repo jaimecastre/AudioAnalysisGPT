@@ -936,7 +936,7 @@ Goal: Play and pause imported audio.
 
 Scope:
 
-- Web Audio playback
+- NAudio
 - play/pause button
 - seek position state
 - basic transport UI

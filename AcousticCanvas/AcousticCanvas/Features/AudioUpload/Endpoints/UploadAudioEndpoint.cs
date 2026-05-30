@@ -1,9 +1,11 @@
 using FastEndpoints;
+using AcousticCanvas.Features.AudioUpload.Commands;
+using AcousticCanvas.Features.AudioUpload.Handlers;
 
-namespace AcousticCanvas.Features.AudioUpload;
+namespace AcousticCanvas.Features.AudioUpload.Endpoints;
 
 public class UploadAudioEndpoint(UploadAudioHandler handler)
-    : Endpoint<UploadAudioRequest, AudioFileResponse>
+    : Endpoint<UploadAudioRequest, UploadAudioResult>
 {
     public override void Configure()
     {
@@ -22,12 +24,11 @@ public class UploadAudioEndpoint(UploadAudioHandler handler)
 
         await using var fileStream = request.File.OpenReadStream();
 
-        var response = await Task.Run(
-            () => handler.Handle(fileStream, request.File.FileName),
-            cancellationToken
-        );
+        var result = await handler.ExecuteAsync(
+            new UploadAudioCommand(fileStream, request.File.FileName),
+            cancellationToken);
 
-        Response = response;
+        Response = result;
     }
 }
 

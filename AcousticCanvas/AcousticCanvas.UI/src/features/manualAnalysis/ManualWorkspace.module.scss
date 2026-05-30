@@ -15,12 +15,19 @@
   background-color: var(--bg-base);
 }
 
+.mainArea {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
 .fileListPanel {
   padding: 16px;
-  border-right: 1px solid var(--border);
   background-color: var(--bg-surface);
   overflow-y: auto;
   min-width: 240px;
+  flex: 1;
 }
 
 .emptyState {

@@ -32,7 +32,7 @@ const DEFAULT_HEADERS: Record<string, string> = {
   Accept: 'application/json',
 };
 
-const API_BASE_URL = 'http://localhost:5219';
+const API_BASE_URL = 'http://localhost:5146';
 
 const buildUrl = (endpoint: string): string => {
   const baseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`;
@@ -79,4 +79,5 @@ async function requestJson<T>(endpoint: string, options?: RequestOptions): Promi
 export const apiClient = {
   request,
   requestJson,
+  buildUrl,
 };

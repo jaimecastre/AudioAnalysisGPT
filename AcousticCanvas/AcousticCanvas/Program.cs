@@ -1,9 +1,14 @@
 using FastEndpoints;
-using AcousticCanvas.Features.AudioUpload;
+using AcousticCanvas.Features.AudioUpload.Handlers;
+using AcousticCanvas.Features.Playback.Handlers;
+using AcousticCanvas.Features.Playback.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddFastEndpoints();
-builder.Services.AddScoped<UploadAudioHandler>();
+builder.Services.AddSingleton<UploadAudioHandler>();
+builder.Services.AddSingleton<PlaybackStateStore>();
+builder.Services.AddSingleton<PlaybackControlHandler>();
+builder.Services.AddSingleton<GetPlaybackStateHandler>();
 
 builder.Services.AddCors(options =>
 {

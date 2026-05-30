@@ -1,0 +1,19 @@
+.transportContainer {
+  padding: 16px;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.timelineContainer {
+  flex: 1;
+  min-width: 200px;
+}
+
+.timelineSlider {
+  width: 100%;
+}
+
+.timeDisplay {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}

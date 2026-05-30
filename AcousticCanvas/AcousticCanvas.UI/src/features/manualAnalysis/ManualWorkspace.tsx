@@ -1,6 +1,11 @@
 import type { JSX } from 'react';
+import { useEffect } from 'react';
 import { AudioFileDropzone } from '../audioUpload/AudioFileDropzone';
 import { useAudioUpload } from '../audioUpload/useAudioUpload';
+import { useAudioPlayer } from '../playback/useAudioPlayer';
+import { TransportUI } from '../playback/TransportUI';
+import { apiClient } from '../../shared/api/apiClient';
+import { API_ENDPOINTS } from '../../shared/api/apiEndpoints';
 import { Text, Stack, Badge, Card, Group } from '@mantine/core';
 import { IconFileMusic } from '@tabler/icons-react';
 import styles from './ManualWorkspace.module.scss';
@@ -11,6 +16,29 @@ interface ManualWorkspaceProps {
 
 export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps): JSX.Element => {
   const { isUploading, uploadedFile, uploadFile, clearUploadedFile } = useAudioUpload();
+  const {
+    isPlaying,
+    currentTime,
+    duration,
+    isLoading: isAudioLoading,
+    play,
+    pause,
+    seek,
+    loadFile,
+    unloadFile,
+  } = useAudioPlayer();
+
+  useEffect(() => {
+    if (uploadedFile) {
+      const fileUrl = apiClient.buildUrl(API_ENDPOINTS.AUDIO.GET_FILE(uploadedFile.id));
+      loadFile(fileUrl);
+    }
+  }, [uploadedFile, loadFile]);
+
+  const handleClearFile = (): void => {
+    unloadFile();
+    clearUploadedFile();
+  };
 
   if (!uploadedFile && !showDropzone) {
     return (
@@ -32,10 +60,21 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
 
   return (
     <div className={styles.workspaceWithFileList}>
-      <FileListPanel
-        uploadedFile={uploadedFile}
-        onClearFile={clearUploadedFile}
-      />
+      <div className={styles.mainArea}>
+        <TransportUI
+          isPlaying={isPlaying}
+          currentTime={currentTime}
+          duration={duration}
+          isLoading={isAudioLoading}
+          onPlay={play}
+          onPause={pause}
+          onSeek={seek}
+        />
+        <FileListPanel
+          uploadedFile={uploadedFile}
+          onClearFile={handleClearFile}
+        />
+      </div>
     </div>
   );
 };

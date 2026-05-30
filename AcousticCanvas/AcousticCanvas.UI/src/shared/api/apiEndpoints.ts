@@ -1,6 +1,9 @@
 export const API_ENDPOINTS = {
   AUDIO: {
     UPLOAD: 'api/audio/upload',
+    PLAYBACK_CONTROL: 'api/audio/playback/control',
+    GET_STATE: (fileId: string) => `api/audio/playback/state/${fileId}`,
+    GET_FILE: (fileId: string) => `api/audio/file/${fileId}`,
   },
 } as const;
 

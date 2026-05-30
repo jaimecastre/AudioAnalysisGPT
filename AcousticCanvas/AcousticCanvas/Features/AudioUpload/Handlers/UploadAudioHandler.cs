@@ -1,32 +1,44 @@
+using FastEndpoints;
 using NAudio.Wave;
+using AcousticCanvas.Features.AudioUpload.Commands;
 
-namespace AcousticCanvas.Features.AudioUpload;
+namespace AcousticCanvas.Features.AudioUpload.Handlers;
 
-public class UploadAudioHandler
+public class UploadAudioHandler : CommandHandler<UploadAudioCommand, UploadAudioResult>
 {
     private const int WaveformResolution = 2000;
+    private readonly string _storagePath;
 
-    public AudioFileResponse Handle(Stream fileStream, string fileName)
+    public UploadAudioHandler()
     {
-        var fileId = Guid.NewGuid().ToString("N")[..12];
-        var tempPath = Path.Combine(Path.GetTempPath(), $"{fileId}_{fileName}");
-
-        using (var fileOutput = File.Create(tempPath))
-        {
-            fileStream.CopyTo(fileOutput);
-        }
-
-        try
-        {
-            return ProcessAudioFile(tempPath, fileId, fileName);
-        }
-        finally
-        {
-            File.Delete(tempPath);
-        }
+        _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "AudioStorage");
+        Directory.CreateDirectory(_storagePath);
     }
 
-    private static AudioFileResponse ProcessAudioFile(
+    public override Task<UploadAudioResult> ExecuteAsync(UploadAudioCommand command, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var fileId = Guid.NewGuid().ToString("N")[..12];
+        var storedFileName = $"{fileId}_{command.FileName}";
+        var storagePath = Path.Combine(_storagePath, storedFileName);
+
+        using (var fileOutput = File.Create(storagePath))
+        {
+            command.FileStream.CopyTo(fileOutput);
+        }
+
+        var result = ProcessAudioFile(storagePath, fileId, command.FileName);
+        return Task.FromResult(result);
+    }
+
+    public string GetFilePath(string fileId)
+    {
+        var files = Directory.GetFiles(_storagePath, $"{fileId}_*");
+        return files.FirstOrDefault() ?? string.Empty;
+    }
+
+    private static UploadAudioResult ProcessAudioFile(
         string filePath,
         string fileId,
         string fileName)
@@ -39,7 +51,7 @@ public class UploadAudioHandler
 
         var waveformData = ExtractWaveformData(reader);
 
-        return new AudioFileResponse(
+        return new UploadAudioResult(
             fileId,
             fileName,
             durationSeconds,
