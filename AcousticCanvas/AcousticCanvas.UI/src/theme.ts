@@ -33,28 +33,5 @@ export const theme = createTheme({
     lg: '1.25rem',
     xl: '1.5rem',
   },
-  components: {
-    AppShell: {
-      styles: {
-        main: {
-          backgroundColor: '#f8f9fa',
-        },
-      },
-    },
-    Navbar: {
-      styles: {
-        root: {
-          borderRight: '1px solid #e9ecef',
-        },
-      },
-    },
-    Header: {
-      styles: {
-        root: {
-          borderBottom: '1px solid #e9ecef',
-          backgroundColor: '#ffffff',
-        },
-      },
-    },
-  },
+  components: {},
 });
