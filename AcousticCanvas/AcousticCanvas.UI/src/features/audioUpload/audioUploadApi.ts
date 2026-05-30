@@ -1,7 +1,7 @@
-export interface WaveformDataPoint {
-  timeSeconds: number;
-  minAmplitude: number;
-  maxAmplitude: number;
+export interface WaveformBin {
+  x: number;
+  yMin: number;
+  yMax: number;
 }
 
 export interface AudioFileResponse {
@@ -11,5 +11,5 @@ export interface AudioFileResponse {
   sampleRate: number;
   channels: number;
   bitDepth: number;
-  waveformData: WaveformDataPoint[];
+  waveformBins: WaveformBin[];
 }

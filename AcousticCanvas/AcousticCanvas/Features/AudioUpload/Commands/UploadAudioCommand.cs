@@ -2,7 +2,7 @@ using FastEndpoints;
 
 namespace AcousticCanvas.Features.AudioUpload.Commands;
 
-public record UploadAudioCommand(Stream FileStream, string FileName) : ICommand<UploadAudioResult>;
+public record UploadAudioCommand(Stream FileStream, string FileName, int Resolution = 2000) : ICommand<UploadAudioResult>;
 
 public record UploadAudioResult(
     string Id,
@@ -11,11 +11,11 @@ public record UploadAudioResult(
     int SampleRate,
     int Channels,
     int BitDepth,
-    List<WaveformDataPoint> WaveformData
+    List<WaveformBin> WaveformBins
 );
 
-public record WaveformDataPoint(
-    double TimeSeconds,
-    float MinAmplitude,
-    float MaxAmplitude
+public record WaveformBin(
+    double X,
+    double YMin,
+    double YMax
 );

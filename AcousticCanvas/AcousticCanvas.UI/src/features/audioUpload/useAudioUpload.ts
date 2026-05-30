@@ -2,12 +2,12 @@ import { useState, useCallback } from 'react';
 import { notifications } from '@mantine/notifications';
 import { apiClient, ApiError, HttpMethod } from '../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../shared/api/apiEndpoints';
-import type { AudioFileResponse, WaveformDataPoint } from './audioUploadApi';
+import type { AudioFileResponse, WaveformBin } from './audioUploadApi';
 
 interface UseAudioUploadReturn {
   isUploading: boolean;
   uploadedFile: AudioFileResponse | null;
-  waveformData: WaveformDataPoint[];
+  waveformBins: WaveformBin[];
   uploadFile: (file: File) => Promise<void>;
   clearUploadedFile: () => void;
 }
@@ -15,7 +15,7 @@ interface UseAudioUploadReturn {
 export const useAudioUpload = (): UseAudioUploadReturn => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<AudioFileResponse | null>(null);
-  const [waveformData, setWaveformData] = useState<WaveformDataPoint[]>([]);
+  const [waveformBins, setWaveformBins] = useState<WaveformBin[]>([]);
 
   const uploadFile = useCallback(async (file: File): Promise<void> => {
     setIsUploading(true);
@@ -33,7 +33,7 @@ export const useAudioUpload = (): UseAudioUploadReturn => {
       );
 
       setUploadedFile(data);
-      setWaveformData(data.waveformData);
+      setWaveformBins(data.waveformBins);
 
       notifications.show({
         title: 'Upload successful',
@@ -59,13 +59,13 @@ export const useAudioUpload = (): UseAudioUploadReturn => {
 
   const clearUploadedFile = useCallback((): void => {
     setUploadedFile(null);
-    setWaveformData([]);
+    setWaveformBins([]);
   }, []);
 
   return {
     isUploading,
     uploadedFile,
-    waveformData,
+    waveformBins,
     uploadFile,
     clearUploadedFile,
   };

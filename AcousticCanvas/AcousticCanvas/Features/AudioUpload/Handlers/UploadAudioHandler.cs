@@ -6,7 +6,6 @@ namespace AcousticCanvas.Features.AudioUpload.Handlers;
 
 public class UploadAudioHandler : CommandHandler<UploadAudioCommand, UploadAudioResult>
 {
-    private const int WaveformResolution = 2000;
     private readonly string _storagePath;
 
     public UploadAudioHandler()
@@ -28,7 +27,7 @@ public class UploadAudioHandler : CommandHandler<UploadAudioCommand, UploadAudio
             command.FileStream.CopyTo(fileOutput);
         }
 
-        var result = ProcessAudioFile(storagePath, fileId, command.FileName);
+        var result = ProcessAudioFile(storagePath, fileId, command.FileName, command.Resolution);
         return Task.FromResult(result);
     }
 
@@ -41,7 +40,8 @@ public class UploadAudioHandler : CommandHandler<UploadAudioCommand, UploadAudio
     private static UploadAudioResult ProcessAudioFile(
         string filePath,
         string fileId,
-        string fileName)
+        string fileName,
+        int resolution)
     {
         using var reader = new AudioFileReader(filePath);
 
@@ -50,14 +50,14 @@ public class UploadAudioHandler : CommandHandler<UploadAudioCommand, UploadAudio
         var durationSeconds = reader.TotalTime.TotalSeconds;
         var bitDepth = reader.WaveFormat.BitsPerSample;
 
-        List<WaveformDataPoint> waveformData;
+        List<WaveformBin> waveformBins;
         try
         {
-            waveformData = ExtractWaveformData(reader);
+            waveformBins = ExtractWaveformBins(reader, resolution);
         }
         catch
         {
-            waveformData = new List<WaveformDataPoint>();
+            waveformBins = new List<WaveformBin>();
         }
 
         return new UploadAudioResult(
@@ -67,30 +67,33 @@ public class UploadAudioHandler : CommandHandler<UploadAudioCommand, UploadAudio
             sampleRate,
             channels,
             bitDepth,
-            waveformData
+            waveformBins
         );
     }
 
-    private static List<WaveformDataPoint> ExtractWaveformData(AudioFileReader reader)
+    private static List<WaveformBin> ExtractWaveformBins(AudioFileReader reader, int resolution)
     {
-        var waveformData = new List<WaveformDataPoint>();
+        var bins = new List<WaveformBin>();
         var sampleRate = reader.WaveFormat.SampleRate;
-        var totalTime = reader.TotalTime.TotalSeconds;
-        var samplesPerPoint = (int)(sampleRate * totalTime / WaveformResolution);
         var channels = reader.WaveFormat.Channels;
-
-        if (samplesPerPoint < channels)
+        var durationSeconds = reader.TotalTime.TotalSeconds;
+        
+        // Calculate samples per bin based on resolution requested
+        var totalSamples = (long)(sampleRate * durationSeconds * channels);
+        var samplesPerBin = (int)(totalSamples / resolution);
+        
+        if (samplesPerBin < channels)
         {
-            samplesPerPoint = channels;
+            samplesPerBin = channels;
         }
+        
+        // Ensure block alignment
+        samplesPerBin = (samplesPerBin / channels) * channels;
 
-        // Ensure buffer size is multiple of channels to maintain block alignment
-        samplesPerPoint = (samplesPerPoint / channels) * channels;
-
-        var buffer = new float[samplesPerPoint];
+        var buffer = new float[samplesPerBin];
         var samplesReadTotal = 0;
-        var sampleRateDouble = (double)sampleRate;
-
+        var binIndex = 0;
+        
         reader.Position = 0;
 
         while (true)
@@ -104,7 +107,6 @@ public class UploadAudioHandler : CommandHandler<UploadAudioCommand, UploadAudio
             }
             catch (ArgumentException)
             {
-                // Block alignment error - try reading smaller chunk
                 samplesToRead = channels * 1024;
                 if (samplesToRead > buffer.Length)
                 {
@@ -121,30 +123,39 @@ public class UploadAudioHandler : CommandHandler<UploadAudioCommand, UploadAudio
             var minAmplitude = float.MaxValue;
             var maxAmplitude = float.MinValue;
 
-            for (var index = 0; index < samplesRead; index++)
+            // Sum to mono for analysis
+            for (var index = 0; index < samplesRead; index += channels)
             {
-                var sample = buffer[index];
-                if (sample < minAmplitude)
+                float sampleSum = 0;
+                for (var ch = 0; ch < channels; ch++)
                 {
-                    minAmplitude = sample;
+                    sampleSum += buffer[index + ch];
                 }
-                if (sample > maxAmplitude)
+                var monoSample = sampleSum / channels;
+                
+                if (monoSample < minAmplitude)
                 {
-                    maxAmplitude = sample;
+                    minAmplitude = monoSample;
+                }
+                if (monoSample > maxAmplitude)
+                {
+                    maxAmplitude = monoSample;
                 }
             }
 
-            var timePosition = samplesReadTotal / sampleRateDouble;
-
-            waveformData.Add(new WaveformDataPoint(
-                timePosition,
+            // X is normalized position (0 to 1)
+            var x = (double)binIndex / resolution;
+            
+            bins.Add(new WaveformBin(
+                x,
                 minAmplitude == float.MaxValue ? 0 : minAmplitude,
                 maxAmplitude == float.MinValue ? 0 : maxAmplitude
             ));
 
             samplesReadTotal += samplesRead;
+            binIndex++;
         }
 
-        return waveformData;
+        return bins;
     }
 }

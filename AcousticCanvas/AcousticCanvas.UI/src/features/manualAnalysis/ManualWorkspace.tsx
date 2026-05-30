@@ -4,6 +4,7 @@ import { AudioFileDropzone } from '../audioUpload/AudioFileDropzone';
 import { useAudioUpload } from '../audioUpload/useAudioUpload';
 import { useAudioPlayer } from '../playback/useAudioPlayer';
 import { TransportUI } from '../playback/TransportUI';
+import { WaveformChart } from '../playback/WaveformChart';
 import { apiClient } from '../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../shared/api/apiEndpoints';
 import { Text, Stack, Badge, Card, Group } from '@mantine/core';
@@ -15,7 +16,7 @@ interface ManualWorkspaceProps {
 }
 
 export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps): JSX.Element => {
-  const { isUploading, uploadedFile, uploadFile, clearUploadedFile } = useAudioUpload();
+  const { isUploading, uploadedFile, waveformBins, uploadFile, clearUploadedFile } = useAudioUpload();
   const {
     isPlaying,
     currentTime,
@@ -61,6 +62,11 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
 
       {uploadedFile && (
         <div className={styles.mainArea}>
+          <WaveformChart
+            waveformBins={waveformBins}
+            currentTime={currentTime}
+            duration={duration}
+          />
           <TransportUI
             isPlaying={isPlaying}
             currentTime={currentTime}
