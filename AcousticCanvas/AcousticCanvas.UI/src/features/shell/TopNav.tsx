@@ -1,3 +1,4 @@
+import { SegmentedControl } from '@mantine/core';
 import styles from './TopNav.module.scss';
 
 type ActiveMode = 'manual' | 'agent';
@@ -32,25 +33,24 @@ interface TopNavModeSwitcherProps {
 }
 
 function TopNavModeSwitcher({ activeMode, onModeChange }: TopNavModeSwitcherProps) {
+  const modeOptions = [
+    { label: 'Manual Analysis', value: 'manual' },
+    { label: 'Agent', value: 'agent' },
+  ];
+
   return (
-    <div className={styles.modeSwitcher} role="tablist" aria-label="Workspace mode">
-      <button
-        role="tab"
-        aria-selected={activeMode === 'manual'}
-        className={activeMode === 'manual' ? styles.modeButtonActive : styles.modeButton}
-        onClick={() => onModeChange('manual')}
-      >
-        Manual Analysis
-      </button>
-      <button
-        role="tab"
-        aria-selected={activeMode === 'agent'}
-        className={activeMode === 'agent' ? styles.modeButtonActive : styles.modeButton}
-        onClick={() => onModeChange('agent')}
-      >
-        Agent
-      </button>
-    </div>
+    <SegmentedControl
+      value={activeMode}
+      onChange={(selectedValue) => onModeChange(selectedValue as ActiveMode)}
+      data={modeOptions}
+      size="xs"
+      aria-label="Workspace mode"
+      classNames={{
+        root: styles.modeSwitcherRoot,
+        indicator: styles.modeSwitcherIndicator,
+        label: styles.modeSwitcherLabel,
+      }}
+    />
   );
 }
 

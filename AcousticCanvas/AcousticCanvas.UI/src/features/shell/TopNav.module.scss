@@ -23,35 +23,24 @@
     }
   }
 
-  .modeSwitcher {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
+  .modeSwitcherRoot {
     background-color: var(--bg-elevated);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 3px;
+  }
 
-    .modeButton {
-      font-family: var(--font-sans);
-      font-size: 0.8rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-      background: transparent;
-      border: none;
-      border-radius: calc(var(--radius-md) - 2px);
-      padding: var(--space-1) var(--space-3);
-      cursor: pointer;
-      transition: color 0.15s, background-color 0.15s;
+  .modeSwitcherIndicator {
+    background-color: var(--bg-overlay);
+    box-shadow: none;
+  }
 
-      &:hover {
-        color: var(--text-primary);
-      }
+  .modeSwitcherLabel {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
 
-      &.modeButtonActive {
-        color: var(--text-primary);
-        background-color: var(--bg-overlay);
-      }
+    &[data-active] {
+      color: var(--text-primary);
     }
   }
 

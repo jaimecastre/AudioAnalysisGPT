@@ -50,6 +50,26 @@
   color-scheme: dark;
 }
 
+/* ─── Mantine AppShell overrides ─────────────────────────────────────────── */
+:root {
+  --app-shell-color: var(--bg-base);
+  --app-shell-header-height: 48px;
+}
+
+.mantine-AppShell-root {
+  background-color: var(--bg-base);
+}
+
+.mantine-AppShell-main {
+  background-color: var(--bg-base);
+  min-height: calc(100vh - var(--app-shell-header-height));
+}
+
+.mantine-AppShell-header {
+  background-color: var(--bg-surface);
+  border-bottom-color: var(--border);
+}
+
 /* ─── Reset ──────────────────────────────────────────────────────────────── */
 *,
 *::before,
