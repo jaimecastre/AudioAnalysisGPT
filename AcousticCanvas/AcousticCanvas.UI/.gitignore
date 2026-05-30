@@ -12,6 +12,32 @@ dist
 dist-ssr
 *.local
 
+# Audio files (development)
+*.wav
+*.mp3
+*.flac
+*.aac
+*.ogg
+*.m4a
+*.aiff
+*.wma
+
+# Audio analysis cache and temp files
+*.cache
+*.temp
+/tmp/
+/cache/
+
+# Build artifacts
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage/
+*.lcov
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +48,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Package manager lock files (keep one based on your preference)
+# yarn.lock
+# pnpm-lock.yaml

@@ -1,0 +1,14 @@
+# Windsurf Rules for AcousticCanvas
+
+## Documentation References
+
+Reference Mantine documentation using:
+@https://mantine.dev/llms.txt
+
+Reference UI spacing guidelines using:
+@https://designforducks.com/ui-spacing-cheat-sheet-a-complete-guide-2/
+
+Reference React patterns using:
+@https://www.patterns.dev/react/
+
+This provides persistent access to Mantine component documentation, hooks, and styling guides, comprehensive UI spacing best practices, and React design patterns for the AcousticCanvas audio analysis workspace.
