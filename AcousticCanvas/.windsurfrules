@@ -12,3 +12,18 @@ Reference React patterns using:
 @https://www.patterns.dev/react/
 
 This provides persistent access to Mantine component documentation, hooks, and styling guides, comprehensive UI spacing best practices, and React design patterns for the AcousticCanvas audio analysis workspace.
+
+## Code Style
+
+- Write junior-friendly code: simple, flat, and easy to follow — no clever abstractions
+- Use long, descriptive names for variables, functions, and components that make intent obvious without needing comments
+- Avoid one-liners, nested ternaries, and complex chaining — prefer explicit steps
+- Keep functions short and single-purpose; if a function does two things, split it
+
+## Architecture: Frontend vs Backend
+
+- All logic, calculations, and data transformations belong in the backend — no exceptions
+- The frontend only renders what the backend returns; it does not compute, derive, or transform data
+- No DSP, audio math, signal processing, or analysis of any kind in the frontend
+- No business rules or domain decisions in the frontend
+- Frontend responsibilities: display state, handle user input, call backend endpoints, render results
