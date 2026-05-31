@@ -15,6 +15,8 @@ builder.Services.AddSingleton<IReadOnlyList<ISignalFileImporter>>(importers);
 builder.Services.AddSingleton<SignalAnalysisService>();
 builder.Services.AddSingleton<RunAnalysisHandler>();
 builder.Services.AddSingleton<RunSpectrumHandler>();
+builder.Services.AddSingleton<SpectrogramCacheStore>();
+builder.Services.AddSingleton<RunSpectrogramHandler>();
 builder.Services.AddSingleton<GetWaveformHandler>();
 builder.Services.AddSingleton<PlaybackStateStore>();
 builder.Services.AddSingleton<PlaybackControlHandler>();

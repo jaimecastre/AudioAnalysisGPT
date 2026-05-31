@@ -211,52 +211,63 @@ export const WaveSurferDisplay = ({
     <div
       style={{
         display: 'flex',
-        flexDirection: 'row',
+        flexDirection: 'column',
         width: '100%',
-        height: '100%',
         flexShrink: 0,
         overflow: 'hidden',
       }}
     >
-      <canvas
-        ref={axisCanvasRef}
-        width={Y_AXIS_WIDTH}
-        style={{ flexShrink: 0, display: 'block', height: '100%' }}
-      />
+      {/* Waveform row: y-axis canvas + waveform */}
       <div
-        ref={waveContainerRef}
         style={{
-          flex: 1,
-          minWidth: 0,
-          height: '100%',
+          display: 'flex',
+          flexDirection: 'row',
+          width: '100%',
+          height: containerHeight,
+          flexShrink: 0,
           overflow: 'hidden',
-          backgroundColor: BACKGROUND_COLOR,
-          position: 'relative',
         }}
       >
-        {showHint && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              border: '1px solid rgba(0, 184, 169, 0.3)',
-              borderRadius: '8px',
-              padding: '12px 20px',
-              fontSize: '13px',
-              color: 'rgba(0, 0, 0, 0.6)',
-              fontFamily: FONT_FAMILY,
-              pointerEvents: 'none',
-              zIndex: 10,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            👆 Click and drag to select a region
-          </div>
-        )}
+        <canvas
+          ref={axisCanvasRef}
+          width={Y_AXIS_WIDTH}
+          style={{ flexShrink: 0, display: 'block', height: '100%' }}
+        />
+        <div
+          ref={waveContainerRef}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            height: '100%',
+            overflow: 'hidden',
+            backgroundColor: BACKGROUND_COLOR,
+            position: 'relative',
+          }}
+        >
+          {showHint && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                border: '1px solid rgba(0, 184, 169, 0.3)',
+                borderRadius: '8px',
+                padding: '12px 20px',
+                fontSize: '13px',
+                color: 'rgba(0, 0, 0, 0.6)',
+                fontFamily: FONT_FAMILY,
+                pointerEvents: 'none',
+                zIndex: 10,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              👆 Click and drag to select a region
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

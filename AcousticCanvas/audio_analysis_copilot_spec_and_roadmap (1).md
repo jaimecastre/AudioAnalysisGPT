@@ -1065,25 +1065,6 @@ Acceptance criteria:
 
 ---
 
-### Branch 2.5 — `markers-basic`
-
-Goal: Add manual markers.
-
-Scope:
-
-- add marker at playback cursor
-- marker list
-- marker visible on waveform
-- marker label
-
-Acceptance criteria:
-
-- user can add marker
-- marker persists in project state
-- clicking marker seeks to it
-
----
-
 ## Phase 3 — Stable internal tool API
 
 ### Branch 3.1 — `tool-get-state`

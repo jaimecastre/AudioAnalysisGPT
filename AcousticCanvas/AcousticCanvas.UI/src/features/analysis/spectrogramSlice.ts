@@ -1,0 +1,79 @@
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { createSlice } from '@reduxjs/toolkit';
+import type { SpectrogramAnalysis, SpectrogramUserParameters } from './spectrogramTypes';
+import { DEFAULT_SPECTROGRAM_PARAMS } from './spectrogramTypes';
+
+export type SpectrogramStatus = 'idle' | 'running' | 'complete' | 'error';
+
+interface SpectrogramState {
+  result: SpectrogramAnalysis | null;
+  status: SpectrogramStatus;
+  error: string | null;
+  selectedChannelId: string | null;
+  userParameters: SpectrogramUserParameters;
+}
+
+const initialState: SpectrogramState = {
+  result: null,
+  status: 'idle',
+  error: null,
+  selectedChannelId: null,
+  userParameters: DEFAULT_SPECTROGRAM_PARAMS,
+};
+
+const spectrogramSlice = createSlice({
+  name: 'spectrogram',
+  initialState,
+  reducers: {
+    spectrogramStarted: (state) => {
+      state.status = 'running';
+      state.error = null;
+    },
+    spectrogramCompleted: (state, action: PayloadAction<SpectrogramAnalysis>) => {
+      state.status = 'complete';
+      state.result = action.payload;
+      state.error = null;
+      const channelIds = action.payload.channels.map((c) => c.channelId);
+      if (!state.selectedChannelId || !channelIds.includes(state.selectedChannelId)) {
+        state.selectedChannelId = channelIds[0] ?? null;
+      }
+    },
+    spectrogramFailed: (state, action: PayloadAction<string>) => {
+      state.status = 'error';
+      state.error = action.payload;
+    },
+    spectrogramClear: () => initialState,
+    spectrogramSetChannel: (state, action: PayloadAction<string>) => {
+      state.selectedChannelId = action.payload;
+    },
+    spectrogramSetParameters: (state, action: PayloadAction<Partial<SpectrogramUserParameters>>) => {
+      state.userParameters = { ...state.userParameters, ...action.payload };
+    },
+  },
+});
+
+export const {
+  spectrogramStarted,
+  spectrogramCompleted,
+  spectrogramFailed,
+  spectrogramClear,
+  spectrogramSetChannel,
+  spectrogramSetParameters,
+} = spectrogramSlice.actions;
+
+export default spectrogramSlice.reducer;
+
+export const spectrogramResultSelector = (state: { spectrogram: SpectrogramState }): SpectrogramAnalysis | null =>
+  state.spectrogram.result;
+
+export const spectrogramStatusSelector = (state: { spectrogram: SpectrogramState }): SpectrogramStatus =>
+  state.spectrogram.status;
+
+export const spectrogramErrorSelector = (state: { spectrogram: SpectrogramState }): string | null =>
+  state.spectrogram.error;
+
+export const spectrogramSelectedChannelIdSelector = (state: { spectrogram: SpectrogramState }): string | null =>
+  state.spectrogram.selectedChannelId;
+
+export const spectrogramUserParametersSelector = (state: { spectrogram: SpectrogramState }): SpectrogramUserParameters =>
+  state.spectrogram.userParameters;

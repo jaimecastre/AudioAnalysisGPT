@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
     GET_WAVEFORM: (fileId: string, points: number) => `api/waveform?fileId=${fileId}&points=${points}`,
     RUN_ANALYSIS: (fileId: string) => `api/analysis?fileId=${fileId}`,
     RUN_SPECTRUM: 'api/analysis/spectrum',
+    RUN_SPECTROGRAM: 'api/analysis/spectrogram',
   },
 } as const;
 
