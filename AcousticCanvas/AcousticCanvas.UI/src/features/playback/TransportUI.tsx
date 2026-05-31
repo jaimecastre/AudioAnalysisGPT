@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { ActionIcon, Slider, Group, Text } from '@mantine/core';
 import { IconPlayerPlay, IconPlayerPause } from '@tabler/icons-react';
 import styles from './TransportUI.module.scss';
@@ -11,6 +11,7 @@ interface TransportUIProps {
   onPlay: () => void;
   onPause: () => void;
   onSeek: (timeSeconds: number) => void;
+  secondaryControls?: ReactNode;
 }
 
 const formatTime = (seconds: number): string => {
@@ -31,6 +32,7 @@ export const TransportUI = ({
   onPlay,
   onPause,
   onSeek,
+  secondaryControls,
 }: TransportUIProps): JSX.Element => {
   const handlePlayPause = (): void => {
     if (isPlaying) {
@@ -76,6 +78,12 @@ export const TransportUI = ({
             {formatTime(currentTime)} / {formatTime(duration)}
           </Text>
         </div>
+
+        {secondaryControls && (
+          <div className={styles.secondaryControls}>
+            {secondaryControls}
+          </div>
+        )}
       </Group>
     </div>
   );

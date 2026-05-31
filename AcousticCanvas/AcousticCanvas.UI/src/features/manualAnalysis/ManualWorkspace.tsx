@@ -9,8 +9,13 @@ import { apiClient } from '../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../shared/api/apiEndpoints';
 import { useAppSelector, useAppDispatch } from '../../store/reduxHooks';
 import { projectFilesSelector, removeAudioFile } from '../project/projectSlice';
-import { Text, Stack, Badge, Card, Group } from '@mantine/core';
-import { IconFileMusic } from '@tabler/icons-react';
+import {
+  setLoopEnabled,
+  loopEnabledSelector,
+  activeSelectionSelector,
+} from '../waveform/waveformSelectionSlice';
+import { Text, Stack, Badge, Card, Group, ActionIcon, Tooltip } from '@mantine/core';
+import { IconRepeat, IconX, IconFileMusic } from '@tabler/icons-react';
 import styles from './ManualWorkspace.module.scss';
 
 interface ManualWorkspaceProps {
@@ -22,6 +27,8 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
   const files = useAppSelector(projectFilesSelector);
   const uploadedFile = files.length > 0 ? files[0] : null;
   const { isUploading, uploadFile } = useAudioUpload();
+  const loopEnabled = useAppSelector(loopEnabledSelector);
+  const activeSelection = useAppSelector(activeSelectionSelector);
 
   const waveSurferRef = useRef<WaveSurferDisplayRef | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -63,12 +70,21 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
 
   const handleClearFile = (): void => {
     waveSurferRef.current?.pause();
+    waveSurferRef.current?.clearSelection();
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
     if (uploadedFile) {
       dispatch(removeAudioFile(uploadedFile.id));
     }
+  };
+
+  const handleToggleLoop = (): void => {
+    dispatch(setLoopEnabled(!loopEnabled));
+  };
+
+  const handleClearSelection = (): void => {
+    waveSurferRef.current?.clearSelection();
   };
 
   // Home view: always show welcome placeholder
@@ -123,6 +139,34 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
                 onPlay={handlePlay}
                 onPause={handlePause}
                 onSeek={handleSeek}
+                secondaryControls={
+                  <>
+                    <Tooltip label={loopEnabled ? 'Loop: on' : 'Loop: off'} withArrow position="top">
+                      <ActionIcon
+                        variant={loopEnabled ? 'filled' : 'subtle'}
+                        color={loopEnabled ? 'teal' : 'gray'}
+                        size="sm"
+                        onClick={handleToggleLoop}
+                        aria-label="Toggle loop"
+                      >
+                        <IconRepeat size={14} />
+                      </ActionIcon>
+                    </Tooltip>
+                    {activeSelection && (
+                      <Tooltip label="Clear selection" withArrow position="top">
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          size="sm"
+                          onClick={handleClearSelection}
+                          aria-label="Clear selection"
+                        >
+                          <IconX size={14} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
+                  </>
+                }
               />
             </div>
           </div>

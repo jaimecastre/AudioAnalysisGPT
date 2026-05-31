@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 import { useRef, useEffect, useCallback } from 'react';
 import { useWaveformData } from './hooks/useWaveformData';
 import { useWaveSurfer } from './hooks/useWaveSurfer';
+import { useRegions } from './hooks/useRegions';
 
 // Y-axis layout constants
 const Y_AXIS_WIDTH = 72;
@@ -18,6 +19,7 @@ export interface WaveSurferDisplayRef {
   play: () => void;
   pause: () => void;
   seek: (timeSeconds: number) => void;
+  clearSelection: () => void;
 }
 
 interface WaveSurferDisplayProps {
@@ -123,7 +125,7 @@ export const WaveSurferDisplay = ({
 
   const waveformData = useWaveformData(fileId);
 
-  useWaveSurfer({
+  const { wavesurferRef, isReady } = useWaveSurfer({
     containerRef: waveContainerRef,
     audioUrl,
     height,
@@ -133,6 +135,18 @@ export const WaveSurferDisplay = ({
     onTimeUpdate,
     onFinish,
   });
+
+  const { clearSelection } = useRegions({ wavesurferRef, isReady });
+
+  useEffect(() => {
+    if (!displayRef) {
+      return;
+    }
+    const existingControls = displayRef.current;
+    if (existingControls) {
+      displayRef.current = { ...existingControls, clearSelection };
+    }
+  }, [displayRef, clearSelection]);
 
   const redrawAxis = useCallback(() => {
     const canvas = axisCanvasRef.current;

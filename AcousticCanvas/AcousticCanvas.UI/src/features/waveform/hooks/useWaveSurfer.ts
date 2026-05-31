@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import type { WaveformResponse } from '../../audioUpload/audioUploadApi';
 import type { WaveSurferDisplayRef } from '../WaveSurferDisplay';
@@ -54,7 +54,14 @@ const buildDisplayControls = (
       wavesurferRef.current?.seekTo(timeSeconds / duration);
     }
   },
+  // clearSelection is a placeholder; useRegions replaces it after regions are initialized
+  clearSelection: () => {},
 });
+
+interface UseWaveSurferReturn {
+  wavesurferRef: React.MutableRefObject<WaveSurfer | null>;
+  isReady: boolean;
+}
 
 export const useWaveSurfer = ({
   containerRef,
@@ -65,8 +72,9 @@ export const useWaveSurfer = ({
   onReady,
   onTimeUpdate,
   onFinish,
-}: UseWaveSurferOptions): void => {
+}: UseWaveSurferOptions): UseWaveSurferReturn => {
   const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -79,11 +87,14 @@ export const useWaveSurfer = ({
       wavesurferRef.current = null;
     }
 
+    setIsReady(false);
+
     const config = buildWaveSurferConfig(container, height, audioUrl, waveformData);
     const wavesurfer = WaveSurfer.create(config);
     wavesurferRef.current = wavesurfer;
 
     wavesurfer.on('ready', () => {
+      setIsReady(true);
       onReady?.(waveformData.durationSeconds);
     });
 
@@ -98,6 +109,7 @@ export const useWaveSurfer = ({
     return () => {
       wavesurfer.destroy();
       wavesurferRef.current = null;
+      setIsReady(false);
     };
   }, [containerRef, audioUrl, height, waveformData, onReady, onTimeUpdate, onFinish]);
 
@@ -114,4 +126,6 @@ export const useWaveSurfer = ({
       }
     };
   }, [displayRef]);
+
+  return { wavesurferRef, isReady };
 };

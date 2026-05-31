@@ -17,3 +17,11 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+
+.secondaryControls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
+}
