@@ -13,6 +13,7 @@ export const fixtureAudioFile: AudioFile = {
   durationSeconds: 2.5,
   sampleRate: 44100,
   channels: 1,
+  bitDepth: 24,
   fileSizeBytes: 220500,
 };
 

@@ -39,7 +39,6 @@ export const useAudioUpload = (): UseAudioUploadReturn => {
         channels: data.channels,
         bitDepth: data.bitDepth,
         fileSizeBytes: 0,
-        waveformBins: data.waveformBins,
       }));
 
       notifications.show({

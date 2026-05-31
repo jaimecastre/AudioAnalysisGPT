@@ -8,12 +8,6 @@ export type RegionId = string;
 export type MarkerId = string;
 export type AnalysisResultId = string;
 
-export interface WaveformBin {
-  x: number;
-  yMin: number;
-  yMax: number;
-}
-
 export interface AudioFile {
   id: AudioFileId;
   name: string;
@@ -22,7 +16,6 @@ export interface AudioFile {
   channels: number;
   bitDepth: number;
   fileSizeBytes: number;
-  waveformBins: WaveformBin[];
 }
 
 export interface Region {

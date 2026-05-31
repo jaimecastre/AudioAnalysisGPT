@@ -1,9 +1,3 @@
-export interface WaveformBin {
-  x: number;
-  yMin: number;
-  yMax: number;
-}
-
 export interface AudioFileResponse {
   id: string;
   name: string;
@@ -11,5 +5,13 @@ export interface AudioFileResponse {
   sampleRate: number;
   channels: number;
   bitDepth: number;
-  waveformBins: WaveformBin[];
+}
+
+export interface WaveformResponse {
+  durationSeconds: number;
+  sampleRate: number;
+  channels: number;
+  globalMinFs: number;
+  globalMaxFs: number;
+  peaks: number[];
 }

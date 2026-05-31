@@ -16,19 +16,75 @@
   background-color: var(--bg-base);
 }
 
+// The left content area: fills all horizontal space, scrollable vertically
 .mainArea {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
   overflow: hidden;
+}
+
+// Scrollable viewport that holds all signal cards stacked vertically
+.signalViewport {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 16px 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// A single signal card — reused for waveform, spectrogram, spectrum, etc.
+.signalCard {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.signalCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-elevated);
+  flex-shrink: 0;
+}
+
+.signalCardLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.signalCardBody {
+  flex: 1;
+  overflow: hidden;
+}
+
+// Generic transport bar — docked below all signal cards, spans full width
+.transportBar {
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  flex-shrink: 0;
 }
 
 .fileListPanel {
   padding: 16px;
   background-color: var(--bg-surface);
+  border-right: 1px solid var(--border);
   overflow-y: auto;
-  min-width: 240px;
-  flex: 1;
+  width: 220px;
+  flex-shrink: 0;
 }
 
 .emptyState {

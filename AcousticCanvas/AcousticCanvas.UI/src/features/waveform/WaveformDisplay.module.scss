@@ -1,6 +1,10 @@
+.container {
+  display: block;
+  width: 100%;
+}
+
 .canvas {
   display: block;
-  background-color: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--mantine-radius-sm);
 }

@@ -2,10 +2,12 @@ using FastEndpoints;
 using AcousticCanvas.Features.AudioUpload.Handlers;
 using AcousticCanvas.Features.Playback.Handlers;
 using AcousticCanvas.Features.Playback.Services;
+using AcousticCanvas.Features.Waveform.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddFastEndpoints();
 builder.Services.AddSingleton<UploadAudioHandler>();
+builder.Services.AddSingleton<WaveformAnalyzer>();
 builder.Services.AddSingleton<PlaybackStateStore>();
 builder.Services.AddSingleton<PlaybackControlHandler>();
 builder.Services.AddSingleton<GetPlaybackStateHandler>();

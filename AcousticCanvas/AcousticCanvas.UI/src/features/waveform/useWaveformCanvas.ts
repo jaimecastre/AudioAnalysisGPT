@@ -1,13 +1,14 @@
 import { useRef, useEffect } from 'react';
-import type { WaveformDataPoint } from '../audioUpload/audioUploadApi';
+import type { WaveformBin } from '../audioUpload/audioUploadApi';
 import { drawWaveformCanvas } from './waveformCanvasUtils';
 
 interface UseWaveformCanvasOptions {
-  waveformData: WaveformDataPoint[];
+  waveformBins: WaveformBin[];
   width: number;
   height: number;
   color: string;
   backgroundColor: string;
+  amplitudeUnit: string;
 }
 
 interface UseWaveformCanvasReturn {
@@ -15,7 +16,7 @@ interface UseWaveformCanvasReturn {
 }
 
 export function useWaveformCanvas(options: UseWaveformCanvasOptions): UseWaveformCanvasReturn {
-  const { waveformData, width, height, color, backgroundColor } = options;
+  const { waveformBins, width, height, color, backgroundColor, amplitudeUnit } = options;
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -31,13 +32,14 @@ export function useWaveformCanvas(options: UseWaveformCanvasOptions): UseWavefor
 
     drawWaveformCanvas({
       context,
-      waveformData,
+      waveformBins,
       width,
       height,
       color,
       backgroundColor,
+      amplitudeUnit,
     });
-  }, [waveformData, width, height, color, backgroundColor]);
+  }, [waveformBins, width, height, color, backgroundColor, amplitudeUnit]);
 
   return { canvasRef };
 }

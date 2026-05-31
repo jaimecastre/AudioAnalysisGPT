@@ -1,10 +1,10 @@
 import type { JSX } from 'react';
-import { useEffect } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { AudioFileDropzone } from '../audioUpload/AudioFileDropzone';
 import { useAudioUpload } from '../audioUpload/useAudioUpload';
-import { useAudioPlayer } from '../playback/useAudioPlayer';
 import { TransportUI } from '../playback/TransportUI';
-import { WaveformChart } from '../playback/WaveformChart';
+import { WaveSurferDisplay } from '../waveform/WaveSurferDisplay';
+import type { WaveSurferDisplayRef } from '../waveform/WaveSurferDisplay';
 import { apiClient } from '../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../shared/api/apiEndpoints';
 import { useAppSelector, useAppDispatch } from '../../store/reduxHooks';
@@ -21,29 +21,51 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
   const dispatch = useAppDispatch();
   const files = useAppSelector(projectFilesSelector);
   const uploadedFile = files.length > 0 ? files[0] : null;
-  const waveformBins = uploadedFile?.waveformBins ?? [];
   const { isUploading, uploadFile } = useAudioUpload();
-  const {
-    isPlaying,
-    currentTime,
-    duration,
-    isLoading: isAudioLoading,
-    play,
-    pause,
-    seek,
-    loadFile,
-    unloadFile,
-  } = useAudioPlayer();
 
-  useEffect(() => {
-    if (uploadedFile) {
-      const fileUrl = apiClient.buildUrl(API_ENDPOINTS.AUDIO.GET_FILE(uploadedFile.id));
-      loadFile(fileUrl);
-    }
-  }, [uploadedFile, loadFile]);
+  const waveSurferRef = useRef<WaveSurferDisplayRef | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const audioUrl = uploadedFile
+    ? apiClient.buildUrl(API_ENDPOINTS.AUDIO.GET_FILE(uploadedFile.id))
+    : '';
+
+  const handleWaveSurferReady = useCallback((audioDuration: number): void => {
+    setDuration(audioDuration);
+    setCurrentTime(0);
+    setIsPlaying(false);
+  }, []);
+
+  const handleWaveSurferTimeUpdate = useCallback((time: number): void => {
+    setCurrentTime(time);
+  }, []);
+
+  const handleWaveSurferFinish = useCallback((): void => {
+    setIsPlaying(false);
+  }, []);
+
+  const handlePlay = (): void => {
+    waveSurferRef.current?.play();
+    setIsPlaying(true);
+  };
+
+  const handlePause = (): void => {
+    waveSurferRef.current?.pause();
+    setIsPlaying(false);
+  };
+
+  const handleSeek = (timeSeconds: number): void => {
+    waveSurferRef.current?.seek(timeSeconds);
+    setCurrentTime(timeSeconds);
+  };
 
   const handleClearFile = (): void => {
-    unloadFile();
+    waveSurferRef.current?.pause();
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
     if (uploadedFile) {
       dispatch(removeAudioFile(uploadedFile.id));
     }
@@ -71,26 +93,40 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
       )}
 
       {shouldShowFileContent && (
-        <div className={styles.mainArea}>
-          <WaveformChart
-            waveformBins={waveformBins}
-            currentTime={currentTime}
-            duration={duration}
-          />
-          <TransportUI
-            isPlaying={isPlaying}
-            currentTime={currentTime}
-            duration={duration}
-            isLoading={isAudioLoading}
-            onPlay={play}
-            onPause={pause}
-            onSeek={seek}
-          />
+        <>
           <FileListPanel
             uploadedFile={uploadedFile}
             onClearFile={handleClearFile}
           />
-        </div>
+          <div className={styles.mainArea}>
+            <div className={styles.signalViewport}>
+              <div className={styles.signalCard}>
+                <div className={styles.signalCardBody}>
+                  <WaveSurferDisplay
+                    fileId={uploadedFile.id}
+                    audioUrl={audioUrl}
+                    height={100}
+                    onReady={handleWaveSurferReady}
+                    onTimeUpdate={handleWaveSurferTimeUpdate}
+                    onFinish={handleWaveSurferFinish}
+                    displayRef={waveSurferRef}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className={styles.transportBar}>
+              <TransportUI
+                isPlaying={isPlaying}
+                currentTime={currentTime}
+                duration={duration}
+                isLoading={false}
+                onPlay={handlePlay}
+                onPause={handlePause}
+                onSeek={handleSeek}
+              />
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
