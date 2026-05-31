@@ -18,17 +18,24 @@ public static class SpectrogramAnalyzer
         double startSeconds,
         double endSeconds,
         int fftSize,
-        double overlap)
+        double overlap,
+        string scale,
+        double gainDb,
+        double rangeDb)
     {
+        scale = NormalizeScale(scale);
+        gainDb = Math.Clamp(gainDb, -10.0, 30.0);
+        rangeDb = Math.Clamp(rangeDb, 20.0, 120.0);
         var firstChannel = channels[0];
         var sampleRate = firstChannel.SampleRate;
         var binCount = fftSize / 2 + 1;
 
-        var startSample = (int)Math.Floor(startSeconds * sampleRate);
-        var endSample = (int)Math.Ceiling(endSeconds * sampleRate);
+        var durationSeconds = (double)firstChannel.Samples.Length / sampleRate;
+        var clampedStartSeconds = Math.Clamp(startSeconds, 0.0, durationSeconds);
+        var clampedEndSeconds = Math.Clamp(endSeconds, clampedStartSeconds, durationSeconds);
 
-        startSample = Math.Clamp(startSample, 0, firstChannel.Samples.Length);
-        endSample = Math.Clamp(endSample, 0, firstChannel.Samples.Length);
+        var startSample = (int)Math.Floor(clampedStartSeconds * sampleRate);
+        var endSample = (int)Math.Ceiling(clampedEndSeconds * sampleRate);
 
         var regionLength = endSample - startSample;
         var nominalHopSize = (int)Math.Max(1, fftSize * (1.0 - overlap));
@@ -59,7 +66,10 @@ public static class SpectrogramAnalyzer
                 binCount,
                 window,
                 coherentGain,
-                sampleRate);
+                sampleRate,
+                scale,
+                gainDb,
+                rangeDb);
 
             channelResults.Add(channelResult);
         }
@@ -71,8 +81,11 @@ public static class SpectrogramAnalyzer
             FftSize = fftSize,
             WindowType = DefaultWindowType,
             Overlap = overlap,
-            StartTimeSeconds = startSeconds,
-            EndTimeSeconds = endSeconds,
+            Scale = scale,
+            GainDb = gainDb,
+            RangeDb = rangeDb,
+            StartTimeSeconds = clampedStartSeconds,
+            EndTimeSeconds = clampedEndSeconds,
             FrameCount = actualFrameCount,
             BinCount = binCount,
             SampleRate = sampleRate,
@@ -80,9 +93,9 @@ public static class SpectrogramAnalyzer
 
         var region = new TimeRange
         {
-            StartSeconds = startSeconds,
-            EndSeconds = endSeconds,
-            DurationSeconds = Math.Max(0.0, endSeconds - startSeconds),
+            StartSeconds = clampedStartSeconds,
+            EndSeconds = clampedEndSeconds,
+            DurationSeconds = clampedEndSeconds - clampedStartSeconds,
         };
 
         return new SpectrogramAnalysis
@@ -102,7 +115,10 @@ public static class SpectrogramAnalyzer
         int binCount,
         double[] window,
         double coherentGain,
-        int sampleRate)
+        int sampleRate,
+        string scale,
+        double gainDb,
+        double rangeDb)
     {
         var samples = channel.Samples;
         var frames = new List<double[]>();
@@ -111,7 +127,7 @@ public static class SpectrogramAnalyzer
         while (blockStart + fftSize <= endSample)
         {
             var amplitudes = ComputeFrameAmplitudes(samples, blockStart, fftSize, window, coherentGain);
-            frames.Add(amplitudes);
+            frames.Add(RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0));
             blockStart += hopSize;
         }
 
@@ -119,7 +135,7 @@ public static class SpectrogramAnalyzer
         if (frames.Count == 0)
         {
             var amplitudes = ComputeFrameAmplitudes(samples, startSample, fftSize, window, coherentGain);
-            frames.Add(amplitudes);
+            frames.Add(RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0));
         }
 
         // Find global max amplitude across all frames for normalisation.
@@ -139,9 +155,7 @@ public static class SpectrogramAnalyzer
         // This matches what wavesurfer's SpectrogramPlugin expects: Uint8Array[][] where
         // 255 = loudest, 0 = silence / below floor.
         // Dynamic range window: 0 dB at peak, -gainDB dB at floor.
-        const double gainDb = 20.0;
-        const double rangeDb = 80.0;
-        const double floorDb = -(gainDb + rangeDb);
+        var floorDb = -(gainDb + rangeDb);
 
         var frequencyData = new List<byte[]>();
 
@@ -226,6 +240,55 @@ public static class SpectrogramAnalyzer
         }
         return window;
     }
+
+    private static double[] RemapFrequencyScale(double[] amplitudes, string scale, double nyquistHz)
+    {
+        if (scale == "linear")
+        {
+            return amplitudes;
+        }
+
+        var remapped = new double[amplitudes.Length];
+        var maxIndex = amplitudes.Length - 1;
+        var maxScaledFrequency = FrequencyToScale(nyquistHz, scale);
+
+        for (var index = 0; index < amplitudes.Length; index++)
+        {
+            var scaledFraction = maxIndex == 0 ? 0.0 : (double)index / maxIndex;
+            var sourcePosition = ScaleToFrequency(scaledFraction * maxScaledFrequency, scale) / nyquistHz * maxIndex;
+            sourcePosition = Math.Clamp(sourcePosition, 0.0, maxIndex);
+            var lowerIndex = (int)Math.Floor(sourcePosition);
+            var upperIndex = Math.Min(lowerIndex + 1, maxIndex);
+            var interpolation = sourcePosition - lowerIndex;
+            remapped[index] = amplitudes[lowerIndex] * (1.0 - interpolation) + amplitudes[upperIndex] * interpolation;
+        }
+
+        return remapped;
+    }
+
+    private static double FrequencyToScale(double frequencyHz, string scale) =>
+        scale switch
+        {
+            "mel" => 2595.0 * Math.Log10(1.0 + frequencyHz / 700.0),
+            "logarithmic" => Math.Log10(1.0 + frequencyHz),
+            _ => frequencyHz,
+        };
+
+    private static double ScaleToFrequency(double scaledFrequency, string scale) =>
+        scale switch
+        {
+            "mel" => 700.0 * (Math.Pow(10.0, scaledFrequency / 2595.0) - 1.0),
+            "logarithmic" => Math.Pow(10.0, scaledFrequency) - 1.0,
+            _ => scaledFrequency,
+        };
+
+    private static string NormalizeScale(string scale) =>
+        (scale ?? string.Empty).ToLowerInvariant() switch
+        {
+            "linear" => "linear",
+            "logarithmic" => "logarithmic",
+            _ => "mel",
+        };
 
     private static double ComputeCoherentGain(double[] window, int fftSize)
     {

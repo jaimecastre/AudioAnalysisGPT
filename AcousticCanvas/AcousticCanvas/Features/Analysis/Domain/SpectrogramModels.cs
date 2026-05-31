@@ -21,9 +21,8 @@ public sealed class ChannelSpectrogramAnalysis
     // Nyquist frequency in Hz (sampleRate / 2).
     public required double NyquistHz { get; init; }
 
-    // Row-major flat data: [frameIndex][binIndex] = byte 0-255.
-    // Each byte is a normalised amplitude: 0 = silence, 255 = loudest bin in the file.
-    // Shape matches what wavesurfer's SpectrogramPlugin expects as Uint8Array[][].
+    // Each frame contains frequency-bin amplitudes normalised to bytes in the range 0-255.
+    // System.Text.Json serializes each byte[] frame as a base64 string.
     public required IReadOnlyList<byte[]> FrequencyData { get; init; }
 }
 
@@ -32,6 +31,9 @@ public sealed class SpectrogramParameters
     public required int FftSize { get; init; }
     public required string WindowType { get; init; }
     public required double Overlap { get; init; }
+    public required string Scale { get; init; }
+    public required double GainDb { get; init; }
+    public required double RangeDb { get; init; }
     public required double StartTimeSeconds { get; init; }
     public required double EndTimeSeconds { get; init; }
     public required int FrameCount { get; init; }

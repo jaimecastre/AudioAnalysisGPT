@@ -19,7 +19,7 @@ import {
   activeSelectionSelector,
 } from '../waveform/waveformSelectionSlice';
 import { Text, Card, Group, ActionIcon, Tooltip } from '@mantine/core';
-import { IconRepeat, IconX, IconFileMusic, IconInfoCircle, IconWaveSine, IconChartLine } from '@tabler/icons-react';
+import { IconRepeat, IconX, IconFileMusic, IconInfoCircle, IconWaveSine, IconChartLine, IconTrash } from '@tabler/icons-react';
 import { RightSidebar } from './RightSidebar';
 import { useRunAnalysis } from '../analysis/useRunAnalysis';
 import {
@@ -57,13 +57,17 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
 
   // Tool panels spawned from the toolbox
   const [toolPanels, setToolPanels] = useState<Array<{ id: string; type: 'spectrogram' | 'spectrum'; fileId: string | null }>>([]);
+  const hasSpectrogramPanel = toolPanels.some((panel) => panel.type === 'spectrogram');
+  const hasSpectrumPanel = toolPanels.some((panel) => panel.type === 'spectrum');
 
   const handleAddSpectrogramPanel = (): void => {
+    if (hasSpectrogramPanel) return;
     const newPanelId = `spectrogram-${Date.now()}`;
     setToolPanels((prev) => [...prev, { id: newPanelId, type: 'spectrogram', fileId: selectedSignalId ?? null }]);
   };
 
   const handleAddSpectrumPanel = (): void => {
+    if (hasSpectrumPanel) return;
     const newPanelId = `spectrum-${Date.now()}`;
     setToolPanels((prev) => [...prev, { id: newPanelId, type: 'spectrum', fileId: selectedSignalId ?? null }]);
   };
@@ -165,6 +169,8 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
             onClearFile={handleClearFile}
             onAddSpectrogram={handleAddSpectrogramPanel}
             onAddSpectrum={handleAddSpectrumPanel}
+            hasSpectrogramPanel={hasSpectrogramPanel}
+            hasSpectrumPanel={hasSpectrumPanel}
           />
           <div className={styles.contentRow}>
           <div className={styles.mainArea}>
@@ -206,6 +212,8 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
                       panelId={panel.id}
                       availableFiles={files}
                       selectedFileId={panel.fileId}
+                      currentTimeSeconds={currentTime}
+                      onSeek={handleSeek}
                       onFileSelect={handleToolPanelFileSelect}
                       onClose={handleToolPanelClose}
                     />
@@ -295,9 +303,18 @@ interface FileListPanelProps {
   onClearFile: () => void;
   onAddSpectrogram: () => void;
   onAddSpectrum: () => void;
+  hasSpectrogramPanel: boolean;
+  hasSpectrumPanel: boolean;
 }
 
-const FileListPanel = ({ uploadedFile, onClearFile, onAddSpectrogram, onAddSpectrum }: FileListPanelProps): JSX.Element => {
+const FileListPanel = ({
+  uploadedFile,
+  onClearFile,
+  onAddSpectrogram,
+  onAddSpectrum,
+  hasSpectrogramPanel,
+  hasSpectrumPanel,
+}: FileListPanelProps): JSX.Element => {
   return (
     <div className={styles.fileListPanel}>
       <Text fw={600} size="sm" mb="md" c="dimmed">FILES</Text>
@@ -309,42 +326,51 @@ const FileListPanel = ({ uploadedFile, onClearFile, onAddSpectrogram, onAddSpect
               {uploadedFile.name}
             </Text>
           </Group>
-          <Text
-            size="xs"
-            c="dimmed"
-            mt="sm"
-            style={{ cursor: 'pointer' }}
-            onClick={onClearFile}
-          >
-            Click to remove
-          </Text>
+          <Tooltip label="Remove audio file" withArrow position="right">
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              size="sm"
+              mt="xs"
+              onClick={onClearFile}
+              aria-label="Remove audio file"
+            >
+              <IconTrash size={15} />
+            </ActionIcon>
+          </Tooltip>
         </Card>
       )}
 
       <div style={{ marginTop: 24 }}>
         <Text fw={600} size="sm" mb="sm" c="dimmed">TOOLS</Text>
         <Group gap="xs">
-          <Tooltip label="Add Spectrogram" withArrow position="right">
-            <ActionIcon
-              variant="light"
-              color="teal"
-              size="lg"
-              onClick={onAddSpectrogram}
-              aria-label="Add spectrogram panel"
-            >
-              <IconWaveSine size={18} />
-            </ActionIcon>
+          <Tooltip label={hasSpectrogramPanel ? 'Spectrogram panel already open' : 'Add spectrogram'} withArrow position="right">
+            <span>
+              <ActionIcon
+                variant="light"
+                color="teal"
+                size="lg"
+                onClick={onAddSpectrogram}
+                disabled={hasSpectrogramPanel}
+                aria-label="Add spectrogram panel"
+              >
+                <IconWaveSine size={18} />
+              </ActionIcon>
+            </span>
           </Tooltip>
-          <Tooltip label="Add Spectrum" withArrow position="right">
-            <ActionIcon
-              variant="light"
-              color="teal"
-              size="lg"
-              onClick={onAddSpectrum}
-              aria-label="Add spectrum panel"
-            >
-              <IconChartLine size={18} />
-            </ActionIcon>
+          <Tooltip label={hasSpectrumPanel ? 'Spectrum panel already open' : 'Add spectrum'} withArrow position="right">
+            <span>
+              <ActionIcon
+                variant="light"
+                color="teal"
+                size="lg"
+                onClick={onAddSpectrum}
+                disabled={hasSpectrumPanel}
+                aria-label="Add spectrum panel"
+              >
+                <IconChartLine size={18} />
+              </ActionIcon>
+            </span>
           </Tooltip>
         </Group>
       </div>

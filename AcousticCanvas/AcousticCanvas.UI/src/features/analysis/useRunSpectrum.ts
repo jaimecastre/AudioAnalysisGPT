@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef } from 'react';
 import { useAppDispatch } from '../../store/reduxHooks';
 import { apiClient, HttpMethod } from '../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../shared/api/apiEndpoints';
@@ -13,9 +14,16 @@ interface RunSpectrumArgs {
 
 export const useRunSpectrum = (): { runSpectrum: (args: RunSpectrumArgs) => Promise<void> } => {
   const dispatch = useAppDispatch();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const runSpectrum = async (args: RunSpectrumArgs): Promise<void> => {
-    dispatch(spectrumStarted());
+  useEffect(() => () => abortControllerRef.current?.abort(), []);
+
+  const runSpectrum = useCallback(async (args: RunSpectrumArgs): Promise<void> => {
+    abortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    const requestId = crypto.randomUUID();
+    abortControllerRef.current = abortController;
+    dispatch(spectrumStarted(requestId));
     try {
       const result = await apiClient.requestJson<SpectrumAnalysis>(
         API_ENDPOINTS.AUDIO.RUN_SPECTRUM,
@@ -28,14 +36,17 @@ export const useRunSpectrum = (): { runSpectrum: (args: RunSpectrumArgs) => Prom
             fftSize: args.parameters.fftSize,
             overlap: args.parameters.overlap,
           },
+          signal: abortController.signal,
         },
       );
-      dispatch(spectrumCompleted(result));
+      if (abortController.signal.aborted) return;
+      dispatch(spectrumCompleted({ requestId, result }));
     } catch (error) {
+      if (abortController.signal.aborted) return;
       const message = error instanceof Error ? error.message : 'Spectrum analysis failed';
-      dispatch(spectrumFailed(message));
+      dispatch(spectrumFailed({ requestId, message }));
     }
-  };
+  }, [dispatch]);
 
   return { runSpectrum };
 };

@@ -16,10 +16,17 @@ interface UseSpectrogramPluginReturn {
   spectrogramContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
-// Converts backend number[][] (values 0-255) to Uint8Array[][] as required by
+// Converts backend base64 byte[] frames to Uint8Array[][] as required by
 // wavesurfer SpectrogramPlugin.drawSpectrogram. Shape: [channel][frame][bin].
-function buildUint8FrequencyData(frequencyData: number[][]): Uint8Array[][] {
-  const frames = frequencyData.map((frame) => new Uint8Array(frame));
+function buildUint8FrequencyData(frequencyData: string[]): Uint8Array[][] {
+  const frames = frequencyData.map((encodedFrame) => {
+    const binaryFrame = window.atob(encodedFrame);
+    const frame = new Uint8Array(binaryFrame.length);
+    for (let index = 0; index < binaryFrame.length; index++) {
+      frame[index] = binaryFrame.charCodeAt(index);
+    }
+    return frame;
+  });
   return [frames];
 }
 
@@ -115,16 +122,20 @@ export const useSpectrogramPlugin = ({
   return { spectrogramContainerRef };
 };
 
-// Produces a 256-entry heat colormap: dark blue → teal → yellow → white.
+// Produces a 256-entry magma-style heat colormap.
 // Each entry is [r, g, b, alpha] with values 0-1 as expected by the plugin.
 function buildDefaultColorMap(): number[][] {
   const colorMap: number[][] = [];
   const stops: Array<{ pos: number; r: number; g: number; b: number }> = [
-    { pos: 0, r: 0.05, g: 0.01, b: 0.13 },
-    { pos: 0.25, r: 0.04, g: 0.23, b: 0.42 },
-    { pos: 0.5, r: 0.1, g: 0.5, b: 0.56 },
-    { pos: 0.75, r: 0.96, g: 0.73, b: 0.26 },
-    { pos: 1.0, r: 1.0, g: 1.0, b: 1.0 },
+    { pos: 0, r: 0, g: 0, b: 4 / 255 },
+    { pos: 0.13, r: 27 / 255, g: 12 / 255, b: 65 / 255 },
+    { pos: 0.25, r: 79 / 255, g: 12 / 255, b: 107 / 255 },
+    { pos: 0.38, r: 120 / 255, g: 28 / 255, b: 109 / 255 },
+    { pos: 0.5, r: 165 / 255, g: 44 / 255, b: 96 / 255 },
+    { pos: 0.63, r: 207 / 255, g: 68 / 255, b: 70 / 255 },
+    { pos: 0.75, r: 237 / 255, g: 105 / 255, b: 37 / 255 },
+    { pos: 0.88, r: 251 / 255, g: 155 / 255, b: 6 / 255 },
+    { pos: 1.0, r: 252 / 255, g: 253 / 255, b: 191 / 255 },
   ];
 
   for (let i = 0; i < 256; i++) {

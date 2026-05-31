@@ -9,6 +9,7 @@ interface SpectrumState {
   result: SpectrumAnalysis | null;
   status: SpectrumStatus;
   error: string | null;
+  activeRequestId: string | null;
   selectedChannelId: string | null;
   userParameters: SpectrumUserParameters;
 }
@@ -17,6 +18,7 @@ const initialState: SpectrumState = {
   result: null,
   status: 'idle',
   error: null,
+  activeRequestId: null,
   selectedChannelId: null,
   userParameters: DEFAULT_SPECTRUM_PARAMS,
 };
@@ -25,23 +27,26 @@ const spectrumSlice = createSlice({
   name: 'spectrum',
   initialState,
   reducers: {
-    spectrumStarted: (state) => {
+    spectrumStarted: (state, action: PayloadAction<string>) => {
       state.status = 'running';
       state.error = null;
+      state.activeRequestId = action.payload;
     },
-    spectrumCompleted: (state, action: PayloadAction<SpectrumAnalysis>) => {
+    spectrumCompleted: (state, action: PayloadAction<{ requestId: string; result: SpectrumAnalysis }>) => {
+      if (state.activeRequestId !== action.payload.requestId) return;
       state.status = 'complete';
-      state.result = action.payload;
+      state.result = action.payload.result;
       state.error = null;
       // Auto-select first channel if none selected or previous channel gone.
-      const channelIds = action.payload.channels.map((c) => c.channelId);
+      const channelIds = action.payload.result.channels.map((c) => c.channelId);
       if (!state.selectedChannelId || !channelIds.includes(state.selectedChannelId)) {
         state.selectedChannelId = channelIds[0] ?? null;
       }
     },
-    spectrumFailed: (state, action: PayloadAction<string>) => {
+    spectrumFailed: (state, action: PayloadAction<{ requestId: string; message: string }>) => {
+      if (state.activeRequestId !== action.payload.requestId) return;
       state.status = 'error';
-      state.error = action.payload;
+      state.error = action.payload.message;
     },
     spectrumClear: () => initialState,
     spectrumSetChannel: (state, action: PayloadAction<string>) => {

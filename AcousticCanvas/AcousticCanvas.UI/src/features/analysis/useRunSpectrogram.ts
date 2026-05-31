@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef } from 'react';
 import { useAppDispatch } from '../../store/reduxHooks';
 import { apiClient, HttpMethod } from '../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../shared/api/apiEndpoints';
@@ -13,9 +14,16 @@ interface RunSpectrogramArgs {
 
 export const useRunSpectrogram = (): { runSpectrogram: (args: RunSpectrogramArgs) => Promise<void> } => {
   const dispatch = useAppDispatch();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const runSpectrogram = async (args: RunSpectrogramArgs): Promise<void> => {
-    dispatch(spectrogramStarted());
+  useEffect(() => () => abortControllerRef.current?.abort(), []);
+
+  const runSpectrogram = useCallback(async (args: RunSpectrogramArgs): Promise<void> => {
+    abortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    const requestId = crypto.randomUUID();
+    abortControllerRef.current = abortController;
+    dispatch(spectrogramStarted(requestId));
     try {
       const result = await apiClient.requestJson<SpectrogramAnalysis>(
         API_ENDPOINTS.AUDIO.RUN_SPECTROGRAM,
@@ -27,15 +35,21 @@ export const useRunSpectrogram = (): { runSpectrogram: (args: RunSpectrogramArgs
             endSeconds: args.endSeconds,
             fftSize: args.parameters.fftSize,
             overlap: args.parameters.overlap,
+            scale: args.parameters.scale,
+            gainDb: args.parameters.gainDb,
+            rangeDb: args.parameters.rangeDb,
           },
+          signal: abortController.signal,
         },
       );
-      dispatch(spectrogramCompleted(result));
+      if (abortController.signal.aborted) return;
+      dispatch(spectrogramCompleted({ requestId, result }));
     } catch (error) {
+      if (abortController.signal.aborted) return;
       const message = error instanceof Error ? error.message : 'Spectrogram analysis failed';
-      dispatch(spectrogramFailed(message));
+      dispatch(spectrogramFailed({ requestId, message }));
     }
-  };
+  }, [dispatch]);
 
   return { runSpectrogram };
 };

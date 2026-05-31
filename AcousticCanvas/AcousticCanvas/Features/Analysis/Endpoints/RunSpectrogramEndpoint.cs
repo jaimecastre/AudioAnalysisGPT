@@ -29,7 +29,10 @@ public class RunSpectrogramEndpoint(UploadAudioHandler uploadAudioHandler)
             StartSeconds: request.StartSeconds,
             EndSeconds: request.EndSeconds,
             FftSize: request.FftSize,
-            Overlap: request.Overlap);
+            Overlap: request.Overlap,
+            Scale: request.Scale,
+            GainDb: request.GainDb,
+            RangeDb: request.RangeDb);
 
         try
         {
@@ -50,4 +53,7 @@ public class RunSpectrogramRequest
     public double EndSeconds { get; set; }
     public int FftSize { get; set; } = 2048;
     public double Overlap { get; set; } = 0.75;
+    public string Scale { get; set; } = "mel";
+    public double GainDb { get; set; } = 20.0;
+    public double RangeDb { get; set; } = 80.0;
 }

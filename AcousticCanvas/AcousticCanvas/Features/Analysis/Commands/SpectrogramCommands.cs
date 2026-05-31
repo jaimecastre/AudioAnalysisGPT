@@ -8,5 +8,8 @@ public record RunSpectrogramQuery(
     double StartSeconds,
     double EndSeconds,
     int FftSize,
-    double Overlap
+    double Overlap,
+    string Scale,
+    double GainDb,
+    double RangeDb
 ) : ICommand<SpectrogramAnalysis>;

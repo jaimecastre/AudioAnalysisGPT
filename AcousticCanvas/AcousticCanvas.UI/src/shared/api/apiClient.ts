@@ -12,6 +12,7 @@ export interface RequestOptions {
   body?: unknown;
   headers?: Record<string, string>;
   method?: HttpMethod;
+  signal?: AbortSignal;
 }
 
 export class ApiError extends Error {
@@ -41,7 +42,7 @@ const buildUrl = (endpoint: string): string => {
 };
 
 async function request(endpoint: string, options: RequestOptions = {}): Promise<Response> {
-  const { body, headers = {}, method = HttpMethod.GET } = options;
+  const { body, headers = {}, method = HttpMethod.GET, signal } = options;
   const url = buildUrl(endpoint);
 
   const isFormData = body instanceof FormData;
@@ -55,6 +56,7 @@ async function request(endpoint: string, options: RequestOptions = {}): Promise<
         ? { ...DEFAULT_HEADERS, 'Content-Type': 'application/json', ...headers }
         : { ...DEFAULT_HEADERS, ...headers },
     method,
+    signal,
   };
 
   if (body !== undefined && method !== HttpMethod.GET) {

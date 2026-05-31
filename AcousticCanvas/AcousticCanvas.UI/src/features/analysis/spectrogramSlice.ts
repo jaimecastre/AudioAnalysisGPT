@@ -9,6 +9,7 @@ interface SpectrogramState {
   result: SpectrogramAnalysis | null;
   status: SpectrogramStatus;
   error: string | null;
+  activeRequestId: string | null;
   selectedChannelId: string | null;
   userParameters: SpectrogramUserParameters;
 }
@@ -17,6 +18,7 @@ const initialState: SpectrogramState = {
   result: null,
   status: 'idle',
   error: null,
+  activeRequestId: null,
   selectedChannelId: null,
   userParameters: DEFAULT_SPECTROGRAM_PARAMS,
 };
@@ -25,22 +27,25 @@ const spectrogramSlice = createSlice({
   name: 'spectrogram',
   initialState,
   reducers: {
-    spectrogramStarted: (state) => {
+    spectrogramStarted: (state, action: PayloadAction<string>) => {
       state.status = 'running';
       state.error = null;
+      state.activeRequestId = action.payload;
     },
-    spectrogramCompleted: (state, action: PayloadAction<SpectrogramAnalysis>) => {
+    spectrogramCompleted: (state, action: PayloadAction<{ requestId: string; result: SpectrogramAnalysis }>) => {
+      if (state.activeRequestId !== action.payload.requestId) return;
       state.status = 'complete';
-      state.result = action.payload;
+      state.result = action.payload.result;
       state.error = null;
-      const channelIds = action.payload.channels.map((c) => c.channelId);
+      const channelIds = action.payload.result.channels.map((c) => c.channelId);
       if (!state.selectedChannelId || !channelIds.includes(state.selectedChannelId)) {
         state.selectedChannelId = channelIds[0] ?? null;
       }
     },
-    spectrogramFailed: (state, action: PayloadAction<string>) => {
+    spectrogramFailed: (state, action: PayloadAction<{ requestId: string; message: string }>) => {
+      if (state.activeRequestId !== action.payload.requestId) return;
       state.status = 'error';
-      state.error = action.payload;
+      state.error = action.payload.message;
     },
     spectrogramClear: () => initialState,
     spectrogramSetChannel: (state, action: PayloadAction<string>) => {
