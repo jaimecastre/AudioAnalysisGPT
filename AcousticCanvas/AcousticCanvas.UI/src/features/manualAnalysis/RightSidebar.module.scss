@@ -8,7 +8,7 @@
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.08);
   transition: width 0.2s ease;
   overflow: hidden;
-  width: 240px;
+  width: 280px;
 
   &.collapsed {
     width: 32px;
@@ -43,7 +43,7 @@
 .panel {
   display: flex;
   flex-direction: column;
-  width: 240px;
+  width: 280px;
   height: 100%;
   overflow: hidden;
 }
@@ -67,8 +67,44 @@
 .panelTitleGroup {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
+}
+
+.tabStrip {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+}
+
+.tabButton {
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+  }
+}
+
+.tabButtonActive {
+  color: #00b8a9;
+  background-color: rgba(0, 184, 169, 0.1);
+
+  &:hover {
+    background-color: rgba(0, 184, 169, 0.15);
+    color: #00b8a9;
+  }
 }
 
 .panelTitle {

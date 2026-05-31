@@ -1,8 +1,10 @@
 import type { JSX } from 'react';
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useWaveformData } from './hooks/useWaveformData';
 import { useWaveSurfer } from './hooks/useWaveSurfer';
 import { useRegions } from './hooks/useRegions';
+import { useAppSelector } from '../../store/reduxHooks';
+import { activeSelectionSelector } from './waveformSelectionSlice';
 
 // Y-axis layout constants
 const Y_AXIS_WIDTH = 72;
@@ -25,15 +27,14 @@ export interface WaveSurferDisplayRef {
 interface WaveSurferDisplayProps {
   fileId: string;
   audioUrl: string;
-  height?: number;
   onReady?: (duration: number) => void;
   onTimeUpdate?: (currentTime: number) => void;
   onFinish?: () => void;
   displayRef?: React.MutableRefObject<WaveSurferDisplayRef | null>;
 }
 
-// Draws the FS y-axis: globalMaxFs at top, 0 FS in the middle, globalMinFs at bottom.
-// Ticks are pinned to actual canvas edges since WaveSurfer fills the full height.
+// Draws the FS y-axis: ticks align with actual waveform peak positions.
+// WaveSurfer centers 0 and scales amplitude to fit with padding.
 function drawFsYAxis(
   canvas: HTMLCanvasElement,
   canvasHeight: number,
@@ -59,38 +60,47 @@ function drawFsYAxis(
   const lineEndX = canvasWidth;
   const lineStartX = canvasWidth - 6;
 
-  // Top tick — globalMaxFs
-  const topY = 10;
+  // Calculate y-positions where waveform peaks actually appear
+  // WaveSurfer uses ~80% of height for waveform with padding to prevent clipping
+  const waveformPadding = 8; // pixels of padding at top/bottom
+  const usableHeight = canvasHeight - 2 * waveformPadding;
+  const centerY = canvasHeight / 2;
+
+  // Find the max absolute amplitude to determine scaling
+  const maxAbsAmplitude = Math.max(Math.abs(globalMaxFs), Math.abs(globalMinFs));
+
+  // Calculate pixel positions where ticks should align with waveform peaks
+  // Positive peak position (above center)
+  const topY = centerY - (globalMaxFs / maxAbsAmplitude) * (usableHeight / 2);
+  // Negative peak position (below center)
+  const bottomY = centerY - (globalMinFs / maxAbsAmplitude) * (usableHeight / 2);
+
+  // Top tick — positive peak (+max)
   context.strokeStyle = AXIS_LINE_COLOR;
   context.beginPath();
   context.moveTo(lineStartX, topY);
   context.lineTo(lineEndX, topY);
   context.stroke();
   context.fillStyle = LABEL_COLOR;
-  context.textBaseline = 'top';
-  context.fillText(`+${globalMaxFs.toFixed(3)}`, tickX, topY + 1);
+  context.textBaseline = 'middle';
+  context.fillText(`+${globalMaxFs.toFixed(3)}`, tickX, topY);
 
-  // Middle tick — 0 FS
-  const middleY = canvasHeight / 2;
+  // Middle tick — 0 FS (center line, no label)
   context.strokeStyle = AXIS_LINE_COLOR;
   context.beginPath();
-  context.moveTo(lineStartX, middleY);
-  context.lineTo(lineEndX, middleY);
+  context.moveTo(lineStartX, centerY);
+  context.lineTo(lineEndX, centerY);
   context.stroke();
-  context.fillStyle = LABEL_COLOR;
-  context.textBaseline = 'middle';
-  context.fillText('0', tickX, middleY);
 
-  // Bottom tick — globalMinFs
-  const bottomY = canvasHeight - 10;
+  // Bottom tick — negative peak (min)
   context.strokeStyle = AXIS_LINE_COLOR;
   context.beginPath();
   context.moveTo(lineStartX, bottomY);
   context.lineTo(lineEndX, bottomY);
   context.stroke();
   context.fillStyle = LABEL_COLOR;
-  context.textBaseline = 'bottom';
-  context.fillText(`${globalMinFs.toFixed(3)}`, tickX, bottomY - 1);
+  context.textBaseline = 'middle';
+  context.fillText(`${globalMinFs.toFixed(3)}`, tickX, bottomY);
 
   // Vertical axis line
   context.strokeStyle = AXIS_LINE_COLOR;
@@ -114,7 +124,6 @@ function drawFsYAxis(
 export const WaveSurferDisplay = ({
   fileId,
   audioUrl,
-  height = 120,
   onReady,
   onTimeUpdate,
   onFinish,
@@ -122,13 +131,34 @@ export const WaveSurferDisplay = ({
 }: WaveSurferDisplayProps): JSX.Element => {
   const waveContainerRef = useRef<HTMLDivElement>(null);
   const axisCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [containerHeight, setContainerHeight] = useState(200);
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  const activeSelection = useAppSelector(activeSelectionSelector);
+  const hasSelection = activeSelection && activeSelection.endSeconds > activeSelection.startSeconds;
+  const showHint = !hasInteracted && !hasSelection;
+
+  // Measure container height on mount and resize
+  useEffect(() => {
+    const updateHeight = () => {
+      if (waveContainerRef.current) {
+        setContainerHeight(waveContainerRef.current.clientHeight);
+      }
+    };
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    if (waveContainerRef.current?.parentElement) {
+      observer.observe(waveContainerRef.current.parentElement);
+    }
+    return () => observer.disconnect();
+  }, []);
 
   const waveformData = useWaveformData(fileId);
 
   const { wavesurferRef, isReady } = useWaveSurfer({
     containerRef: waveContainerRef,
     audioUrl,
-    height,
+    height: containerHeight,
     waveformData,
     displayRef,
     onReady,
@@ -137,6 +167,25 @@ export const WaveSurferDisplay = ({
   });
 
   const { clearSelection } = useRegions({ wavesurferRef, isReady });
+
+  // Track first interaction to fade the hint
+  // Re-attach when container changes (view switches recreate WaveSurfer)
+  useEffect(() => {
+    const container = waveContainerRef.current;
+    if (!container || !isReady) return;
+
+    const handleInteraction = () => {
+      setHasInteracted(true);
+    };
+
+    container.addEventListener('mousedown', handleInteraction);
+    container.addEventListener('touchstart', handleInteraction);
+
+    return () => {
+      container.removeEventListener('mousedown', handleInteraction);
+      container.removeEventListener('touchstart', handleInteraction);
+    };
+  }, [isReady]);
 
   useEffect(() => {
     if (!displayRef) {
@@ -154,9 +203,9 @@ export const WaveSurferDisplay = ({
       return;
     }
     canvas.width = Y_AXIS_WIDTH;
-    canvas.height = height;
-    drawFsYAxis(canvas, height, waveformData.globalMaxFs, waveformData.globalMinFs);
-  }, [height, waveformData]);
+    canvas.height = containerHeight;
+    drawFsYAxis(canvas, containerHeight, waveformData.globalMaxFs, waveformData.globalMinFs);
+  }, [containerHeight, waveformData]);
 
   useEffect(() => {
     redrawAxis();
@@ -168,7 +217,7 @@ export const WaveSurferDisplay = ({
         display: 'flex',
         flexDirection: 'row',
         width: '100%',
-        height: `${height}px`,
+        height: '100%',
         flexShrink: 0,
         overflow: 'hidden',
       }}
@@ -176,18 +225,43 @@ export const WaveSurferDisplay = ({
       <canvas
         ref={axisCanvasRef}
         width={Y_AXIS_WIDTH}
-        height={height}
-        style={{ flexShrink: 0, display: 'block' }}
+        style={{ flexShrink: 0, display: 'block', height: '100%' }}
       />
       <div
         ref={waveContainerRef}
         style={{
           flex: 1,
           minWidth: 0,
+          height: '100%',
           overflow: 'hidden',
           backgroundColor: BACKGROUND_COLOR,
+          position: 'relative',
         }}
-      />
+      >
+        {showHint && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              border: '1px solid rgba(0, 184, 169, 0.3)',
+              borderRadius: '8px',
+              padding: '12px 20px',
+              fontSize: '13px',
+              color: 'rgba(0, 0, 0, 0.6)',
+              fontFamily: FONT_FAMILY,
+              pointerEvents: 'none',
+              zIndex: 10,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            👆 Click and drag to select a region
+          </div>
+        )}
+      </div>
     </div>
   );
 };

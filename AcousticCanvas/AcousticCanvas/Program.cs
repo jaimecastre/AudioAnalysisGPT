@@ -10,9 +10,11 @@ using AcousticCanvas.Features.Waveform.Handlers;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddFastEndpoints();
 builder.Services.AddSingleton<UploadAudioHandler>();
-builder.Services.AddSingleton<SignalAnalysisService>(_ =>
-    new SignalAnalysisService(new List<ISignalFileImporter> { new WavSignalFileImporter() }));
+var importers = new List<ISignalFileImporter> { new WavSignalFileImporter() };
+builder.Services.AddSingleton<IReadOnlyList<ISignalFileImporter>>(importers);
+builder.Services.AddSingleton<SignalAnalysisService>();
 builder.Services.AddSingleton<RunAnalysisHandler>();
+builder.Services.AddSingleton<RunSpectrumHandler>();
 builder.Services.AddSingleton<GetWaveformHandler>();
 builder.Services.AddSingleton<PlaybackStateStore>();
 builder.Services.AddSingleton<PlaybackControlHandler>();

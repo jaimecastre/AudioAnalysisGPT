@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "fdgKlYp6eX5FJenDIiPum4JXmPyLgzDMnFlgoHG8gDs7+gJoimzs+Bl31hxBwVLqEtVkK0BGZYb7XzasZb32Ig==",
+  "dgSpecHash": "U7SRZ5lDt13WEuZzQ3Bi8A8IASXR2rU9E6zo2aN4VqRKyScsJtav0vMYmQXX3my4VnMHPM/vhsfVnrCCQp5tEQ==",
   "success": true,
   "projectFilePath": "/Users/jaimecastresanaiza/Documents/GitHub/AudioAnalysisGPT/AcousticCanvas/AcousticCanvas/AcousticCanvas.csproj",
   "expectedPackageFiles": [
@@ -11,6 +11,7 @@
     "/Users/jaimecastresanaiza/.nuget/packages/fastendpoints.messaging/8.1.0/fastendpoints.messaging.8.1.0.nupkg.sha512",
     "/Users/jaimecastresanaiza/.nuget/packages/fastendpoints.messaging.core/8.1.0/fastendpoints.messaging.core.8.1.0.nupkg.sha512",
     "/Users/jaimecastresanaiza/.nuget/packages/fluentvalidation/12.1.1/fluentvalidation.12.1.1.nupkg.sha512",
+    "/Users/jaimecastresanaiza/.nuget/packages/mathnet.numerics/5.0.0/mathnet.numerics.5.0.0.nupkg.sha512",
     "/Users/jaimecastresanaiza/.nuget/packages/microsoft.aspnetcore.http.abstractions/2.3.9/microsoft.aspnetcore.http.abstractions.2.3.9.nupkg.sha512",
     "/Users/jaimecastresanaiza/.nuget/packages/microsoft.aspnetcore.http.features/2.3.0/microsoft.aspnetcore.http.features.2.3.0.nupkg.sha512",
     "/Users/jaimecastresanaiza/.nuget/packages/microsoft.aspnetcore.openapi/8.0.0/microsoft.aspnetcore.openapi.8.0.0.nupkg.sha512",

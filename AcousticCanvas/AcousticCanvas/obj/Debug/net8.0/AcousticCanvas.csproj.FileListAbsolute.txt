@@ -103,3 +103,4 @@
 /Users/jaimecastresanaiza/Documents/GitHub/AudioAnalysisGPT/AcousticCanvas/AcousticCanvas/obj/Debug/net8.0/AcousticCanvas.pdb
 /Users/jaimecastresanaiza/Documents/GitHub/AudioAnalysisGPT/AcousticCanvas/AcousticCanvas/obj/Debug/net8.0/AcousticCanvas.genruntimeconfig.cache
 /Users/jaimecastresanaiza/Documents/GitHub/AudioAnalysisGPT/AcousticCanvas/AcousticCanvas/obj/Debug/net8.0/ref/AcousticCanvas.dll
+/Users/jaimecastresanaiza/Documents/GitHub/AudioAnalysisGPT/AcousticCanvas/AcousticCanvas/bin/Debug/net8.0/MathNet.Numerics.dll

@@ -1,0 +1,46 @@
+.wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-base);
+  border-radius: 4px;
+}
+
+.tooltip {
+  position: absolute;
+  pointer-events: none;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 10;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tooltipRow {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.tooltipLabel {
+  color: var(--text-muted);
+  min-width: 28px;
+}
+
+.tooltipValue {
+  color: #00b8a9;
+  font-weight: 600;
+}

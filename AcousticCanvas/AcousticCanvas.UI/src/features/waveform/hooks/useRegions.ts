@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
@@ -42,6 +42,11 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
     loopEnabledRef.current = loopEnabled;
   }, [loopEnabled]);
 
+  // Get current selection from store for restoration
+  const getCurrentSelection = useCallback(() => {
+    return activeSelectionRef.current;
+  }, []);
+
   // Set up RegionsPlugin and drag selection once WaveSurfer is ready
   useEffect(() => {
     const wavesurfer = wavesurferRef.current;
@@ -49,61 +54,80 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
       return;
     }
 
-    const regions = RegionsPlugin.create();
-    regionsRef.current = regions;
-    wavesurfer.registerPlugin(regions);
+    const cleanupFns: Array<() => void> = [];
 
-    const disableDragSelection = regions.enableDragSelection({
-      color: REGION_COLOR,
-    });
+    // Small timeout to ensure DOM is settled after height changes
+    const setupTimeout = setTimeout(() => {
+      const regions = RegionsPlugin.create();
+      regionsRef.current = regions;
+      wavesurfer.registerPlugin(regions);
 
-    // When user finishes drawing a new region: remove all previous, store the new one
-    const unsubscribeRegionCreated = regions.on('region-created', (region) => {
-      const allRegions = regions.getRegions();
-      allRegions.forEach((existingRegion) => {
-        if (existingRegion.id !== region.id) {
-          existingRegion.remove();
+      // Restore existing selection from Redux state (persists across tab switches)
+      const currentSelection = getCurrentSelection();
+      if (currentSelection && currentSelection.endSeconds > currentSelection.startSeconds) {
+        regions.addRegion({
+          start: currentSelection.startSeconds,
+          end: currentSelection.endSeconds,
+          color: REGION_COLOR,
+          drag: true,
+          resize: true,
+        });
+      }
+
+      const disableDragSelection = regions.enableDragSelection({
+        color: REGION_COLOR,
+      });
+      cleanupFns.push(disableDragSelection);
+
+      // When user finishes drawing a new region: remove all previous, store the new one
+      const unsubscribeRegionCreated = regions.on('region-created', (region) => {
+        const allRegions = regions.getRegions();
+        allRegions.forEach((existingRegion) => {
+          if (existingRegion.id !== region.id) {
+            existingRegion.remove();
+          }
+        });
+
+        dispatch(setActiveSelection({
+          id: region.id,
+          startSeconds: region.start,
+          endSeconds: region.end,
+        }));
+      });
+      cleanupFns.push(unsubscribeRegionCreated);
+
+      // When user drags or resizes an existing region: sync updated times to state
+      const unsubscribeRegionUpdated = regions.on('region-updated', (region) => {
+        dispatch(updateActiveSelection({
+          startSeconds: region.start,
+          endSeconds: region.end,
+        }));
+      });
+      cleanupFns.push(unsubscribeRegionUpdated);
+
+      // Loop logic: on every timeupdate, if loop is on and we are past region end, seek back
+      const unsubscribeTimeUpdate = wavesurfer.on('timeupdate', (currentTime: number) => {
+        const selection = activeSelectionRef.current;
+        const shouldLoop = loopEnabledRef.current;
+
+        if (!shouldLoop || !selection) {
+          return;
+        }
+
+        const pastRegionEnd = currentTime >= selection.endSeconds - LOOP_CHECK_EPSILON_SECONDS;
+        if (pastRegionEnd && wavesurfer.isPlaying()) {
+          wavesurfer.setTime(selection.startSeconds);
         }
       });
-
-      dispatch(setActiveSelection({
-        id: region.id,
-        startSeconds: region.start,
-        endSeconds: region.end,
-      }));
-    });
-
-    // When user drags or resizes an existing region: sync updated times to state
-    const unsubscribeRegionUpdated = regions.on('region-updated', (region) => {
-      dispatch(updateActiveSelection({
-        startSeconds: region.start,
-        endSeconds: region.end,
-      }));
-    });
-
-    // Loop logic: on every timeupdate, if loop is on and we are past region end, seek back
-    const unsubscribeTimeUpdate = wavesurfer.on('timeupdate', (currentTime: number) => {
-      const selection = activeSelectionRef.current;
-      const shouldLoop = loopEnabledRef.current;
-
-      if (!shouldLoop || !selection) {
-        return;
-      }
-
-      const pastRegionEnd = currentTime >= selection.endSeconds - LOOP_CHECK_EPSILON_SECONDS;
-      if (pastRegionEnd && wavesurfer.isPlaying()) {
-        wavesurfer.setTime(selection.startSeconds);
-      }
-    });
+      cleanupFns.push(unsubscribeTimeUpdate);
+    }, 50); // 50ms delay for DOM to settle
 
     return () => {
-      disableDragSelection();
-      unsubscribeRegionCreated();
-      unsubscribeRegionUpdated();
-      unsubscribeTimeUpdate();
+      clearTimeout(setupTimeout);
+      cleanupFns.forEach(fn => fn());
       regionsRef.current = null;
     };
-  }, [wavesurferRef, isReady, dispatch]);
+  }, [wavesurferRef, isReady, dispatch, getCurrentSelection]);
 
   const clearSelection = (): void => {
     const regions = regionsRef.current;

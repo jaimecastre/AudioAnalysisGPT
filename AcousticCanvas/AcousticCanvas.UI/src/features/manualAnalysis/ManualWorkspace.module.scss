@@ -93,6 +93,15 @@
 .signalCardBody {
   flex: 1;
   overflow: hidden;
+  min-height: 200px;
+}
+
+// Waveform-only view: thin strip like in split view
+.signalCardBodyTime {
+  flex: 0 0 60px;
+  height: 60px;
+  overflow: hidden;
+  padding: 8px 12px;
 }
 
 // Generic transport bar — docked below all signal cards, spans full width
@@ -116,3 +125,86 @@
   color: var(--text-muted);
   font-size: 0.875rem;
 }
+
+// Workspace-level view mode toggle bar — docked above signal cards
+.viewModeBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-elevated);
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.viewModeRoot {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.viewModeIndicator {
+  background-color: var(--bg-overlay);
+  box-shadow: none;
+}
+
+.viewModeLabel {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+
+  &[data-active] {
+    color: var(--text-primary);
+  }
+}
+
+// Compact spectrum container for multi-signal workspace
+.spectrumContainer {
+  height: 180px;
+  padding: 8px;
+}
+
+// Split view: waveform + spectrum stacked
+.signalCardBodySplit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  overflow: visible;
+  min-height: 280px;
+
+  // Waveform container - minimal height just for region selection
+  > *:first-child {
+    flex: 0 0 60px; // Very thin - just enough to see waveform peaks and select region
+    height: 60px;
+    position: relative;
+    z-index: 100; // Above spectrum
+  }
+
+  // Spectrum container - maximize space for detailed inspection
+  > *:nth-child(2) {
+    flex: 0 0 200px; // Larger FFT
+    height: 200px;
+    position: relative;
+    z-index: 1;
+  }
+}
+
+.spectrumContainerSplit {
+  height: 100%;
+  padding: 8px;
+  border-top: 1px solid var(--border);
+}
+
+// Region info bar below waveform
+.regionInfoBar {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background-color: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+

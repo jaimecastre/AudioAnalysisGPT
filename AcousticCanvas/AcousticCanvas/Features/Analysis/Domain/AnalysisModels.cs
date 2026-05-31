@@ -54,5 +54,6 @@ public sealed class AnalysisResult
 {
     public required FileInfoAnalysis FileInfo { get; init; }
     public required LevelAnalysis Level { get; init; }
+    public SpectrumAnalysis? Spectrum { get; init; }
     public required DateTimeOffset AnalyzedAt { get; init; }
 }

@@ -46,10 +46,14 @@ async function request(endpoint: string, options: RequestOptions = {}): Promise<
 
   const isFormData = body instanceof FormData;
 
+  const isJsonBody = body !== undefined && !isFormData && method !== HttpMethod.GET;
+
   const requestInit: RequestInit = {
     headers: isFormData
       ? { ...headers }
-      : { ...DEFAULT_HEADERS, ...headers },
+      : isJsonBody
+        ? { ...DEFAULT_HEADERS, 'Content-Type': 'application/json', ...headers }
+        : { ...DEFAULT_HEADERS, ...headers },
     method,
   };
 

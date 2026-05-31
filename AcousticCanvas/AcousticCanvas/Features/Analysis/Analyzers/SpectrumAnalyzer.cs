@@ -1,0 +1,282 @@
+using MathNet.Numerics.IntegralTransforms;
+using AcousticCanvas.Features.Analysis.Domain;
+using System.Numerics;
+
+namespace AcousticCanvas.Features.Analysis.Analyzers;
+
+public static class SpectrumAnalyzer
+{
+    private const string DefaultWindowType = "hann";
+    private const string AveragingMethod = "power";
+    private const string ScalingDescription = "one-sided amplitude, coherent-gain corrected";
+
+    public static SpectrumAnalysis Analyze(
+        IReadOnlyList<SignalChannel> channels,
+        double startSeconds,
+        double endSeconds,
+        int fftSize,
+        double overlap)
+    {
+        var channelResults = new List<ChannelSpectrumAnalysis>();
+
+        foreach (var channel in channels)
+        {
+            var channelResult = AnalyzeChannel(channel, startSeconds, endSeconds, fftSize, overlap);
+            channelResults.Add(channelResult);
+        }
+
+        // Use block count from first channel (all channels share the same time region and sample rate).
+        var blockCount = channelResults.Count > 0
+            ? GetBlockCount(channels[0].SampleRate, startSeconds, endSeconds, fftSize, overlap)
+            : 0;
+
+        var parameters = new SpectrumParameters
+        {
+            FftSize = fftSize,
+            WindowType = DefaultWindowType,
+            Overlap = overlap,
+            Averaging = AveragingMethod,
+            Scaling = ScalingDescription,
+            StartTimeSeconds = startSeconds,
+            EndTimeSeconds = endSeconds,
+            BlockCount = blockCount,
+        };
+
+        var region = new TimeRange
+        {
+            StartSeconds = startSeconds,
+            EndSeconds = endSeconds,
+            DurationSeconds = Math.Max(0.0, endSeconds - startSeconds),
+        };
+
+        return new SpectrumAnalysis
+        {
+            Channels = channelResults,
+            Parameters = parameters,
+            Region = region,
+        };
+    }
+
+    private static ChannelSpectrumAnalysis AnalyzeChannel(
+        SignalChannel channel,
+        double startSeconds,
+        double endSeconds,
+        int fftSize,
+        double overlap)
+    {
+        var sampleRate = channel.SampleRate;
+        var samples = channel.Samples;
+
+        var startSample = (int)Math.Floor(startSeconds * sampleRate);
+        var endSample = (int)Math.Ceiling(endSeconds * sampleRate);
+
+        startSample = Math.Clamp(startSample, 0, samples.Length);
+        endSample = Math.Clamp(endSample, 0, samples.Length);
+
+        var spectrumData = ComputeAveragedSpectrum(samples, startSample, endSample, sampleRate, fftSize, overlap);
+
+        if (channel.DbReference != null)
+        {
+            ApplyDbReferenceInPlace(spectrumData.Magnitudes, spectrumData.MagnitudesDb, channel.DbReference);
+        }
+
+        // Find peak frequency and max magnitude from data.
+        double? maxMagnitude = null;
+        double? maxMagnitudeDb = null;
+        double? peakFrequencyHz = null;
+
+        for (var i = 0; i < spectrumData.FrequenciesHz.Length; i++)
+        {
+            if (maxMagnitude == null || spectrumData.Magnitudes[i] > maxMagnitude.Value)
+            {
+                maxMagnitude = spectrumData.Magnitudes[i];
+                maxMagnitudeDb = spectrumData.MagnitudesDb[i];
+                peakFrequencyHz = spectrumData.FrequenciesHz[i];
+            }
+        }
+
+        return new ChannelSpectrumAnalysis
+        {
+            ChannelId = channel.Id,
+            ChannelName = channel.Name,
+            Quantity = channel.Quantity,
+            Unit = channel.Unit,
+            FrequenciesHz = spectrumData.FrequenciesHz,
+            Magnitudes = spectrumData.Magnitudes,
+            MagnitudesDb = spectrumData.MagnitudesDb,
+            MaxMagnitude = maxMagnitude.HasValue ? Math.Round(maxMagnitude.Value, 6) : null,
+            MaxMagnitudeDb = maxMagnitudeDb.HasValue ? Math.Round(maxMagnitudeDb.Value, 3) : null,
+            PeakFrequencyHz = peakFrequencyHz.HasValue ? Math.Round(peakFrequencyHz.Value, 3) : null,
+            DbUnit = channel.DbReference?.DbUnit,
+            DbReferenceValue = channel.DbReference?.Value,
+            DbReferenceUnit = channel.DbReference?.Unit,
+        };
+    }
+
+    private static SpectrumData ComputeAveragedSpectrum(
+        float[] samples,
+        int startSample,
+        int endSample,
+        int sampleRate,
+        int fftSize,
+        double overlap)
+    {
+        var regionLength = endSample - startSample;
+        var halfFftSize = fftSize / 2 + 1;
+
+        // Hann window coefficients.
+        var window = BuildHannWindow(fftSize);
+
+        // Coherent gain correction: sum(window) / N.
+        var coherentGain = 0.0;
+        for (var i = 0; i < fftSize; i++)
+        {
+            coherentGain += window[i];
+        }
+        coherentGain /= fftSize;
+
+        var hopSize = (int)Math.Max(1, fftSize * (1.0 - overlap));
+
+        // Accumulate power per bin across all blocks.
+        var powerAccumulator = new double[halfFftSize];
+        var blockCount = 0;
+
+        var blockStart = startSample;
+        do
+        {
+            var block = ExtractBlock(samples, blockStart, fftSize, regionLength == 0);
+
+            // Apply window.
+            var complexBlock = new Complex[fftSize];
+            for (var i = 0; i < fftSize; i++)
+            {
+                complexBlock[i] = new Complex(block[i] * window[i], 0.0);
+            }
+
+            // Forward FFT in-place.
+            Fourier.Forward(complexBlock, FourierOptions.NoScaling);
+
+            // Compute one-sided amplitude spectrum with coherent gain correction.
+            // DC bin (0) and Nyquist bin (fftSize/2): no doubling.
+            // All other bins: double for one-sided.
+            for (var k = 0; k < halfFftSize; k++)
+            {
+                var rawMagnitude = complexBlock[k].Magnitude;
+                var amplitude = rawMagnitude / (fftSize * coherentGain);
+
+                if (k > 0 && k < halfFftSize - 1)
+                {
+                    amplitude *= 2.0;
+                }
+
+                powerAccumulator[k] += amplitude * amplitude;
+            }
+
+            blockCount++;
+            blockStart += hopSize;
+        }
+        while (blockStart + fftSize <= endSample);
+
+        // If no full block fit, blockCount is already 1 from the initial do-while.
+        var actualBlockCount = Math.Max(blockCount, 1);
+
+        var frequenciesHz = new double[halfFftSize];
+        var magnitudes = new double[halfFftSize];
+        var magnitudesDb = new double?[halfFftSize];
+
+        for (var k = 0; k < halfFftSize; k++)
+        {
+            var meanPower = powerAccumulator[k] / actualBlockCount;
+            var meanMagnitude = Math.Sqrt(meanPower);
+
+            frequenciesHz[k] = Math.Round((double)k * sampleRate / fftSize, 6);
+            magnitudes[k] = Math.Round(meanMagnitude, 9);
+            magnitudesDb[k] = null; // filled per-channel with dB reference
+        }
+
+        return new SpectrumData(frequenciesHz, magnitudes, magnitudesDb);
+    }
+
+    private readonly record struct SpectrumData(
+        double[] FrequenciesHz,
+        double[] Magnitudes,
+        double?[] MagnitudesDb);
+
+    // Applies dB reference in-place to avoid allocating new arrays.
+    private static void ApplyDbReferenceInPlace(
+        double[] magnitudes,
+        double?[] magnitudesDb,
+        DbReference dbReference)
+    {
+        if (dbReference.Value <= 0)
+        {
+            return;
+        }
+
+        for (var i = 0; i < magnitudes.Length; i++)
+        {
+            if (magnitudes[i] > 0)
+            {
+                magnitudesDb[i] = Math.Round(20.0 * Math.Log10(magnitudes[i] / dbReference.Value), 3);
+            }
+        }
+    }
+
+    private static double[] BuildHannWindow(int size)
+    {
+        var window = new double[size];
+        for (var n = 0; n < size; n++)
+        {
+            window[n] = 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * n / (size - 1)));
+        }
+        return window;
+    }
+
+    private static double[] ExtractBlock(float[] samples, int startIndex, int fftSize, bool forceZeroPad)
+    {
+        var block = new double[fftSize];
+        if (forceZeroPad)
+        {
+            return block; // all zeros
+        }
+
+        var available = Math.Min(fftSize, samples.Length - startIndex);
+        available = Math.Max(available, 0);
+
+        for (var i = 0; i < available; i++)
+        {
+            block[i] = samples[startIndex + i];
+        }
+        // Remaining entries are already zero (zero-padded).
+        return block;
+    }
+
+    private static int GetBlockCount(
+        int sampleRate,
+        double startSeconds,
+        double endSeconds,
+        int fftSize,
+        double overlap)
+    {
+        var startSample = (int)Math.Floor(startSeconds * sampleRate);
+        var endSample = (int)Math.Ceiling(endSeconds * sampleRate);
+        var regionLength = endSample - startSample;
+        var hopSize = (int)Math.Max(1, fftSize * (1.0 - overlap));
+
+        if (regionLength <= 0)
+        {
+            return 1; // one zero-padded block
+        }
+
+        var count = 0;
+        var pos = startSample;
+        do
+        {
+            count++;
+            pos += hopSize;
+        }
+        while (pos + fftSize <= endSample);
+
+        return Math.Max(count, 1);
+    }
+}

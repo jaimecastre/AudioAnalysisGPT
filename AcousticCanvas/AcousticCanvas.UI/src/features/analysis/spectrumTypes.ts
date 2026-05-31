@@ -1,0 +1,57 @@
+export type SpectrumParameters = {
+  fftSize: number;
+  windowType: 'hann';
+  overlap: number;
+  averaging: string;
+  scaling: string;
+  startTimeSeconds: number;
+  endTimeSeconds: number;
+  blockCount: number;
+};
+
+export type ChannelSpectrumAnalysis = {
+  channelId: string;
+  channelName: string;
+  quantity: string;
+  unit: string;
+  // Columnar arrays: much smaller than array-of-objects in JSON
+  frequenciesHz: number[];
+  magnitudes: number[];
+  magnitudesDb: (number | null)[];
+  maxMagnitude: number | null;
+  maxMagnitudeDb: number | null;
+  peakFrequencyHz: number | null;
+  dbUnit: string | null;
+  dbReferenceValue: number | null;
+  dbReferenceUnit: string | null;
+};
+
+export type SpectrumAnalysis = {
+  region: {
+    startSeconds: number;
+    endSeconds: number;
+    durationSeconds: number;
+  };
+  parameters: SpectrumParameters;
+  channels: ChannelSpectrumAnalysis[];
+};
+
+export type SpectrumUserParameters = {
+  fftSize: number;
+  windowType: 'hann';
+  overlap: number;
+};
+
+export const DEFAULT_SPECTRUM_PARAMS: SpectrumUserParameters = {
+  fftSize: 8192,
+  windowType: 'hann',
+  overlap: 0.5,
+};
+
+export const FFT_SIZE_OPTIONS = [
+  { value: '1024', label: '1024' },
+  { value: '2048', label: '2048' },
+  { value: '4096', label: '4096' },
+  { value: '8192', label: '8192' },
+  { value: '16384', label: '16384' },
+] as const;

@@ -11,7 +11,6 @@ import { useAppSelector, useAppDispatch } from '../../store/reduxHooks';
 import {
   projectFilesSelector,
   removeAudioFile,
-  setSelectedSignal,
   selectedSignalIdSelector,
 } from '../project/projectSlice';
 import {
@@ -19,8 +18,8 @@ import {
   loopEnabledSelector,
   activeSelectionSelector,
 } from '../waveform/waveformSelectionSlice';
-import { Text, Stack, Badge, Card, Group, ActionIcon, Tooltip } from '@mantine/core';
-import { IconRepeat, IconX, IconFileMusic } from '@tabler/icons-react';
+import { Text, Card, Group, ActionIcon, Tooltip, SegmentedControl, Box, Checkbox } from '@mantine/core';
+import { IconRepeat, IconX, IconFileMusic, IconInfoCircle } from '@tabler/icons-react';
 import { RightSidebar } from './RightSidebar';
 import { useRunAnalysis } from '../analysis/useRunAnalysis';
 import {
@@ -29,7 +28,18 @@ import {
   analysisErrorSelector,
   analysisClear,
 } from '../analysis/analysisSlice';
+import { useRunSpectrum } from '../analysis/useRunSpectrum';
+import {
+  spectrumResultSelector,
+  spectrumStatusSelector,
+  spectrumErrorSelector,
+  spectrumUserParametersSelector,
+  spectrumSetParameters,
+} from '../analysis/spectrumSlice';
+import { SpectrumCanvas } from '../analysis/SpectrumCanvas';
 import styles from './ManualWorkspace.module.scss';
+
+type ViewMode = 'time' | 'frequency' | 'split';
 
 interface ManualWorkspaceProps {
   showDropzone?: boolean;
@@ -46,12 +56,34 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
   const analysisStatus = useAppSelector(analysisStatusSelector);
   const analysisError = useAppSelector(analysisErrorSelector);
   const selectedSignalId = useAppSelector(selectedSignalIdSelector);
+  const spectrumResult = useAppSelector(spectrumResultSelector);
+  const spectrumStatus = useAppSelector(spectrumStatusSelector);
+  const spectrumError = useAppSelector(spectrumErrorSelector);
+  const spectrumUserParameters = useAppSelector(spectrumUserParametersSelector);
   const { runAnalysis } = useRunAnalysis();
+  const { runSpectrum } = useRunSpectrum();
 
   const waveSurferRef = useRef<WaveSurferDisplayRef | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>('time');
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+
+  // Channel visibility state - lifted up to share between sidebar and main view
+  const [hiddenChannelIds, setHiddenChannelIds] = useState<Set<string>>(new Set());
+
+  const toggleChannel = (channelId: string) => {
+    setHiddenChannelIds(prev => {
+      const next = new Set(prev);
+      if (next.has(channelId)) {
+        next.delete(channelId);
+      } else {
+        next.add(channelId);
+      }
+      return next;
+    });
+  };
 
   const audioUrl = uploadedFile
     ? apiClient.buildUrl(API_ENDPOINTS.AUDIO.GET_FILE(uploadedFile.id))
@@ -93,8 +125,20 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
     }
   }, [selectedSignalId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSelectSignal = (fileId: string): void => {
-    dispatch(setSelectedSignal(fileId));
+  // Auto-calculate spectrum when selection changes (so it's ready when user switches tabs).
+  useEffect(() => {
+    if (selectedSignalId && activeSelection && activeSelection.endSeconds > activeSelection.startSeconds) {
+      runSpectrum({
+        fileId: selectedSignalId,
+        startSeconds: activeSelection.startSeconds,
+        endSeconds: activeSelection.endSeconds,
+        parameters: spectrumUserParameters,
+      });
+    }
+  }, [selectedSignalId, activeSelection?.startSeconds, activeSelection?.endSeconds]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSetSpectrumFftSize = (fftSize: number): void => {
+    dispatch(spectrumSetParameters({ fftSize }));
   };
 
   const handleClearFile = (): void => {
@@ -146,25 +190,111 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
           />
           <div className={styles.contentRow}>
           <div className={styles.mainArea}>
+            <div className={styles.viewModeBar}>
+              <SegmentedControl
+                value={viewMode}
+                onChange={(value) => setViewMode(value as ViewMode)}
+                data={[
+                  { label: 'Waveform', value: 'time' },
+                  { label: 'Spectrum', value: 'frequency' },
+                  { label: 'Both', value: 'split' },
+                ]}
+                size="xs"
+                classNames={{
+                  root: styles.viewModeRoot,
+                  indicator: styles.viewModeIndicator,
+                  label: styles.viewModeLabel,
+                }}
+              />
+              <Tooltip label="Open inspector" withArrow position="bottom">
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  onClick={() => setIsInspectorOpen(true)}
+                  aria-label="Open inspector"
+                >
+                  <IconInfoCircle size={18} />
+                </ActionIcon>
+              </Tooltip>
+            </div>
             <div className={styles.signalViewport}>
               <div
                 className={`${styles.signalCard} ${selectedSignalId === uploadedFile.id ? styles.signalCardSelected : ''}`}
-                onClick={() => handleSelectSignal(uploadedFile.id)}
               >
                 <div className={styles.signalCardHeader}>
                   <span className={styles.signalCardLabel}>{uploadedFile.name}</span>
+                  {/* Channel visibility toggles - only show in spectrum views with multiple channels */}
+                  {(viewMode === 'frequency' || viewMode === 'split') && spectrumResult && spectrumResult.channels.length > 1 && (
+                    <Group gap="sm">
+                      {spectrumResult.channels.map(ch => (
+                        <Checkbox
+                          key={ch.channelId}
+                          size="xs"
+                          label={ch.channelName}
+                          checked={!hiddenChannelIds.has(ch.channelId)}
+                          onChange={() => toggleChannel(ch.channelId)}
+                        />
+                      ))}
+                    </Group>
+                  )}
                 </div>
-                <div className={styles.signalCardBody}>
-                  <WaveSurferDisplay
-                    fileId={uploadedFile.id}
-                    audioUrl={audioUrl}
-                    height={100}
-                    onReady={handleWaveSurferReady}
-                    onTimeUpdate={handleWaveSurferTimeUpdate}
-                    onFinish={handleWaveSurferFinish}
-                    displayRef={waveSurferRef}
-                  />
+                <div className={
+                  viewMode === 'split'
+                    ? styles.signalCardBodySplit
+                    : viewMode === 'time'
+                      ? styles.signalCardBodyTime
+                      : styles.signalCardBody
+                }>
+                  {(viewMode === 'time' || viewMode === 'split') && (
+                    <WaveSurferDisplay
+                      fileId={uploadedFile.id}
+                      audioUrl={audioUrl}
+                      onReady={handleWaveSurferReady}
+                      onTimeUpdate={handleWaveSurferTimeUpdate}
+                      onFinish={handleWaveSurferFinish}
+                      displayRef={waveSurferRef}
+                    />
+                  )}
+                  {(viewMode === 'frequency' || viewMode === 'split') && (
+                    spectrumResult && spectrumResult.channels.length > 0 ? (
+                      <Box className={viewMode === 'split' ? styles.spectrumContainerSplit : styles.spectrumContainer}>
+                        <SpectrumCanvas
+                          channels={spectrumResult.channels
+                            .filter(ch => !hiddenChannelIds.has(ch.channelId))
+                            .map(ch => ({
+                              channelId: ch.channelId,
+                              channelName: ch.channelName,
+                              frequenciesHz: ch.frequenciesHz,
+                              magnitudes: ch.magnitudes,
+                              magnitudesDb: ch.magnitudesDb,
+                              yMode: ch.dbUnit ? 'db' : 'linear',
+                              yUnit: ch.dbUnit ?? ch.unit ?? '',
+                            }))}
+                        />
+                      </Box>
+                    ) : (
+                      <Box className={viewMode === 'split' ? styles.spectrumContainerSplit : styles.spectrumContainer}>
+                        <div className={styles.emptyState}>
+                          <Text size="sm" c="dimmed">Select a region to see spectrum</Text>
+                        </div>
+                      </Box>
+                    )
+                  )}
                 </div>
+                {activeSelection && activeSelection.endSeconds > activeSelection.startSeconds && (
+                  <div className={styles.regionInfoBar}>
+                    <Group gap="xs">
+                      <Text size="xs" c="dimmed">Region:</Text>
+                      <Text size="xs" fw={500}>
+                        {activeSelection.startSeconds.toFixed(3)}s – {activeSelection.endSeconds.toFixed(3)}s
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        ({(activeSelection.endSeconds - activeSelection.startSeconds).toFixed(3)}s)
+                      </Text>
+                    </Group>
+                  </div>
+                )}
               </div>
             </div>
             <div className={styles.transportBar}>
@@ -207,13 +337,21 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
               />
             </div>
           </div>
-          <RightSidebar
+        </div>
+        <RightSidebar
+            isOpen={isInspectorOpen}
+            onClose={() => setIsInspectorOpen(false)}
             analysisResult={analysisResult}
             analysisStatus={analysisStatus}
             analysisError={analysisError}
             selectedFileName={files.find((f) => f.id === selectedSignalId)?.name ?? null}
+            spectrumResult={spectrumResult}
+            spectrumStatus={spectrumStatus}
+            spectrumError={spectrumError}
+            spectrumUserParameters={spectrumUserParameters}
+            activeSelection={activeSelection}
+            onSetSpectrumFftSize={handleSetSpectrumFftSize}
           />
-          </div>
         </>
       )}
     </div>
@@ -221,7 +359,7 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
 };
 
 interface FileListPanelProps {
-  uploadedFile: { id: string; name: string; durationSeconds: number; sampleRate: number; channels: number; bitDepth: number } | null;
+  uploadedFile: { id: string; name: string } | null;
   onClearFile: () => void;
 }
 
@@ -237,17 +375,6 @@ const FileListPanel = ({ uploadedFile, onClearFile }: FileListPanelProps): JSX.E
               {uploadedFile.name}
             </Text>
           </Group>
-          <Stack gap={4}>
-            <Badge size="xs" color="teal" variant="light">
-              {uploadedFile.durationSeconds.toFixed(2)}s
-            </Badge>
-            <Badge size="xs" color="blue" variant="light">
-              {uploadedFile.sampleRate} Hz
-            </Badge>
-            <Badge size="xs" color="gray" variant="light">
-              {uploadedFile.channels} ch / {uploadedFile.bitDepth}-bit
-            </Badge>
-          </Stack>
           <Text
             size="xs"
             c="dimmed"

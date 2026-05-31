@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="FastEndpoints" Version="8.1.0" />
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
