@@ -28,6 +28,59 @@
   flex-shrink: 0;
 }
 
+.contextCard {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.contextRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.contextIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.contextSelectionIcon {
+  color: rgba(0, 184, 169, 0.8);
+  flex-shrink: 0;
+}
+
+.contextFileName {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.contextMeta {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  padding-left: 17px;
+}
+
+.contextSelectionLabel {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: rgba(0, 184, 169, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .headerTitle {
   font-family: var(--font-mono);
   font-size: 0.65rem;

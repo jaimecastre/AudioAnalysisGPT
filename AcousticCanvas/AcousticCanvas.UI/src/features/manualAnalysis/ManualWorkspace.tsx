@@ -21,8 +21,9 @@ import {
   activeSelectionSelector,
 } from '../waveform/waveformSelectionSlice';
 import { Text, Group, ActionIcon, Tooltip } from '@mantine/core';
-import { IconRepeat, IconX, IconFileMusic, IconWaveSine, IconChartLine, IconTrash, IconChevronDown, IconChevronRight, IconUpload } from '@tabler/icons-react';
+import { IconRepeat, IconX, IconFileMusic, IconWaveSine, IconChartLine, IconTrash, IconChevronDown, IconChevronRight, IconUpload, IconRobot } from '@tabler/icons-react';
 import { RightSidebar } from './RightSidebar';
+import { ChatPanel } from '../agentAnalysis/ChatPanel';
 import { useRunAnalysis } from '../analysis/useRunAnalysis';
 import {
   analysisResultSelector,
@@ -59,6 +60,7 @@ export const ManualWorkspace = (): JSX.Element => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isDraggingFileOver, setIsDraggingFileOver] = useState(false);
+  const [isAgentPanelOpen, setIsAgentPanelOpen] = useState(false);
   // Resizable left panel
   const [leftPanelWidth, setLeftPanelWidth] = useState(220);
   const isDraggingPanelRef = useRef(false);
@@ -171,6 +173,10 @@ export const ManualWorkspace = (): JSX.Element => {
 
   const handleClearSelection = (): void => {
     waveSurferRef.current?.clearSelection();
+  };
+
+  const handleToggleAgentPanel = (): void => {
+    setIsAgentPanelOpen((previous) => !previous);
   };
 
   return (
@@ -319,6 +325,20 @@ export const ManualWorkspace = (): JSX.Element => {
             analysisError={analysisError}
             selectedFileName={files.find((f) => f.id === selectedSignalId)?.name ?? null}
           />
+          <div
+            className={`${styles.agentPanelColumn} ${isAgentPanelOpen ? styles.agentPanelColumnOpen : ''}`}
+          >
+            <ChatPanel />
+          </div>
+          <button
+            type="button"
+            className={`${styles.agentPanelToggle} ${isAgentPanelOpen ? styles.agentPanelToggleActive : ''}`}
+            onClick={handleToggleAgentPanel}
+            title={isAgentPanelOpen ? 'Close agent panel' : 'Open agent panel'}
+            aria-label={isAgentPanelOpen ? 'Close agent panel' : 'Open agent panel'}
+          >
+            <IconRobot size={16} />
+          </button>
         </>
       )}
     </div>

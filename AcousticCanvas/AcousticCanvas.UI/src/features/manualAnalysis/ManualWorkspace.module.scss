@@ -312,6 +312,56 @@
   border-top: 1px solid var(--border);
 }
 
+// ─── Agent panel (Cascade-style right panel) ──────────────
+
+.agentPanelColumn {
+  width: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 0 solid var(--border);
+}
+
+.agentPanelColumnOpen {
+  width: 320px;
+  border-left-width: 1px;
+}
+
+.agentPanelToggle {
+  position: fixed;
+  bottom: 56px;
+  right: 12px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background-color: var(--bg-elevated);
+    color: var(--text-primary);
+    border-color: rgba(0, 184, 169, 0.4);
+  }
+}
+
+.agentPanelToggleActive {
+  background-color: rgba(0, 184, 169, 0.12);
+  color: #00b8a9;
+  border-color: rgba(0, 184, 169, 0.5);
+
+  &:hover {
+    background-color: rgba(0, 184, 169, 0.18);
+  }
+}
+
 // Region info bar below waveform
 .regionInfoBar {
   display: flex;

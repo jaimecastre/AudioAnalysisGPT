@@ -1,6 +1,6 @@
 import type { JSX, KeyboardEvent } from 'react';
 import { useRef, useEffect, useState } from 'react';
-import { IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX } from '@tabler/icons-react';
+import { IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX, IconAlignBoxLeftMiddle } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
 import { store } from '../../store/reduxStore';
 import {
@@ -9,6 +9,7 @@ import {
   userMessageSent,
   conversationCleared,
 } from './chatSlice';
+import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
 import type { ChatMessage } from './chatSlice';
 import { runAgentToolLoop } from './agentToolRunner';
 import { agentWorkspaceCleared } from './agentWorkspaceSlice';
@@ -75,6 +76,36 @@ function ThinkingIndicator(): JSX.Element {
   );
 }
 
+function SelectionChip({ onExplain }: { onExplain: () => void }): JSX.Element | null {
+  const activeSelection = useAppSelector(activeSelectionSelector);
+  const hasValidSelection = activeSelection !== null && activeSelection.endSeconds > activeSelection.startSeconds;
+
+  if (!hasValidSelection || !activeSelection) return null;
+
+  const startFormatted = activeSelection.startSeconds.toFixed(3);
+  const endFormatted = activeSelection.endSeconds.toFixed(3);
+  const durationFormatted = (activeSelection.endSeconds - activeSelection.startSeconds).toFixed(3);
+
+  return (
+    <div className={styles.selectionChipBar}>
+      <div className={styles.selectionChipInfo}>
+        <IconAlignBoxLeftMiddle size={12} className={styles.selectionChipIcon} />
+        <span className={styles.selectionChipLabel}>
+          {startFormatted}s – {endFormatted}s ({durationFormatted}s)
+        </span>
+      </div>
+      <button
+        type="button"
+        className={styles.selectionChipButton}
+        onClick={onExplain}
+        aria-label="Explain this selection"
+      >
+        Explain selection
+      </button>
+    </div>
+  );
+}
+
 function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) => void }): JSX.Element {
   return (
     <div className={styles.emptyState}>
@@ -103,6 +134,7 @@ export function ChatPanel(): JSX.Element {
   const dispatch = useAppDispatch();
   const messages = useAppSelector(chatMessagesSelector);
   const isThinking = useAppSelector(chatIsThinkingSelector);
+  const activeSelection = useAppSelector(activeSelectionSelector);
 
   const [inputValue, setInputValue] = useState('');
   const messageListRef = useRef<HTMLDivElement | null>(null);
@@ -160,6 +192,22 @@ export function ChatPanel(): JSX.Element {
     dispatch(agentWorkspaceCleared());
   };
 
+  const handleExplainSelection = (): void => {
+    if (!activeSelection || isThinking) return;
+    const startFormatted = activeSelection.startSeconds.toFixed(3);
+    const endFormatted = activeSelection.endSeconds.toFixed(3);
+    const explainMessage = `Explain the audio from ${startFormatted}s to ${endFormatted}s. Run level analysis and spectrum analysis on this region and describe what you find.`;
+
+    const userMessageId = crypto.randomUUID();
+    dispatch(userMessageSent({
+      id: userMessageId,
+      content: explainMessage,
+      timestamp: new Date().toISOString(),
+    }));
+
+    runAgentToolLoop(explainMessage, dispatch, () => store.getState());
+  };
+
   const hasMessages = messages.length > 0;
   const canSend = inputValue.trim().length > 0 && !isThinking;
 
@@ -195,6 +243,7 @@ export function ChatPanel(): JSX.Element {
       </div>
 
       <div className={styles.inputArea}>
+        <SelectionChip onExplain={handleExplainSelection} />
         <div className={styles.inputRow}>
           <textarea
             ref={textareaRef}

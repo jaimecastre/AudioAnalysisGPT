@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import { useRef, useEffect } from 'react';
-import { IconArrowRight } from '@tabler/icons-react';
+import { IconArrowRight, IconFileMusic, IconAlignBoxLeftMiddle } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
 import { agentArtifactsSelector } from './agentWorkspaceSlice';
 import type {
@@ -10,7 +10,46 @@ import type {
   AgentArtifactSelection,
 } from './agentWorkspaceSlice';
 import { setActiveMode } from '../navigation/navigationSlice';
+import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
+import { projectFilesSelector, selectedSignalIdSelector } from '../project/projectSlice';
 import styles from './AgentWorkspacePanel.module.scss';
+
+function WorkspaceContextCard(): JSX.Element | null {
+  const files = useAppSelector(projectFilesSelector);
+  const selectedSignalId = useAppSelector(selectedSignalIdSelector);
+  const activeSelection = useAppSelector(activeSelectionSelector);
+
+  const activeFile = files.find((file) => file.id === selectedSignalId) ?? null;
+
+  if (!activeFile) return null;
+
+  const hasValidSelection = activeSelection !== null && activeSelection.endSeconds > activeSelection.startSeconds;
+
+  return (
+    <div className={styles.contextCard}>
+      <div className={styles.contextRow}>
+        <IconFileMusic size={12} className={styles.contextIcon} />
+        <span className={styles.contextFileName} title={activeFile.name}>{activeFile.name}</span>
+      </div>
+      <div className={styles.contextMeta}>
+        {activeFile.sampleRate / 1000}kHz
+        {' · '}{activeFile.channels}ch
+        {activeFile.bitDepth ? ` · ${activeFile.bitDepth}bit` : ''}
+      </div>
+      {hasValidSelection && activeSelection && (
+        <div className={styles.contextRow}>
+          <IconAlignBoxLeftMiddle size={12} className={styles.contextSelectionIcon} />
+          <span className={styles.contextSelectionLabel}>
+            {activeSelection.startSeconds.toFixed(3)}s
+            {' – '}
+            {activeSelection.endSeconds.toFixed(3)}s
+            {' ('}{(activeSelection.endSeconds - activeSelection.startSeconds).toFixed(3)}s{')'}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function formatTimestamp(isoString: string): string {
   return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -148,6 +187,7 @@ export function AgentWorkspacePanel(): JSX.Element {
       <div className={styles.header}>
         <span className={styles.headerTitle}>Workspace</span>
       </div>
+      <WorkspaceContextCard />
       <div className={styles.artifactFeed} ref={feedRef}>
         {!hasArtifacts && (
           <div className={styles.emptyState}>
