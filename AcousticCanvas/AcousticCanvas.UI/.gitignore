@@ -28,7 +28,8 @@ dist-ssr
 /tmp/
 /cache/
 
-# Build artifacts
+# Environment / secrets
+.env
 .env.local
 .env.development.local
 .env.test.local

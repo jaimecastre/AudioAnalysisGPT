@@ -5,6 +5,8 @@ import waveformSelectionReducer from '../features/waveform/waveformSelectionSlic
 import analysisReducer from '../features/analysis/analysisSlice';
 import spectrumReducer from '../features/analysis/spectrumSlice';
 import spectrogramReducer from '../features/analysis/spectrogramSlice';
+import chatReducer from '../features/agentAnalysis/chatSlice';
+import agentWorkspaceReducer from '../features/agentAnalysis/agentWorkspaceSlice';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +16,8 @@ export const store = configureStore({
     analysis: analysisReducer,
     spectrum: spectrumReducer,
     spectrogram: spectrogramReducer,
+    chat: chatReducer,
+    agentWorkspace: agentWorkspaceReducer,
   },
 });
 

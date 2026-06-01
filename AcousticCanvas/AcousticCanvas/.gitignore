@@ -1,0 +1,15 @@
+# Uploaded audio files — never commit these
+AudioStorage/*.wav
+AudioStorage/*.mp3
+AudioStorage/*.flac
+AudioStorage/*.aac
+AudioStorage/*.ogg
+AudioStorage/*.m4a
+AudioStorage/*.aiff
+
+# Keep the folder itself
+!AudioStorage/.gitkeep
+
+# Build output
+bin/
+obj/

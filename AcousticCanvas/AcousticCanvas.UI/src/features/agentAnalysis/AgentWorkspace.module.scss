@@ -1,35 +1,22 @@
 .workspace {
   display: grid;
-  grid-template-columns: 220px 1fr 280px;
+  grid-template-columns: 180px 1fr 220px;
+  grid-template-rows: 100%;
   height: 100%;
   overflow: hidden;
   background-color: var(--bg-base);
 
-  .chatPanel {
-    display: flex;
-    flex-direction: column;
+  > * {
+    min-height: 0;
     overflow: hidden;
-
-    .chatInputArea {
-      flex-shrink: 0;
-      border-top: 1px solid var(--border);
-      padding: var(--space-3);
-
-      .chatInputPlaceholder {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 40px;
-        border: 1px dashed var(--border);
-        border-radius: var(--radius-md);
-
-        .chatInputHint {
-          font-family: var(--font-sans);
-          font-size: 0.75rem;
-          color: var(--text-muted);
-          font-style: italic;
-        }
-      }
-    }
   }
+}
+
+.chatColumn {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
 }
