@@ -11,6 +11,7 @@ import { useAppSelector, useAppDispatch } from '../../store/reduxHooks';
 import {
   projectFilesSelector,
   selectedSignalIdSelector,
+  addMarker,
 } from '../project/projectSlice';
 import type { AudioFile } from '../../store/projectState';
 import {
@@ -19,7 +20,7 @@ import {
   activeSelectionSelector,
 } from '../waveform/waveformSelectionSlice';
 import { Text, Group, ActionIcon, Tooltip } from '@mantine/core';
-import { IconRepeat, IconX, IconFileMusic, IconWaveSine, IconChartLine, IconTrash, IconUpload, IconRobot, IconPlus } from '@tabler/icons-react';
+import { IconRepeat, IconX, IconFileMusic, IconWaveSine, IconChartLine, IconTrash, IconUpload, IconRobot, IconPlus, IconBookmark } from '@tabler/icons-react';
 import { RightSidebar } from './RightSidebar';
 import { ChatPanel } from '../agentAnalysis/ChatPanel';
 import {
@@ -107,6 +108,18 @@ export const ManualWorkspace = (): JSX.Element => {
 
   const handleClearSelection = (): void => {
     waveSurferRef.current?.clearSelection();
+  };
+
+  const handleAddMarkerAtPlayhead = (): void => {
+    if (!selectedSignalId || currentTime === null) return;
+    const newMarker = {
+      id: crypto.randomUUID(),
+      fileId: selectedSignalId,
+      timeSeconds: currentTime,
+      label: `Marker at ${currentTime.toFixed(2)}s`,
+      source: 'manual' as const,
+    };
+    dispatch(addMarker(newMarker));
   };
 
   // Tracks the last selection that WaveSurfer itself reported (from user drag/resize).
@@ -298,6 +311,18 @@ export const ManualWorkspace = (): JSX.Element => {
                           aria-label="Toggle loop"
                         >
                           <IconRepeat size={14} />
+                        </ActionIcon>
+                      </Tooltip>
+                      <Tooltip label="Add marker at playhead" withArrow position="top">
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          size="sm"
+                          onClick={handleAddMarkerAtPlayhead}
+                          aria-label="Add marker at playhead"
+                          disabled={!selectedSignalId}
+                        >
+                          <IconBookmark size={14} />
                         </ActionIcon>
                       </Tooltip>
                       {activeSelection && (

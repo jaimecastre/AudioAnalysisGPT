@@ -3,6 +3,7 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import { useWaveformData } from './hooks/useWaveformData';
 import { useWaveSurfer } from './hooks/useWaveSurfer';
 import { useRegions } from './hooks/useRegions';
+import { useMarkers } from './hooks/useMarkers';
 import { useAppSelector } from '../../store/reduxHooks';
 import { activeSelectionSelector } from './waveformSelectionSlice';
 
@@ -170,6 +171,13 @@ export const WaveSurferDisplay = ({
   });
 
   const { clearSelection, setSelectionInWaveSurfer } = useRegions({ wavesurferRef, isReady, onUserSelectionChange });
+
+  const handleMarkerClick = useCallback((timeSeconds: number) => {
+    wavesurferRef.current?.setTime(timeSeconds);
+    wavesurferRef.current?.play();
+  }, [wavesurferRef]);
+
+  useMarkers({ wavesurferRef, isReady, fileId, onMarkerClick: handleMarkerClick });
 
   // Track first interaction to fade the hint
   // Re-attach when container changes (view switches recreate WaveSurfer)
