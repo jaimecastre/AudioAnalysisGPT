@@ -21,7 +21,7 @@ import {
   activeSelectionSelector,
 } from '../waveform/waveformSelectionSlice';
 import { Text, Group, ActionIcon, Tooltip } from '@mantine/core';
-import { IconRepeat, IconX, IconFileMusic, IconInfoCircle, IconWaveSine, IconChartLine, IconTrash, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { IconRepeat, IconX, IconFileMusic, IconWaveSine, IconChartLine, IconTrash, IconChevronDown, IconChevronRight, IconUpload } from '@tabler/icons-react';
 import { RightSidebar } from './RightSidebar';
 import { useRunAnalysis } from '../analysis/useRunAnalysis';
 import {
@@ -58,8 +58,7 @@ export const ManualWorkspace = (): JSX.Element => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
-
+  const [isDraggingFileOver, setIsDraggingFileOver] = useState(false);
   // Resizable left panel
   const [leftPanelWidth, setLeftPanelWidth] = useState(220);
   const isDraggingPanelRef = useRef(false);
@@ -201,21 +200,24 @@ export const ManualWorkspace = (): JSX.Element => {
           />
           <div className={styles.contentRow}>
           <div className={styles.mainArea}>
-            <div className={styles.viewModeBar}>
-              <div />
-              <Tooltip label="Open inspector" withArrow position="bottom">
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  size="sm"
-                  onClick={() => setIsInspectorOpen(true)}
-                  aria-label="Open inspector"
-                >
-                  <IconInfoCircle size={18} />
-                </ActionIcon>
-              </Tooltip>
-            </div>
-            <div className={styles.signalViewport}>
+            <div
+              className={styles.signalViewport}
+              onDragOver={(event) => { event.preventDefault(); setIsDraggingFileOver(true); }}
+              onDragLeave={() => setIsDraggingFileOver(false)}
+              onDrop={(event) => {
+                event.preventDefault();
+                setIsDraggingFileOver(false);
+                const droppedFile = event.dataTransfer.files[0];
+                if (droppedFile) handleFileSelected(droppedFile);
+              }}
+              style={{ position: 'relative' }}
+            >
+              {isDraggingFileOver && (
+                <div className={styles.dropAcceptOverlay}>
+                  <IconUpload size={32} />
+                  <span>Drop to replace file</span>
+                </div>
+              )}
               <div
                 className={`${styles.signalCard} ${selectedSignalId === uploadedFile.id ? styles.signalCardSelected : ''}`}
               >
@@ -312,8 +314,6 @@ export const ManualWorkspace = (): JSX.Element => {
           </div>
         </div>
         <RightSidebar
-            isOpen={isInspectorOpen}
-            onClose={() => setIsInspectorOpen(false)}
             analysisResult={analysisResult}
             analysisStatus={analysisStatus}
             analysisError={analysisError}

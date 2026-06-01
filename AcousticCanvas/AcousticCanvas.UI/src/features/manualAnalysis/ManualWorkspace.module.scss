@@ -194,6 +194,24 @@
   font-family: var(--font-mono);
 }
 
+.dropAcceptOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: rgba(0, 184, 169, 0.15);
+  border: 2px dashed #00b8a9;
+  border-radius: var(--radius-md);
+  color: #00b8a9;
+  font-size: 0.875rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
 .emptyState {
   text-align: center;
   color: var(--text-muted);

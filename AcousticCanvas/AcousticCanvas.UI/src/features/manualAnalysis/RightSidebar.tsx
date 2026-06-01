@@ -1,12 +1,13 @@
 import type { JSX } from 'react';
-import { Drawer, Loader, Text, Group } from '@mantine/core';
+import { useState } from 'react';
+import { Loader } from '@mantine/core';
+import { IconChevronRight, IconChevronLeft } from '@tabler/icons-react';
 import { AnalysisInspector } from '../analysis/AnalysisInspector';
 import type { AnalysisResult } from '../analysis/analysisTypes';
 import type { AnalysisStatus } from '../analysis/analysisSlice';
+import styles from './RightSidebar.module.scss';
 
 interface RightSidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
   analysisResult: AnalysisResult | null;
   analysisStatus: AnalysisStatus;
   analysisError: string | null;
@@ -14,39 +15,59 @@ interface RightSidebarProps {
 }
 
 export const RightSidebar = ({
-  isOpen,
-  onClose,
   analysisResult,
   analysisStatus,
   analysisError,
   selectedFileName,
 }: RightSidebarProps): JSX.Element => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const panelIsLoading = analysisStatus === 'running';
 
+  const handleToggleCollapse = (): void => {
+    setIsCollapsed((previous) => !previous);
+  };
+
   return (
-    <Drawer
-      opened={isOpen}
-      onClose={onClose}
-      position="right"
-      size={320}
-      title={
-        <Group gap="xs">
-          <Text size="sm" fw={600}>Inspector</Text>
-          {selectedFileName && (
-            <Text size="xs" c="dimmed" truncate style={{ maxWidth: 180 }}>
-              {selectedFileName}
-            </Text>
-          )}
-          {panelIsLoading && <Loader size={12} color="teal" />}
-        </Group>
-      }
-      closeButtonProps={{ 'aria-label': 'Close inspector' }}
-    >
-      <AnalysisInspector
-        result={analysisResult}
-        status={analysisStatus}
-        error={analysisError}
-      />
-    </Drawer>
+    <div className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : ''}`}>
+      {isCollapsed ? (
+        <button
+          className={styles.toggleButton}
+          onClick={handleToggleCollapse}
+          type="button"
+          aria-label="Expand inspector"
+        >
+          <IconChevronLeft size={14} />
+        </button>
+      ) : (
+        <div className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <div className={styles.panelTitleGroup}>
+              <span className={styles.panelTitle}>Inspector</span>
+              {selectedFileName && (
+                <span className={styles.panelSubtitle}>{selectedFileName}</span>
+              )}
+            </div>
+            <div className={styles.panelHeaderRight}>
+              {panelIsLoading && <Loader size={12} color="teal" />}
+              <button
+                className={styles.toggleButton}
+                onClick={handleToggleCollapse}
+                type="button"
+                aria-label="Collapse inspector"
+              >
+                <IconChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+          <div className={styles.panelContent}>
+            <AnalysisInspector
+              result={analysisResult}
+              status={analysisStatus}
+              error={analysisError}
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 };

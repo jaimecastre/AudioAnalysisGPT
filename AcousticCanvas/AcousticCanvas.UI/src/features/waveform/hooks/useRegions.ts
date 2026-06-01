@@ -13,6 +13,55 @@ import {
 const REGION_COLOR = 'rgba(0, 184, 169, 0.25)';
 const LOOP_CHECK_EPSILON_SECONDS = 0.05;
 
+function formatRegionTime(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  const millis = Math.floor((seconds % 1) * 1000);
+  return `${minutes}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
+}
+
+function buildRegionLabelElement(startSeconds: number, endSeconds: number): HTMLElement {
+  const durationSeconds = endSeconds - startSeconds;
+  const container = document.createElement('div');
+  container.style.cssText = [
+    'position: absolute',
+    'top: 4px',
+    'left: 4px',
+    'right: 4px',
+    'display: flex',
+    'justify-content: space-between',
+    'pointer-events: none',
+    'z-index: 10',
+  ].join(';');
+
+  const labelStyle = [
+    'font-size: 9px',
+    "font-family: 'JetBrains Mono', ui-monospace, monospace",
+    'color: rgba(0, 100, 90, 0.9)',
+    'background: rgba(255, 255, 255, 0.75)',
+    'padding: 1px 4px',
+    'border-radius: 3px',
+    'white-space: nowrap',
+  ].join(';');
+
+  const startLabel = document.createElement('span');
+  startLabel.style.cssText = labelStyle;
+  startLabel.textContent = formatRegionTime(startSeconds);
+
+  const durationLabel = document.createElement('span');
+  durationLabel.style.cssText = labelStyle;
+  durationLabel.textContent = `${durationSeconds.toFixed(3)}s`;
+
+  const endLabel = document.createElement('span');
+  endLabel.style.cssText = labelStyle;
+  endLabel.textContent = formatRegionTime(endSeconds);
+
+  container.appendChild(startLabel);
+  container.appendChild(durationLabel);
+  container.appendChild(endLabel);
+  return container;
+}
+
 interface UseRegionsOptions {
   wavesurferRef: React.MutableRefObject<WaveSurfer | null>;
   isReady: boolean;
@@ -67,6 +116,7 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
         color: REGION_COLOR,
         drag: true,
         resize: true,
+        content: buildRegionLabelElement(currentSelection.startSeconds, currentSelection.endSeconds),
       });
     }
 
@@ -83,6 +133,8 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
         }
       });
 
+      region.setOptions({ content: buildRegionLabelElement(region.start, region.end) });
+
       dispatch(setActiveSelection({
         id: region.id,
         startSeconds: region.start,
@@ -92,6 +144,7 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
 
     // When user drags or resizes an existing region: sync updated times to state
     const unsubscribeRegionUpdated = regions.on('region-updated', (region) => {
+      region.setOptions({ content: buildRegionLabelElement(region.start, region.end) });
       dispatch(updateActiveSelection({
         startSeconds: region.start,
         endSeconds: region.end,
