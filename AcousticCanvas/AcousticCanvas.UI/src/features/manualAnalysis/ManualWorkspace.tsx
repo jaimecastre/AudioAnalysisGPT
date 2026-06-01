@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { AudioFileDropzone } from '../audioUpload/AudioFileDropzone';
 import { setActiveView } from '../navigation/navigationSlice';
 import { useAudioUpload } from '../audioUpload/useAudioUpload';
@@ -38,7 +38,8 @@ import styles from './ManualWorkspace.module.scss';
 export const ManualWorkspace = (): JSX.Element => {
   const dispatch = useAppDispatch();
   const files = useAppSelector(projectFilesSelector);
-  const uploadedFile = files.length > 0 ? files[0] : null;
+  const selectedSignalId = useAppSelector(selectedSignalIdSelector);
+  const uploadedFile = files.find((file) => file.id === selectedSignalId) ?? null;
   const { isUploading, uploadFile } = useAudioUpload();
 
   const handleFileSelected = async (file: File): Promise<void> => {
@@ -52,7 +53,6 @@ export const ManualWorkspace = (): JSX.Element => {
   const analysisResult = useAppSelector(analysisResultSelector);
   const analysisStatus = useAppSelector(analysisStatusSelector);
   const analysisError = useAppSelector(analysisErrorSelector);
-  const selectedSignalId = useAppSelector(selectedSignalIdSelector);
   const { runAnalysis } = useRunAnalysis();
 
   const waveSurferRef = useRef<WaveSurferDisplayRef | null>(null);
@@ -119,19 +119,19 @@ export const ManualWorkspace = (): JSX.Element => {
     ? apiClient.buildUrl(API_ENDPOINTS.AUDIO.GET_FILE(uploadedFile.id))
     : '';
 
-  const handleWaveSurferReady = useCallback((audioDuration: number): void => {
+  const handleWaveSurferReady = (audioDuration: number): void => {
     setDuration(audioDuration);
     setCurrentTime(0);
     setIsPlaying(false);
-  }, []);
+  };
 
-  const handleWaveSurferTimeUpdate = useCallback((time: number): void => {
+  const handleWaveSurferTimeUpdate = (time: number): void => {
     setCurrentTime(time);
-  }, []);
+  };
 
-  const handleWaveSurferFinish = useCallback((): void => {
+  const handleWaveSurferFinish = (): void => {
     setIsPlaying(false);
-  }, []);
+  };
 
   const handlePlay = (): void => {
     waveSurferRef.current?.play();

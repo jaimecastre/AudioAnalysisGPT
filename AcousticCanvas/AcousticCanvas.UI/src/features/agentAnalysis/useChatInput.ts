@@ -1,7 +1,6 @@
 import type { ChangeEvent, KeyboardEvent, RefObject } from 'react';
 import { useState, useRef } from 'react';
-import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
-import { store } from '../../store/reduxStore';
+import { useAppDispatch, useAppSelector, useAppStore } from '../../store/reduxHooks';
 import {
   userMessageSent,
   conversationCleared,
@@ -40,6 +39,7 @@ export interface UseChatInputReturn {
 export function useChatInput(isThinking: boolean): UseChatInputReturn {
   const dispatch = useAppDispatch();
   const activeSelection = useAppSelector(activeSelectionSelector);
+  const reduxStore = useAppStore();
   const { uploadFile, isUploading } = useAudioUpload();
 
   const [inputValue, setInputValue] = useState('');
@@ -106,7 +106,7 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
       textareaRef.current.style.height = 'auto';
     }
 
-    runAgentToolLoop(finalContent, dispatch, () => store.getState());
+    runAgentToolLoop(finalContent, dispatch, () => reduxStore.getState());
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -138,7 +138,7 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
       timestamp: new Date().toISOString(),
     }));
 
-    runAgentToolLoop(explainMessage, dispatch, () => store.getState());
+    runAgentToolLoop(explainMessage, dispatch, () => reduxStore.getState());
   };
 
   const canSend = (inputValue.trim().length > 0 || pendingAttachments.length > 0) && !isThinking && !isUploading;

@@ -42,6 +42,7 @@ When asked to "explain" a time region or selection:
 5. Do NOT speculate about subjective quality — only describe what the measurements show.
 
 ## Format
-- Use **bold** for key measured values.
-- Keep responses concise — bullet points for lists of metrics, prose for explanations.
-- If the user asks a question that requires multiple analyses, run them sequentially and synthesise the answer at the end.`;
+- Write in plain prose — no markdown, no asterisks, no bold, no headers, no bullet points with dashes.
+- Present measured values inline in sentences: "The peak level is -3.65 dBFS and the RMS is -20.84 dBFS."
+- Keep responses concise. Use short paragraphs separated by line breaks for distinct topics.
+- If the user asks a question that requires multiple analyses, run them sequentially and synthesise the answer at the end in a single paragraph.`;

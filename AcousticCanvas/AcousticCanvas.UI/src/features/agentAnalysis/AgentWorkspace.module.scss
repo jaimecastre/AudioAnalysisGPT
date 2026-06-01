@@ -20,3 +20,18 @@
   border-left: 1px solid var(--border);
   border-right: 1px solid var(--border);
 }
+
+.noFileBanner {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  background-color: rgba(234, 179, 8, 0.06);
+  border-bottom: 1px solid rgba(234, 179, 8, 0.2);
+  font-size: 0.72rem;
+  color: rgba(234, 179, 8, 0.85);
+  line-height: 1.5;
+
+  strong {
+    color: rgba(234, 179, 8, 0.95);
+    font-weight: 600;
+  }
+}
