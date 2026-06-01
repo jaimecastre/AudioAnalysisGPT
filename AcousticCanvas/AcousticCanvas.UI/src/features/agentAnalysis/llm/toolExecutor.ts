@@ -29,11 +29,20 @@ function executeGetState(state: RootState): string {
 async function executeAnalyze(
   dispatch: AppDispatch,
   parsedArgs: Record<string, unknown>,
+  state: RootState,
 ): Promise<string> {
   const kind = parsedArgs['kind'] as AnalysisKind;
   const fileId = parsedArgs['fileId'] as string;
-  const startSeconds = typeof parsedArgs['startSeconds'] === 'number' ? parsedArgs['startSeconds'] : null;
-  const endSeconds = typeof parsedArgs['endSeconds'] === 'number' ? parsedArgs['endSeconds'] : null;
+
+  const activeSelection = state.waveformSelection.activeSelection;
+  const selectionIsValid = activeSelection !== null
+    && activeSelection.endSeconds > activeSelection.startSeconds;
+
+  const argsStartSeconds = typeof parsedArgs['startSeconds'] === 'number' ? parsedArgs['startSeconds'] : null;
+  const argsEndSeconds = typeof parsedArgs['endSeconds'] === 'number' ? parsedArgs['endSeconds'] : null;
+
+  const startSeconds = argsStartSeconds ?? (selectionIsValid ? activeSelection!.startSeconds : null);
+  const endSeconds = argsEndSeconds ?? (selectionIsValid ? activeSelection!.endSeconds : null);
 
   const validKinds: AnalysisKind[] = ['file_info', 'level', 'spectrum'];
   const isValidKind = validKinds.includes(kind);
@@ -128,7 +137,7 @@ export async function executeToolCall(
     resultJson = executeGetState(state);
   } else if (toolName === 'analyze') {
     try {
-      resultJson = await executeAnalyze(dispatch, parsedArgs);
+      resultJson = await executeAnalyze(dispatch, parsedArgs, state);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
       resultJson = JSON.stringify({ error: errorMessage });

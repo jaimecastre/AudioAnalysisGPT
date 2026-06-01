@@ -1,18 +1,15 @@
-import type { JSX, KeyboardEvent } from 'react';
-import { useRef, useEffect, useState } from 'react';
-import { IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX, IconAlignBoxLeftMiddle } from '@tabler/icons-react';
-import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
-import { store } from '../../store/reduxStore';
+import type { JSX } from 'react';
+import { useRef, useEffect } from 'react';
 import {
-  chatMessagesSelector,
-  chatIsThinkingSelector,
-  userMessageSent,
-  conversationCleared,
-} from './chatSlice';
+  IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX,
+  IconAlignBoxLeftMiddle, IconPaperclip, IconFileMusic, IconFileText,
+} from '@tabler/icons-react';
+import { useAppSelector } from '../../store/reduxHooks';
+import { chatMessagesSelector, chatIsThinkingSelector } from './chatSlice';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
 import type { ChatMessage } from './chatSlice';
-import { runAgentToolLoop } from './agentToolRunner';
-import { agentWorkspaceCleared } from './agentWorkspaceSlice';
+import { ATTACH_ACCEPT } from './chatAttachments';
+import { useChatInput } from './useChatInput';
 import styles from './ChatPanel.module.scss';
 
 const SUGGESTION_PROMPTS = [
@@ -131,14 +128,29 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) =
 }
 
 export function ChatPanel(): JSX.Element {
-  const dispatch = useAppDispatch();
   const messages = useAppSelector(chatMessagesSelector);
   const isThinking = useAppSelector(chatIsThinkingSelector);
-  const activeSelection = useAppSelector(activeSelectionSelector);
 
-  const [inputValue, setInputValue] = useState('');
+  const {
+    inputValue,
+    setInputValue,
+    pendingAttachments,
+    isUploading,
+    canSend,
+    textareaRef,
+    fileInputRef,
+    handleTextareaInput,
+    handleKeyDown,
+    handleSuggestionClick,
+    handleAttachClick,
+    handleFileInputChange,
+    handleRemoveAttachment,
+    handleSendMessage,
+    handleClearConversation,
+    handleExplainSelection,
+  } = useChatInput(isThinking);
+
   const messageListRef = useRef<HTMLDivElement | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     const messageList = messageListRef.current;
@@ -146,70 +158,7 @@ export function ChatPanel(): JSX.Element {
     messageList.scrollTop = messageList.scrollHeight;
   }, [messages, isThinking]);
 
-  const handleTextareaInput = (): void => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    textarea.style.height = 'auto';
-    textarea.style.height = `${textarea.scrollHeight}px`;
-  };
-
-  const sendMessage = (): void => {
-    const trimmedContent = inputValue.trim();
-    if (!trimmedContent || isThinking) return;
-
-    const userMessageId = crypto.randomUUID();
-    const userTimestamp = new Date().toISOString();
-
-    dispatch(userMessageSent({
-      id: userMessageId,
-      content: trimmedContent,
-      timestamp: userTimestamp,
-    }));
-
-    setInputValue('');
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-    }
-
-    runAgentToolLoop(trimmedContent, dispatch, () => store.getState());
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const handleSuggestionClick = (suggestionText: string): void => {
-    setInputValue(suggestionText);
-    textareaRef.current?.focus();
-  };
-
-  const handleClearConversation = (): void => {
-    dispatch(conversationCleared());
-    dispatch(agentWorkspaceCleared());
-  };
-
-  const handleExplainSelection = (): void => {
-    if (!activeSelection || isThinking) return;
-    const startFormatted = activeSelection.startSeconds.toFixed(3);
-    const endFormatted = activeSelection.endSeconds.toFixed(3);
-    const explainMessage = `Explain the audio from ${startFormatted}s to ${endFormatted}s. Run level analysis and spectrum analysis on this region and describe what you find.`;
-
-    const userMessageId = crypto.randomUUID();
-    dispatch(userMessageSent({
-      id: userMessageId,
-      content: explainMessage,
-      timestamp: new Date().toISOString(),
-    }));
-
-    runAgentToolLoop(explainMessage, dispatch, () => store.getState());
-  };
-
   const hasMessages = messages.length > 0;
-  const canSend = inputValue.trim().length > 0 && !isThinking;
 
   return (
     <div className={styles.panel}>
@@ -243,8 +192,47 @@ export function ChatPanel(): JSX.Element {
       </div>
 
       <div className={styles.inputArea}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept={ATTACH_ACCEPT}
+          className={styles.hiddenFileInput}
+          onChange={handleFileInputChange}
+          aria-label="Attach files"
+        />
         <SelectionChip onExplain={handleExplainSelection} />
+        {pendingAttachments.length > 0 && (
+          <div className={styles.attachmentChips}>
+            {pendingAttachments.map((attachment) => (
+              <div key={attachment.name} className={styles.attachmentChip}>
+                {attachment.kind === 'audio'
+                  ? <IconFileMusic size={11} className={styles.attachmentChipIcon} />
+                  : <IconFileText size={11} className={styles.attachmentChipIcon} />}
+                <span className={styles.attachmentChipName}>{attachment.name}</span>
+                <button
+                  type="button"
+                  className={styles.attachmentChipRemove}
+                  onClick={() => handleRemoveAttachment(attachment.name)}
+                  aria-label={`Remove ${attachment.name}`}
+                >
+                  <IconX size={10} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <div className={styles.inputRow}>
+          <button
+            type="button"
+            className={styles.attachButton}
+            onClick={handleAttachClick}
+            disabled={isThinking || isUploading}
+            title="Attach audio, PDF, or text file"
+            aria-label="Attach file"
+          >
+            <IconPaperclip size={15} />
+          </button>
           <textarea
             ref={textareaRef}
             className={styles.textarea}
@@ -259,14 +247,14 @@ export function ChatPanel(): JSX.Element {
           <button
             type="button"
             className={styles.sendButton}
-            onClick={sendMessage}
+            onClick={handleSendMessage}
             disabled={!canSend}
             aria-label="Send message"
           >
             <IconArrowUp size={16} />
           </button>
         </div>
-        <p className={styles.inputHint}>Enter to send · Shift+Enter for newline</p>
+        <p className={styles.inputHint}>Enter to send · Shift+Enter for newline · 📎 attach audio, PDF, text</p>
       </div>
     </div>
   );

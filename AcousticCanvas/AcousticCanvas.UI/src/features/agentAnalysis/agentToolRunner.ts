@@ -274,6 +274,19 @@ export async function runAgentToolLoop(
     return;
   }
 
+  const mockIndicatorId = crypto.randomUUID();
+  dispatch(toolCallStarted({
+    id: mockIndicatorId,
+    toolName: 'mock-runner',
+    content: 'No API key — running in mock mode',
+    timestamp: new Date().toISOString(),
+  }));
+  dispatch(toolCallFinished({
+    id: mockIndicatorId,
+    toolStatus: 'error',
+    content: 'No API key — running in mock mode. Add VITE_OPENAI_API_KEY to .env to enable real AI.',
+  }));
+
   const intent = classifyIntent(userText);
   const currentState = getState();
   let responseText: string;
