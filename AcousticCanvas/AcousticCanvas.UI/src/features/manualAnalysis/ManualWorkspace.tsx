@@ -13,13 +13,14 @@ import {
   removeAudioFile,
   selectedSignalIdSelector,
 } from '../project/projectSlice';
+import type { AudioFile } from '../../store/projectState';
 import {
   setLoopEnabled,
   loopEnabledSelector,
   activeSelectionSelector,
 } from '../waveform/waveformSelectionSlice';
-import { Text, Card, Group, ActionIcon, Tooltip } from '@mantine/core';
-import { IconRepeat, IconX, IconFileMusic, IconInfoCircle, IconWaveSine, IconChartLine, IconTrash } from '@tabler/icons-react';
+import { Text, Group, ActionIcon, Tooltip } from '@mantine/core';
+import { IconRepeat, IconX, IconFileMusic, IconInfoCircle, IconWaveSine, IconChartLine, IconTrash, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { RightSidebar } from './RightSidebar';
 import { useRunAnalysis } from '../analysis/useRunAnalysis';
 import {
@@ -54,6 +55,34 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+
+  // Resizable left panel
+  const [leftPanelWidth, setLeftPanelWidth] = useState(220);
+  const isDraggingPanelRef = useRef(false);
+
+  const handleDragHandleMouseDown = (): void => {
+    isDraggingPanelRef.current = true;
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent): void => {
+      if (!isDraggingPanelRef.current) return;
+      const newWidth = Math.max(140, Math.min(400, event.clientX - 200));
+      setLeftPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = (): void => {
+      isDraggingPanelRef.current = false;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return (): void => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   // Tool panels spawned from the toolbox
   const [toolPanels, setToolPanels] = useState<Array<{ id: string; type: 'spectrogram' | 'spectrum'; fileId: string | null }>>([]);
@@ -171,6 +200,13 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
             onAddSpectrum={handleAddSpectrumPanel}
             hasSpectrogramPanel={hasSpectrogramPanel}
             hasSpectrumPanel={hasSpectrumPanel}
+            width={leftPanelWidth}
+          />
+          <div
+            className={styles.panelDragHandle}
+            onMouseDown={handleDragHandleMouseDown}
+            role="separator"
+            aria-label="Resize left panel"
           />
           <div className={styles.contentRow}>
           <div className={styles.mainArea}>
@@ -299,12 +335,13 @@ export const ManualWorkspace = ({ showDropzone = false }: ManualWorkspaceProps):
 };
 
 interface FileListPanelProps {
-  uploadedFile: { id: string; name: string } | null;
+  uploadedFile: AudioFile | null;
   onClearFile: () => void;
   onAddSpectrogram: () => void;
   onAddSpectrum: () => void;
   hasSpectrogramPanel: boolean;
   hasSpectrumPanel: boolean;
+  width: number;
 }
 
 const FileListPanel = ({
@@ -314,31 +351,53 @@ const FileListPanel = ({
   onAddSpectrum,
   hasSpectrogramPanel,
   hasSpectrumPanel,
+  width,
 }: FileListPanelProps): JSX.Element => {
+  const [isFileExpanded, setIsFileExpanded] = useState(true);
+
+  const handleToggleExpanded = (): void => {
+    setIsFileExpanded((previous) => !previous);
+  };
+
+  const channelLabels = uploadedFile
+    ? Array.from({ length: uploadedFile.channels }, (_, index) => `Channel ${index + 1}`)
+    : [];
+
   return (
-    <div className={styles.fileListPanel}>
+    <div className={styles.fileListPanel} style={{ width }}>
       <Text fw={600} size="sm" mb="md" c="dimmed">FILES</Text>
       {uploadedFile && (
-        <Card withBorder shadow="sm" padding="sm">
-          <Group gap="xs" mb="xs">
-            <IconFileMusic size={20} />
-            <Text fw={500} size="sm" truncate style={{ flex: 1 }}>
+        <div className={styles.fileTreeNode}>
+          <div className={styles.fileTreeRow} onClick={handleToggleExpanded}>
+            <span className={styles.fileTreeChevron}>
+              {isFileExpanded ? <IconChevronDown size={14} /> : <IconChevronRight size={14} />}
+            </span>
+            <IconFileMusic size={16} className={styles.fileTreeFileIcon} />
+            <span className={styles.fileTreeFileName} title={uploadedFile.name}>
               {uploadedFile.name}
-            </Text>
-          </Group>
-          <Tooltip label="Remove audio file" withArrow position="right">
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              size="sm"
-              mt="xs"
-              onClick={onClearFile}
-              aria-label="Remove audio file"
-            >
-              <IconTrash size={15} />
-            </ActionIcon>
-          </Tooltip>
-        </Card>
+            </span>
+            <Tooltip label="Remove audio file" withArrow position="right">
+              <ActionIcon
+                variant="subtle"
+                color="red"
+                size="xs"
+                onClick={(event) => { event.stopPropagation(); onClearFile(); }}
+                aria-label="Remove audio file"
+              >
+                <IconTrash size={13} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+          {isFileExpanded && (
+            <div className={styles.fileTreeChildren}>
+              {channelLabels.map((label) => (
+                <div key={label} className={styles.fileTreeChannelRow}>
+                  <span className={styles.fileTreeChannelLabel}>{label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       <div style={{ marginTop: 24 }}>

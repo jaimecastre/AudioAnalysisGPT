@@ -113,10 +113,85 @@
 .fileListPanel {
   padding: 16px;
   background-color: var(--bg-surface);
-  border-right: 1px solid var(--border);
   overflow-y: auto;
-  width: 220px;
   flex-shrink: 0;
+  min-width: 140px;
+  max-width: 400px;
+}
+
+.panelDragHandle {
+  width: 4px;
+  flex-shrink: 0;
+  background-color: var(--border);
+  cursor: col-resize;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: #00b8a9;
+  }
+}
+
+.fileTreeNode {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.fileTreeRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  cursor: pointer;
+  background-color: var(--bg-elevated);
+  user-select: none;
+
+  &:hover {
+    background-color: var(--bg-overlay);
+  }
+}
+
+.fileTreeChevron {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fileTreeFileIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fileTreeFileName {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileTreeChildren {
+  border-top: 1px solid var(--border);
+}
+
+.fileTreeChannelRow {
+  display: flex;
+  align-items: center;
+  padding: 5px 8px 5px 28px;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.fileTreeChannelLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
 .emptyState {

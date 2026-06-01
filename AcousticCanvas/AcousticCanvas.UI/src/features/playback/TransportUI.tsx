@@ -16,12 +16,12 @@ interface TransportUIProps {
 
 const formatTime = (seconds: number): string => {
   if (!Number.isFinite(seconds) || seconds < 0) {
-    return '0:00.00';
+    return '0:00.000';
   }
   const minutes = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
-  const millis = Math.floor((seconds % 1) * 100);
-  return `${minutes}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(2, '0')}`;
+  const millis = Math.floor((seconds % 1) * 1000);
+  return `${minutes}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
 };
 
 export const TransportUI = ({
