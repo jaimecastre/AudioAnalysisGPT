@@ -452,6 +452,53 @@
 }
 
 // Region info bar below waveform
+.comparisonPanel {
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+  max-height: 700px;
+  overflow: hidden;
+}
+
+.comparisonPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background-color: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.comparisonPanelTitle {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.comparisonPanelError {
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #e05252;
+  background: rgba(224, 82, 82, 0.08);
+  border-bottom: 1px solid rgba(224, 82, 82, 0.2);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinIcon {
+  animation: spin 1s linear infinite;
+}
+
 .regionInfoBar {
   display: flex;
   align-items: center;

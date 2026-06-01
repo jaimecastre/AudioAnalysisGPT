@@ -19,7 +19,10 @@ import {
   activeSelectionSelector,
 } from '../waveform/waveformSelectionSlice';
 import { Text, Group, ActionIcon, Tooltip } from '@mantine/core';
-import { IconRepeat, IconX, IconFileMusic, IconWaveSine, IconChartLine, IconTrash, IconUpload, IconRobot, IconPlus, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { IconRepeat, IconX, IconFileMusic, IconWaveSine, IconChartLine, IconTrash, IconUpload, IconRobot, IconPlus, IconChevronDown, IconChevronRight, IconGitCompare, IconLoader2 } from '@tabler/icons-react';
+import { ComparisonView } from '../comparison/ComparisonView';
+import { callCompareTool } from '../agent/services/compareToolService';
+import type { CompareResult } from '../agent/agentToolTypes';
 import { RightSidebar } from './RightSidebar';
 import { ChatPanel } from '../agentAnalysis/ChatPanel';
 import {
@@ -74,6 +77,9 @@ export const ManualWorkspace = (): JSX.Element => {
   const addFileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDraggingFileOver, setIsDraggingFileOver] = useState(false);
   const [isAgentPanelOpen, setIsAgentPanelOpen] = useState(false);
+  const [manualCompareResult, setManualCompareResult] = useState<CompareResult | null>(null);
+  const [manualCompareStatus, setManualCompareStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [manualCompareError, setManualCompareError] = useState<string | null>(null);
 
   const handleFileSelected = async (file: File): Promise<void> => {
     const result = await uploadFile(file);
@@ -169,6 +175,31 @@ export const ManualWorkspace = (): JSX.Element => {
     setIsAgentPanelOpen((previous) => !previous);
   };
 
+  const handleRunManualCompare = async (): Promise<void> => {
+    if (files.length < 2) return;
+    setManualCompareStatus('loading');
+    setManualCompareError(null);
+    try {
+      const result = await callCompareTool({
+        fileIds: files.map((file) => file.id),
+        startSeconds: null,
+        endSeconds: null,
+      });
+      setManualCompareResult(result);
+      setManualCompareStatus('idle');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Compare failed';
+      setManualCompareError(errorMessage);
+      setManualCompareStatus('error');
+    }
+  };
+
+  const handleCloseComparisonPanel = (): void => {
+    setManualCompareResult(null);
+    setManualCompareStatus('idle');
+    setManualCompareError(null);
+  };
+
   return (
     <div className={styles.workspaceWithFileList}>
       {files.length === 0 && (
@@ -188,6 +219,9 @@ export const ManualWorkspace = (): JSX.Element => {
             onAddSpectrum={handleAddSpectrumPanelForActiveFile}
             hasSpectrogramPanel={hasSpectrogramPanel}
             hasSpectrumPanel={hasSpectrumPanel}
+            hasComparisonPanel={manualCompareResult !== null}
+            isCompareLoading={manualCompareStatus === 'loading'}
+            onRunCompare={handleRunManualCompare}
             width={leftPanelWidth}
           />
           <div
@@ -267,6 +301,26 @@ export const ManualWorkspace = (): JSX.Element => {
                           displayRef={waveSurferRef}
                         />
                       </div>
+                      {manualCompareResult !== null && (
+                        <div className={styles.comparisonPanel}>
+                          <div className={styles.comparisonPanelHeader}>
+                            <span className={styles.comparisonPanelTitle}>A/B Comparison</span>
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              size="xs"
+                              onClick={handleCloseComparisonPanel}
+                              aria-label="Close comparison panel"
+                            >
+                              <IconX size={12} />
+                            </ActionIcon>
+                          </div>
+                          {manualCompareStatus === 'error' && (
+                            <div className={styles.comparisonPanelError}>{manualCompareError}</div>
+                          )}
+                          <ComparisonView result={manualCompareResult} />
+                        </div>
+                      )}
                       {toolPanels.map((panel) => (
                         panel.type === 'spectrogram' ? (
                           <SpectrogramPanel
@@ -382,8 +436,11 @@ interface FileListPanelProps {
   onAddFileClick: () => void;
   onAddSpectrogram: () => void;
   onAddSpectrum: () => void;
+  onRunCompare: () => void;
   hasSpectrogramPanel: boolean;
   hasSpectrumPanel: boolean;
+  hasComparisonPanel: boolean;
+  isCompareLoading: boolean;
   width: number;
 }
 
@@ -395,10 +452,14 @@ function FileListPanel({
   onAddFileClick,
   onAddSpectrogram,
   onAddSpectrum,
+  onRunCompare,
   hasSpectrogramPanel,
   hasSpectrumPanel,
+  hasComparisonPanel,
+  isCompareLoading,
   width,
 }: FileListPanelProps): JSX.Element {
+  const canCompare = files.length >= 2;
   const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(new Set());
 
   function handleToggleExpanded(fileId: string): void {
@@ -501,6 +562,24 @@ function FileListPanel({
                 aria-label="Add spectrum panel"
               >
                 <IconChartLine size={18} />
+              </ActionIcon>
+            </span>
+          </Tooltip>
+          <Tooltip
+            label={!canCompare ? 'Load at least 2 files to compare' : hasComparisonPanel ? 'Comparison already open' : 'Compare all loaded files'}
+            withArrow
+            position="right"
+          >
+            <span>
+              <ActionIcon
+                variant="light"
+                color="blue"
+                size="lg"
+                onClick={onRunCompare}
+                disabled={!canCompare || hasComparisonPanel || isCompareLoading}
+                aria-label="Run A/B comparison"
+              >
+                {isCompareLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconGitCompare size={18} />}
               </ActionIcon>
             </span>
           </Tooltip>

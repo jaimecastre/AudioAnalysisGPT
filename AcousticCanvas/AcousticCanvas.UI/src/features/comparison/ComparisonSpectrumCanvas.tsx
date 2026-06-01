@@ -22,14 +22,14 @@ interface TooltipState {
 }
 
 const MARGIN = { top: 16, right: 20, bottom: 48, left: 56 };
-const GRID_COLOR = 'rgba(255,255,255,0.06)';
-const AXIS_COLOR = 'rgba(255,255,255,0.35)';
-const LABEL_COLOR = 'rgba(255,255,255,0.45)';
+const GRID_COLOR = 'rgba(0,0,0,0.07)';
+const AXIS_COLOR = 'rgba(0,0,0,0.4)';
+const LABEL_COLOR = 'rgba(0,0,0,0.5)';
 const FONT = '10px ui-monospace, SFMono-Regular, Menlo, monospace';
 
-const COLOR_A = '#4dabf7';
-const COLOR_B = '#ff8c42';
-const COLOR_DELTA = '#69db7c';
+const COLOR_A = '#1971c2';
+const COLOR_B = '#e8590c';
+const COLOR_DELTA = '#2f9e44';
 
 function formatHz(hz: number): string {
   if (hz >= 1000) {
@@ -208,18 +208,44 @@ function drawComparisonSpectrum(
   }
   ctx.stroke();
 
-  // --- Draw delta curve (B − A), dashed ---
+  // --- Draw delta curve (B − A) on its own ±30 dB scale ---
+  // The delta zero line sits at the top quarter of the plot.
+  // This keeps it visually separate from the spectrum curves below.
   if (showDelta && delta.frequenciesHz.length > 0) {
+    const deltaRange = 30; // ± dB shown above and below zero line
+    const deltaZeroY = MARGIN.top + plotHeight * 0.22;
+    const deltaScale = (plotHeight * 0.22) / deltaRange; // px per dB
+
+    const toDeltaY = (deltaDb: number): number =>
+      deltaZeroY - deltaDb * deltaScale;
+
+    // Draw the Δ = 0 reference line (light dashed).
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(47,158,68,0.25)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 4]);
+    ctx.moveTo(MARGIN.left, deltaZeroY);
+    ctx.lineTo(MARGIN.left + plotWidth, deltaZeroY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Label the zero line.
+    ctx.fillStyle = COLOR_DELTA;
+    ctx.font = '9px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('Δ 0 dB', MARGIN.left + 4, deltaZeroY - 3);
+
+    // Draw the delta curve.
     ctx.beginPath();
     ctx.strokeStyle = COLOR_DELTA;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 3]);
     let startedDelta = false;
     for (let k = 0; k < delta.frequenciesHz.length; k++) {
       const db = delta.deltaDb[k];
       if (db === null) continue;
       const xPixel = toX(delta.frequenciesHz[k]);
-      const yPixel = toY(db);
+      const yPixel = toDeltaY(db);
       if (!startedDelta) {
         ctx.moveTo(xPixel, yPixel);
         startedDelta = true;

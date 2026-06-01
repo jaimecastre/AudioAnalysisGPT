@@ -113,10 +113,15 @@ public class RunCompareHandler(SignalAnalysisService analysisService)
         var spectrumCurve = BuildSpectrumCurve(firstSpectrumChannel);
         var bandEnergies = ComputeBandEnergies(firstSpectrumChannel);
 
+        var storedFileName = Path.GetFileName(filePath);
+        var displayFileName = storedFileName.Length > 13 && storedFileName[12] == '_'
+            ? storedFileName[13..]
+            : storedFileName;
+
         return new CompareFileSummary
         {
             FileId = filePath,
-            FileName = Path.GetFileName(filePath),
+            FileName = displayFileName,
             PeakDb = peakDb,
             RmsDb = rmsDb,
             CrestFactorDb = crestFactorDb,

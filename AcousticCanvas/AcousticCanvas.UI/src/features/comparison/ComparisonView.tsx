@@ -8,10 +8,6 @@ interface ComparisonViewProps {
   result: CompareResult;
 }
 
-function stripToFileName(value: string): string {
-  const lastSlash = Math.max(value.lastIndexOf('/'), value.lastIndexOf('\\'));
-  return lastSlash >= 0 ? value.slice(lastSlash + 1) : value;
-}
 
 function formatDb(value: number): string {
   if (!isFinite(value)) return '—';
@@ -113,6 +109,13 @@ interface BandEnergyTableProps {
 function BandEnergyTable({ bandEnergiesA, bandEnergiesB, bandEnergyDeltas, labelA, labelB }: BandEnergyTableProps): JSX.Element {
   return (
     <table className={styles.metricsTable}>
+      <colgroup>
+        <col style={{ width: '7%' }} />
+        <col style={{ width: '10%' }} />
+        <col style={{ width: '33%' }} />
+        <col style={{ width: '33%' }} />
+        <col style={{ width: '17%' }} />
+      </colgroup>
       <thead>
         <tr>
           <th className={styles.tableHeadLabel}>Band</th>
@@ -168,8 +171,8 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
   const fileB = result.files[1];
   const diff = result.pairwiseDiffs[0];
 
-  const labelA = stripToFileName(fileA.fileId);
-  const labelB = stripToFileName(fileB.fileId);
+  const labelA = fileA.fileName;
+  const labelB = fileB.fileName;
 
   return (
     <div className={styles.comparisonView}>
@@ -177,16 +180,16 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
       {/* File legend strip */}
       <div className={styles.legendStrip}>
         <div className={styles.legendItem}>
-          <span className={styles.legendSwatch} style={{ background: '#4dabf7' }} />
+          <span className={styles.legendSwatch} style={{ background: '#1971c2' }} />
           <span className={styles.legendLabel} title={labelA}>{labelA}</span>
         </div>
         <div className={styles.legendItem}>
-          <span className={styles.legendSwatch} style={{ background: '#ff8c42' }} />
+          <span className={styles.legendSwatch} style={{ background: '#e8590c' }} />
           <span className={styles.legendLabel} title={labelB}>{labelB}</span>
         </div>
         {showDelta && (
           <div className={styles.legendItem}>
-            <span className={styles.legendSwatchDashed} style={{ borderColor: '#69db7c' }} />
+            <span className={styles.legendSwatchDashed} style={{ borderColor: '#2f9e44' }} />
             <span className={styles.legendLabel}>Δ (B − A)</span>
           </div>
         )}

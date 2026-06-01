@@ -10,28 +10,31 @@
   height: 100%;
   display: block;
   cursor: crosshair;
+  background: var(--bg-base);
+  border-radius: var(--radius-sm);
 }
 
 .tooltip {
   position: absolute;
   pointer-events: none;
-  background: rgba(18, 18, 22, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
   padding: 6px 10px;
   display: flex;
   flex-direction: column;
   gap: 2px;
   z-index: 10;
   white-space: nowrap;
+  box-shadow: var(--shadow-md);
 }
 
 .tooltipFreq {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 4px;
   margin-bottom: 2px;
 }
@@ -39,6 +42,7 @@
 .tooltipA,
 .tooltipB,
 .tooltipDelta {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
+  font-weight: 600;
 }

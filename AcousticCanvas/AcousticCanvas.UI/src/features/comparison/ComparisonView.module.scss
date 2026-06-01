@@ -13,8 +13,8 @@
   justify-content: center;
   height: 120px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
 }
 
 /* --- Legend strip --- */
@@ -23,9 +23,9 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 7px 12px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   flex-wrap: wrap;
 }
@@ -51,9 +51,9 @@
 }
 
 .legendLabel {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-secondary);
   max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -64,15 +64,15 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
   cursor: pointer;
   margin-left: auto;
   user-select: none;
 
   input[type='checkbox'] {
-    accent-color: #69db7c;
+    accent-color: var(--accent);
     cursor: pointer;
   }
 }
@@ -83,8 +83,8 @@
   flex: 1 1 0;
   min-height: 220px;
   max-height: 340px;
-  background: rgba(0, 0, 0, 0.25);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border);
 }
 
 /* --- Tab bar --- */
@@ -93,15 +93,16 @@
   display: flex;
   flex-direction: row;
   gap: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
   flex-shrink: 0;
 }
 
 .tabButton {
   padding: 7px 14px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -109,13 +110,13 @@
   transition: color 0.15s, border-color 0.15s;
 
   &:hover {
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--text-secondary);
   }
 }
 
 .tabButtonActive {
-  color: rgba(255, 255, 255, 0.85);
-  border-bottom-color: #4dabf7;
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
 }
 
 /* --- Table section --- */
@@ -124,85 +125,103 @@
   flex-shrink: 0;
   overflow-x: auto;
   padding: 0 4px 8px;
+  background: var(--bg-surface);
 }
 
 .metricsTable {
   width: 100%;
   border-collapse: collapse;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
 }
 
 .metricsTable thead tr {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
 }
 
 .tableRow {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border);
 
   &:last-child {
     border-bottom: none;
   }
 
   &:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-elevated);
   }
 }
 
 .tableHeadLabel,
-.tableHeadA,
-.tableHeadB,
-.tableHeadDelta,
 .tableHeadWinner {
   padding: 6px 10px;
   text-align: left;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.35);
+  font-weight: 600;
+  color: var(--text-muted);
   font-size: 10px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
+.tableHeadA,
+.tableHeadB,
+.tableHeadDelta {
+  padding: 6px 10px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 0;
+}
+
 .tableLabel {
   padding: 5px 10px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .tableMeta {
   padding: 5px 10px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-muted);
   font-size: 10px;
 }
 
 .tableValueA {
   padding: 5px 10px;
-  color: #4dabf7;
+  color: #1971c2;
   text-align: right;
+  font-weight: 600;
 }
 
 .tableValueB {
   padding: 5px 10px;
-  color: #ff8c42;
+  color: #e8590c;
   text-align: right;
+  font-weight: 600;
 }
 
 .tableDelta {
   padding: 5px 10px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
   text-align: right;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .deltaPositive {
-  color: #69db7c;
+  color: #2f9e44;
 }
 
 .deltaNegative {
-  color: #ff8c42;
+  color: #e8590c;
 }
 
 .tableWinner {
   padding: 5px 10px;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-muted);
   font-size: 10px;
 }
