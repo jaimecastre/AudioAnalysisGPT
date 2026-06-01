@@ -1,6 +1,6 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
-import type { ProjectStatus, AudioFile, AudioFileId } from '../../store/projectState';
+import type { ProjectStatus, AudioFile, AudioFileId, Marker, VisibleView } from '../../store/projectState';
 
 const PROJECT_SLICE_NAME = 'project';
 
@@ -9,6 +9,8 @@ export interface IProjectState {
   status: ProjectStatus;
   files: AudioFile[];
   selectedSignalId: string | null;
+  markers: Marker[];
+  visibleViews: VisibleView[];
 }
 
 const initialState: IProjectState = {
@@ -16,6 +18,8 @@ const initialState: IProjectState = {
   status: 'no-project',
   files: [],
   selectedSignalId: null,
+  markers: [],
+  visibleViews: ['waveform'],
 };
 
 const projectSlice = createSlice({
@@ -49,6 +53,24 @@ const projectSlice = createSlice({
       state.selectedSignalId = action.payload;
     },
     clearProject: () => initialState,
+    addMarker: (state, action: PayloadAction<Marker>) => {
+      const alreadyExists = state.markers.some((marker) => marker.id === action.payload.id);
+      if (!alreadyExists) {
+        state.markers.push(action.payload);
+      }
+    },
+    removeMarker: (state, action: PayloadAction<string>) => {
+      state.markers = state.markers.filter((marker) => marker.id !== action.payload);
+    },
+    openView: (state, action: PayloadAction<VisibleView>) => {
+      const alreadyVisible = state.visibleViews.includes(action.payload);
+      if (!alreadyVisible) {
+        state.visibleViews.push(action.payload);
+      }
+    },
+    closeView: (state, action: PayloadAction<VisibleView>) => {
+      state.visibleViews = state.visibleViews.filter((view) => view !== action.payload);
+    },
   },
 });
 
@@ -59,6 +81,10 @@ export const {
   removeAudioFile,
   setSelectedSignal,
   clearProject,
+  addMarker,
+  removeMarker,
+  openView,
+  closeView,
 } = projectSlice.actions;
 
 export default projectSlice.reducer;
@@ -74,6 +100,12 @@ export const projectFilesSelector = (state: { project: IProjectState }): AudioFi
 
 export const selectedSignalIdSelector = (state: { project: IProjectState }): string | null =>
   state.project.selectedSignalId;
+
+export const markersSelector = (state: { project: IProjectState }): Marker[] =>
+  state.project.markers;
+
+export const visibleViewsSelector = (state: { project: IProjectState }): VisibleView[] =>
+  state.project.visibleViews;
 
 export const activeFileSelector = (
   state: { project: IProjectState; navigation: { activeFileId: AudioFileId | null } },

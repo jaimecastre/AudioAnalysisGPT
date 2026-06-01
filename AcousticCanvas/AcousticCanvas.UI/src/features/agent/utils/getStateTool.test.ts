@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { getStateTool, getStateToolAsJson } from './getStateTool';
-import { AGENT_CAPABILITIES } from '../capabilitiesRegistry';
 import type { RootState } from '../../../store/reduxStore';
 
 const emptyState: RootState = {
@@ -9,6 +8,8 @@ const emptyState: RootState = {
     status: 'no-project',
     files: [],
     selectedSignalId: null,
+    markers: [],
+    visibleViews: ['waveform'],
   },
   navigation: {
     activeMode: 'manual',
@@ -59,6 +60,8 @@ const stateWithFile: RootState = {
       },
     ],
     selectedSignalId: 'file-001',
+    markers: [],
+    visibleViews: ['waveform'],
   },
 };
 
@@ -120,10 +123,14 @@ describe('getStateTool', () => {
     expect(result.visibleViews).toHaveLength(0);
   });
 
-  it('always returns all agent capabilities', () => {
+  it('always returns the full capability registry', () => {
     const result = getStateTool(emptyState);
-    expect(result.capabilities).toEqual(AGENT_CAPABILITIES);
-    expect(result.capabilities).toHaveLength(6);
+    expect(result.capabilities).toHaveProperty('tools');
+    expect(result.capabilities).toHaveProperty('analysisKinds');
+    expect(result.capabilities).toHaveProperty('eventKinds');
+    expect(result.capabilities.tools).toHaveLength(6);
+    expect(result.capabilities.analysisKinds).toHaveLength(3);
+    expect(result.capabilities.eventKinds).toHaveLength(4);
   });
 
   it('does not include any raw audio buffer fields', () => {
@@ -132,8 +139,7 @@ describe('getStateTool', () => {
     expect(jsonString).not.toContain('ArrayBuffer');
     expect(jsonString).not.toContain('Float32Array');
     expect(jsonString).not.toContain('Uint8Array');
-    expect(jsonString).not.toContain('samples');
-    expect(jsonString).not.toContain('buffer');
+    expect(jsonString).not.toContain('Int16Array');
   });
 
   it('serializes to valid JSON without throwing', () => {

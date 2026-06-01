@@ -4,7 +4,7 @@ import type {
   GetStateActiveFile,
   GetStateActiveSelection,
 } from './agentToolTypes';
-import { AGENT_CAPABILITIES } from './capabilitiesRegistry';
+import { CAPABILITY_REGISTRY } from './capabilitiesRegistry';
 
 function buildActiveFile(state: RootState): GetStateActiveFile | null {
   const allFiles = state.project.files;
@@ -64,6 +64,6 @@ export function getStateSelector(state: RootState): GetStateResult {
     activeFile,
     activeSelection,
     visibleViews,
-    capabilities: AGENT_CAPABILITIES,
+    capabilities: CAPABILITY_REGISTRY,
   };
 }

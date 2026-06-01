@@ -1,0 +1,99 @@
+import { describe, it, expect } from 'vitest';
+import {
+  CAPABILITY_REGISTRY,
+  SUPPORTED_ANALYSIS_KINDS,
+  SUPPORTED_EVENT_KINDS,
+  isAnalysisKindSupported,
+  isEventKindSupported,
+  buildUnsupportedAnalysisKindError,
+  buildUnsupportedEventKindError,
+} from '../capabilitiesRegistry';
+
+describe('CAPABILITY_REGISTRY structure', () => {
+  it('contains 6 agent tools', () => {
+    expect(CAPABILITY_REGISTRY.tools).toHaveLength(6);
+  });
+
+  it('contains 3 analysis kinds', () => {
+    expect(CAPABILITY_REGISTRY.analysisKinds).toHaveLength(3);
+  });
+
+  it('contains 4 event kinds', () => {
+    expect(CAPABILITY_REGISTRY.eventKinds).toHaveLength(4);
+  });
+
+  it('each analysis kind has kind, description, requiresRegion, and defaultOptions', () => {
+    for (const entry of CAPABILITY_REGISTRY.analysisKinds) {
+      expect(entry).toHaveProperty('kind');
+      expect(entry).toHaveProperty('description');
+      expect(entry).toHaveProperty('requiresRegion');
+      expect(entry).toHaveProperty('defaultOptions');
+    }
+  });
+
+  it('each event kind has kind, description, and defaultOptions', () => {
+    for (const entry of CAPABILITY_REGISTRY.eventKinds) {
+      expect(entry).toHaveProperty('kind');
+      expect(entry).toHaveProperty('description');
+      expect(entry).toHaveProperty('defaultOptions');
+    }
+  });
+
+  it('spectrum analysis kind requires a region', () => {
+    const spectrumEntry = CAPABILITY_REGISTRY.analysisKinds.find((e) => e.kind === 'spectrum');
+    expect(spectrumEntry?.requiresRegion).toBe(true);
+  });
+
+  it('file_info and level do not require a region', () => {
+    const fileInfo = CAPABILITY_REGISTRY.analysisKinds.find((e) => e.kind === 'file_info');
+    const level = CAPABILITY_REGISTRY.analysisKinds.find((e) => e.kind === 'level');
+    expect(fileInfo?.requiresRegion).toBe(false);
+    expect(level?.requiresRegion).toBe(false);
+  });
+});
+
+describe('isAnalysisKindSupported', () => {
+  it('returns true for supported kinds', () => {
+    expect(isAnalysisKindSupported('file_info')).toBe(true);
+    expect(isAnalysisKindSupported('level')).toBe(true);
+    expect(isAnalysisKindSupported('spectrum')).toBe(true);
+  });
+
+  it('returns false for unsupported kinds', () => {
+    expect(isAnalysisKindSupported('loudness')).toBe(false);
+    expect(isAnalysisKindSupported('')).toBe(false);
+    expect(isAnalysisKindSupported('LEVEL')).toBe(false);
+  });
+});
+
+describe('isEventKindSupported', () => {
+  it('returns true for supported kinds', () => {
+    expect(isEventKindSupported('clipping')).toBe(true);
+    expect(isEventKindSupported('silence')).toBe(true);
+    expect(isEventKindSupported('loudest_region')).toBe(true);
+    expect(isEventKindSupported('clicks')).toBe(true);
+  });
+
+  it('returns false for unsupported kinds', () => {
+    expect(isEventKindSupported('noise')).toBe(false);
+    expect(isEventKindSupported('')).toBe(false);
+  });
+});
+
+describe('error message builders', () => {
+  it('buildUnsupportedAnalysisKindError lists all supported kinds', () => {
+    const errorMessage = buildUnsupportedAnalysisKindError('loudness');
+    expect(errorMessage).toContain('loudness');
+    for (const kind of SUPPORTED_ANALYSIS_KINDS) {
+      expect(errorMessage).toContain(kind);
+    }
+  });
+
+  it('buildUnsupportedEventKindError lists all supported kinds', () => {
+    const errorMessage = buildUnsupportedEventKindError('noise');
+    expect(errorMessage).toContain('noise');
+    for (const kind of SUPPORTED_EVENT_KINDS) {
+      expect(errorMessage).toContain(kind);
+    }
+  });
+});
