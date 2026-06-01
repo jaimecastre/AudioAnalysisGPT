@@ -199,6 +199,9 @@ export const SpectrogramPanel = ({
   const [canvasHeight, setCanvasHeight] = useState(DEFAULT_CANVAS_HEIGHT);
   const effectiveFileId = selectedFileId ?? availableFiles[0]?.id ?? null;
   const selectedFile = availableFiles.find((file) => file.id === effectiveFileId);
+  const canvasKey = spectrogramResult
+    ? `${spectrogramResult.parameters.fftSize}-${spectrogramResult.region.startSeconds}-${spectrogramResult.region.endSeconds}`
+    : 'empty';
   const hasRegion = Boolean(activeSelection && activeSelection.endSeconds > activeSelection.startSeconds);
   const regionStartSeconds = activeSelection?.startSeconds;
   const regionEndSeconds = activeSelection?.endSeconds;
@@ -389,6 +392,7 @@ export const SpectrogramPanel = ({
               onMouseLeave={() => setHover(null)}
             >
               <canvas
+                key={canvasKey}
                 ref={canvasRef}
                 className={styles.spectrogramCanvas}
                 style={{ height: canvasHeight }}

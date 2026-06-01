@@ -24,9 +24,9 @@ const formatLinear = (value: number | null, unit: string): string => {
   return `${value.toFixed(4)} ${unit}`;
 };
 
-function FileInfoSection({ fileInfo }: { fileInfo: FileInfoAnalysis }): JSX.Element {
+function FileInfoSection({ fileInfo, animationDelay = '0ms' }: { fileInfo: FileInfoAnalysis; animationDelay?: string }): JSX.Element {
   return (
-    <div className={styles.section}>
+    <div className={styles.section} style={{ animationDelay }}>
       <div className={styles.sectionLabel}>FILE INFO</div>
       <div className={styles.metricGrid}>
         <MetricRow label="Container" value={fileInfo.containerFormat} />
@@ -44,7 +44,7 @@ function FileInfoSection({ fileInfo }: { fileInfo: FileInfoAnalysis }): JSX.Elem
 
 const CREST_FACTOR_DB_MAX = 40;
 
-function ChannelLevelSection({ channel }: { channel: ChannelLevelAnalysis }): JSX.Element {
+function ChannelLevelSection({ channel, animationDelay = '0ms' }: { channel: ChannelLevelAnalysis; animationDelay?: string }): JSX.Element {
   const peakBarPercent = Math.abs(channel.peak) * 100;
   const rmsBarPercent = channel.rms * 100;
   const crestFactorBarPercent = channel.crestFactorDb !== null
@@ -53,7 +53,7 @@ function ChannelLevelSection({ channel }: { channel: ChannelLevelAnalysis }): JS
   const dcOffsetBarPercent = Math.abs(channel.dcOffset) * 100;
 
   return (
-    <div className={styles.section}>
+    <div className={styles.section} style={{ animationDelay }}>
       <div className={styles.sectionLabel}>
         {channel.channelName.toUpperCase()}
         <span className={styles.unitTag}>{channel.unit}</span>
@@ -134,13 +134,20 @@ export const AnalysisInspector = ({
         )}
 
         {status === 'complete' && result && (
-          <Stack gap={0}>
-            <FileInfoSection fileInfo={result.fileInfo} />
-            {result.level.channels.map((channel) => (
-              <ChannelLevelSection key={channel.channelId} channel={channel} />
+          <Stack key={result.analyzedAt} gap={0}>
+            <FileInfoSection fileInfo={result.fileInfo} animationDelay="0ms" />
+            {result.level.channels.map((channel, index) => (
+              <ChannelLevelSection
+                key={channel.channelId}
+                channel={channel}
+                animationDelay={`${(index + 1) * 60}ms`}
+              />
             ))}
             {result.level.combined && (
-              <ChannelLevelSection channel={result.level.combined} />
+              <ChannelLevelSection
+                channel={result.level.combined}
+                animationDelay={`${(result.level.channels.length + 1) * 60}ms`}
+              />
             )}
             <div className={styles.timestamp}>
               <Text size="xs" c="dimmed">
