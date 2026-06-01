@@ -636,6 +636,48 @@ Note: The current backend is C# (.NET 8, FastEndpoints). ML inference models in 
 
 ---
 
+### v3 — CPB filters, 1/3 octave analysis, and sound quality metrics
+
+**What:**
+
+**CPB (Constant Percentage Bandwidth) analysis** — the industry-standard way to look at spectrum in acoustic engineering, NVH, and product sound design:
+- 1/3 octave band analysis: 31 ISO 266 standard bands from 20 Hz to 20 kHz, IEC 61260-1 compliant
+- 1/1 octave analysis: 10 bands, same standard
+- Output: RMS energy in dBFS (or dB SPL if a calibration factor is provided) per band
+- Difference from the current FFT spectrum: CPB uses logarithmically spaced, perceptually scaled bands that match how the human ear processes frequency. The current FFT gives raw linear-spaced bins — useful for finding exact frequencies, not for acoustic measurement reporting.
+- Implementation: a bank of IIR Butterworth bandpass filters in C#, one per ISO centre frequency. Alternatively: FFT energy summed per ISO band (faster, accurate enough for most uses). Standard: IEC 61260-1:2014 / ANSI S1.11.
+- Fits as new `analyze()` kinds: `cpb_third_octave`, `cpb_octave` — no new agent tools needed.
+
+**Psychoacoustic / sound quality metrics** — quantify how sound is *perceived*, not just what's physically present:
+
+| Metric | Standard | Unit | What it tells you |
+|---|---|---|---|
+| Loudness | ISO 532-1 (Zwicker) / ISO 532-2 (Moore-Glasberg) | Sone / Phon | Perceived loudness, accounting for masking and equal-loudness contours |
+| Sharpness | DIN 45692 | Acum | High-frequency harshness — "grating" or "cutting" character |
+| Roughness | Aures model | Asper | Fast AM modulation (~15–300 Hz) — "growling" or "harsh" character |
+| Fluctuation strength | Fastl & Zwicker | Vacil | Slow AM modulation (~0.5–20 Hz) — tremolo, warble |
+| Tonality | ECMA-418-2 | — | Presence of tonal components (whines, hums) vs broadband noise |
+| Speech Transmission Index | IEC 60268-16 | STI (0–1) | How well speech is intelligible in a given acoustic environment |
+
+**Who needs these:**
+- Automotive / product NVH engineers: "does this fan sound cheap?"
+- HVAC / building acoustics: noise assessment, room acoustic quality
+- Machine monitoring (extends v2): not just "is something different" but "does it sound rough / tonal?"
+- Podcast / dialogue: STI for room intelligibility measurement
+- Sound designers: designing product sounds with intentional perceptual character
+
+**Implementation path:**
+- CPB: pure C# IIR filter bank, self-contained, ~1 week
+- Sound quality metrics (Zwicker loudness etc.): complex DSP — recommended to implement via **Python sidecar** using `mosqito` (open source, MIT licence) or `python-acoustics`. `mosqito` implements Zwicker loudness, sharpness, roughness, fluctuation strength, and tonality to ISO/DIN standards.
+- New `analyze()` kinds: `loudness_zwicker`, `sharpness`, `roughness`, `tonality`
+- New card types in `AgentWorkspacePanel`: CPB bar chart (31 bars, log x-axis), sound quality metrics summary card
+
+**Profiles that benefit most:** music mix, machine monitoring, film dialogue, product sound design (new profile)
+
+**Effort:** CPB alone ~1 week backend + 2 days frontend. Full psychoacoustic suite ~2–3 weeks (Python sidecar dependency).
+
+---
+
 ### Advanced — BirdNET, health audio, live capture
 
 **What:**

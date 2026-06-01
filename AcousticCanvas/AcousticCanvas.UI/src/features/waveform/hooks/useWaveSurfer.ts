@@ -59,6 +59,14 @@ export const useWaveSurfer = ({
   const appliedHeightRef = useRef<number | null>(null);
   const [isReady, setIsReady] = useState(false);
 
+  const onReadyRef = useRef(onReady);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  const onFinishRef = useRef(onFinish);
+
+  useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
+  useEffect(() => { onTimeUpdateRef.current = onTimeUpdate; }, [onTimeUpdate]);
+  useEffect(() => { onFinishRef.current = onFinish; }, [onFinish]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container || !audioUrl || !waveformData) {
@@ -78,15 +86,15 @@ export const useWaveSurfer = ({
 
     wavesurfer.on('ready', () => {
       setIsReady(true);
-      onReady?.(waveformData.durationSeconds);
+      onReadyRef.current?.(waveformData.durationSeconds);
     });
 
     wavesurfer.on('timeupdate', (time: number) => {
-      onTimeUpdate?.(time);
+      onTimeUpdateRef.current?.(time);
     });
 
     wavesurfer.on('finish', () => {
-      onFinish?.();
+      onFinishRef.current?.();
     });
 
     return () => {
@@ -96,7 +104,7 @@ export const useWaveSurfer = ({
       setIsReady(false);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [containerRef, audioUrl, waveformData, onReady, onTimeUpdate, onFinish]);
+  }, [containerRef, audioUrl, waveformData]);
 
   useEffect(() => {
     const wavesurfer = wavesurferRef.current;
@@ -125,6 +133,7 @@ export const useWaveSurfer = ({
         }
       },
       clearSelection: () => {},
+      setSelection: () => {},
     };
 
     return () => {

@@ -22,6 +22,7 @@ export interface WaveSurferDisplayRef {
   pause: () => void;
   seek: (timeSeconds: number) => void;
   clearSelection: () => void;
+  setSelection: (startSeconds: number, endSeconds: number) => void;
 }
 
 interface WaveSurferDisplayProps {
@@ -30,6 +31,7 @@ interface WaveSurferDisplayProps {
   onReady?: (duration: number) => void;
   onTimeUpdate?: (currentTime: number) => void;
   onFinish?: () => void;
+  onUserSelectionChange?: (startSeconds: number, endSeconds: number) => void;
   displayRef?: React.MutableRefObject<WaveSurferDisplayRef | null>;
 }
 
@@ -127,6 +129,7 @@ export const WaveSurferDisplay = ({
   onReady,
   onTimeUpdate,
   onFinish,
+  onUserSelectionChange,
   displayRef,
 }: WaveSurferDisplayProps): JSX.Element => {
   const waveContainerRef = useRef<HTMLDivElement>(null);
@@ -166,7 +169,7 @@ export const WaveSurferDisplay = ({
     onFinish,
   });
 
-  const { clearSelection } = useRegions({ wavesurferRef, isReady });
+  const { clearSelection, setSelectionInWaveSurfer } = useRegions({ wavesurferRef, isReady, onUserSelectionChange });
 
   // Track first interaction to fade the hint
   // Re-attach when container changes (view switches recreate WaveSurfer)
@@ -197,11 +200,12 @@ export const WaveSurferDisplay = ({
     drawFsYAxis(canvas, containerHeight, waveformData.globalMaxFs, waveformData.globalMinFs);
   }, [containerHeight, waveformData]);
 
-  // Update displayRef with clearSelection when regions are ready
+  // Update displayRef with imperative region methods when regions are ready
   useEffect(() => {
     if (!displayRef?.current) return;
     displayRef.current.clearSelection = clearSelection;
-  }, [displayRef, clearSelection]);
+    displayRef.current.setSelection = setSelectionInWaveSurfer;
+  }, [displayRef, clearSelection, setSelectionInWaveSurfer]);
 
   useEffect(() => {
     redrawAxis();

@@ -65,14 +65,16 @@ function buildRegionLabelElement(startSeconds: number, endSeconds: number): HTML
 interface UseRegionsOptions {
   wavesurferRef: React.MutableRefObject<WaveSurfer | null>;
   isReady: boolean;
+  onUserSelectionChange?: (startSeconds: number, endSeconds: number) => void;
 }
 
 interface UseRegionsReturn {
   regionsRef: React.MutableRefObject<ReturnType<typeof RegionsPlugin.create> | null>;
   clearSelection: () => void;
+  setSelectionInWaveSurfer: (startSeconds: number, endSeconds: number) => void;
 }
 
-export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRegionsReturn => {
+export const useRegions = ({ wavesurferRef, isReady, onUserSelectionChange }: UseRegionsOptions): UseRegionsReturn => {
   const dispatch = useAppDispatch();
   const activeSelection = useAppSelector(activeSelectionSelector);
   const loopEnabled = useAppSelector(loopEnabledSelector);
@@ -82,6 +84,7 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
   // Track refs to avoid stale closures in event callbacks
   const activeSelectionRef = useRef(activeSelection);
   const loopEnabledRef = useRef(loopEnabled);
+  const onUserSelectionChangeRef = useRef(onUserSelectionChange);
 
   useEffect(() => {
     activeSelectionRef.current = activeSelection;
@@ -90,6 +93,10 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
   useEffect(() => {
     loopEnabledRef.current = loopEnabled;
   }, [loopEnabled]);
+
+  useEffect(() => {
+    onUserSelectionChangeRef.current = onUserSelectionChange;
+  }, [onUserSelectionChange]);
 
   // Get current selection from store for restoration
   const getCurrentSelection = useCallback(() => {
@@ -107,22 +114,30 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
     regionsRef.current = regions;
     wavesurfer.registerPlugin(regions);
 
-    // Restore existing selection from Redux state (persists across tab switches)
-    const currentSelection = getCurrentSelection();
-    if (currentSelection && currentSelection.endSeconds > currentSelection.startSeconds) {
-      regions.addRegion({
-        start: currentSelection.startSeconds,
-        end: currentSelection.endSeconds,
-        color: REGION_COLOR,
-        drag: true,
-        resize: true,
-        content: buildRegionLabelElement(currentSelection.startSeconds, currentSelection.endSeconds),
-      });
-    }
-
     const disableDragSelection = regions.enableDragSelection({
       color: REGION_COLOR,
     });
+
+    let isCancelled = false;
+    const currentSelection = getCurrentSelection();
+    if (currentSelection && currentSelection.endSeconds > currentSelection.startSeconds) {
+      requestAnimationFrame(() => {
+        if (isCancelled) return;
+        if (!wavesurferRef.current) return;
+        try {
+          regions.addRegion({
+            start: currentSelection.startSeconds,
+            end: currentSelection.endSeconds,
+            color: REGION_COLOR,
+            drag: true,
+            resize: true,
+            content: buildRegionLabelElement(currentSelection.startSeconds, currentSelection.endSeconds),
+          });
+        } catch {
+          // WaveSurfer was destroyed — safe to ignore
+        }
+      });
+    }
 
     // When user finishes drawing a new region: remove all previous, store the new one
     const unsubscribeRegionCreated = regions.on('region-created', (region) => {
@@ -135,6 +150,7 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
 
       region.setOptions({ content: buildRegionLabelElement(region.start, region.end) });
 
+      onUserSelectionChangeRef.current?.(region.start, region.end);
       dispatch(setActiveSelection({
         id: region.id,
         startSeconds: region.start,
@@ -145,6 +161,7 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
     // When user drags or resizes an existing region: sync updated times to state
     const unsubscribeRegionUpdated = regions.on('region-updated', (region) => {
       region.setOptions({ content: buildRegionLabelElement(region.start, region.end) });
+      onUserSelectionChangeRef.current?.(region.start, region.end);
       dispatch(updateActiveSelection({
         startSeconds: region.start,
         endSeconds: region.end,
@@ -167,13 +184,34 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
     });
 
     return () => {
+      isCancelled = true;
       disableDragSelection();
       unsubscribeRegionCreated();
       unsubscribeRegionUpdated();
       unsubscribeTimeUpdate();
       regionsRef.current = null;
     };
-  }, [wavesurferRef, isReady, dispatch, getCurrentSelection]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady, dispatch, getCurrentSelection]);
+
+  const setSelectionInWaveSurfer = useCallback((startSeconds: number, endSeconds: number): void => {
+    const regions = regionsRef.current;
+    const wavesurfer = wavesurferRef.current;
+    if (!regions || !wavesurfer) return;
+    try {
+      regions.clearRegions();
+      regions.addRegion({
+        start: startSeconds,
+        end: endSeconds,
+        color: REGION_COLOR,
+        drag: true,
+        resize: true,
+        content: buildRegionLabelElement(startSeconds, endSeconds),
+      });
+    } catch {
+      // WaveSurfer was destroyed — safe to ignore
+    }
+  }, [wavesurferRef]);
 
   const clearSelection = (): void => {
     const regions = regionsRef.current;
@@ -183,5 +221,5 @@ export const useRegions = ({ wavesurferRef, isReady }: UseRegionsOptions): UseRe
     dispatch(clearActiveSelection());
   };
 
-  return { regionsRef, clearSelection };
+  return { regionsRef, clearSelection, setSelectionInWaveSurfer };
 };

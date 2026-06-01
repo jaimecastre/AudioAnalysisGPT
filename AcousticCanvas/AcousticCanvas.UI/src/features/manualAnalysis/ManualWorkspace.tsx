@@ -1,5 +1,5 @@
 import type { JSX, ChangeEvent } from 'react';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { AudioFileDropzone } from '../audioUpload/AudioFileDropzone';
 import { setActiveView } from '../navigation/navigationSlice';
 import { useAudioUpload } from '../audioUpload/useAudioUpload';
@@ -109,6 +109,33 @@ export const ManualWorkspace = (): JSX.Element => {
     waveSurferRef.current?.clearSelection();
   };
 
+  // Tracks the last selection that WaveSurfer itself reported (from user drag/resize).
+  // Updated via handleWaveSurferUserSelectionChange whenever the user interacts with the waveform.
+  // Used in the sync effect below to skip re-pushing WaveSurfer's own changes back into it.
+  const lastWaveSurferSelectionRef = useRef<{ startSeconds: number; endSeconds: number } | null>(null);
+
+  const handleWaveSurferUserSelectionChange = (startSeconds: number, endSeconds: number): void => {
+    lastWaveSurferSelectionRef.current = { startSeconds, endSeconds };
+  };
+
+  useEffect(() => {
+    if (!activeSelection || activeSelection.endSeconds <= activeSelection.startSeconds) {
+      return;
+    }
+
+    const lastFromWaveSurfer = lastWaveSurferSelectionRef.current;
+    const alreadyMatchesWaveSurfer = lastFromWaveSurfer !== null
+      && Math.abs(lastFromWaveSurfer.startSeconds - activeSelection.startSeconds) < 0.001
+      && Math.abs(lastFromWaveSurfer.endSeconds - activeSelection.endSeconds) < 0.001;
+
+    if (alreadyMatchesWaveSurfer) return;
+
+    waveSurferRef.current?.setSelection(activeSelection.startSeconds, activeSelection.endSeconds);
+    lastWaveSurferSelectionRef.current = { startSeconds: activeSelection.startSeconds, endSeconds: activeSelection.endSeconds };
+  // waveSurferRef is a stable ref — safe to omit from deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSelection]);
+
   const handleToggleAgentPanel = (): void => {
     setIsAgentPanelOpen((previous) => !previous);
   };
@@ -207,6 +234,7 @@ export const ManualWorkspace = (): JSX.Element => {
                           onReady={handleWaveSurferReady}
                           onTimeUpdate={handleWaveSurferTimeUpdate}
                           onFinish={handleWaveSurferFinish}
+                          onUserSelectionChange={handleWaveSurferUserSelectionChange}
                           displayRef={waveSurferRef}
                         />
                       </div>
