@@ -1,0 +1,114 @@
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.fileListPanel {
+  padding: 16px;
+  background-color: var(--bg-surface);
+  overflow-y: auto;
+  flex-shrink: 0;
+  min-width: 140px;
+  max-width: 400px;
+}
+
+.addFileRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  transition: border-color 0.15s ease, color 0.15s ease;
+  background: none;
+  width: 100%;
+  text-align: left;
+
+  &:hover {
+    border-color: rgba(0, 184, 169, 0.5);
+    color: var(--text-secondary);
+  }
+}
+
+.fileTreeNode {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: rgba(0, 184, 169, 0.4);
+  }
+}
+
+.fileTreeNodeActive {
+  border-color: #00b8a9;
+  border-left-width: 3px;
+}
+
+.fileTreeRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  cursor: pointer;
+  background-color: var(--bg-elevated);
+  user-select: none;
+
+  &:hover {
+    background-color: var(--bg-overlay);
+  }
+}
+
+.fileTreeChevron {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fileTreeFileIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fileTreeFileName {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileTreeChildren {
+  border-top: 1px solid var(--border);
+}
+
+.fileTreeChannelRow {
+  display: flex;
+  align-items: center;
+  padding: 5px 8px 5px 28px;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.fileTreeChannelLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.spinIcon {
+  animation: spin 1s linear infinite;
+}

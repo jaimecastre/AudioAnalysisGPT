@@ -1,0 +1,200 @@
+import type { JSX } from 'react';
+import { useState } from 'react';
+import { Text, Group, ActionIcon, Tooltip } from '@mantine/core';
+import {
+  IconFileMusic,
+  IconWaveSine,
+  IconChartLine,
+  IconTrash,
+  IconPlus,
+  IconChevronDown,
+  IconChevronRight,
+  IconGitCompare,
+  IconLoader2,
+  IconBug,
+} from '@tabler/icons-react';
+import type { AudioFile } from '../../store/projectState';
+import styles from './FileListPanel.module.scss';
+
+interface FileListPanelProps {
+  files: AudioFile[];
+  selectedSignalId: string | null;
+  onSelectFile: (fileId: string) => void;
+  onRemoveFile: (fileId: string) => void;
+  onAddFileClick: () => void;
+  onAddSpectrogram: () => void;
+  onAddSpectrum: () => void;
+  onRunCompare: () => void;
+  onOpenFindings: () => void;
+  hasSpectrogramPanel: boolean;
+  hasSpectrumPanel: boolean;
+  hasComparisonPanel: boolean;
+  isCompareLoading: boolean;
+  isFindingsPanelOpen: boolean;
+  width: number;
+}
+
+export function FileListPanel({
+  files,
+  selectedSignalId,
+  onSelectFile,
+  onRemoveFile,
+  onAddFileClick,
+  onAddSpectrogram,
+  onAddSpectrum,
+  onRunCompare,
+  onOpenFindings,
+  hasSpectrogramPanel,
+  hasSpectrumPanel,
+  hasComparisonPanel,
+  isCompareLoading,
+  isFindingsPanelOpen,
+  width,
+}: FileListPanelProps): JSX.Element {
+  const canCompare = files.length >= 2;
+  const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(new Set());
+
+  function handleToggleExpanded(fileId: string): void {
+    setExpandedFileIds((previousSet) => {
+      const nextSet = new Set(previousSet);
+      if (nextSet.has(fileId)) {
+        nextSet.delete(fileId);
+      } else {
+        nextSet.add(fileId);
+      }
+      return nextSet;
+    });
+  }
+
+  return (
+    <div className={styles.fileListPanel} style={{ width }}>
+      <Text fw={600} size="sm" mb="md" c="dimmed">FILES</Text>
+      {files.map((file) => {
+        const isActive = file.id === selectedSignalId;
+        const isExpanded = expandedFileIds.has(file.id);
+        return (
+          <div
+            key={file.id}
+            className={`${styles.fileTreeNode} ${isActive ? styles.fileTreeNodeActive : ''}`}
+            onClick={() => onSelectFile(file.id)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectFile(file.id); }}
+          >
+            <div className={styles.fileTreeRow}>
+              <span
+                className={styles.fileTreeChevron}
+                onClick={(e) => { e.stopPropagation(); handleToggleExpanded(file.id); }}
+                role="button"
+                tabIndex={-1}
+                aria-label={isExpanded ? 'Collapse channels' : 'Expand channels'}
+              >
+                {isExpanded ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}
+              </span>
+              <IconFileMusic size={16} className={styles.fileTreeFileIcon} />
+              <span className={styles.fileTreeFileName} title={file.name}>
+                {file.name}
+              </span>
+              <Tooltip label="Remove file" withArrow position="right">
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  size="xs"
+                  onClick={(event) => { event.stopPropagation(); onRemoveFile(file.id); }}
+                  aria-label={`Remove ${file.name}`}
+                >
+                  <IconTrash size={13} />
+                </ActionIcon>
+              </Tooltip>
+            </div>
+            {isExpanded && (
+              <div className={styles.fileTreeChildren}>
+                {Array.from({ length: file.channels }, (_, channelIndex) => (
+                  <div key={channelIndex} className={styles.fileTreeChannelRow}>
+                    <span className={styles.fileTreeChannelLabel}>
+                      Channel {channelIndex + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <button type="button" className={styles.addFileRow} onClick={onAddFileClick}>
+        <IconPlus size={12} />
+        Add file
+      </button>
+
+      <div style={{ marginTop: 24 }}>
+        <Text fw={600} size="sm" mb="sm" c="dimmed">TOOLS</Text>
+        <Group gap="xs">
+          <Tooltip label={hasSpectrogramPanel ? 'Spectrogram panel already open' : 'Add spectrogram'} withArrow position="right">
+            <span>
+              <ActionIcon
+                variant="light"
+                color="teal"
+                size="lg"
+                onClick={onAddSpectrogram}
+                disabled={hasSpectrogramPanel}
+                aria-label="Add spectrogram panel"
+              >
+                <IconWaveSine size={18} />
+              </ActionIcon>
+            </span>
+          </Tooltip>
+          <Tooltip label={hasSpectrumPanel ? 'Spectrum panel already open' : 'Add spectrum'} withArrow position="right">
+            <span>
+              <ActionIcon
+                variant="light"
+                color="teal"
+                size="lg"
+                onClick={onAddSpectrum}
+                disabled={hasSpectrumPanel}
+                aria-label="Add spectrum panel"
+              >
+                <IconChartLine size={18} />
+              </ActionIcon>
+            </span>
+          </Tooltip>
+          <Tooltip
+            label={!canCompare ? 'Load at least 2 files to compare' : hasComparisonPanel ? 'Comparison already open' : 'Compare all loaded files'}
+            withArrow
+            position="right"
+          >
+            <span>
+              <ActionIcon
+                variant="light"
+                color="blue"
+                size="lg"
+                onClick={onRunCompare}
+                disabled={!canCompare || hasComparisonPanel || isCompareLoading}
+                aria-label="Run A/B comparison"
+              >
+                {isCompareLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconGitCompare size={18} />}
+              </ActionIcon>
+            </span>
+          </Tooltip>
+          <Tooltip
+            label={isFindingsPanelOpen ? 'Findings panel already open' : 'Analyse findings'}
+            withArrow
+            position="right"
+          >
+            <span>
+              <ActionIcon
+                variant="light"
+                color="orange"
+                size="lg"
+                onClick={onOpenFindings}
+                disabled={isFindingsPanelOpen}
+                aria-label="Open findings panel"
+              >
+                <IconBug size={18} />
+              </ActionIcon>
+            </span>
+          </Tooltip>
+        </Group>
+      </div>
+    </div>
+  );
+}

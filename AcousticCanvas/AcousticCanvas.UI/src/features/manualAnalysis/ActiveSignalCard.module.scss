@@ -1,0 +1,111 @@
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.signalCard {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  animation: fadeSlideIn 0.22s ease both;
+
+  &:hover {
+    border-color: rgba(0, 184, 169, 0.4);
+  }
+}
+
+.signalCardSelected {
+  border-color: #00b8a9;
+  border-left-width: 3px;
+  box-shadow: var(--shadow-sm), 0 0 0 1px rgba(0, 184, 169, 0.15);
+
+  &:hover {
+    border-color: #00b8a9;
+  }
+}
+
+.signalCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-elevated);
+  flex-shrink: 0;
+}
+
+.signalCardLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.signalCardBody {
+  flex: 1;
+  overflow: hidden;
+  min-height: 200px;
+}
+
+.comparisonPanel {
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+  max-height: 700px;
+  overflow: hidden;
+}
+
+.comparisonPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background-color: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.comparisonPanelTitle {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.comparisonPanelError {
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #e05252;
+  background: rgba(224, 82, 82, 0.08);
+  border-bottom: 1px solid rgba(224, 82, 82, 0.2);
+}
+
+.regionInfoBar {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background-color: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}

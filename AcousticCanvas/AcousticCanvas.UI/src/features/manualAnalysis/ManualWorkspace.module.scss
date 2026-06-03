@@ -1,14 +1,3 @@
-@keyframes fadeSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .workspace {
   display: flex;
   align-items: center;
@@ -53,67 +42,6 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-// A single signal card — reused for waveform, spectrogram, spectrum, etc.
-.signalCard {
-  display: flex;
-  flex-direction: column;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  animation: fadeSlideIn 0.22s ease both;
-
-  &:hover {
-    border-color: rgba(0, 184, 169, 0.4);
-  }
-}
-
-.signalCardSelected {
-  border-color: #00b8a9;
-  border-left-width: 3px;
-  box-shadow: var(--shadow-sm), 0 0 0 1px rgba(0, 184, 169, 0.15);
-
-  &:hover {
-    border-color: #00b8a9;
-  }
-}
-
-.signalCardHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-  background-color: var(--bg-elevated);
-  flex-shrink: 0;
-}
-
-.signalCardLabel {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-}
-
-.signalCardBody {
-  flex: 1;
-  overflow: hidden;
-  min-height: 200px;
-}
-
-// Waveform-only view: thin strip like in split view
-.signalCardBodyTime {
-  flex: 0 0 60px;
-  height: 60px;
-  overflow: hidden;
 }
 
 // Inactive stacked track — compact, no waveform canvas
@@ -170,43 +98,11 @@
   font-style: italic;
 }
 
-// Add-file row at bottom of file list panel
-.addFileRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-  padding: 6px 8px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  transition: border-color 0.15s ease, color 0.15s ease;
-  background: none;
-  width: 100%;
-  text-align: left;
-
-  &:hover {
-    border-color: rgba(0, 184, 169, 0.5);
-    color: var(--text-secondary);
-  }
-}
-
 // Generic transport bar — docked below all signal cards, spans full width
 .transportBar {
   border-top: 1px solid var(--border);
   background-color: var(--bg-surface);
   flex-shrink: 0;
-}
-
-.fileListPanel {
-  padding: 16px;
-  background-color: var(--bg-surface);
-  overflow-y: auto;
-  flex-shrink: 0;
-  min-width: 140px;
-  max-width: 400px;
 }
 
 .panelDragHandle {
@@ -219,81 +115,6 @@
   &:hover {
     background-color: #00b8a9;
   }
-}
-
-.fileTreeNode {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  margin-bottom: 6px;
-  cursor: pointer;
-  transition: border-color 0.15s ease;
-
-  &:hover {
-    border-color: rgba(0, 184, 169, 0.4);
-  }
-}
-
-.fileTreeNodeActive {
-  border-color: #00b8a9;
-  border-left-width: 3px;
-}
-
-.fileTreeRow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 8px;
-  cursor: pointer;
-  background-color: var(--bg-elevated);
-  user-select: none;
-
-  &:hover {
-    background-color: var(--bg-overlay);
-  }
-}
-
-.fileTreeChevron {
-  display: flex;
-  align-items: center;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.fileTreeFileIcon {
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.fileTreeFileName {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.fileTreeChildren {
-  border-top: 1px solid var(--border);
-}
-
-.fileTreeChannelRow {
-  display: flex;
-  align-items: center;
-  padding: 5px 8px 5px 28px;
-  border-bottom: 1px solid var(--border);
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.fileTreeChannelLabel {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
 }
 
 @keyframes overlayFadeIn {
@@ -451,61 +272,4 @@
   }
 }
 
-// Region info bar below waveform
-.comparisonPanel {
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 520px;
-  max-height: 700px;
-  overflow: hidden;
-}
-
-.comparisonPanelHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 12px;
-  background-color: var(--bg-elevated);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.comparisonPanelTitle {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.comparisonPanelError {
-  padding: 8px 12px;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: #e05252;
-  background: rgba(224, 82, 82, 0.08);
-  border-bottom: 1px solid rgba(224, 82, 82, 0.2);
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.spinIcon {
-  animation: spin 1s linear infinite;
-}
-
-.regionInfoBar {
-  display: flex;
-  align-items: center;
-  padding: 6px 12px;
-  background-color: var(--bg-elevated);
-  border-top: 1px solid var(--border);
-  font-family: var(--font-mono);
-  flex-shrink: 0;
-}
 

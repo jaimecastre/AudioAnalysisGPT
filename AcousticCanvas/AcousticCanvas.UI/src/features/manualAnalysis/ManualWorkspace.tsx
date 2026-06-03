@@ -4,35 +4,20 @@ import { AudioFileDropzone } from '../audioUpload/AudioFileDropzone';
 import { setActiveView } from '../navigation/navigationSlice';
 import { useAudioUpload } from '../audioUpload/useAudioUpload';
 import { TransportUI } from '../playback/TransportUI';
-import { WaveSurferDisplay } from '../waveform/WaveSurferDisplay';
 import { apiClient } from '../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../shared/api/apiEndpoints';
 import { useAppSelector, useAppDispatch } from '../../store/reduxHooks';
-import {
-  projectFilesSelector,
-  selectedSignalIdSelector,
-} from '../project/projectSlice';
-import type { AudioFile } from '../../store/projectState';
-import {
-  setLoopEnabled,
-  loopEnabledSelector,
-  activeSelectionSelector,
-} from '../waveform/waveformSelectionSlice';
-import { Text, Group, ActionIcon, Tooltip } from '@mantine/core';
-import { IconRepeat, IconX, IconFileMusic, IconWaveSine, IconChartLine, IconTrash, IconUpload, IconRobot, IconPlus, IconChevronDown, IconChevronRight, IconGitCompare, IconLoader2, IconBug } from '@tabler/icons-react';
-import { ComparisonView } from '../comparison/ComparisonView';
+import { projectFilesSelector, selectedSignalIdSelector } from '../project/projectSlice';
+import { setLoopEnabled, loopEnabledSelector, activeSelectionSelector } from '../waveform/waveformSelectionSlice';
+import { ActionIcon, Tooltip } from '@mantine/core';
+import { IconRepeat, IconX, IconUpload, IconRobot } from '@tabler/icons-react';
 import { callCompareTool } from '../agent/services/compareToolService';
 import type { CompareResult } from '../agent/agentToolTypes';
 import { RightSidebar } from './RightSidebar';
-import { FindingsPanel } from '../findings/FindingsPanel';
+import { FileListPanel } from './FileListPanel';
+import { ActiveSignalCard } from './ActiveSignalCard';
 import { ChatPanel } from '../agentAnalysis/ChatPanel';
-import {
-  analysisResultSelector,
-  analysisStatusSelector,
-  analysisErrorSelector,
-} from '../analysis/analysisSlice';
-import { SpectrogramPanel } from '../analysis/SpectrogramPanel';
-import { SpectrumPanel } from '../analysis/SpectrumPanel';
+import { analysisResultSelector, analysisStatusSelector, analysisErrorSelector } from '../analysis/analysisSlice';
 import { useManualPlayback } from './useManualPlayback';
 import { useToolPanels } from './useToolPanels';
 import { useResizablePanel } from './useResizablePanel';
@@ -286,97 +271,39 @@ export const ManualWorkspace = (): JSX.Element => {
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectFile(file.id); }}
                         aria-label={`Switch to ${file.name}`}
                       >
-                        <IconFileMusic size={18} className={styles.signalCardInactiveIcon} />
-                        <div className={styles.signalCardInactiveMeta}>
-                          <span className={styles.signalCardInactiveName} title={file.name}>{file.name}</span>
-                          <span className={styles.signalCardInactiveDetail}>
-                            {file.durationSeconds.toFixed(2)}s · {(file.sampleRate / 1000).toFixed(1)} kHz · {file.channels}ch
-                          </span>
-                        </div>
+                        <span className={styles.signalCardInactiveName} title={file.name}>{file.name}</span>
+                        <span className={styles.signalCardInactiveDetail}>
+                          {file.durationSeconds.toFixed(2)}s · {(file.sampleRate / 1000).toFixed(1)} kHz · {file.channels}ch
+                        </span>
                         <span className={styles.signalCardInactiveHint}>click to load</span>
                       </div>
                     );
                   }
 
                   return (
-                    <div key={file.id} className={`${styles.signalCard} ${styles.signalCardSelected}`}>
-                      <div className={styles.signalCardHeader}>
-                        <span className={styles.signalCardLabel}>{file.name}</span>
-                      </div>
-                      <div className={styles.signalCardBody}>
-                        <WaveSurferDisplay
-                          fileId={file.id}
-                          audioUrl={fileAudioUrl}
-                          onReady={handleWaveSurferReady}
-                          onTimeUpdate={handleWaveSurferTimeUpdate}
-                          onFinish={handleWaveSurferFinish}
-                          onUserSelectionChange={handleWaveSurferUserSelectionChange}
-                          displayRef={waveSurferRef}
-                        />
-                      </div>
-                      {manualCompareResult !== null && (
-                        <div className={styles.comparisonPanel}>
-                          <div className={styles.comparisonPanelHeader}>
-                            <span className={styles.comparisonPanelTitle}>A/B Comparison</span>
-                            <ActionIcon
-                              variant="subtle"
-                              color="gray"
-                              size="xs"
-                              onClick={handleCloseComparisonPanel}
-                              aria-label="Close comparison panel"
-                            >
-                              <IconX size={12} />
-                            </ActionIcon>
-                          </div>
-                          {manualCompareStatus === 'error' && (
-                            <div className={styles.comparisonPanelError}>{manualCompareError}</div>
-                          )}
-                          <ComparisonView result={manualCompareResult} />
-                        </div>
-                      )}
-                      {isFindingsPanelOpen && (
-                        <FindingsPanel
-                          fileId={selectedSignalId}
-                          onClose={handleCloseFindingsPanel}
-                        />
-                      )}
-                      {toolPanels.map((panel) => (
-                        panel.type === 'spectrogram' ? (
-                          <SpectrogramPanel
-                            key={panel.id}
-                            panelId={panel.id}
-                            availableFiles={files}
-                            selectedFileId={panel.fileId}
-                            currentTimeSeconds={currentTime}
-                            onSeek={handleSeek}
-                            onFileSelect={handleToolPanelFileSelect}
-                            onClose={handleToolPanelClose}
-                          />
-                        ) : (
-                          <SpectrumPanel
-                            key={panel.id}
-                            panelId={panel.id}
-                            availableFiles={files}
-                            selectedFileId={panel.fileId}
-                            onFileSelect={handleToolPanelFileSelect}
-                            onClose={handleToolPanelClose}
-                          />
-                        )
-                      ))}
-                      {activeSelection && activeSelection.endSeconds > activeSelection.startSeconds && (
-                        <div className={styles.regionInfoBar}>
-                          <Group gap="xs">
-                            <Text size="xs" c="dimmed">Region:</Text>
-                            <Text size="xs" fw={500}>
-                              {activeSelection.startSeconds.toFixed(3)}s – {activeSelection.endSeconds.toFixed(3)}s
-                            </Text>
-                            <Text size="xs" c="dimmed">
-                              ({(activeSelection.endSeconds - activeSelection.startSeconds).toFixed(3)}s)
-                            </Text>
-                          </Group>
-                        </div>
-                      )}
-                    </div>
+                    <ActiveSignalCard
+                      key={file.id}
+                      file={file}
+                      audioUrl={fileAudioUrl}
+                      waveSurferRef={waveSurferRef}
+                      currentTime={currentTime}
+                      activeSelection={activeSelection}
+                      toolPanels={toolPanels}
+                      allFiles={files}
+                      manualCompareResult={manualCompareResult}
+                      manualCompareStatus={manualCompareStatus}
+                      manualCompareError={manualCompareError}
+                      isFindingsPanelOpen={isFindingsPanelOpen}
+                      onWaveSurferReady={handleWaveSurferReady}
+                      onWaveSurferTimeUpdate={handleWaveSurferTimeUpdate}
+                      onWaveSurferFinish={handleWaveSurferFinish}
+                      onWaveSurferUserSelectionChange={handleWaveSurferUserSelectionChange}
+                      onCloseComparisonPanel={handleCloseComparisonPanel}
+                      onCloseFindingsPanel={handleCloseFindingsPanel}
+                      onToolPanelFileSelect={handleToolPanelFileSelect}
+                      onToolPanelClose={handleToolPanelClose}
+                      onSeek={handleSeek}
+                    />
                   );
                 })}
               </div>
@@ -443,189 +370,6 @@ export const ManualWorkspace = (): JSX.Element => {
           </button>
         </>
       )}
-    </div>
-  );
-};
-
-interface FileListPanelProps {
-  files: AudioFile[];
-  selectedSignalId: string | null;
-  onSelectFile: (fileId: string) => void;
-  onRemoveFile: (fileId: string) => void;
-  onAddFileClick: () => void;
-  onAddSpectrogram: () => void;
-  onAddSpectrum: () => void;
-  onRunCompare: () => void;
-  onOpenFindings: () => void;
-  hasSpectrogramPanel: boolean;
-  hasSpectrumPanel: boolean;
-  hasComparisonPanel: boolean;
-  isCompareLoading: boolean;
-  isFindingsPanelOpen: boolean;
-  width: number;
-}
-
-function FileListPanel({
-  files,
-  selectedSignalId,
-  onSelectFile,
-  onRemoveFile,
-  onAddFileClick,
-  onAddSpectrogram,
-  onAddSpectrum,
-  onRunCompare,
-  onOpenFindings,
-  hasSpectrogramPanel,
-  hasSpectrumPanel,
-  hasComparisonPanel,
-  isCompareLoading,
-  isFindingsPanelOpen,
-  width,
-}: FileListPanelProps): JSX.Element {
-  const canCompare = files.length >= 2;
-  const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(new Set());
-
-  function handleToggleExpanded(fileId: string): void {
-    setExpandedFileIds((previousSet) => {
-      const nextSet = new Set(previousSet);
-      if (nextSet.has(fileId)) {
-        nextSet.delete(fileId);
-      } else {
-        nextSet.add(fileId);
-      }
-      return nextSet;
-    });
-  }
-
-  return (
-    <div className={styles.fileListPanel} style={{ width }}>
-      <Text fw={600} size="sm" mb="md" c="dimmed">FILES</Text>
-      {files.map((file) => {
-        const isActive = file.id === selectedSignalId;
-        const isExpanded = expandedFileIds.has(file.id);
-        return (
-          <div
-            key={file.id}
-            className={`${styles.fileTreeNode} ${isActive ? styles.fileTreeNodeActive : ''}`}
-            onClick={() => onSelectFile(file.id)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectFile(file.id); }}
-          >
-            <div className={styles.fileTreeRow}>
-              <span
-                className={styles.fileTreeChevron}
-                onClick={(e) => { e.stopPropagation(); handleToggleExpanded(file.id); }}
-                role="button"
-                tabIndex={-1}
-                aria-label={isExpanded ? 'Collapse channels' : 'Expand channels'}
-              >
-                {isExpanded ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}
-              </span>
-              <IconFileMusic size={16} className={styles.fileTreeFileIcon} />
-              <span className={styles.fileTreeFileName} title={file.name}>
-                {file.name}
-              </span>
-              <Tooltip label="Remove file" withArrow position="right">
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  size="xs"
-                  onClick={(event) => { event.stopPropagation(); onRemoveFile(file.id); }}
-                  aria-label={`Remove ${file.name}`}
-                >
-                  <IconTrash size={13} />
-                </ActionIcon>
-              </Tooltip>
-            </div>
-            {isExpanded && (
-              <div className={styles.fileTreeChildren}>
-                {Array.from({ length: file.channels }, (_, channelIndex) => (
-                  <div key={channelIndex} className={styles.fileTreeChannelRow}>
-                    <span className={styles.fileTreeChannelLabel}>
-                      Channel {channelIndex + 1}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
-      <button type="button" className={styles.addFileRow} onClick={onAddFileClick}>
-        <IconPlus size={12} />
-        Add file
-      </button>
-
-      <div style={{ marginTop: 24 }}>
-        <Text fw={600} size="sm" mb="sm" c="dimmed">TOOLS</Text>
-        <Group gap="xs">
-          <Tooltip label={hasSpectrogramPanel ? 'Spectrogram panel already open' : 'Add spectrogram'} withArrow position="right">
-            <span>
-              <ActionIcon
-                variant="light"
-                color="teal"
-                size="lg"
-                onClick={onAddSpectrogram}
-                disabled={hasSpectrogramPanel}
-                aria-label="Add spectrogram panel"
-              >
-                <IconWaveSine size={18} />
-              </ActionIcon>
-            </span>
-          </Tooltip>
-          <Tooltip label={hasSpectrumPanel ? 'Spectrum panel already open' : 'Add spectrum'} withArrow position="right">
-            <span>
-              <ActionIcon
-                variant="light"
-                color="teal"
-                size="lg"
-                onClick={onAddSpectrum}
-                disabled={hasSpectrumPanel}
-                aria-label="Add spectrum panel"
-              >
-                <IconChartLine size={18} />
-              </ActionIcon>
-            </span>
-          </Tooltip>
-          <Tooltip
-            label={!canCompare ? 'Load at least 2 files to compare' : hasComparisonPanel ? 'Comparison already open' : 'Compare all loaded files'}
-            withArrow
-            position="right"
-          >
-            <span>
-              <ActionIcon
-                variant="light"
-                color="blue"
-                size="lg"
-                onClick={onRunCompare}
-                disabled={!canCompare || hasComparisonPanel || isCompareLoading}
-                aria-label="Run A/B comparison"
-              >
-                {isCompareLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconGitCompare size={18} />}
-              </ActionIcon>
-            </span>
-          </Tooltip>
-          <Tooltip
-            label={isFindingsPanelOpen ? 'Findings panel already open' : 'Analyse findings'}
-            withArrow
-            position="right"
-          >
-            <span>
-              <ActionIcon
-                variant="light"
-                color="orange"
-                size="lg"
-                onClick={onOpenFindings}
-                disabled={isFindingsPanelOpen}
-                aria-label="Open findings panel"
-              >
-                <IconBug size={18} />
-              </ActionIcon>
-            </span>
-          </Tooltip>
-        </Group>
-      </div>
     </div>
   );
 };
