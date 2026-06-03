@@ -285,11 +285,10 @@ export async function runAgentToolLoop(
   dispatch: AppDispatch,
   getState: () => RootState,
 ): Promise<void> {
-  const openAiApiKey = import.meta.env.VITE_OPENAI_API_KEY as string | undefined;
-  const hasApiKey = typeof openAiApiKey === 'string' && openAiApiKey.trim().length > 0;
+  const useBackendAgent = import.meta.env.VITE_DISABLE_AGENT !== 'true';
 
-  if (hasApiKey) {
-    await runLlmToolLoop(userText, dispatch, getState, openAiApiKey!);
+  if (useBackendAgent) {
+    await runLlmToolLoop(userText, dispatch, getState, '');
     return;
   }
 
@@ -297,13 +296,13 @@ export async function runAgentToolLoop(
   dispatch(toolCallStarted({
     id: mockIndicatorId,
     toolName: 'mock-runner',
-    content: 'No API key — running in mock mode',
+    content: 'Agent disabled — running in mock mode',
     timestamp: new Date().toISOString(),
   }));
   dispatch(toolCallFinished({
     id: mockIndicatorId,
     toolStatus: 'error',
-    content: 'No API key — running in mock mode. Add VITE_OPENAI_API_KEY to .env to enable real AI.',
+    content: 'Agent disabled — running in mock mode. Remove VITE_DISABLE_AGENT=true to enable.',
   }));
 
   const intent = classifyIntent(userText);
@@ -323,7 +322,7 @@ export async function runAgentToolLoop(
   } else if (intent === 'set_selection') {
     responseText = await runSetSelection(dispatch, currentState);
   } else {
-    responseText = "I didn't recognise a specific command. Try asking about: file info, level/peak, spectrum, markers, or selection. (No API key configured — running in mock mode.)";
+    responseText = "I didn't recognise a specific command. Try asking about: file info, level/peak, spectrum, markers, or selection. (Agent disabled — running in mock mode.)";
   }
 
   dispatch(assistantMessageReceived({

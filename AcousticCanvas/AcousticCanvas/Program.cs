@@ -1,4 +1,5 @@
 using FastEndpoints;
+using AcousticCanvas.Features.Agent.Services;
 using AcousticCanvas.Features.Analysis.Handlers;
 using AcousticCanvas.Features.Analysis.Importers;
 using AcousticCanvas.Features.Analysis.Services;
@@ -24,6 +25,7 @@ builder.Services.AddSingleton<GetWaveformHandler>();
 builder.Services.AddSingleton<PlaybackStateStore>();
 builder.Services.AddSingleton<PlaybackControlHandler>();
 builder.Services.AddSingleton<GetPlaybackStateHandler>();
+builder.Services.AddSingleton<OpenAiChatService>();
 
 builder.Services.AddCors(options =>
 {

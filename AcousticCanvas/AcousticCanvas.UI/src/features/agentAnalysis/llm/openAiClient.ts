@@ -45,25 +45,30 @@ export type OpenAiChatRequest = {
   max_tokens?: number;
 };
 
-const OPENAI_CHAT_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
-const OPENAI_MODEL = 'gpt-4o-mini';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5146';
+const BACKEND_CHAT_ENDPOINT = `${API_BASE_URL}/api/agent/chat`;
 
 export async function callOpenAiChat(
-  apiKey: string,
+  _apiKey: string,
   request: OpenAiChatRequest,
 ): Promise<OpenAiChatResponse> {
-  const response = await fetch(OPENAI_CHAT_ENDPOINT, {
+  const response = await fetch(BACKEND_CHAT_ENDPOINT, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ ...request, model: OPENAI_MODEL }),
+    body: JSON.stringify({
+      messages: request.messages,
+      tools: request.tools,
+      tool_choice: request.tool_choice ?? 'auto',
+      temperature: request.temperature,
+      max_tokens: request.max_tokens,
+    }),
   });
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`OpenAI API error ${response.status}: ${errorBody}`);
+    throw new Error(`Agent API error ${response.status}: ${errorBody}`);
   }
 
   const data: OpenAiChatResponse = await response.json();
