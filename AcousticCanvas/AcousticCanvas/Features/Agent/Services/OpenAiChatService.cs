@@ -20,7 +20,8 @@ public sealed class OpenAiChatService
     public OpenAiChatService(IConfiguration configuration)
     {
         _apiKey = configuration["OpenAI:ApiKey"]
-            ?? throw new InvalidOperationException("OpenAI:ApiKey is not configured. Set it in appsettings.json or user secrets.");
+            ?? Environment.GetEnvironmentVariable("VITE_OPENAI_API_KEY")
+            ?? throw new InvalidOperationException("OpenAI:ApiKey is not configured. Set it in appsettings.json, user secrets, or VITE_OPENAI_API_KEY environment variable.");
         _model = configuration["OpenAI:Model"] ?? "gpt-4o-mini";
         _systemPrompt = configuration["OpenAI:SystemPrompt"] ?? DefaultSystemPrompt;
 
