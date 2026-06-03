@@ -7,6 +7,7 @@ import spectrumReducer from '../features/analysis/spectrumSlice';
 import spectrogramReducer from '../features/analysis/spectrogramSlice';
 import chatReducer from '../features/agentAnalysis/chatSlice';
 import agentWorkspaceReducer from '../features/agentAnalysis/agentWorkspaceSlice';
+import findingsReducer from '../features/findings/findingsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     spectrogram: spectrogramReducer,
     chat: chatReducer,
     agentWorkspace: agentWorkspaceReducer,
+    findings: findingsReducer,
   },
 });
 

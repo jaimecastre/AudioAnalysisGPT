@@ -19,11 +19,12 @@ import {
   activeSelectionSelector,
 } from '../waveform/waveformSelectionSlice';
 import { Text, Group, ActionIcon, Tooltip } from '@mantine/core';
-import { IconRepeat, IconX, IconFileMusic, IconWaveSine, IconChartLine, IconTrash, IconUpload, IconRobot, IconPlus, IconChevronDown, IconChevronRight, IconGitCompare, IconLoader2 } from '@tabler/icons-react';
+import { IconRepeat, IconX, IconFileMusic, IconWaveSine, IconChartLine, IconTrash, IconUpload, IconRobot, IconPlus, IconChevronDown, IconChevronRight, IconGitCompare, IconLoader2, IconBug } from '@tabler/icons-react';
 import { ComparisonView } from '../comparison/ComparisonView';
 import { callCompareTool } from '../agent/services/compareToolService';
 import type { CompareResult } from '../agent/agentToolTypes';
 import { RightSidebar } from './RightSidebar';
+import { FindingsPanel } from '../findings/FindingsPanel';
 import { ChatPanel } from '../agentAnalysis/ChatPanel';
 import {
   analysisResultSelector,
@@ -80,6 +81,7 @@ export const ManualWorkspace = (): JSX.Element => {
   const [manualCompareResult, setManualCompareResult] = useState<CompareResult | null>(null);
   const [manualCompareStatus, setManualCompareStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [manualCompareError, setManualCompareError] = useState<string | null>(null);
+  const [isFindingsPanelOpen, setIsFindingsPanelOpen] = useState(false);
 
   const handleFilesSelected = async (files: File[]): Promise<void> => {
     const results = await uploadFiles(files);
@@ -200,6 +202,14 @@ export const ManualWorkspace = (): JSX.Element => {
     setManualCompareError(null);
   };
 
+  const handleOpenFindingsPanel = (): void => {
+    setIsFindingsPanelOpen(true);
+  };
+
+  const handleCloseFindingsPanel = (): void => {
+    setIsFindingsPanelOpen(false);
+  };
+
   return (
     <div className={styles.workspaceWithFileList}>
       {files.length === 0 && (
@@ -222,6 +232,8 @@ export const ManualWorkspace = (): JSX.Element => {
             hasComparisonPanel={manualCompareResult !== null}
             isCompareLoading={manualCompareStatus === 'loading'}
             onRunCompare={handleRunManualCompare}
+            isFindingsPanelOpen={isFindingsPanelOpen}
+            onOpenFindings={handleOpenFindingsPanel}
             width={leftPanelWidth}
           />
           <div
@@ -321,6 +333,12 @@ export const ManualWorkspace = (): JSX.Element => {
                           )}
                           <ComparisonView result={manualCompareResult} />
                         </div>
+                      )}
+                      {isFindingsPanelOpen && (
+                        <FindingsPanel
+                          fileId={selectedSignalId}
+                          onClose={handleCloseFindingsPanel}
+                        />
                       )}
                       {toolPanels.map((panel) => (
                         panel.type === 'spectrogram' ? (
@@ -438,10 +456,12 @@ interface FileListPanelProps {
   onAddSpectrogram: () => void;
   onAddSpectrum: () => void;
   onRunCompare: () => void;
+  onOpenFindings: () => void;
   hasSpectrogramPanel: boolean;
   hasSpectrumPanel: boolean;
   hasComparisonPanel: boolean;
   isCompareLoading: boolean;
+  isFindingsPanelOpen: boolean;
   width: number;
 }
 
@@ -454,10 +474,12 @@ function FileListPanel({
   onAddSpectrogram,
   onAddSpectrum,
   onRunCompare,
+  onOpenFindings,
   hasSpectrogramPanel,
   hasSpectrumPanel,
   hasComparisonPanel,
   isCompareLoading,
+  isFindingsPanelOpen,
   width,
 }: FileListPanelProps): JSX.Element {
   const canCompare = files.length >= 2;
@@ -581,6 +603,24 @@ function FileListPanel({
                 aria-label="Run A/B comparison"
               >
                 {isCompareLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconGitCompare size={18} />}
+              </ActionIcon>
+            </span>
+          </Tooltip>
+          <Tooltip
+            label={isFindingsPanelOpen ? 'Findings panel already open' : 'Analyse findings'}
+            withArrow
+            position="right"
+          >
+            <span>
+              <ActionIcon
+                variant="light"
+                color="orange"
+                size="lg"
+                onClick={onOpenFindings}
+                disabled={isFindingsPanelOpen}
+                aria-label="Open findings panel"
+              >
+                <IconBug size={18} />
               </ActionIcon>
             </span>
           </Tooltip>

@@ -11,6 +11,7 @@ export const API_ENDPOINTS = {
     RUN_AGENT_ANALYSIS: 'api/analysis/run',
     RUN_COMPARE: 'api/analysis/compare',
     RUN_FIND: 'api/analysis/find',
+    RUN_FINDINGS: 'api/analysis/findings',
   },
 } as const;
 
