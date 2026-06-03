@@ -5,15 +5,133 @@ import { callAnalyzeTool } from '../../agent/services/analyzeToolService';
 import { callCompareTool } from '../../agent/services/compareToolService';
 import { callFindTool } from '../../agent/services/findToolService';
 import { applyWorkspaceAction } from '../../agent/utils/workspaceTool';
-import type { AnalysisKind, WorkspaceAction } from '../../agent/agentToolTypes';
+import type { AnalysisKind, SpectralFocus, WorkspaceAction } from '../../agent/agentToolTypes';
+import { SUPPORTED_ANALYSIS_KINDS, SUPPORTED_EVENT_KINDS } from '../../agent/capabilitiesRegistry';
 import { analysisArtifactAdded, markerArtifactAdded, selectionArtifactAdded, compareArtifactAdded, findArtifactAdded, reportArtifactAdded } from '../agentWorkspaceSlice';
 import type { AgentArtifact } from '../agentWorkspaceSlice';
+
+export type ArtifactReference = {
+  artifactType: AgentArtifact['type'];
+  artifactId: string;
+};
 
 export type ToolExecutionResult = {
   toolCallId: string;
   toolName: string;
   resultJson: string;
+  artifactRefs: ArtifactReference[];
 };
+
+function suggestClosestKind(requested: string, supported: string[]): string | null {
+  const lowerRequested = requested.toLowerCase();
+  const directContains = supported.find((candidate) => candidate.includes(lowerRequested) || lowerRequested.includes(candidate));
+  if (directContains) return directContains;
+
+  const requestedTokens = lowerRequested.split(/[^a-z0-9]+/).filter((token) => token.length > 1);
+  if (requestedTokens.length === 0) return supported[0] ?? null;
+
+  const scored = supported
+    .map((candidate) => {
+      const score = requestedTokens.reduce((sum, token) => sum + (candidate.includes(token) ? 1 : 0), 0);
+      return { candidate, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  return scored[0] && scored[0].score > 0 ? scored[0].candidate : (supported[0] ?? null);
+}
+
+function normalizeAnalysisKindAlias(kind: string): string {
+  const normalized = kind.trim().toLowerCase();
+
+  if (normalized === 'info' || normalized === 'metadata' || normalized === 'format' || normalized === 'file_metadata') {
+    return 'file_info';
+  }
+
+  if (normalized === 'loudness' || normalized === 'volume' || normalized === 'gain' || normalized === 'amplitude') {
+    return 'loudness';
+  }
+
+  if (normalized === 'peak' || normalized === 'peaks' || normalized === 'true_peak' || normalized === 'true-peak') {
+    return 'peaks';
+  }
+
+  if (normalized === 'dynamic_range' || normalized === 'dynamic-range' || normalized === 'crest_factor' || normalized === 'crest-factor') {
+    return 'dynamics';
+  }
+
+  if (normalized === 'fft' || normalized === 'frequency' || normalized === 'spectral' || normalized === 'frequency_content' || normalized === 'spectral_balance') {
+    return 'spectral_balance';
+  }
+
+  if (normalized === 'phase' || normalized === 'stereo' || normalized === 'stereo image' || normalized === 'stereo_image') {
+    return 'stereo_phase';
+  }
+
+  return normalized;
+}
+
+function mapAnalyzeKindToBackend(kind: string): AnalysisKind | null {
+  if (kind === 'file_info' || kind === 'level' || kind === 'spectrum') {
+    return kind;
+  }
+
+  if (kind === 'loudness' || kind === 'peaks' || kind === 'dynamics' || kind === 'stereo_phase' || kind === 'distortion') {
+    return 'level';
+  }
+
+  if (kind === 'spectral_balance' || kind === 'noise' || kind === 'dialogue_clarity') {
+    return 'spectrum';
+  }
+
+  return null;
+}
+
+function normalizeSpectralFocusAlias(focusRaw: string | null): SpectralFocus | null {
+  if (!focusRaw) return null;
+
+  const normalized = focusRaw.trim().toLowerCase();
+  if (!normalized) return null;
+
+  if (normalized === 'muddiness' || normalized === 'muddy') return 'muddy';
+  if (normalized === 'boominess' || normalized === 'boomy') return 'boomy';
+  if (normalized === 'boxiness' || normalized === 'boxy') return 'boxy';
+  if (normalized === 'harshness' || normalized === 'harsh' || normalized === 'piercing') return 'harsh';
+  if (normalized === 'sibilance' || normalized === 'sibilant') return 'sibilant';
+  if (normalized === 'thinness' || normalized === 'thin') return 'thin';
+  if (normalized === 'dullness' || normalized === 'dull') return 'dull';
+
+  return 'general';
+}
+
+function normalizeEventKindAlias(kind: string): string {
+  const normalized = kind.trim().toLowerCase();
+  if (normalized === 'click' || normalized === 'clicks' || normalized === 'click_candidate' || normalized === 'click-candidate') {
+    return 'transient';
+  }
+  if (normalized === 'loudest_region' || normalized === 'loudest-region') {
+    return 'loudest';
+  }
+  return normalized;
+}
+
+function isClickAlias(kind: string): boolean {
+  const normalized = kind.trim().toLowerCase();
+  return normalized === 'click' || normalized === 'clicks' || normalized === 'click_candidate' || normalized === 'click-candidate';
+}
+
+function buildAlternativeSuggestions(requested: string, supported: string[]): string {
+  const closest = suggestClosestKind(requested, supported);
+  const ordered = [
+    ...(closest ? [closest] : []),
+    ...supported.filter((kind) => kind !== closest),
+  ].slice(0, 2);
+
+  if (ordered.length === 0) {
+    return '';
+  }
+
+  return ` Closest available options: ${ordered.join(' or ')}.`;
+}
 
 function stripPathToFileName(value: string): string {
   const lastSlash = Math.max(value.lastIndexOf('/'), value.lastIndexOf('\\'));
@@ -69,8 +187,12 @@ async function executeAnalyze(
   dispatch: AppDispatch,
   parsedArgs: Record<string, unknown>,
   state: RootState,
-): Promise<string> {
-  const kind = parsedArgs['kind'] as AnalysisKind;
+): Promise<{ resultJson: string; artifactRef: ArtifactReference | null }> {
+  const kindRaw = String(parsedArgs['kind'] ?? '');
+  const semanticKind = normalizeAnalysisKindAlias(kindRaw);
+  const backendKind = mapAnalyzeKindToBackend(semanticKind);
+  const focusRaw = typeof parsedArgs['focus'] === 'string' ? parsedArgs['focus'] : null;
+  const normalizedFocus = normalizeSpectralFocusAlias(focusRaw);
   const fileId = parsedArgs['fileId'] as string;
 
   const activeSelection = state.waveformSelection.activeSelection;
@@ -83,26 +205,70 @@ async function executeAnalyze(
   const startSeconds = argsStartSeconds ?? (selectionIsValid ? activeSelection!.startSeconds : null);
   const endSeconds = argsEndSeconds ?? (selectionIsValid ? activeSelection!.endSeconds : null);
 
-  const validKinds: AnalysisKind[] = ['file_info', 'level', 'spectrum'];
-  const isValidKind = validKinds.includes(kind);
-  if (!isValidKind) {
-    return JSON.stringify({ error: `Unknown analysis kind: ${kind}. Supported: file_info, level, spectrum.` });
+  if (!backendKind) {
+    const requested = String(parsedArgs['kind'] ?? '');
+    const suggestion = buildAlternativeSuggestions(requested, SUPPORTED_ANALYSIS_KINDS);
+    return {
+      resultJson: JSON.stringify({
+        error: `Analysis kind "${requested}" is not supported. Supported kinds: ${SUPPORTED_ANALYSIS_KINDS.join(', ')}.${suggestion}`,
+      }),
+      artifactRef: null,
+    };
   }
 
   if (!fileId) {
-    return JSON.stringify({ error: 'fileId is required for analyze().' });
+    return {
+      resultJson: JSON.stringify({ error: 'fileId is required for analyze().' }),
+      artifactRef: null,
+    };
   }
 
-  const result = await callAnalyzeTool({ kind, fileId, startSeconds, endSeconds });
+  const result = await callAnalyzeTool({
+    kind: backendKind,
+    fileId,
+    startSeconds,
+    endSeconds,
+    focus: backendKind === 'spectrum' ? normalizedFocus : null,
+  });
+
+  const normalizedKindForCompare = kindRaw.trim().toLowerCase();
+  const responseResult = {
+    ...result,
+    parameters: {
+      ...(result.parameters ?? {}),
+      requestedKind: kindRaw,
+      semanticKind,
+      resolvedBackendKind: backendKind,
+      ...(backendKind === 'spectrum'
+        ? {
+            requestedFocus: focusRaw,
+            resolvedFocus: normalizedFocus,
+          }
+        : {}),
+      ...(normalizedKindForCompare !== semanticKind
+        ? {
+            aliasResolvedFrom: kindRaw,
+            aliasResolvedTo: semanticKind,
+          }
+        : {}),
+    },
+  };
+  const artifactId = crypto.randomUUID();
 
   dispatch(analysisArtifactAdded({
     type: 'analysis_result',
-    id: crypto.randomUUID(),
+    id: artifactId,
     timestamp: new Date().toISOString(),
-    result,
+    result: responseResult,
   }));
 
-  return JSON.stringify(result);
+  return {
+    resultJson: JSON.stringify(responseResult),
+    artifactRef: {
+      artifactType: 'analysis_result',
+      artifactId,
+    },
+  };
 }
 
 function executeWorkspace(
@@ -235,7 +401,7 @@ function executeReport(
   dispatch: AppDispatch,
   parsedArgs: Record<string, unknown>,
   state: RootState,
-): string {
+): { resultJson: string; artifactRef: ArtifactReference } {
   const artifacts = state.agentWorkspace.artifacts;
   const customTitle = typeof parsedArgs['title'] === 'string' ? parsedArgs['title'] : null;
   const generatedAt = new Date().toLocaleString();
@@ -243,15 +409,22 @@ function executeReport(
 
   const markdownContent = buildReportMarkdown(title, artifacts, generatedAt);
 
+  const artifactId = crypto.randomUUID();
   dispatch(reportArtifactAdded({
     type: 'report',
-    id: crypto.randomUUID(),
+    id: artifactId,
     timestamp: new Date().toISOString(),
     title,
     markdownContent,
   }));
 
-  return JSON.stringify({ success: true, title, characterCount: markdownContent.length });
+  return {
+    resultJson: JSON.stringify({ success: true, title, characterCount: markdownContent.length }),
+    artifactRef: {
+      artifactType: 'report',
+      artifactId,
+    },
+  };
 }
 
 type ParseSuccess = { success: true; value: Record<string, unknown> };
@@ -280,17 +453,23 @@ export async function executeToolCall(
       toolCallId: toolCall.id,
       toolName,
       resultJson: JSON.stringify({ error: 'Failed to parse tool arguments.' }),
+      artifactRefs: [],
     };
   }
   const parsedArgs = parseResult.value;
 
   let resultJson: string;
+  const artifactRefs: ArtifactReference[] = [];
 
   if (toolName === 'getState') {
     resultJson = executeGetState(state);
   } else if (toolName === 'analyze') {
     try {
-      resultJson = await executeAnalyze(dispatch, parsedArgs, state);
+      const analyzeResult = await executeAnalyze(dispatch, parsedArgs, state);
+      resultJson = analyzeResult.resultJson;
+      if (analyzeResult.artifactRef) {
+        artifactRefs.push(analyzeResult.artifactRef);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
       resultJson = JSON.stringify({ error: errorMessage });
@@ -301,12 +480,17 @@ export async function executeToolCall(
       const startSeconds = typeof parsedArgs['startSeconds'] === 'number' ? parsedArgs['startSeconds'] : null;
       const endSeconds = typeof parsedArgs['endSeconds'] === 'number' ? parsedArgs['endSeconds'] : null;
       const compareResult = await callCompareTool({ fileIds, startSeconds, endSeconds });
+      const artifactId = crypto.randomUUID();
       dispatch(compareArtifactAdded({
         type: 'compare_result',
-        id: crypto.randomUUID(),
+        id: artifactId,
         timestamp: new Date().toISOString(),
         result: compareResult,
       }));
+      artifactRefs.push({
+        artifactType: 'compare_result',
+        artifactId,
+      });
       resultJson = JSON.stringify(compareResult);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Compare failed';
@@ -315,17 +499,45 @@ export async function executeToolCall(
   } else if (toolName === 'find') {
     try {
       const fileId = typeof parsedArgs['fileId'] === 'string' ? parsedArgs['fileId'] : '';
-      const kind = typeof parsedArgs['kind'] === 'string' ? parsedArgs['kind'] as 'clipping' | 'silence' | 'loudest' | 'transient' : 'clipping';
-      const startSeconds = typeof parsedArgs['startSeconds'] === 'number' ? parsedArgs['startSeconds'] : null;
-      const endSeconds = typeof parsedArgs['endSeconds'] === 'number' ? parsedArgs['endSeconds'] : null;
-      const findResult = await callFindTool({ fileId, kind, startSeconds, endSeconds });
-      dispatch(findArtifactAdded({
-        type: 'find_result',
-        id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
-        result: findResult,
-      }));
-      resultJson = JSON.stringify(findResult);
+      const kindRaw = typeof parsedArgs['kind'] === 'string' ? parsedArgs['kind'] : 'clipping';
+      const normalizedKind = normalizeEventKindAlias(kindRaw);
+      if (!SUPPORTED_EVENT_KINDS.includes(normalizedKind)) {
+        const suggestion = buildAlternativeSuggestions(normalizedKind, SUPPORTED_EVENT_KINDS);
+        resultJson = JSON.stringify({
+          error: `Event kind "${kindRaw}" is not supported. Supported kinds: ${SUPPORTED_EVENT_KINDS.join(', ')}.${suggestion}`,
+        });
+      } else {
+        const kind = normalizedKind as 'clipping' | 'silence' | 'loudest' | 'transient';
+        const startSeconds = typeof parsedArgs['startSeconds'] === 'number' ? parsedArgs['startSeconds'] : null;
+        const endSeconds = typeof parsedArgs['endSeconds'] === 'number' ? parsedArgs['endSeconds'] : null;
+        const findResult = await callFindTool({ fileId, kind, startSeconds, endSeconds });
+
+        const usedClickAlias = kind === 'transient' && isClickAlias(kindRaw);
+        const responseResult = usedClickAlias
+          ? {
+              ...findResult,
+              kind: 'click_candidate',
+              events: findResult.events.map((event) => ({
+                ...event,
+                description: event.description.replace('Transient onset', 'Click candidate'),
+              })),
+              detectorKind: 'transient',
+            }
+          : findResult;
+
+        const artifactId = crypto.randomUUID();
+        dispatch(findArtifactAdded({
+          type: 'find_result',
+          id: artifactId,
+          timestamp: new Date().toISOString(),
+          result: responseResult,
+        }));
+        artifactRefs.push({
+          artifactType: 'find_result',
+          artifactId,
+        });
+        resultJson = JSON.stringify(responseResult);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Find failed';
       resultJson = JSON.stringify({ error: errorMessage });
@@ -333,7 +545,9 @@ export async function executeToolCall(
   } else if (toolName === 'workspace') {
     resultJson = executeWorkspace(dispatch, parsedArgs);
   } else if (toolName === 'report') {
-    resultJson = executeReport(dispatch, parsedArgs, state);
+    const reportResult = executeReport(dispatch, parsedArgs, state);
+    resultJson = reportResult.resultJson;
+    artifactRefs.push(reportResult.artifactRef);
   } else {
     resultJson = JSON.stringify({ error: `Unknown tool: ${toolName}. Available tools: getState, analyze, compare, find, workspace, report.` });
   }
@@ -342,5 +556,6 @@ export async function executeToolCall(
     toolCallId: toolCall.id,
     toolName,
     resultJson: sanitizeResultForLlm(resultJson),
+    artifactRefs,
   };
 }

@@ -9,6 +9,7 @@ import type { AudioFileResponse } from './audioUploadApi';
 interface UseAudioUploadReturn {
   isUploading: boolean;
   uploadFile: (file: File) => Promise<AudioFileResponse | null>;
+  uploadFiles: (files: File[]) => Promise<AudioFileResponse[]>;
 }
 
 export const useAudioUpload = (): UseAudioUploadReturn => {
@@ -65,8 +66,64 @@ export const useAudioUpload = (): UseAudioUploadReturn => {
     }
   }, [dispatch]);
 
+  const uploadFiles = useCallback(async (files: File[]): Promise<AudioFileResponse[]> => {
+    if (files.length === 1) {
+      const result = await uploadFile(files[0]!);
+      return result ? [result] : [];
+    }
+
+    setIsUploading(true);
+    const results: AudioFileResponse[] = [];
+    let failCount = 0;
+
+    for (const file of files) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const data = await apiClient.requestJson<AudioFileResponse>(
+          API_ENDPOINTS.AUDIO.UPLOAD,
+          { method: HttpMethod.POST, body: formData },
+        );
+
+        dispatch(addAudioFile({
+          id: data.id,
+          name: data.name,
+          durationSeconds: data.durationSeconds,
+          sampleRate: data.sampleRate,
+          channels: data.channels,
+          bitDepth: data.bitDepth,
+          fileSizeBytes: 0,
+        }));
+
+        results.push(data);
+      } catch {
+        failCount++;
+      }
+    }
+
+    setIsUploading(false);
+
+    if (failCount === 0) {
+      notifications.show({
+        title: 'Import complete',
+        message: `${results.length} file${results.length !== 1 ? 's' : ''} imported successfully`,
+        color: 'teal',
+      });
+    } else {
+      notifications.show({
+        title: 'Import finished with errors',
+        message: `${results.length} succeeded, ${failCount} failed`,
+        color: failCount === files.length ? 'red' : 'yellow',
+      });
+    }
+
+    return results;
+  }, [dispatch, uploadFile]);
+
   return {
     isUploading,
     uploadFile,
+    uploadFiles,
   };
 };

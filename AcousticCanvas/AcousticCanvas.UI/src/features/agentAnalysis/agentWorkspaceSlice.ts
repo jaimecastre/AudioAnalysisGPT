@@ -66,10 +66,12 @@ export type AgentArtifact =
 
 interface AgentWorkspaceState {
   artifacts: AgentArtifact[];
+  focusedArtifactId: string | null;
 }
 
 const initialState: AgentWorkspaceState = {
   artifacts: [],
+  focusedArtifactId: null,
 };
 
 const agentWorkspaceSlice = createSlice({
@@ -97,6 +99,12 @@ const agentWorkspaceSlice = createSlice({
     reportArtifactAdded: (state, action: PayloadAction<AgentArtifactReport>) => {
       state.artifacts.push(action.payload);
     },
+    artifactFocused: (state, action: PayloadAction<string>) => {
+      state.focusedArtifactId = action.payload;
+    },
+    artifactFocusCleared: (state) => {
+      state.focusedArtifactId = null;
+    },
     agentWorkspaceCleared: () => initialState,
   },
 });
@@ -109,6 +117,8 @@ export const {
   compareArtifactAdded,
   findArtifactAdded,
   reportArtifactAdded,
+  artifactFocused,
+  artifactFocusCleared,
   agentWorkspaceCleared,
 } = agentWorkspaceSlice.actions;
 
@@ -116,3 +126,6 @@ export default agentWorkspaceSlice.reducer;
 
 export const agentArtifactsSelector = (state: { agentWorkspace: AgentWorkspaceState }): AgentArtifact[] =>
   state.agentWorkspace.artifacts;
+
+export const focusedArtifactIdSelector = (state: { agentWorkspace: AgentWorkspaceState }): string | null =>
+  state.agentWorkspace.focusedArtifactId;

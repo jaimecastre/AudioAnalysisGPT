@@ -1,8 +1,9 @@
 .dropzone {
-  border: 2px dashed var(--border-strong);
+  width: 420px;
+  border: 2px dashed var(--mantine-color-default-border);
   border-radius: var(--mantine-radius-md);
-  transition: border-color 0.2s ease;
-  background-color: var(--bg-surface);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  background-color: var(--mantine-color-body);
 
   &[data-accept] {
     border-color: var(--mantine-color-teal-6);
@@ -13,22 +14,9 @@
     border-color: var(--mantine-color-red-6);
     background-color: var(--mantine-color-red-0);
   }
-}
 
-.icon {
-  width: 52px;
-  height: 52px;
-  color: var(--accent);
-}
-
-.iconAccept {
-  color: var(--mantine-color-teal-6);
-}
-
-.iconReject {
-  color: var(--mantine-color-red-6);
-}
-
-.textContainer {
-  text-align: center;
+  &[data-idle]:hover {
+    border-color: var(--mantine-color-teal-5);
+    background-color: var(--mantine-color-default-hover);
+  }
 }

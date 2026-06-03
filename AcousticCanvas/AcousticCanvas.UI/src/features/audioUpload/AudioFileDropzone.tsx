@@ -1,12 +1,13 @@
 import type { JSX } from 'react';
-import { Card, Group, Text, Badge } from '@mantine/core';
+import { Stack, Text } from '@mantine/core';
 import { Dropzone } from '@mantine/dropzone';
 import { IconUpload, IconFileMusic, IconX } from '@tabler/icons-react';
+import styles from './AudioFileDropzone.module.scss';
 
-export type OnAudioFileUploaded = (file: File) => void;
+export type OnAudioFilesUploaded = (files: File[]) => void;
 
 interface AudioFileDropzoneProps {
-  onFileSelected: OnAudioFileUploaded;
+  onFileSelected: OnAudioFilesUploaded;
   isUploading?: boolean;
 }
 
@@ -22,54 +23,44 @@ export const AudioFileDropzone = ({
   onFileSelected,
   isUploading = false,
 }: AudioFileDropzoneProps): JSX.Element => {
-  const handleDrop = (files: File[]): void => {
-    if (files.length > 0 && files[0] !== null) {
-      onFileSelected(files[0]);
+  const handleDrop = (dropped: File[]): void => {
+    if (dropped.length > 0) {
+      onFileSelected(dropped);
     }
   };
 
   return (
-    <Card shadow="sm" padding="lg" withBorder style={{ maxWidth: 480 }}>
-      <Card.Section>
-        <Dropzone
-          onDrop={handleDrop}
-          onReject={(files) => console.log('rejected files', files)}
-          maxSize={100 * 1024 ** 2}
-          accept={ACCEPTED_AUDIO_TYPES}
-          maxFiles={1}
-          disabled={isUploading}
-        >
-          <Group justify="center" gap="xl" mih={180} style={{ pointerEvents: 'none' }}>
-            <Dropzone.Accept>
-              <IconUpload size={52} color="var(--mantine-color-teal-6)" />
-            </Dropzone.Accept>
-            <Dropzone.Reject>
-              <IconX size={52} color="var(--mantine-color-red-6)" />
-            </Dropzone.Reject>
-            <Dropzone.Idle>
-              <IconFileMusic size={52} color="var(--mantine-color-dimmed)" />
-            </Dropzone.Idle>
+    <Dropzone
+      onDrop={handleDrop}
+      onReject={(files) => console.log('rejected files', files)}
+      maxSize={100 * 1024 ** 2}
+      accept={ACCEPTED_AUDIO_TYPES}
+      disabled={isUploading}
+      className={styles.dropzone}
+    >
+      <Stack align="center" justify="center" gap="md" mih={220} style={{ pointerEvents: 'none' }}>
+        <Dropzone.Accept>
+          <IconUpload size={48} color="var(--mantine-color-teal-6)" />
+        </Dropzone.Accept>
+        <Dropzone.Reject>
+          <IconX size={48} color="var(--mantine-color-red-6)" />
+        </Dropzone.Reject>
+        <Dropzone.Idle>
+          <IconFileMusic size={48} color="var(--mantine-color-dimmed)" />
+        </Dropzone.Idle>
 
-            <div>
-              <Text size="xl" inline>
-                {isUploading ? 'Uploading...' : 'Drop audio file here'}
-              </Text>
-              <Text size="sm" c="dimmed" inline mt={7}>
-                or click to select
-              </Text>
-            </div>
-          </Group>
-        </Dropzone>
-      </Card.Section>
-
-      <Group justify="space-between" mt="md" mb="xs">
-        <Text fw={500}>Import Audio File</Text>
-        <Badge color="teal">100MB max</Badge>
-      </Group>
-
-      <Text size="sm" c="dimmed">
-        Supports: WAV, MP3, FLAC, AIFF, OGG formats. Files are processed locally in your browser.
-      </Text>
-    </Card>
+        <Stack align="center" gap={4}>
+          <Text size="lg" fw={500}>
+            {isUploading ? 'Uploading...' : 'Drop audio files here'}
+          </Text>
+          <Text size="sm" c="dimmed">
+            {isUploading ? 'Please wait' : 'or click to select — multiple files supported'}
+          </Text>
+          <Text size="xs" c="dimmed" mt={4}>
+            WAV · MP3 · FLAC · AIFF · OGG &nbsp;·&nbsp; 100 MB max per file
+          </Text>
+        </Stack>
+      </Stack>
+    </Dropzone>
   );
 };

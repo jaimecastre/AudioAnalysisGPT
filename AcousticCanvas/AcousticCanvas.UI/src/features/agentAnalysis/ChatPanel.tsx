@@ -4,10 +4,11 @@ import {
   IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX,
   IconAlignBoxLeftMiddle, IconPaperclip, IconFileMusic, IconFileText,
 } from '@tabler/icons-react';
-import { useAppSelector } from '../../store/reduxHooks';
+import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
 import { chatMessagesSelector, chatIsThinkingSelector } from './chatSlice';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
 import type { ChatMessage } from './chatSlice';
+import { artifactFocused } from './agentWorkspaceSlice';
 import { ATTACH_ACCEPT } from './chatAttachments';
 import { useChatInput } from './useChatInput';
 import type { MentionCandidate } from './useChatInput';
@@ -37,10 +38,73 @@ function UserMessage({ message }: { message: ChatMessage }): JSX.Element {
   );
 }
 
+type EvidenceToken = {
+  type: 'analysis_result' | 'compare_result' | 'find_result' | 'report' | 'marker_added' | 'selection_set';
+  id: string;
+};
+
+const EVIDENCE_LABELS: Record<EvidenceToken['type'], string> = {
+  analysis_result: 'Analysis result',
+  compare_result: 'Compare result',
+  find_result: 'Find result',
+  report: 'Report',
+  marker_added: 'Marker',
+  selection_set: 'Selection',
+};
+
+function getShortArtifactId(id: string): string {
+  return id.length > 6 ? id.slice(-6) : id;
+}
+
+function parseEvidenceTokens(content: string): { text: string; tokens: EvidenceToken[] } {
+  const evidenceRegex = /\[(analysis_result|compare_result|find_result|report|marker_added|selection_set):([0-9a-fA-F-]{8,})\]/g;
+  const tokens: EvidenceToken[] = [];
+
+  const withoutTokens = content.replace(evidenceRegex, (_, type: EvidenceToken['type'], id: string) => {
+    tokens.push({ type, id });
+    return '';
+  });
+
+  const plainText = withoutTokens
+    .replace(/\n?\s*Evidence:\s*$/gim, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return {
+    text: plainText,
+    tokens,
+  };
+}
+
 function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
+  const dispatch = useAppDispatch();
+  const parsed = parseEvidenceTokens(message.content);
+
+  const handleEvidenceClick = (token: EvidenceToken): void => {
+    dispatch(artifactFocused(token.id));
+  };
+
   return (
     <div className={`${styles.messageWrapper} ${styles.assistant}`}>
-      <div className={styles.messageBubble}>{message.content}</div>
+      <div className={styles.messageBubble}>
+        {parsed.text}
+        {parsed.tokens.length > 0 && (
+          <div className={styles.evidenceRow}>
+            <span className={styles.evidenceLabel}>Evidence:</span>
+            {parsed.tokens.map((token) => (
+              <button
+                type="button"
+                key={`${token.type}:${token.id}`}
+                className={styles.evidenceLink}
+                onClick={() => handleEvidenceClick(token)}
+                title={`Open ${token.type.replace('_', ' ')} artifact`}
+              >
+                {EVIDENCE_LABELS[token.type]} #{getShortArtifactId(token.id)}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <div className={styles.messageMeta}>
         <span className={`${styles.messageRole} ${styles.assistant}`}>Agent</span>
         <span className={styles.messageTime}>{formatTimestamp(message.timestamp)}</span>

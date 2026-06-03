@@ -4,14 +4,17 @@ import { ChatPanel } from './ChatPanel';
 import { AgentWorkspacePanel } from './AgentWorkspacePanel';
 import { useAppSelector } from '../../store/reduxHooks';
 import { projectFilesSelector } from '../project/projectSlice';
+import { IconGripVertical } from '@tabler/icons-react';
+import { useResizableSidebar } from '../../shared/useResizableSidebar';
 import styles from './AgentWorkspace.module.scss';
 
 export const AgentWorkspace = (): JSX.Element => {
   const files = useAppSelector(projectFilesSelector);
   const hasNoFile = files.length === 0;
+  const { handleResizePointerDown, containerRef } = useResizableSidebar({ initialWidth: 320, minWidth: 260, maxWidth: 540 });
 
   return (
-    <div className={styles.workspace}>
+    <div ref={containerRef} className={styles.workspace}>
       <TaskProgressPanel />
       <div className={styles.chatColumn}>
         {hasNoFile && (
@@ -24,7 +27,12 @@ export const AgentWorkspace = (): JSX.Element => {
         )}
         <ChatPanel />
       </div>
-      <AgentWorkspacePanel />
+      <div className={styles.rightPanelColumn}>
+        <div className={styles.rightPanelResizeHandle} onPointerDown={handleResizePointerDown} role="separator" aria-label="Resize workspace panel" title="Drag to resize workspace panel">
+          <IconGripVertical size={12} />
+        </div>
+        <AgentWorkspacePanel />
+      </div>
     </div>
   );
 };

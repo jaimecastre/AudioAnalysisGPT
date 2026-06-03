@@ -136,7 +136,7 @@ describe('getStateTool', () => {
     expect(result.capabilities).toHaveProperty('analysisKinds');
     expect(result.capabilities).toHaveProperty('eventKinds');
     expect(result.capabilities.tools).toHaveLength(6);
-    expect(result.capabilities.analysisKinds).toHaveLength(3);
+    expect(result.capabilities.analysisKinds.length).toBeGreaterThanOrEqual(11);
     expect(result.capabilities.eventKinds).toHaveLength(4);
   });
 

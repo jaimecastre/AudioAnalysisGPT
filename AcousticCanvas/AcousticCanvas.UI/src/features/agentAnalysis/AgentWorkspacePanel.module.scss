@@ -13,6 +13,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
+  min-width: 0;
   min-height: 0;
   overflow: hidden;
   background-color: var(--bg-base);
@@ -98,8 +100,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 184, 169, 0.2) transparent;
 }
 
 .emptyState {
@@ -151,6 +151,18 @@
   border-radius: 3px;
 }
 
+.cachedTag {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  color: #5c7cfa;
+  background-color: rgba(92, 124, 250, 0.14);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
 .cardTimestamp {
   font-size: 0.6rem;
   font-family: var(--font-mono);
@@ -192,6 +204,23 @@
 .metricValueHighlight {
   color: #00b8a9;
   font-weight: 600;
+}
+
+.parameterHeading {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  font-size: 0.62rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.focusedArtifact {
+  border-radius: var(--radius-md);
+  outline: 1px solid rgba(0, 184, 169, 0.45);
+  box-shadow: 0 0 0 2px rgba(0, 184, 169, 0.16);
 }
 
 .cardFooter {

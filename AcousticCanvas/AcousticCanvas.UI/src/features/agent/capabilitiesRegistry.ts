@@ -50,6 +50,71 @@ const ANALYSIS_KINDS: AnalysisKindEntry[] = [
       overlap: 0.5,
     },
   },
+  {
+    kind: 'loudness',
+    description: 'Semantic loudness analysis mode mapped to measured level metrics such as RMS and peak values.',
+    requiresRegion: false,
+    defaultOptions: {
+      backendKind: 'level',
+    },
+  },
+  {
+    kind: 'peaks',
+    description: 'Semantic peak-focused analysis mode mapped to measured level metrics.',
+    requiresRegion: false,
+    defaultOptions: {
+      backendKind: 'level',
+    },
+  },
+  {
+    kind: 'dynamics',
+    description: 'Semantic dynamics mode mapped to crest factor, RMS, and peak analysis.',
+    requiresRegion: false,
+    defaultOptions: {
+      backendKind: 'level',
+    },
+  },
+  {
+    kind: 'spectral_balance',
+    description: 'Semantic spectrum mode for tonal balance issues such as muddy, harsh, or boomy content.',
+    requiresRegion: true,
+    defaultOptions: {
+      backendKind: 'spectrum',
+      focus: 'general',
+    },
+  },
+  {
+    kind: 'noise',
+    description: 'Semantic noise-inspection mode mapped to spectral analysis for frequency-domain evidence.',
+    requiresRegion: true,
+    defaultOptions: {
+      backendKind: 'spectrum',
+    },
+  },
+  {
+    kind: 'stereo_phase',
+    description: 'Semantic stereo/phase inspection mode currently mapped to level-domain indicators.',
+    requiresRegion: false,
+    defaultOptions: {
+      backendKind: 'level',
+    },
+  },
+  {
+    kind: 'distortion',
+    description: 'Semantic distortion mode currently mapped to level-domain clipping/peak indicators.',
+    requiresRegion: false,
+    defaultOptions: {
+      backendKind: 'level',
+    },
+  },
+  {
+    kind: 'dialogue_clarity',
+    description: 'Semantic dialogue-clarity mode mapped to spectral analysis for masking and tonal evidence.',
+    requiresRegion: true,
+    defaultOptions: {
+      backendKind: 'spectrum',
+    },
+  },
 ];
 
 const EVENT_KINDS: EventKindEntry[] = [
@@ -69,17 +134,17 @@ const EVENT_KINDS: EventKindEntry[] = [
     },
   },
   {
-    kind: 'loudest_region',
+    kind: 'loudest',
     description: 'Locates the time window with the highest RMS energy in the file.',
     defaultOptions: {
       windowSeconds: 1.0,
     },
   },
   {
-    kind: 'clicks',
-    description: 'Detects transient click artifacts caused by sudden discontinuities in the waveform.',
+    kind: 'transient',
+    description: 'Detects sudden onsets and transient regions in the waveform.',
     defaultOptions: {
-      sensitivityDb: 20,
+      onsetThresholdDb: 12,
     },
   },
 ];

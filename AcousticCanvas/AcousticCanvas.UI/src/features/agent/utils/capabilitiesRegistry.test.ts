@@ -14,8 +14,8 @@ describe('CAPABILITY_REGISTRY structure', () => {
     expect(CAPABILITY_REGISTRY.tools).toHaveLength(6);
   });
 
-  it('contains 3 analysis kinds', () => {
-    expect(CAPABILITY_REGISTRY.analysisKinds).toHaveLength(3);
+  it('contains expanded analysis kinds including semantic modes', () => {
+    expect(CAPABILITY_REGISTRY.analysisKinds.length).toBeGreaterThanOrEqual(11);
   });
 
   it('contains 4 event kinds', () => {
@@ -57,10 +57,13 @@ describe('isAnalysisKindSupported', () => {
     expect(isAnalysisKindSupported('file_info')).toBe(true);
     expect(isAnalysisKindSupported('level')).toBe(true);
     expect(isAnalysisKindSupported('spectrum')).toBe(true);
+    expect(isAnalysisKindSupported('loudness')).toBe(true);
+    expect(isAnalysisKindSupported('spectral_balance')).toBe(true);
+    expect(isAnalysisKindSupported('dialogue_clarity')).toBe(true);
   });
 
   it('returns false for unsupported kinds', () => {
-    expect(isAnalysisKindSupported('loudness')).toBe(false);
+    expect(isAnalysisKindSupported('transient')).toBe(false);
     expect(isAnalysisKindSupported('')).toBe(false);
     expect(isAnalysisKindSupported('LEVEL')).toBe(false);
   });
@@ -70,8 +73,8 @@ describe('isEventKindSupported', () => {
   it('returns true for supported kinds', () => {
     expect(isEventKindSupported('clipping')).toBe(true);
     expect(isEventKindSupported('silence')).toBe(true);
-    expect(isEventKindSupported('loudest_region')).toBe(true);
-    expect(isEventKindSupported('clicks')).toBe(true);
+    expect(isEventKindSupported('loudest')).toBe(true);
+    expect(isEventKindSupported('transient')).toBe(true);
   });
 
   it('returns false for unsupported kinds', () => {

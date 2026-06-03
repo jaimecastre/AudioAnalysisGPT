@@ -13,3 +13,9 @@ AudioStorage/*.aiff
 # Build output
 bin/
 obj/
+
+# User-specific project settings
+*.csproj.user
+
+# Local dev settings (may contain secrets)
+appsettings.Development.json

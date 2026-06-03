@@ -207,6 +207,40 @@
   }
 }
 
+.evidenceRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(0, 184, 169, 0.2);
+}
+
+.evidenceLabel {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.evidenceLink {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: #00b8a9;
+  background: rgba(0, 184, 169, 0.08);
+  border: 1px solid rgba(0, 184, 169, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: rgba(0, 184, 169, 0.15);
+    border-color: rgba(0, 184, 169, 0.45);
+  }
+}
+
 .messageMeta {
   display: flex;
   align-items: center;

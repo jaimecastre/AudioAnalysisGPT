@@ -48,7 +48,7 @@ export const ManualWorkspace = (): JSX.Element => {
   const analysisStatus = useAppSelector(analysisStatusSelector);
   const analysisError = useAppSelector(analysisErrorSelector);
 
-  const { isUploading, uploadFile } = useAudioUpload();
+  const { isUploading, uploadFile, uploadFiles } = useAudioUpload();
   const { panelWidth: leftPanelWidth, handleDragHandleMouseDown } = useResizablePanel(220);
   const {
     toolPanels,
@@ -81,9 +81,9 @@ export const ManualWorkspace = (): JSX.Element => {
   const [manualCompareStatus, setManualCompareStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [manualCompareError, setManualCompareError] = useState<string | null>(null);
 
-  const handleFileSelected = async (file: File): Promise<void> => {
-    const result = await uploadFile(file);
-    if (result) {
+  const handleFilesSelected = async (files: File[]): Promise<void> => {
+    const results = await uploadFiles(files);
+    if (results.length > 0) {
       dispatch(setActiveView('import'));
     }
   };
@@ -93,10 +93,10 @@ export const ManualWorkspace = (): JSX.Element => {
   };
 
   const handleAddFileInputChange = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
-    const file = event.target.files?.[0];
+    const selected = Array.from(event.target.files ?? []);
     if (event.target) event.target.value = '';
-    if (file) {
-      await uploadFile(file);
+    if (selected.length > 0) {
+      await uploadFiles(selected);
     }
   };
 
@@ -204,7 +204,7 @@ export const ManualWorkspace = (): JSX.Element => {
     <div className={styles.workspaceWithFileList}>
       {files.length === 0 && (
         <div className={styles.workspace}>
-          <AudioFileDropzone onFileSelected={handleFileSelected} isUploading={isUploading} />
+          <AudioFileDropzone onFileSelected={handleFilesSelected} isUploading={isUploading} />
         </div>
       )}
       {files.length > 0 && (
@@ -234,9 +234,10 @@ export const ManualWorkspace = (): JSX.Element => {
             ref={addFileInputRef}
             type="file"
             accept=".wav,.mp3,.flac,.aiff,.aif"
+            multiple
             style={{ display: 'none' }}
             onChange={handleAddFileInputChange}
-            aria-label="Add audio file"
+            aria-label="Add audio files"
           />
           <div className={styles.contentRow}>
             <div className={styles.mainArea}>
@@ -247,8 +248,8 @@ export const ManualWorkspace = (): JSX.Element => {
                 onDrop={(event) => {
                   event.preventDefault();
                   setIsDraggingFileOver(false);
-                  const droppedFile = event.dataTransfer.files[0];
-                  if (droppedFile) handleFileSelected(droppedFile);
+                  const droppedFiles = Array.from(event.dataTransfer.files);
+                  if (droppedFiles.length > 0) void uploadFiles(droppedFiles);
                 }}
                 style={{ position: 'relative' }}
               >

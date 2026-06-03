@@ -3,7 +3,7 @@ import { useRef, useEffect, useState } from 'react';
 import { ComparisonView } from '../comparison/ComparisonView';
 import { IconArrowRight, IconFileMusic, IconAlignBoxLeftMiddle, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
-import { agentArtifactsSelector } from './agentWorkspaceSlice';
+import { agentArtifactsSelector, focusedArtifactIdSelector, artifactFocusCleared } from './agentWorkspaceSlice';
 import type {
   AgentArtifact,
   AgentArtifactAnalysis,
@@ -69,7 +69,7 @@ function RawDataDrawer({ data }: { data: unknown }): JSX.Element {
         type="button"
         className={styles.rawDrawerToggle}
         onClick={() => setIsExpanded((prev) => !prev)}
-        aria-expanded={isExpanded}
+        aria-expanded={isExpanded ? 'true' : 'false'}
       >
         {isExpanded ? <IconChevronDown size={10} /> : <IconChevronRight size={10} />}
         Raw data
@@ -89,6 +89,8 @@ function AnalysisCard({ artifact }: { artifact: AgentArtifactAnalysis }): JSX.El
     .filter(([, value]) => value !== null && value !== undefined);
 
   const kindLabel = result.kind === 'file_info' ? 'File Info' : result.kind === 'level' ? 'Level' : 'Spectrum';
+  const parameterEntries = Object.entries(result.parameters ?? {})
+    .filter(([, value]) => value !== null && value !== undefined);
 
   const handleOpenInManual = (): void => {
     dispatch(setActiveMode('manual'));
@@ -98,6 +100,7 @@ function AnalysisCard({ artifact }: { artifact: AgentArtifactAnalysis }): JSX.El
     <div className={styles.card}>
       <div className={styles.cardHeader}>
         <span className={styles.cardKindTag}>{kindLabel}</span>
+        {result.fromCache && <span className={styles.cachedTag}>Cached</span>}
         <span className={styles.cardTimestamp}>{formatTimestamp(artifact.timestamp)}</span>
       </div>
       <div className={styles.cardBody}>
@@ -116,6 +119,23 @@ function AnalysisCard({ artifact }: { artifact: AgentArtifactAnalysis }): JSX.El
             </div>
           );
         })}
+        {parameterEntries.length > 0 && (
+          <>
+            <div className={styles.parameterHeading}>parameters</div>
+            {parameterEntries.map(([key, value]) => {
+              const formattedKey = key.replace(/([A-Z])/g, ' $1').toLowerCase();
+              const rawValue = typeof value === 'number'
+                ? (Number.isInteger(value) ? String(value) : value.toFixed(4))
+                : String(value);
+              return (
+                <div key={`param-${key}`} className={styles.metricRow}>
+                  <span className={styles.metricLabel}>{formattedKey}</span>
+                  <span className={styles.metricValue}>{rawValue}</span>
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
       <RawDataDrawer data={result} />
       <div className={styles.cardFooter}>
@@ -202,7 +222,11 @@ function SelectionCard({ artifact }: { artifact: AgentArtifactSelection }): JSX.
 
 function FindCard({ artifact }: { artifact: AgentArtifactFind }): JSX.Element {
   const result = artifact.result;
-  const kindLabel = result.kind.charAt(0).toUpperCase() + result.kind.slice(1);
+  const kindLabel = result.kind
+    .split('_')
+    .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
+    .join(' ');
+  const isClickCandidates = result.kind === 'click_candidate';
 
   return (
     <div className={`${styles.card} ${styles.cardFind}`}>
@@ -224,7 +248,11 @@ function FindCard({ artifact }: { artifact: AgentArtifactFind }): JSX.Element {
         {result.events.slice(0, 5).map((event, index) => (
           <div key={index} className={styles.findEventRow}>
             <span className={styles.findEventTime}>{event.startSeconds.toFixed(3)}s</span>
-            <span className={styles.findEventDesc}>{event.description}</span>
+            <span className={styles.findEventDesc}>
+              {isClickCandidates
+                ? event.description.replace('Transient onset', 'Click candidate')
+                : event.description}
+            </span>
           </div>
         ))}
         {result.eventCount > 5 && (
@@ -293,13 +321,30 @@ function ArtifactCard({ artifact }: { artifact: AgentArtifact }): JSX.Element {
 
 export function AgentWorkspacePanel(): JSX.Element {
   const artifacts = useAppSelector(agentArtifactsSelector);
+  const focusedArtifactId = useAppSelector(focusedArtifactIdSelector);
+  const dispatch = useAppDispatch();
   const feedRef = useRef<HTMLDivElement | null>(null);
+  const artifactRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     const feed = feedRef.current;
     if (!feed) return;
     feed.scrollTop = feed.scrollHeight;
   }, [artifacts]);
+
+  useEffect(() => {
+    if (!focusedArtifactId) return;
+    const artifactEl = artifactRefs.current[focusedArtifactId];
+    if (!artifactEl) return;
+    artifactEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const timeoutId = window.setTimeout(() => {
+      dispatch(artifactFocusCleared());
+    }, 1800);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [dispatch, focusedArtifactId]);
 
   const hasArtifacts = artifacts.length > 0;
 
@@ -318,7 +363,13 @@ export function AgentWorkspacePanel(): JSX.Element {
           </div>
         )}
         {artifacts.map((artifact) => (
-          <ArtifactCard key={artifact.id} artifact={artifact} />
+          <div
+            key={artifact.id}
+            ref={(el) => { artifactRefs.current[artifact.id] = el; }}
+            className={artifact.id === focusedArtifactId ? styles.focusedArtifact : ''}
+          >
+            <ArtifactCard artifact={artifact} />
+          </div>
         ))}
       </div>
     </div>
