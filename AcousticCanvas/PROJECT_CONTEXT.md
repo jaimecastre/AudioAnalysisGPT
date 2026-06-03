@@ -53,7 +53,7 @@ The AI should behave more like a junior acoustic engineer or investigation copil
 | Backend | .NET 8, FastEndpoints 8.1 |
 | DSP | MathNet.Numerics 5.0, NAudio 2.2 |
 | API Docs | Swashbuckle (Swagger) |
-| AI/LLM | OpenAI API — **infrastructure ready, not yet calling** |
+| AI/LLM | OpenAI API (gpt-4o-mini) — **connected via backend proxy** |
 | Python Sidecar | **Not implemented** |
 
 ## Application Modes
@@ -77,8 +77,8 @@ The UI supports two main workspaces:
 | Waveform downsampling | ✅ Done | `GET /api/waveform?fileId={id}&points={n}` |
 | Playback state machine | ✅ Done | `POST /api/audio/playback/control` |
 | Audio file streaming | ✅ Done | `GET /api/audio/file/{fileId}` |
-| Agent analysis run (DSP summary for LLM) | ✅ Infrastructure | `POST /api/analysis/run` |
-| OpenAI API integration | ❌ Not started | — |
+| Agent analysis run (DSP summary for LLM) | ✅ Done | `POST /api/analysis/run` |
+| OpenAI API chat proxy | ✅ Done | `POST /api/agent/chat` |
 | CPB / octave band analysis | ❌ Not started | — |
 | Sound quality metrics (loudness, sharpness) | ❌ Not started | — |
 | Batch benchmarking | ❌ Not started | — |
@@ -558,9 +558,9 @@ public interface ISoundQualityAnalysisService
 
 ## OpenAI API Layer
 
-**Current state**: The `POST /api/analysis/run` endpoint produces a structured DSP summary ready for LLM consumption. The agent tool loop in the frontend dispatches tool calls and collects artifacts. **What's missing**: the actual OpenAI API call to generate natural-language explanations.
+**Current state**: Fully connected. The frontend tool loop dispatches tool calls, collects results, and sends conversation context to `POST /api/agent/chat`. The backend (`OpenAiChatService`) injects the system prompt, forwards to OpenAI (gpt-4o-mini), and returns the response. The API key is stored server-side in `appsettings.Development.json` (gitignored).
 
-OpenAI API should be used for:
+OpenAI API is used for:
 
 - Explanation
 - Interpretation
@@ -570,7 +570,7 @@ OpenAI API should be used for:
 - Summarizing findings
 - Answering user questions grounded in measured evidence
 
-OpenAI API should not be used as the primary source of numeric truth.
+OpenAI API is not used as the primary source of numeric truth.
 
 ---
 
@@ -693,9 +693,10 @@ All acceptance criteria met:
 - ✅ Error handling for unsupported files
 - ✅ Analysis parameters visible to user
 
-## 🔄 Milestone 1.5 — Agent Infrastructure — IN PROGRESS
+## ✅ Milestone 1.5 — Agent Infrastructure — COMPLETE
 
-What's done:
+All acceptance criteria met:
+
 - ✅ Agent chat panel with message history
 - ✅ Agent tool registry and execution loop
 - ✅ Agent artifacts panel (7 types)
@@ -703,12 +704,11 @@ What's done:
 - ✅ File @mentions in chat
 - ✅ Evidence tokens in responses
 - ✅ Backend `POST /api/analysis/run` produces LLM-ready summary
-
-What's missing:
-- ❌ Actual OpenAI API call (agent answers are tool-result-based only)
-- ❌ Natural language explanation generation
-- ❌ Agent "says when evidence is insufficient"
-- ❌ Agent suggests next analysis step in prose
+- ✅ OpenAI API connected via backend proxy (`POST /api/agent/chat`)
+- ✅ Natural language explanation generation (gpt-4o-mini)
+- ✅ Agent cites measured evidence in responses
+- ✅ Agent suggests next analysis steps
+- ✅ API key secured server-side (appsettings.Development.json, gitignored)
 
 ## ❌ Milestone 2 — CPB and Sound Quality Layer — NOT STARTED
 
@@ -770,7 +770,7 @@ Long-term features:
 
 Given the current state, the recommended next work is:
 
-1. **Connect OpenAI API** — Wire `POST /api/analysis/run` output to OpenAI for natural-language explanations
+1. ~~Connect OpenAI API~~ ✅ Done
 2. **Findings Panel** — Generate structured findings from event detection + spectral analysis
 3. **Tonal peak detection** — Add prominence-based peak detection to the spectrum analyzer
 4. **CPB analysis** — Implement 1⁄3 octave bands in backend
@@ -1006,8 +1006,8 @@ Build huge architecture for all future metrics before one full feature works.
 2. ~~Basic metrics~~ ✅
 3. ~~Spectrum/spectrogram~~ ✅
 4. ~~A/B comparison~~ ✅
-5. **Connect OpenAI API for agent explanations** ← next
-6. **Findings panel**
+5. ~~Connect OpenAI API for agent explanations~~ ✅
+6. **Findings panel** ← next
 7. CPB analysis
 8. Sound-quality metrics
 9. Batch comparison
@@ -1134,19 +1134,19 @@ When I ask for sprint planning, please:
 
 Sprint goal:
 
-> Connect the OpenAI API to produce evidence-based explanations from existing DSP results.
+> Implement structured findings generation from existing DSP results.
 
 Suggested scope:
 
 ```
-Select file with existing analysis
-→ backend sends structured evidence to OpenAI
-→ agent returns natural-language explanation
-→ explanation displayed in chat with evidence references
-→ agent suggests one useful next step
+Run event detection / spectrum analysis
+→ backend generates structured findings (type, severity, confidence, evidence)
+→ findings visible in dedicated panel
+→ user can click a finding to see related evidence
+→ agent can explain a finding
 ```
 
-The infrastructure (tool loop, artifacts, chat panel, evidence tokens) is already in place. The missing piece is the actual LLM call.
+The OpenAI integration is complete. The next high-value feature is surfacing automated findings.
 
 ---
 
