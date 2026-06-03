@@ -79,8 +79,9 @@ The UI supports two main workspaces:
 | Audio file streaming | ✅ Done | `GET /api/audio/file/{fileId}` |
 | Agent analysis run (DSP summary for LLM) | ✅ Done | `POST /api/analysis/run` |
 | OpenAI API chat proxy | ✅ Done | `POST /api/agent/chat` |
-| Findings engine (clipping, silence, crest factor, DC offset) | ✅ Done | `POST /api/analysis/findings` |
-| CPB / octave band analysis | ❌ Not started | — |
+| Findings engine (clipping, silence, crest factor, DC offset, tonal peaks) | ✅ Done | `POST /api/analysis/findings` |
+| Tonal peak detection (local prominence heuristic) | ✅ Done | Included in spectrum and findings |
+| CPB / octave band analysis | ✅ Done | `POST /api/analysis/cpb` |
 | Sound quality metrics (loudness, sharpness) | ❌ Not started | — |
 | Batch benchmarking | ❌ Not started | — |
 | Python sidecar | ❌ Not started | — |
@@ -150,7 +151,7 @@ SignalChannel {
 | Playback controls (transport) | ✅ Done | Play/pause, seek slider, time display |
 | Region selection on waveform | ✅ Done | Click-drag, loop toggle |
 | Level analysis inspector | ✅ Done | Multi-channel metrics grid with bars |
-| Spectrum panel | ✅ Done | FFT viz, channel selection, user params |
+| Spectrum panel | ✅ Done | FFT viz, tonal peak summary, channel selection, user params |
 | Spectrogram panel | ✅ Done | Time-frequency heatmap |
 | Comparison view | ✅ Done | Overlaid spectrum + metrics table + band deltas |
 | Agent chat panel | ✅ Done | Messages, suggestion prompts, evidence tokens |
@@ -163,10 +164,10 @@ SignalChannel {
 | Report generation UI | 🟡 Partial | Artifact type exists, no renderer |
 | Task progress panel | 🟡 Placeholder | Empty state only |
 | Calibration UI | 🟡 Referenced in types | Not implemented |
-| CPB / octave band visualization | ❌ Not started | — |
+| CPB / octave band visualization | ✅ Done | Collapsible CPB panel with octave / 1⁄3 octave modes |
 | Sound quality metrics display | ❌ Not started | — |
 | Batch comparison table | ❌ Not started | — |
-| Findings panel | ✅ Done | Severity-coded cards, evidence chips, suggested next step, time range |
+| Findings panel | ✅ Done | Severity-coded cards, tonal peak findings, evidence chips, suggested next step, time range |
 
 ### Redux Store Structure
 
@@ -629,7 +630,7 @@ User can save finding/report as artifact
 - ✅ Averaged spectrum (power-based averaging)
 - ✅ Spectrogram (STFT, multi-scale: linear/mel/log)
 - ✅ Peak frequency detection
-- ❌ Tonal peak detection (with prominence/confidence) — **next priority**
+- ✅ Tonal peak detection (with local prominence/confidence heuristic)
 - ❌ Band energy comparison as standalone feature
 
 ## Event Detection ✅ DONE
@@ -646,10 +647,11 @@ User can save finding/report as artifact
 - ✅ Frequency-domain differences
 - ✅ Named band energy deltas (7 bands: sub → air)
 
-## CPB Analysis ❌ NOT STARTED
+## CPB Analysis 🟡 PARTIAL
 
-- ❌ Octave bands
-- ❌ 1⁄3 octave bands
+- ✅ Octave bands
+- ✅ 1⁄3 octave bands
+- ✅ Region-aware CPB graph
 - ❌ A-weighting / C-weighting
 - ❌ CPB comparison between files
 - ❌ CPB over time
@@ -719,11 +721,11 @@ All acceptance criteria met:
 - ✅ Agent suggests next analysis steps
 - ✅ API key secured server-side (appsettings.Development.json, gitignored)
 
-## ❌ Milestone 2 — CPB and Sound Quality Layer — NOT STARTED
+## 🟡 Milestone 2 — CPB and Sound Quality Layer — PARTIAL
 
 Must-have features:
 
-- CPB / octave / 1⁄3 octave graphs
+- ✅ CPB / octave / 1⁄3 octave graphs
 - Loudness
 - Sharpness
 - Roughness (if feasible)
@@ -781,8 +783,8 @@ Given the current state, the recommended next work is:
 
 1. ~~Connect OpenAI API~~ ✅ Done
 2. ~~Findings Panel~~ ✅ Done — Structured findings from event detection + level analysis
-3. **Tonal peak detection** — Add prominence-based peak detection to the spectrum analyzer
-4. **CPB analysis** — Implement 1⁄3 octave bands in backend
+3. ~~Tonal peak detection~~ ✅ Done — Local prominence heuristic in spectrum analyzer + findings
+4. ~~CPB analysis~~ 🟡 Partial — Backend + manual CPB panel done; comparison/weighting deferred
 5. **Sound quality metrics** — Integrate MoSQITo via Python sidecar or implement basic loudness/sharpness in C#
 
 ---
@@ -817,17 +819,17 @@ Given the current state, the recommended next work is:
 
 ## Story 4 — Spectrogram Analysis ✅ DONE
 
-## Story 5 — CPB Graph ❌ NEXT
+## Story 5 — CPB Graph ✅ DONE
 
 As a user, I want to view a 1⁄3 octave CPB graph so that I can evaluate sound energy by frequency band.
 
 Acceptance criteria:
 
-- User can generate CPB graph
-- Bands are labelled clearly
-- Units are clear
-- Parameters are visible
-- Result can be compared between files
+- ✅ User can generate CPB graph
+- ✅ Bands are labelled clearly
+- ✅ Units are clear
+- ✅ Parameters are visible
+- ❌ Result can be compared between files (deferred to comparison slice)
 
 ## Story 6 — Sound Quality Metrics ❌ NEXT
 
@@ -1017,10 +1019,12 @@ Build huge architecture for all future metrics before one full feature works.
 3. ~~Spectrum/spectrogram~~ ✅
 4. ~~A/B comparison~~ ✅
 5. ~~Connect OpenAI API for agent explanations~~ ✅
-6. **Findings panel** ← next
-7. CPB analysis
-8. Sound-quality metrics
-9. Batch comparison
+6. ~~Findings panel~~ ✅
+7. ~~Tonal peak detection~~ ✅
+8. ~~CPB analysis~~ 🟡 Partial
+9. **CPB comparison / weighting** ← next
+10. Sound-quality metrics
+11. Batch comparison
 
 ---
 
@@ -1144,19 +1148,19 @@ When I ask for sprint planning, please:
 
 Sprint goal:
 
-> Implement structured findings generation from existing DSP results.
+> Add CPB comparison and weighting controls on top of the implemented CPB graph.
 
 Suggested scope:
 
 ```
-Run event detection / spectrum analysis
-→ backend generates structured findings (type, severity, confidence, evidence)
-→ findings visible in dedicated panel
-→ user can click a finding to see related evidence
-→ agent can explain a finding
+Run CPB analysis for two loaded files
+→ compute per-band deltas for octave / 1/3 octave bands
+→ add optional A-weighting / C-weighting metadata and display
+→ frontend shows side-by-side or delta CPB bars
+→ agent can cite CPB band evidence when explaining spectral balance
 ```
 
-The OpenAI integration is complete. The next high-value feature is surfacing automated findings.
+Findings, tonal peak detection, and the first CPB graph slice are now implemented. The next high-value feature is CPB comparison and weighting, because it turns the band graph into a practical A/B acoustic diagnostic.
 
 ---
 

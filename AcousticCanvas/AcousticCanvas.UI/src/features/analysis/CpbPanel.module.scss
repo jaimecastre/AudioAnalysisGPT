@@ -1,0 +1,126 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-elevated);
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.panelBody {
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+  background-color: var(--bg-base);
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+}
+
+.chart {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(26px, 1fr));
+  align-items: end;
+  gap: 4px;
+  min-height: 220px;
+  padding: 14px 12px 8px;
+}
+
+.barColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  height: 100%;
+  gap: 4px;
+}
+
+.barTrack {
+  position: relative;
+  width: 100%;
+  min-width: 12px;
+  max-width: 32px;
+  height: 168px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background-color: var(--bg-surface);
+  overflow: hidden;
+}
+
+.barFill {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-height: 2px;
+  background-color: #00b8a9;
+}
+
+.barLabel {
+  max-width: 44px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  transform: rotate(-42deg);
+  transform-origin: center top;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  flex-wrap: wrap;
+}
+
+.summaryValue {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.loadingOverlay {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(248, 249, 250, 0.72);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  pointer-events: none;
+}
+
+.chartWrap {
+  position: relative;
+}

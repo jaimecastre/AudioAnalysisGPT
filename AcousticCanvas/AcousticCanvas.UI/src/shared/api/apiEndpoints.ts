@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
     RUN_ANALYSIS: (fileId: string) => `api/analysis?fileId=${fileId}`,
     RUN_SPECTRUM: 'api/analysis/spectrum',
     RUN_SPECTROGRAM: 'api/analysis/spectrogram',
+    RUN_CPB: 'api/analysis/cpb',
     RUN_AGENT_ANALYSIS: 'api/analysis/run',
     RUN_COMPARE: 'api/analysis/compare',
     RUN_FIND: 'api/analysis/find',

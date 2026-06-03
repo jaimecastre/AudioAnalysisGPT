@@ -10,6 +10,8 @@ public class RunFindingsHandler(SignalAnalysisService analysisService)
     : CommandHandler<RunFindingsCommand, FindingsResult>
 {
     private static readonly string[] AllEventKinds = ["clipping", "silence", "transient", "loudest"];
+    private const int FindingsSpectrumFftSize = 8192;
+    private const double FindingsSpectrumOverlap = 0.5;
 
     public override async Task<FindingsResult> ExecuteAsync(RunFindingsCommand command, CancellationToken ct)
     {
@@ -22,6 +24,7 @@ public class RunFindingsHandler(SignalAnalysisService analysisService)
 
         var levelAnalysisResult = analysisService.Analyze(command.FilePath);
         var levelAnalysis = levelAnalysisResult.Level;
+        var durationSeconds = levelAnalysisResult.FileInfo.DurationSeconds;
 
         var allEventResults = new List<FindEventsResult>();
 
@@ -38,7 +41,16 @@ public class RunFindingsHandler(SignalAnalysisService analysisService)
             allEventResults.Add(eventResult);
         }
 
-        var findings = FindingsEngine.GenerateFindings(command.FilePath, levelAnalysis, allEventResults);
+        var spectrumCommand = new RunSpectrumQuery(
+            FilePath: command.FilePath,
+            StartSeconds: 0.0,
+            EndSeconds: durationSeconds,
+            FftSize: FindingsSpectrumFftSize,
+            Overlap: FindingsSpectrumOverlap
+        );
+        var spectrumAnalysis = await spectrumCommand.ExecuteAsync(ct);
+
+        var findings = FindingsEngine.GenerateFindings(command.FilePath, levelAnalysis, allEventResults, spectrumAnalysis);
 
         return new FindingsResult
         {

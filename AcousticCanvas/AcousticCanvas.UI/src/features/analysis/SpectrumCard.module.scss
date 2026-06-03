@@ -78,6 +78,95 @@
   margin-top: 4px;
 }
 
+.tonalPeakSection {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.sectionLabel {
+  margin-bottom: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.tonalPeakRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-top: 1px dashed var(--border);
+
+  &:first-of-type {
+    border-top: none;
+    padding-top: 0;
+  }
+}
+
+.tonalPeakMain {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tonalPeakFrequency {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tonalPeakChannel {
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tonalPeakMeta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-variant-numeric: tabular-nums;
+  flex-wrap: wrap;
+  text-align: right;
+}
+
+.confidenceHigh,
+.confidenceMedium {
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.confidenceHigh {
+  color: #00b8a9;
+  background-color: rgba(0, 184, 169, 0.12);
+}
+
+.confidenceMedium {
+  color: #b9770e;
+  background-color: rgba(245, 166, 35, 0.12);
+}
+
 .canvasWrapper {
   flex: 1;
   min-height: 200px;

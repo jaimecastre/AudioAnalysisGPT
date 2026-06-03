@@ -18,7 +18,8 @@ public static class FindingsEngine
     public static IReadOnlyList<Finding> GenerateFindings(
         string fileId,
         LevelAnalysis levelAnalysis,
-        IReadOnlyList<FindEventsResult> eventResults)
+        IReadOnlyList<FindEventsResult> eventResults,
+        SpectrumAnalysis? spectrumAnalysis = null)
     {
         var findings = new List<Finding>();
         var generatedAt = DateTimeOffset.UtcNow;
@@ -36,6 +37,7 @@ public static class FindingsEngine
         AddSilenceFindings(fileId, eventResults, findings, generatedAt, NextFindingId);
         AddHighCrestFactorFinding(fileId, firstChannel, findings, generatedAt, NextFindingId);
         AddDcOffsetFinding(fileId, firstChannel, findings, generatedAt, NextFindingId);
+        AddTonalPeakFinding(fileId, spectrumAnalysis, findings, generatedAt, NextFindingId);
 
         return findings;
     }
@@ -219,6 +221,61 @@ public static class FindingsEngine
             FrequencyHz = null,
             SuggestedNextStep = "Apply a DC offset removal filter (high-pass at a very low frequency, e.g. 5–10 Hz) " +
                                 "to eliminate the offset before further processing.",
+            GeneratedAt = generatedAt,
+        });
+    }
+
+    private static void AddTonalPeakFinding(
+        string fileId,
+        SpectrumAnalysis? spectrumAnalysis,
+        List<Finding> findings,
+        DateTimeOffset generatedAt,
+        Func<string> nextId)
+    {
+        if (spectrumAnalysis is null)
+        {
+            return;
+        }
+
+        var tonalPeak = spectrumAnalysis.Channels
+            .SelectMany(channel => channel.TonalPeaks.Select(peak => new { Channel = channel, Peak = peak }))
+            .OrderByDescending(item => item.Peak.ProminenceDb)
+            .ThenByDescending(item => item.Peak.MagnitudeDb)
+            .FirstOrDefault();
+
+        if (tonalPeak is null)
+        {
+            return;
+        }
+
+        var severity = tonalPeak.Peak.ProminenceDb >= 15.0 ? "medium" : "low";
+
+        findings.Add(new Finding
+        {
+            FindingId = nextId(),
+            FileId = fileId,
+            Type = "tonal_peak",
+            Severity = severity,
+            Confidence = "inferred",
+            Title = "Prominent Tonal Peak",
+            Description = $"A narrow spectral peak at {tonalPeak.Peak.FrequencyHz:F1} Hz stands {tonalPeak.Peak.ProminenceDb:F1} dB above its local spectral floor. " +
+                          "This can indicate a tonal component such as whine, hum, resonance, or another steady narrow-band source.",
+            Evidence = new Dictionary<string, object?>
+            {
+                ["channelId"] = tonalPeak.Channel.ChannelId,
+                ["channelName"] = tonalPeak.Channel.ChannelName,
+                ["frequencyHz"] = tonalPeak.Peak.FrequencyHz,
+                ["magnitudeDb"] = tonalPeak.Peak.MagnitudeDb,
+                ["localFloorDb"] = tonalPeak.Peak.LocalFloorDb,
+                ["prominenceDb"] = tonalPeak.Peak.ProminenceDb,
+                ["bandwidthHz"] = tonalPeak.Peak.BandwidthHz,
+                ["confidence"] = tonalPeak.Peak.Confidence,
+                ["method"] = tonalPeak.Peak.Method,
+            },
+            StartSeconds = spectrumAnalysis.Region.StartSeconds,
+            EndSeconds = spectrumAnalysis.Region.EndSeconds,
+            FrequencyHz = tonalPeak.Peak.FrequencyHz,
+            SuggestedNextStep = "Inspect the spectrum around this frequency and compare it against a reference recording, RPM/order data, or operating-state metadata.",
             GeneratedAt = generatedAt,
         });
     }

@@ -22,10 +22,22 @@ public sealed class ChannelSpectrumAnalysis
     public double? MaxMagnitude { get; init; }
     public double? MaxMagnitudeDb { get; init; }
     public double? PeakFrequencyHz { get; init; }
+    public required IReadOnlyList<TonalPeak> TonalPeaks { get; init; }
 
     public string? DbUnit { get; init; }
     public double? DbReferenceValue { get; init; }
     public string? DbReferenceUnit { get; init; }
+}
+
+public sealed class TonalPeak
+{
+    public required double FrequencyHz { get; init; }
+    public required double MagnitudeDb { get; init; }
+    public required double LocalFloorDb { get; init; }
+    public required double ProminenceDb { get; init; }
+    public required double BandwidthHz { get; init; }
+    public required string Confidence { get; init; }
+    public required string Method { get; init; }
 }
 
 public sealed class SpectrumParameters

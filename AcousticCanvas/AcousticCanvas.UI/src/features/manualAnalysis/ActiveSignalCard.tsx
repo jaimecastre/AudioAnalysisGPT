@@ -7,6 +7,7 @@ import { ComparisonView } from '../comparison/ComparisonView';
 import { FindingsPanel } from '../findings/FindingsPanel';
 import { SpectrogramPanel } from '../analysis/SpectrogramPanel';
 import { SpectrumPanel } from '../analysis/SpectrumPanel';
+import { CpbPanel } from '../analysis/CpbPanel';
 import type { CompareResult } from '../agent/agentToolTypes';
 import type { AudioFile } from '../../store/projectState';
 import type { WaveformSelection } from '../waveform/waveformSelectionSlice';
@@ -14,7 +15,7 @@ import styles from './ActiveSignalCard.module.scss';
 
 interface ToolPanel {
   id: string;
-  type: 'spectrogram' | 'spectrum';
+  type: 'spectrogram' | 'spectrum' | 'cpb';
   fileId: string | null;
 }
 
@@ -108,8 +109,9 @@ export function ActiveSignalCard({
         />
       )}
 
-      {toolPanels.map((panel) => (
-        panel.type === 'spectrogram' ? (
+      {toolPanels.map((panel) => {
+        if (panel.type === 'spectrogram') {
+          return (
           <SpectrogramPanel
             key={panel.id}
             panelId={panel.id}
@@ -120,7 +122,23 @@ export function ActiveSignalCard({
             onFileSelect={onToolPanelFileSelect}
             onClose={onToolPanelClose}
           />
-        ) : (
+          );
+        }
+
+        if (panel.type === 'cpb') {
+          return (
+            <CpbPanel
+              key={panel.id}
+              panelId={panel.id}
+              availableFiles={allFiles}
+              selectedFileId={panel.fileId}
+              onFileSelect={onToolPanelFileSelect}
+              onClose={onToolPanelClose}
+            />
+          );
+        }
+
+        return (
           <SpectrumPanel
             key={panel.id}
             panelId={panel.id}
@@ -129,8 +147,8 @@ export function ActiveSignalCard({
             onFileSelect={onToolPanelFileSelect}
             onClose={onToolPanelClose}
           />
-        )
-      ))}
+        );
+      })}
 
       {activeSelection && activeSelection.endSeconds > activeSelection.startSeconds && (
         <div className={styles.regionInfoBar}>

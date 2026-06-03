@@ -5,6 +5,7 @@ import {
   IconFileMusic,
   IconWaveSine,
   IconChartLine,
+  IconChartBar,
   IconTrash,
   IconPlus,
   IconChevronDown,
@@ -24,10 +25,12 @@ interface FileListPanelProps {
   onAddFileClick: () => void;
   onAddSpectrogram: () => void;
   onAddSpectrum: () => void;
+  onAddCpb: () => void;
   onRunCompare: () => void;
   onOpenFindings: () => void;
   hasSpectrogramPanel: boolean;
   hasSpectrumPanel: boolean;
+  hasCpbPanel: boolean;
   hasComparisonPanel: boolean;
   isCompareLoading: boolean;
   isFindingsPanelOpen: boolean;
@@ -42,10 +45,12 @@ export function FileListPanel({
   onAddFileClick,
   onAddSpectrogram,
   onAddSpectrum,
+  onAddCpb,
   onRunCompare,
   onOpenFindings,
   hasSpectrogramPanel,
   hasSpectrumPanel,
+  hasCpbPanel,
   hasComparisonPanel,
   isCompareLoading,
   isFindingsPanelOpen,
@@ -154,6 +159,20 @@ export function FileListPanel({
                 aria-label="Add spectrum panel"
               >
                 <IconChartLine size={18} />
+              </ActionIcon>
+            </span>
+          </Tooltip>
+          <Tooltip label={hasCpbPanel ? 'CPB panel already open' : 'Add CPB analysis'} withArrow position="right">
+            <span>
+              <ActionIcon
+                variant="light"
+                color="teal"
+                size="lg"
+                onClick={onAddCpb}
+                disabled={hasCpbPanel}
+                aria-label="Add CPB panel"
+              >
+                <IconChartBar size={18} />
               </ActionIcon>
             </span>
           </Tooltip>

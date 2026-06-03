@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 interface ToolPanel {
   id: string;
-  type: 'spectrogram' | 'spectrum';
+  type: 'spectrogram' | 'spectrum' | 'cpb';
   fileId: string | null;
 }
 
@@ -10,8 +10,10 @@ interface UseToolPanelsReturn {
   toolPanels: ToolPanel[];
   hasSpectrogramPanel: boolean;
   hasSpectrumPanel: boolean;
+  hasCpbPanel: boolean;
   handleAddSpectrogramPanel: (fileId: string | null) => void;
   handleAddSpectrumPanel: (fileId: string | null) => void;
+  handleAddCpbPanel: (fileId: string | null) => void;
   handleToolPanelFileSelect: (panelId: string, fileId: string | null) => void;
   handleToolPanelClose: (panelId: string) => void;
 }
@@ -21,6 +23,7 @@ export const useToolPanels = (): UseToolPanelsReturn => {
 
   const hasSpectrogramPanel = toolPanels.some((panel) => panel.type === 'spectrogram');
   const hasSpectrumPanel = toolPanels.some((panel) => panel.type === 'spectrum');
+  const hasCpbPanel = toolPanels.some((panel) => panel.type === 'cpb');
 
   const handleAddSpectrogramPanel = (fileId: string | null): void => {
     if (hasSpectrogramPanel) return;
@@ -32,6 +35,12 @@ export const useToolPanels = (): UseToolPanelsReturn => {
     if (hasSpectrumPanel) return;
     const newPanelId = `spectrum-${Date.now()}`;
     setToolPanels((prev) => [...prev, { id: newPanelId, type: 'spectrum', fileId }]);
+  };
+
+  const handleAddCpbPanel = (fileId: string | null): void => {
+    if (hasCpbPanel) return;
+    const newPanelId = `cpb-${Date.now()}`;
+    setToolPanels((prev) => [...prev, { id: newPanelId, type: 'cpb', fileId }]);
   };
 
   const handleToolPanelFileSelect = (panelId: string, fileId: string | null): void => {
@@ -46,8 +55,10 @@ export const useToolPanels = (): UseToolPanelsReturn => {
     toolPanels,
     hasSpectrogramPanel,
     hasSpectrumPanel,
+    hasCpbPanel,
     handleAddSpectrogramPanel,
     handleAddSpectrumPanel,
+    handleAddCpbPanel,
     handleToolPanelFileSelect,
     handleToolPanelClose,
   };

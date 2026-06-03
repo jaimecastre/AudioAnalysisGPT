@@ -19,6 +19,7 @@ builder.Services.AddSingleton<RunAgentAnalysisHandler>();
 builder.Services.AddSingleton<RunSpectrumHandler>();
 builder.Services.AddSingleton<SpectrogramCacheStore>();
 builder.Services.AddSingleton<RunSpectrogramHandler>();
+builder.Services.AddSingleton<RunCpbHandler>();
 builder.Services.AddSingleton<RunCompareHandler>();
 builder.Services.AddSingleton<FindEventsHandler>();
 builder.Services.AddSingleton<RunFindingsHandler>();

@@ -126,6 +126,11 @@ public class RunAgentAnalysisHandler(SignalAnalysisService analysisService)
         var spectrumResult = await spectrumQuery.ExecuteAsync(ct);
 
         var firstChannel = spectrumResult.Channels.Count > 0 ? spectrumResult.Channels[0] : null;
+        var strongestTonalPeak = spectrumResult.Channels
+            .SelectMany(channel => channel.TonalPeaks)
+            .OrderByDescending(peak => peak.ProminenceDb)
+            .ThenByDescending(peak => peak.MagnitudeDb)
+            .FirstOrDefault();
         var binCount = firstChannel?.FrequenciesHz.Count ?? 0;
 
         var summary = new Dictionary<string, object?>
@@ -135,6 +140,10 @@ public class RunAgentAnalysisHandler(SignalAnalysisService analysisService)
             ["binCount"] = binCount,
             ["peakFrequencyHz"] = firstChannel?.PeakFrequencyHz,
             ["peakMagnitudeDb"] = firstChannel?.MaxMagnitudeDb,
+            ["tonalPeakFrequencyHz"] = strongestTonalPeak?.FrequencyHz,
+            ["tonalPeakProminenceDb"] = strongestTonalPeak?.ProminenceDb,
+            ["tonalPeakLocalFloorDb"] = strongestTonalPeak?.LocalFloorDb,
+            ["tonalPeakConfidence"] = strongestTonalPeak?.Confidence,
             ["channelCount"] = spectrumResult.Channels.Count,
             ["regionStartSeconds"] = startSeconds,
             ["regionEndSeconds"] = endSeconds,

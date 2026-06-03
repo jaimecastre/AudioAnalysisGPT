@@ -36,6 +36,13 @@ export const SpectrumCard = ({
     ? (result.channels[0].frequenciesHz[1] - result.channels[0].frequenciesHz[0]).toFixed(2)
     : null;
 
+  const tonalPeaks = result
+    ? result.channels
+        .flatMap((channel) => channel.tonalPeaks.map((peak) => ({ ...peak, channelName: channel.channelName })))
+        .sort((a, b) => b.prominenceDb - a.prominenceDb)
+        .slice(0, 3)
+    : [];
+
   return (
     <div className={styles.card}>
       {/* Controls row */}
@@ -169,6 +176,30 @@ export const SpectrumCard = ({
             )}
           </div>
 
+          {tonalPeaks.length > 0 && (
+            <div className={styles.tonalPeakSection}>
+              <div className={styles.sectionLabel}>Tonal peaks</div>
+              {tonalPeaks.map((peak) => (
+                <div
+                  key={`${peak.channelName}-${peak.frequencyHz}-${peak.prominenceDb}`}
+                  className={styles.tonalPeakRow}
+                >
+                  <div className={styles.tonalPeakMain}>
+                    <span className={styles.tonalPeakFrequency}>{formatFrequency(peak.frequencyHz)}</span>
+                    <span className={styles.tonalPeakChannel}>{peak.channelName}</span>
+                  </div>
+                  <div className={styles.tonalPeakMeta}>
+                    <span>{peak.prominenceDb.toFixed(1)} dB prominence</span>
+                    <span>{peak.localFloorDb.toFixed(1)} dB floor</span>
+                    <span className={peak.confidence === 'high' ? styles.confidenceHigh : styles.confidenceMedium}>
+                      {peak.confidence}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Canvas - only shown when not in sidebar mode */}
           {showCanvas && result.channels.length > 0 && (
             <div className={styles.canvasWrapper}>
@@ -190,6 +221,13 @@ export const SpectrumCard = ({
     </div>
   );
 };
+
+function formatFrequency(frequencyHz: number): string {
+  if (frequencyHz >= 1000) {
+    return `${(frequencyHz / 1000).toFixed(2)} kHz`;
+  }
+  return `${frequencyHz.toFixed(1)} Hz`;
+}
 
 function ParamRow({ label, value, tooltip }: { label: string; value: string; tooltip?: string }): JSX.Element {
   const labelContent = (

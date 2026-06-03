@@ -21,9 +21,20 @@ export type ChannelSpectrumAnalysis = {
   maxMagnitude: number | null;
   maxMagnitudeDb: number | null;
   peakFrequencyHz: number | null;
+  tonalPeaks: TonalPeak[];
   dbUnit: string | null;
   dbReferenceValue: number | null;
   dbReferenceUnit: string | null;
+};
+
+export type TonalPeak = {
+  frequencyHz: number;
+  magnitudeDb: number;
+  localFloorDb: number;
+  prominenceDb: number;
+  bandwidthHz: number;
+  confidence: 'medium' | 'high';
+  method: string;
 };
 
 export type SpectrumAnalysis = {
