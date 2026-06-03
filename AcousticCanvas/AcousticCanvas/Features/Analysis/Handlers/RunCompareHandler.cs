@@ -11,6 +11,7 @@ public class RunCompareHandler(SignalAnalysisService analysisService)
 {
     private const int DefaultFftSize = 8192;
     private const double DefaultOverlap = 0.5;
+    private const string DefaultCpbBandMode = "third_octave";
 
     private static readonly (string Name, double LowHz, double HighHz)[] NamedBands =
     [
@@ -56,6 +57,7 @@ public class RunCompareHandler(SignalAnalysisService analysisService)
                 var b = summaries[j];
                 var spectrumDelta = BuildSpectrumDelta(a.SpectrumCurve, b.SpectrumCurve);
                 var bandEnergyDeltas = BuildBandEnergyDeltas(a.BandEnergies, b.BandEnergies);
+                var cpbBandDeltas = BuildCpbBandDeltas(a.CpbBands, b.CpbBands);
 
                 pairwiseDiffs.Add(new PairwiseDiff
                 {
@@ -71,6 +73,7 @@ public class RunCompareHandler(SignalAnalysisService analysisService)
                     HigherPeakFrequencyFileId = a.PeakFrequencyHz >= b.PeakFrequencyHz ? a.FileId : b.FileId,
                     SpectrumDelta = spectrumDelta,
                     BandEnergyDeltas = bandEnergyDeltas,
+                    CpbBandDeltas = cpbBandDeltas,
                 });
             }
         }
@@ -112,6 +115,7 @@ public class RunCompareHandler(SignalAnalysisService analysisService)
 
         var spectrumCurve = BuildSpectrumCurve(firstSpectrumChannel);
         var bandEnergies = ComputeBandEnergies(firstSpectrumChannel);
+        var cpbBands = ComputeCpbBands(signalFile.Channels, resolvedStart, resolvedEnd);
 
         var storedFileName = Path.GetFileName(filePath);
         var displayFileName = storedFileName.Length > 13 && storedFileName[12] == '_'
@@ -131,7 +135,37 @@ public class RunCompareHandler(SignalAnalysisService analysisService)
             RegionEndSeconds = resolvedEnd,
             SpectrumCurve = spectrumCurve,
             BandEnergies = bandEnergies,
+            CpbBands = cpbBands,
         };
+    }
+
+    private static IReadOnlyList<CompareCpbBand> ComputeCpbBands(
+        IReadOnlyList<SignalChannel> channels,
+        double startSeconds,
+        double endSeconds)
+    {
+        var cpbAnalysis = CpbAnalyzer.Analyze(
+            channels,
+            startSeconds,
+            endSeconds,
+            DefaultCpbBandMode,
+            DefaultFftSize,
+            DefaultOverlap);
+
+        var firstChannel = cpbAnalysis.Channels.Count > 0 ? cpbAnalysis.Channels[0] : null;
+        if (firstChannel is null)
+        {
+            return [];
+        }
+
+        return firstChannel.Bands.Select(band => new CompareCpbBand
+        {
+            Label = band.Label,
+            CenterFrequencyHz = band.CenterFrequencyHz,
+            LowerFrequencyHz = band.LowerFrequencyHz,
+            UpperFrequencyHz = band.UpperFrequencyHz,
+            LevelDb = band.LevelDb,
+        }).ToArray();
     }
 
     private static CompareSpectrumCurve BuildSpectrumCurve(ChannelSpectrumAnalysis? channel)
@@ -260,6 +294,33 @@ public class RunCompareHandler(SignalAnalysisService analysisService)
                 LowHz = a.LowHz,
                 HighHz = a.HighHz,
                 EnergyDb = deltaDb,
+            });
+        }
+
+        return deltas;
+    }
+
+    private static IReadOnlyList<CompareCpbBand> BuildCpbBandDeltas(
+        IReadOnlyList<CompareCpbBand> cpbBandsA,
+        IReadOnlyList<CompareCpbBand> cpbBandsB)
+    {
+        var deltas = new List<CompareCpbBand>();
+
+        for (int i = 0; i < cpbBandsA.Count && i < cpbBandsB.Count; i++)
+        {
+            var a = cpbBandsA[i];
+            var b = cpbBandsB[i];
+            var deltaDb = a.LevelDb.HasValue && b.LevelDb.HasValue
+                ? Math.Round(b.LevelDb.Value - a.LevelDb.Value, 2)
+                : (double?)null;
+
+            deltas.Add(new CompareCpbBand
+            {
+                Label = a.Label,
+                CenterFrequencyHz = a.CenterFrequencyHz,
+                LowerFrequencyHz = a.LowerFrequencyHz,
+                UpperFrequencyHz = a.UpperFrequencyHz,
+                LevelDb = deltaDb,
             });
         }
 

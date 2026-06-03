@@ -358,6 +358,12 @@ function buildReportMarkdown(title: string, artifacts: AgentArtifact[], generate
         const nameA = stripPathToFileName(diff.fileIdA);
         const nameB = stripPathToFileName(diff.fileIdB);
         lines.push(`**${nameA} vs ${nameB}** — peak Δ: ${diff.peakDeltaDb.toFixed(2)} dB · RMS Δ: ${diff.rmsDeltaDb.toFixed(2)} dB`);
+        const strongestCpbDelta = diff.cpbBandDeltas
+          ?.filter((band) => band.levelDb !== null && Number.isFinite(band.levelDb))
+          .sort((a, b) => Math.abs(b.levelDb ?? 0) - Math.abs(a.levelDb ?? 0))[0];
+        if (strongestCpbDelta?.levelDb !== null && strongestCpbDelta?.levelDb !== undefined) {
+          lines.push(`Strongest CPB difference: ${strongestCpbDelta.label} Hz (${strongestCpbDelta.levelDb > 0 ? '+' : ''}${strongestCpbDelta.levelDb.toFixed(1)} dB, B − A).`);
+        }
       }
       lines.push('');
     }

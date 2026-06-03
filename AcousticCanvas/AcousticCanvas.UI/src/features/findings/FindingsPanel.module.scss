@@ -97,11 +97,17 @@
 /* ---- Finding Card ---- */
 
 .findingCard {
+  display: block;
+  width: 100%;
   padding: 10px 12px 10px 10px;
   border-bottom: 1px solid var(--border);
+  border-top: none;
+  border-right: none;
   border-left: 3px solid transparent;
   background-color: var(--bg-surface);
-  transition: background-color 0.12s ease;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-left-color 0.12s ease;
 
   &:last-child {
     border-bottom: none;
@@ -109,6 +115,11 @@
 
   &:hover {
     background-color: var(--bg-elevated);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(0, 184, 169, 0.35);
+    outline-offset: -2px;
   }
 }
 
@@ -229,6 +240,10 @@
   color: var(--text-secondary);
   line-height: 1.45;
   margin: 0 0 6px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* Time range */
@@ -284,6 +299,20 @@
   font-variant-numeric: tabular-nums;
 }
 
+.evidenceMore {
+  display: inline-flex;
+  align-items: center;
+  min-height: 21px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+}
+
+.findingCardOpenIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
 /* Suggested next step */
 .findingCardNextStep {
   display: flex;
@@ -307,4 +336,162 @@
   color: var(--text-secondary);
   line-height: 1.5;
   font-family: var(--font-mono);
+}
+
+/* ---- Finding Detail Dialog ---- */
+
+.findingDialogContent {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.findingDialogHeader {
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+}
+
+.findingDialogTitle {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.findingDialogClose {
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--bg-base);
+  }
+}
+
+.findingDialogBody {
+  padding: 0;
+}
+
+.findingDialog {
+  padding: 14px;
+}
+
+.findingDialogMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.findingDialogType {
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.findingDialogDescription {
+  margin: 0 0 14px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.findingDialogGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.findingDialogMetric {
+  min-width: 0;
+  padding: 8px 9px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.findingDialogMetricLabel {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.findingDialogMetricValue {
+  display: block;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.findingDialogSection {
+  margin-bottom: 12px;
+}
+
+.findingDialogSectionTitle {
+  margin: 0 0 7px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.findingDialogEvidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.findingDialogNextStep {
+  display: flex;
+  gap: 8px;
+  padding: 9px 10px;
+  background-color: rgba(0, 184, 169, 0.08);
+  border: 1px solid rgba(0, 184, 169, 0.18);
+  border-radius: var(--radius-sm);
+}
+
+.findingDialogNextStepText {
+  margin: 0;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+  .findingDialogGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .findingDialogHeader {
+    padding: 10px 12px;
+  }
+
+  .findingDialog {
+    padding: 12px;
+  }
 }

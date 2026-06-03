@@ -653,9 +653,11 @@ User can save finding/report as artifact
 - ✅ 1⁄3 octave bands
 - ✅ Region-aware CPB graph
 - 🟡 Current method: FFT-bin power summation into nominal fractional-octave bands
+- ✅ CPB comparison between files via existing compare workflow
+- ✅ CPB comparison UX shows the largest band deltas first, with the full band table below
+- ✅ Agent compare/report artifacts can cite strongest CPB band delta
 - ❌ Standards-oriented filter-bank mode via Python sidecar
 - ❌ A-weighting / C-weighting
-- ❌ CPB comparison between files
 - ❌ CPB over time
 
 Future method roadmap:
@@ -1032,10 +1034,11 @@ Build huge architecture for all future metrics before one full feature works.
 6. ~~Findings panel~~ ✅
 7. ~~Tonal peak detection~~ ✅
 8. ~~CPB analysis~~ 🟡 Partial
-9. **CPB comparison / weighting** ← next
-10. Standards-oriented CPB filter-bank mode via Python sidecar
-11. Sound-quality metrics
-12. Batch comparison
+9. ~~CPB comparison~~ ✅
+10. **CPB weighting controls** ← next
+11. Standards-oriented CPB filter-bank mode via Python sidecar
+12. Sound-quality metrics
+13. Batch comparison
 
 ---
 
@@ -1159,20 +1162,19 @@ When I ask for sprint planning, please:
 
 Sprint goal:
 
-> Add CPB comparison and weighting controls on top of the implemented CPB graph.
+> Add CPB weighting controls on top of the implemented graph and comparison views.
 
 Suggested scope:
 
 ```
-Run CPB analysis for two loaded files
-→ compute per-band deltas for octave / 1/3 octave bands
-→ add optional A-weighting / C-weighting metadata and display
+Run CPB analysis with selectable weighting
+→ support Z / A / C weighting metadata and per-band display correction
+→ apply weighting consistently in single-file and comparison CPB views
 → evaluate `PyOctaveBand` for a future `python_filter_bank` CPB method
-→ frontend shows side-by-side or delta CPB bars
-→ agent can cite CPB band evidence when explaining spectral balance
+→ agent can cite weighted or unweighted CPB evidence explicitly
 ```
 
-Findings, tonal peak detection, and the first CPB graph slice are now implemented. The next high-value feature is CPB comparison and weighting, because it turns the band graph into a practical A/B acoustic diagnostic.
+Findings, tonal peak detection, the first CPB graph slice, and CPB comparison are now implemented. The next high-value feature is weighting control, because it makes band energy interpretation clearer for perceptual and acoustic diagnostics.
 
 ---
 

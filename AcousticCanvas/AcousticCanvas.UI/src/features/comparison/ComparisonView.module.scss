@@ -112,6 +112,11 @@
   &:hover {
     color: var(--text-secondary);
   }
+
+  &:disabled {
+    color: rgba(134, 142, 150, 0.45);
+    cursor: not-allowed;
+  }
 }
 
 .tabButtonActive {
@@ -122,10 +127,132 @@
 /* --- Table section --- */
 
 .tableSection {
-  flex-shrink: 0;
-  overflow-x: auto;
+  flex: 1 1 auto;
+  min-height: 260px;
+  overflow: auto;
   padding: 0 4px 8px;
   background: var(--bg-surface);
+}
+
+.tableEmptyState {
+  padding: 18px 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: center;
+}
+
+.cpbEmptyState {
+  padding: 48px 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: center;
+}
+
+.cpbDeltaChart {
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-base);
+}
+
+.cpbDeltaHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.cpbDeltaTitle {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cpbDeltaSubtitle,
+.cpbDeltaScale,
+.cpbDeltaDirection {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.cpbDeltaScale {
+  white-space: nowrap;
+}
+
+.cpbDeltaCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.cpbDeltaCard {
+  min-width: 0;
+  padding: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.cpbDeltaCardTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.cpbBandLabel {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cpbDeltaTrack {
+  position: relative;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.cpbDeltaBar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 1px;
+}
+
+.cpbDeltaPositive {
+  background: #2f9e44;
+}
+
+.cpbDeltaNegative {
+  background: #e8590c;
+}
+
+.cpbDeltaValue {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cpbDeltaDirection {
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .metricsTable {
@@ -183,6 +310,14 @@
   padding: 5px 10px;
   color: var(--text-primary);
   font-weight: 500;
+}
+
+.inlineMeta {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 400;
 }
 
 .tableMeta {

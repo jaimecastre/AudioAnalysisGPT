@@ -173,6 +173,14 @@ export type CompareBandEnergy = {
   energyDb: number;
 };
 
+export type CompareCpbBand = {
+  label: string;
+  centerFrequencyHz: number;
+  lowerFrequencyHz: number;
+  upperFrequencyHz: number;
+  levelDb: number | null;
+};
+
 export type CompareFileSummary = {
   fileId: string;
   fileName: string;
@@ -185,6 +193,7 @@ export type CompareFileSummary = {
   regionEndSeconds: number;
   spectrumCurve: CompareSpectrumCurve;
   bandEnergies: CompareBandEnergy[];
+  cpbBands: CompareCpbBand[];
 };
 
 export type PairwiseDiff = {
@@ -200,6 +209,7 @@ export type PairwiseDiff = {
   higherPeakFrequencyFileId: string;
   spectrumDelta: CompareSpectrumDelta;
   bandEnergyDeltas: CompareBandEnergy[];
+  cpbBandDeltas: CompareCpbBand[];
 };
 
 export type CompareResult = {

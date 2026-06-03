@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
-import { useState } from 'react';
-import type { CompareResult, CompareFileSummary, PairwiseDiff, CompareBandEnergy } from '../agent/agentToolTypes';
+import { useEffect, useState } from 'react';
+import type { CompareResult, CompareFileSummary, PairwiseDiff, CompareBandEnergy, CompareCpbBand } from '../agent/agentToolTypes';
 import { ComparisonSpectrumCanvas } from './ComparisonSpectrumCanvas';
 import styles from './ComparisonView.module.scss';
 
@@ -19,6 +19,11 @@ function formatDeltaDb(value: number): string {
   if (!isFinite(value)) return '—';
   const sign = value > 0 ? '+' : '';
   return `${sign}${value.toFixed(1)} dB`;
+}
+
+function formatNullableDb(value: number | null): string {
+  if (value === null || !isFinite(value)) return '—';
+  return `${value.toFixed(1)} dB`;
 }
 
 interface LevelMetricsTableProps {
@@ -155,9 +160,141 @@ function BandEnergyTable({ bandEnergiesA, bandEnergiesB, bandEnergyDeltas, label
   );
 }
 
+interface CpbDeltaTableProps {
+  cpbBandsA?: CompareCpbBand[];
+  cpbBandsB?: CompareCpbBand[];
+  cpbBandDeltas?: CompareCpbBand[];
+  labelA: string;
+  labelB: string;
+}
+
+function CpbDeltaTable({ cpbBandsA, cpbBandsB, cpbBandDeltas, labelA, labelB }: CpbDeltaTableProps): JSX.Element {
+  const bandsA = cpbBandsA ?? [];
+  const bandsB = cpbBandsB ?? [];
+  const deltas = cpbBandDeltas ?? [];
+
+  if (bandsA.length === 0 || bandsB.length === 0 || deltas.length === 0) {
+    return (
+      <div className={styles.tableEmptyState}>
+        Run comparison again to include CPB band deltas.
+      </div>
+    );
+  }
+
+  return (
+    <table className={styles.metricsTable}>
+      <thead>
+        <tr>
+          <th className={styles.tableHeadLabel}>Band</th>
+          <th className={styles.tableHeadA}>{labelA}</th>
+          <th className={styles.tableHeadB}>{labelB}</th>
+          <th className={styles.tableHeadDelta}>Δ (B − A)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {bandsA.map((bandA, index) => {
+          const bandB = bandsB[index];
+          const bandDelta = deltas[index];
+          if (!bandB || !bandDelta) return null;
+
+          const deltaValue = bandDelta.levelDb;
+          const isPositiveDelta = deltaValue !== null && deltaValue > 0;
+          const isNegativeDelta = deltaValue !== null && deltaValue < 0;
+
+          return (
+            <tr key={bandA.label} className={styles.tableRow}>
+              <td className={styles.tableLabel}>
+                {bandA.label} Hz
+                <span className={styles.inlineMeta}>
+                  {bandA.lowerFrequencyHz.toFixed(0)}-{bandA.upperFrequencyHz.toFixed(0)} Hz
+                </span>
+              </td>
+              <td className={styles.tableValueA}>{formatNullableDb(bandA.levelDb)}</td>
+              <td className={styles.tableValueB}>{formatNullableDb(bandB.levelDb)}</td>
+              <td className={`${styles.tableDelta} ${isPositiveDelta ? styles.deltaPositive : ''} ${isNegativeDelta ? styles.deltaNegative : ''}`}>
+                {deltaValue === null ? '—' : formatDeltaDb(deltaValue)}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function CpbDeltaChart({
+  cpbBandDeltas,
+  labelA,
+  labelB,
+}: {
+  cpbBandDeltas?: CompareCpbBand[];
+  labelA: string;
+  labelB: string;
+}): JSX.Element {
+  const topDeltas = (cpbBandDeltas ?? [])
+    .filter((band) => band.levelDb !== null && isFinite(band.levelDb))
+    .sort((a, b) => Math.abs(b.levelDb ?? 0) - Math.abs(a.levelDb ?? 0))
+    .slice(0, 6);
+
+  if (topDeltas.length === 0) {
+    return (
+      <div className={styles.cpbEmptyState}>
+        Run comparison again to include CPB band deltas.
+      </div>
+    );
+  }
+
+  const maxAbsDelta = Math.max(3, ...topDeltas.map((band) => Math.abs(band.levelDb ?? 0)));
+
+  return (
+    <div className={styles.cpbDeltaChart}>
+      <div className={styles.cpbDeltaHeader}>
+        <div>
+          <div className={styles.cpbDeltaTitle}>Largest CPB Differences</div>
+          <div className={styles.cpbDeltaSubtitle}>Δ is {labelB} minus {labelA}</div>
+        </div>
+        <div className={styles.cpbDeltaScale}>Max |Δ| {maxAbsDelta.toFixed(1)} dB</div>
+      </div>
+      <div className={styles.cpbDeltaCards}>
+        {topDeltas.map((band) => {
+          const delta = band.levelDb ?? 0;
+          const widthPercent = Math.min(100, Math.abs(delta) / maxAbsDelta * 100);
+          const isPositive = delta >= 0;
+          const higherLabel = isPositive ? labelB : labelA;
+
+          return (
+            <div key={band.label} className={styles.cpbDeltaCard}>
+              <div className={styles.cpbDeltaCardTop}>
+                <span className={styles.cpbBandLabel}>{band.label} Hz</span>
+                <span className={`${styles.cpbDeltaValue} ${isPositive ? styles.deltaPositive : styles.deltaNegative}`}>
+                  {formatDeltaDb(delta)}
+                </span>
+              </div>
+              <div className={styles.cpbDeltaTrack}>
+                <div
+                  className={`${styles.cpbDeltaBar} ${isPositive ? styles.cpbDeltaPositive : styles.cpbDeltaNegative}`}
+                  style={{ width: `${widthPercent}%` }}
+                />
+              </div>
+              <div className={styles.cpbDeltaDirection}>{higherLabel} higher</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
   const [showDelta, setShowDelta] = useState(true);
-  const [activeTab, setActiveTab] = useState<'level' | 'bands'>('bands');
+  const hasCpbComparison = Boolean(result.files[0]?.cpbBands?.length && result.files[1]?.cpbBands?.length && result.pairwiseDiffs[0]?.cpbBandDeltas?.length);
+  const [activeTab, setActiveTab] = useState<'cpb' | 'bands' | 'level'>(hasCpbComparison ? 'cpb' : 'bands');
+
+  useEffect(() => {
+    if (!hasCpbComparison && activeTab === 'cpb') {
+      setActiveTab('bands');
+    }
+  }, [activeTab, hasCpbComparison]);
 
   if (result.files.length < 2 || result.pairwiseDiffs.length === 0) {
     return (
@@ -203,20 +340,30 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
         </label>
       </div>
 
-      {/* Spectrum overlay canvas */}
-      <div className={styles.canvasSection}>
-        <ComparisonSpectrumCanvas
-          curveA={fileA.spectrumCurve}
-          curveB={fileB.spectrumCurve}
-          delta={diff.spectrumDelta}
-          labelA={labelA}
-          labelB={labelB}
-          showDelta={showDelta}
-        />
-      </div>
+      {activeTab !== 'cpb' && (
+        <div className={styles.canvasSection}>
+          <ComparisonSpectrumCanvas
+            curveA={fileA.spectrumCurve}
+            curveB={fileB.spectrumCurve}
+            delta={diff.spectrumDelta}
+            labelA={labelA}
+            labelB={labelB}
+            showDelta={showDelta}
+          />
+        </div>
+      )}
 
       {/* Tab switcher for tables */}
       <div className={styles.tabBar}>
+        <button
+          type="button"
+          className={`${styles.tabButton} ${activeTab === 'cpb' ? styles.tabButtonActive : ''}`}
+          onClick={() => setActiveTab('cpb')}
+          disabled={!hasCpbComparison}
+          title={hasCpbComparison ? 'Show CPB band deltas' : 'Run comparison again to include CPB deltas'}
+        >
+          CPB Δ
+        </button>
         <button
           type="button"
           className={`${styles.tabButton} ${activeTab === 'bands' ? styles.tabButtonActive : ''}`}
@@ -235,6 +382,18 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
 
       {/* Tables */}
       <div className={styles.tableSection}>
+        {activeTab === 'cpb' && (
+          <>
+            <CpbDeltaChart cpbBandDeltas={diff.cpbBandDeltas} labelA={labelA} labelB={labelB} />
+            <CpbDeltaTable
+              cpbBandsA={fileA.cpbBands}
+              cpbBandsB={fileB.cpbBands}
+              cpbBandDeltas={diff.cpbBandDeltas}
+              labelA={labelA}
+              labelB={labelB}
+            />
+          </>
+        )}
         {activeTab === 'bands' && (
           <BandEnergyTable
             bandEnergiesA={fileA.bandEnergies}

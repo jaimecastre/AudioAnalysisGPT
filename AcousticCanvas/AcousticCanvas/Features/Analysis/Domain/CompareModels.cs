@@ -26,6 +26,15 @@ public sealed class CompareBandEnergy
     public required double EnergyDb { get; init; }
 }
 
+public sealed class CompareCpbBand
+{
+    public required string Label { get; init; }
+    public required double CenterFrequencyHz { get; init; }
+    public required double LowerFrequencyHz { get; init; }
+    public required double UpperFrequencyHz { get; init; }
+    public required double? LevelDb { get; init; }
+}
+
 public sealed class CompareFileSummary
 {
     public required string FileId { get; init; }
@@ -43,6 +52,9 @@ public sealed class CompareFileSummary
 
     // Energy per named frequency band.
     public required IReadOnlyList<CompareBandEnergy> BandEnergies { get; init; }
+
+    // Nominal 1/3 octave CPB bands for A/B diagnostic comparison.
+    public required IReadOnlyList<CompareCpbBand> CpbBands { get; init; }
 }
 
 public sealed class PairwiseDiff
@@ -63,6 +75,9 @@ public sealed class PairwiseDiff
 
     // Per-band delta: B minus A in dB for each named band.
     public required IReadOnlyList<CompareBandEnergy> BandEnergyDeltas { get; init; }
+
+    // Per-CPB-band delta: B minus A in dB for each nominal 1/3 octave band.
+    public required IReadOnlyList<CompareCpbBand> CpbBandDeltas { get; init; }
 }
 
 public sealed class CompareResult
