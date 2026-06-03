@@ -652,9 +652,19 @@ User can save finding/report as artifact
 - ✅ Octave bands
 - ✅ 1⁄3 octave bands
 - ✅ Region-aware CPB graph
+- 🟡 Current method: FFT-bin power summation into nominal fractional-octave bands
+- ❌ Standards-oriented filter-bank mode via Python sidecar
 - ❌ A-weighting / C-weighting
 - ❌ CPB comparison between files
 - ❌ CPB over time
+
+Future method roadmap:
+
+- Keep `fft_bin_power_sum` as the fast interactive diagnostic CPB mode.
+- Add `python_filter_bank` as a standards-oriented CPB mode when introducing the Python sidecar.
+- First candidate library: `PyOctaveBand` (MIT; fractional octave filter bank, A/C/Z weighting, time weighting).
+- Secondary candidates: `pyfar` fractional octave filters, `pyfilterbank` fractional octave filter bank.
+- Do not claim IEC 61260 compliance for the current C# FFT-bin implementation; label it as nominal FFT-bin CPB analysis.
 
 ## Sound Quality Metrics ❌ NOT STARTED
 
@@ -1023,8 +1033,9 @@ Build huge architecture for all future metrics before one full feature works.
 7. ~~Tonal peak detection~~ ✅
 8. ~~CPB analysis~~ 🟡 Partial
 9. **CPB comparison / weighting** ← next
-10. Sound-quality metrics
-11. Batch comparison
+10. Standards-oriented CPB filter-bank mode via Python sidecar
+11. Sound-quality metrics
+12. Batch comparison
 
 ---
 
@@ -1156,6 +1167,7 @@ Suggested scope:
 Run CPB analysis for two loaded files
 → compute per-band deltas for octave / 1/3 octave bands
 → add optional A-weighting / C-weighting metadata and display
+→ evaluate `PyOctaveBand` for a future `python_filter_bank` CPB method
 → frontend shows side-by-side or delta CPB bars
 → agent can cite CPB band evidence when explaining spectral balance
 ```
