@@ -1,0 +1,59 @@
+using FastEndpoints;
+using AcousticCanvas.Features.Agent.Commands;
+
+namespace AcousticCanvas.Features.Agent.Endpoints;
+
+public sealed class AgentAskRequest
+{
+    public string Question { get; set; } = string.Empty;
+    public List<string> SelectedFileIds { get; set; } = [];
+    public string? ProjectId { get; set; }
+    public string? Mode { get; set; }
+}
+
+public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
+{
+    public override void Configure()
+    {
+        Post("/api/agent/ask");
+        AllowAnonymous();
+    }
+
+    public override async Task HandleAsync(AgentAskRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Question))
+        {
+            HttpContext.Response.StatusCode = 400;
+            await HttpContext.Response.WriteAsync("Question cannot be empty.", cancellationToken);
+            return;
+        }
+
+        if (request.SelectedFileIds.Count == 0)
+        {
+            HttpContext.Response.StatusCode = 400;
+            await HttpContext.Response.WriteAsync("At least one file must be selected.", cancellationToken);
+            return;
+        }
+
+        var command = new AgentAskCommand(
+            Question: request.Question,
+            SelectedFileIds: request.SelectedFileIds,
+            ProjectId: request.ProjectId,
+            Mode: request.Mode);
+
+        try
+        {
+            Response = await command.ExecuteAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            HttpContext.Response.StatusCode = 499;
+            await HttpContext.Response.WriteAsync("Request was cancelled.", cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            HttpContext.Response.StatusCode = 500;
+            await HttpContext.Response.WriteAsync($"Agent orchestration error: {ex.Message}", cancellationToken);
+        }
+    }
+}

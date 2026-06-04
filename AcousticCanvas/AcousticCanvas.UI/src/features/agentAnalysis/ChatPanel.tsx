@@ -11,6 +11,7 @@ import type { ChatMessage } from './chatSlice';
 import { artifactFocused } from './agentWorkspaceSlice';
 import { ATTACH_ACCEPT } from './chatAttachments';
 import { useChatInput } from './useChatInput';
+import { AgentAnswerPanel } from './AgentAnswerPanel';
 import type { MentionCandidate } from './useChatInput';
 import styles from './ChatPanel.module.scss';
 
@@ -246,6 +247,10 @@ export function ChatPanel(): JSX.Element {
     handleSendMessage,
     handleClearConversation,
     handleExplainSelection,
+    agentAskStatus,
+    agentAskResponse,
+    agentAskError,
+    handleClarificationReply,
   } = useChatInput(isThinking);
 
   const messageListRef = useRef<HTMLDivElement | null>(null);
@@ -287,6 +292,12 @@ export function ChatPanel(): JSX.Element {
           return <AssistantMessage key={message.id} message={message} />;
         })}
         {isThinking && <ThinkingIndicator />}
+        <AgentAnswerPanel
+          status={agentAskStatus}
+          response={agentAskResponse}
+          error={agentAskError}
+          onReply={handleClarificationReply}
+        />
       </div>
 
       <div className={styles.inputArea}>

@@ -79,6 +79,7 @@ The UI supports two main workspaces:
 | Audio file streaming | ✅ Done | `GET /api/audio/file/{fileId}` |
 | Agent analysis run (DSP summary for LLM) | ✅ Done | `POST /api/analysis/run` |
 | OpenAI API chat proxy | ✅ Done | `POST /api/agent/chat` |
+| Agent orchestration (planner → tools → evidence → answer) | ✅ Done | `POST /api/agent/ask` |
 | Findings engine (clipping, silence, crest factor, DC offset, tonal peaks) | ✅ Done | `POST /api/analysis/findings` |
 | Tonal peak detection (local prominence heuristic) | ✅ Done | Included in spectrum and findings |
 | CPB / octave band analysis | ✅ Done | `POST /api/analysis/cpb` |
@@ -746,18 +747,19 @@ Must-have features:
 - Metric ranking table across imported files
 - Basic sound-quality summary
 
-## ❌ Milestone 3 — Evidence-Based Agent — NOT STARTED
+## 🟡 Milestone 3 — Evidence-Based Agent — IN PROGRESS
 
 Must-have features:
 
-- Agent can explain selected spectrum
-- Agent can explain selected spectrogram
-- Agent can explain clipping result
+- ✅ Agent orchestration vertical slice (planner → tools → evidence → grounded answer)
+- ✅ `POST /api/agent/ask` endpoint
+- ✅ `AgentOrchestrator`, `AgentPlanner`, `ToolExecutionService`, `EvidencePackageBuilder`, `AgentResponseValidator`
+- ✅ AgentToolRegistry whitelist (get_metadata, run_basic_metrics, run_spectrum, run_cpb, run_event_detection)
+- ✅ Frontend: `useAgentAsk` hook, `agentAskSlice`, `AgentAnswerPanel` component
+- ✅ Evidence references, confidence, limitations, suggested next steps in response
 - Agent can explain A/B differences
-- Agent can suggest next analysis
 - Agent can summarize findings
-- Agent can say when evidence is insufficient
-- Agent responses include evidence references
+- Integrate `AgentAnswerPanel` into the existing `AgentWorkspacePanel` / `ChatPanel`
 
 ## ❌ Milestone 4 — Batch Benchmarking — NOT STARTED
 

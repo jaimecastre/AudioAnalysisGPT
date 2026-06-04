@@ -1,0 +1,390 @@
+@keyframes answerIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ─── Analyzing state (matches ThinkingIndicator placement) ─
+
+.analyzingState {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  animation: answerIn 0.18s ease both;
+}
+
+.analyzingBubble {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  border-bottom-left-radius: 4px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.analyzingSpinner {
+  width: 10px;
+  height: 10px;
+  border: 2px solid rgba(0, 184, 169, 0.3);
+  border-top-color: #00b8a9;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ─── Error state ──────────────────────────────────────────
+
+.errorState {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 2px 20px;
+  padding: 10px 14px;
+  background-color: rgba(248, 113, 113, 0.07);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 10px;
+  animation: answerIn 0.18s ease both;
+}
+
+.errorIcon {
+  color: #f87171;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.errorText {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+// ─── Answer panel (matches .messageBubble assistant style) ─
+
+.answerPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 2px 20px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  border-bottom-left-radius: 4px;
+  overflow: hidden;
+  animation: answerIn 0.18s ease both;
+}
+
+.answerHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px 0;
+}
+
+// ─── Confidence badge ─────────────────────────────────────
+
+.confidenceBadge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+.confidenceHigh {
+  background: rgba(0, 184, 169, 0.12);
+  color: #00b8a9;
+  border: 1px solid rgba(0, 184, 169, 0.3);
+}
+
+.confidenceMedium {
+  background: rgba(0, 184, 169, 0.07);
+  color: rgba(0, 184, 169, 0.8);
+  border: 1px solid rgba(0, 184, 169, 0.2);
+}
+
+.confidenceLow {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.validationWarning {
+  display: inline-flex;
+  align-items: center;
+  color: #f59e0b;
+  cursor: help;
+  opacity: 0.8;
+}
+
+// ─── Answer text ──────────────────────────────────────────
+
+.answerText {
+  padding: 8px 14px 10px;
+  font-size: 0.83rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+// ─── Divider sections ─────────────────────────────────────
+
+.evidenceSection,
+.limitationsSection,
+.nextStepsSection,
+.toolExecutionSection {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+}
+
+// ─── Section label ────────────────────────────────────────
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+  font-size: 0.62rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+// ─── Evidence chips (matches .evidenceLink style) ─────────
+
+.evidenceChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.evidenceChip {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 2px 6px;
+  background: rgba(0, 184, 169, 0.08);
+  color: #00b8a9;
+  border: 1px solid rgba(0, 184, 169, 0.3);
+  border-radius: 4px;
+}
+
+// ─── Lists ────────────────────────────────────────────────
+
+.limitationsList,
+.nextStepsList {
+  margin: 0;
+  padding-left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.limitationItem,
+.nextStepItem {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.nextStepItem {
+  color: var(--text-secondary);
+}
+
+// ─── Tool execution toggle ────────────────────────────────
+
+.toolExecutionToggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  padding: 0;
+  transition: color 0.15s ease;
+
+  &:hover {
+    color: var(--text-secondary);
+  }
+}
+
+.toolExecutionList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 7px;
+}
+
+// ─── Tool execution rows ──────────────────────────────────
+
+.toolExecutionRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+}
+
+.toolIconSuccess {
+  color: rgba(0, 184, 169, 0.9);
+  background-color: rgba(0, 184, 169, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.toolIconFailed {
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.toolName {
+  color: var(--text-secondary);
+}
+
+.toolStatus {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.toolStatusCompleted {
+  color: rgba(0, 184, 169, 0.8);
+}
+
+.toolStatusFailed {
+  color: #f87171;
+}
+
+.toolError {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  opacity: 0.8;
+}
+
+.limitationsInline {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.limitationInlineItem {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  line-height: 1.5;
+  opacity: 0.7;
+}
+
+// ─── Clarification inline reply ───────────────────────────
+
+.clarificationPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 2px 20px;
+  padding: 10px 14px;
+  background-color: var(--bg-surface);
+  border: 1px solid rgba(0, 184, 169, 0.25);
+  border-radius: 14px;
+  border-bottom-left-radius: 4px;
+  animation: answerIn 0.18s ease both;
+}
+
+.clarificationQuestion {
+  font-size: 0.83rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.clarificationInputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 6px 5px 10px;
+  transition: border-color 0.15s ease;
+
+  &:focus-within {
+    border-color: rgba(0, 184, 169, 0.6);
+  }
+}
+
+.clarificationInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--text-primary);
+
+  &::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+  }
+}
+
+.clarificationSendButton {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  background-color: #00b8a9;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background-color: #00a396;
+  }
+
+  &:disabled {
+    background-color: var(--bg-elevated);
+    color: var(--text-muted);
+    cursor: default;
+  }
+}

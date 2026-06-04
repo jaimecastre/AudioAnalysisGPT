@@ -9,6 +9,7 @@ import cpbReducer from '../features/analysis/cpbSlice';
 import chatReducer from '../features/agentAnalysis/chatSlice';
 import agentWorkspaceReducer from '../features/agentAnalysis/agentWorkspaceSlice';
 import findingsReducer from '../features/findings/findingsSlice';
+import agentAskReducer from '../features/agentAnalysis/agentAskSlice';
 
 export const store = configureStore({
   reducer: {
@@ -22,6 +23,7 @@ export const store = configureStore({
     chat: chatReducer,
     agentWorkspace: agentWorkspaceReducer,
     findings: findingsReducer,
+    agentAsk: agentAskReducer,
   },
 });
 

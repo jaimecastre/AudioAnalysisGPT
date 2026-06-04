@@ -85,10 +85,11 @@ public static class SpectrumAnalyzer
             ApplyDbReferenceInPlace(spectrumData.Magnitudes, spectrumData.MagnitudesDb, channel.DbReference);
         }
 
-        // Find peak frequency and max magnitude from data.
+        // Find peak bin, then apply quadratic interpolation for sub-bin frequency accuracy.
         double? maxMagnitude = null;
         double? maxMagnitudeDb = null;
         double? peakFrequencyHz = null;
+        var peakBinIndex = -1;
 
         for (var i = 0; i < spectrumData.FrequenciesHz.Length; i++)
         {
@@ -97,6 +98,19 @@ public static class SpectrumAnalyzer
                 maxMagnitude = spectrumData.Magnitudes[i];
                 maxMagnitudeDb = spectrumData.MagnitudesDb[i];
                 peakFrequencyHz = spectrumData.FrequenciesHz[i];
+                peakBinIndex = i;
+            }
+        }
+
+        if (peakBinIndex > 0 && peakBinIndex < spectrumData.FrequenciesHz.Length - 1)
+        {
+            var interpolatedHz = QuadraticInterpolateFrequencyHz(
+                spectrumData.Magnitudes,
+                spectrumData.FrequenciesHz,
+                peakBinIndex);
+            if (interpolatedHz.HasValue)
+            {
+                peakFrequencyHz = interpolatedHz.Value;
             }
         }
 
@@ -168,9 +182,12 @@ public static class SpectrumAnalyzer
                 ? "high"
                 : "medium";
 
+            var interpolatedPeakHz = QuadraticInterpolateFrequencyHz(magnitudes, frequenciesHz, i)
+                ?? frequenciesHz[i];
+
             candidates.Add(new TonalPeak
             {
-                FrequencyHz = Math.Round(frequenciesHz[i], 3),
+                FrequencyHz = Math.Round(interpolatedPeakHz, 3),
                 MagnitudeDb = Math.Round(dbValues[i], 3),
                 LocalFloorDb = Math.Round(localFloor.Value, 3),
                 ProminenceDb = Math.Round(prominenceDb, 3),
@@ -270,6 +287,55 @@ public static class SpectrumAnalyzer
     private static bool IsFinite(double value)
     {
         return !double.IsNaN(value) && !double.IsInfinity(value);
+    }
+
+    /// <summary>
+    /// Parabolic interpolation in log-magnitude (dB) domain around <paramref name="peakIndex"/>.
+    /// The Hann window main lobe is approximately parabolic in dB, so this gives significantly
+    /// better sub-bin frequency accuracy for sinusoids than linear-magnitude interpolation.
+    /// Falls back to linear magnitude if any neighbour is zero or negative.
+    /// Returns the interpolated frequency in Hz, or null if neighbours are invalid.
+    /// </summary>
+    private static double? QuadraticInterpolateFrequencyHz(
+        IReadOnlyList<double> magnitudes,
+        IReadOnlyList<double> frequenciesHz,
+        int peakIndex)
+    {
+        if (peakIndex <= 0 || peakIndex >= magnitudes.Count - 1)
+        {
+            return null;
+        }
+
+        var magLeft   = magnitudes[peakIndex - 1];
+        var magCenter = magnitudes[peakIndex];
+        var magRight  = magnitudes[peakIndex + 1];
+
+        double alpha;
+        double beta;
+        double gamma;
+
+        if (magLeft > 0.0 && magCenter > 0.0 && magRight > 0.0)
+        {
+            alpha = 20.0 * Math.Log10(magLeft);
+            beta  = 20.0 * Math.Log10(magCenter);
+            gamma = 20.0 * Math.Log10(magRight);
+        }
+        else
+        {
+            alpha = magLeft;
+            beta  = magCenter;
+            gamma = magRight;
+        }
+
+        var denominator = alpha - 2.0 * beta + gamma;
+        if (Math.Abs(denominator) < 1e-12)
+        {
+            return null;
+        }
+
+        var fractionalOffset = 0.5 * (alpha - gamma) / denominator;
+        var binSpacingHz = frequenciesHz[peakIndex] - frequenciesHz[peakIndex - 1];
+        return frequenciesHz[peakIndex] + fractionalOffset * binSpacingHz;
     }
 
     private static SpectrumData ComputeAveragedSpectrum(

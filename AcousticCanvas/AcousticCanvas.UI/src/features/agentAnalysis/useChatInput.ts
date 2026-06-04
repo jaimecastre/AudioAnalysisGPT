@@ -6,7 +6,7 @@ import {
   conversationCleared,
 } from './chatSlice';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
-import { projectFilesSelector } from '../project/projectSlice';
+import { projectFilesSelector, selectedSignalIdSelector } from '../project/projectSlice';
 import { agentWorkspaceCleared } from './agentWorkspaceSlice';
 import { runAgentToolLoop } from './agentToolRunner';
 import { useAudioUpload } from '../audioUpload/useAudioUpload';
@@ -17,6 +17,8 @@ import {
   buildMessageWithAttachments,
 } from './chatAttachments';
 import type { PendingAttachment } from './chatAttachments';
+import { routeUserQuestion } from './llm/questionRouter';
+import { useAgentAsk } from './hooks/useAgentAsk';
 
 export type MentionCandidate = {
   fileId: string;
@@ -44,6 +46,11 @@ export interface UseChatInputReturn {
   handleSendMessage: () => void;
   handleClearConversation: () => void;
   handleExplainSelection: () => void;
+  agentAskStatus: ReturnType<typeof useAgentAsk>['status'];
+  agentAskResponse: ReturnType<typeof useAgentAsk>['response'];
+  agentAskError: ReturnType<typeof useAgentAsk>['error'];
+  agentAskIsAnalyzing: boolean;
+  handleClarificationReply: (replyText: string) => void;
 }
 
 function getActiveMentionToken(text: string, cursorPosition: number): string | null {
@@ -68,7 +75,9 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
   const dispatch = useAppDispatch();
   const activeSelection = useAppSelector(activeSelectionSelector);
   const projectFiles = useAppSelector(projectFilesSelector);
+  const selectedSignalId = useAppSelector(selectedSignalIdSelector);
   const reduxStore = useAppStore();
+  const { status: agentAskStatus, response: agentAskResponse, error: agentAskError, isAnalyzing: agentAskIsAnalyzing, submitQuestion } = useAgentAsk();
   const { uploadFile, isUploading } = useAudioUpload();
 
   const [inputValue, setInputValue] = useState('');
@@ -176,7 +185,15 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
       textareaRef.current.style.height = 'auto';
     }
 
-    runAgentToolLoop(finalContent, dispatch, () => reduxStore.getState());
+    const route = routeUserQuestion(trimmedContent);
+
+    if (route === 'orchestrator') {
+      const allLoadedFileIds = projectFiles.map((file) => file.id);
+      const targetFileIds = allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
+      submitQuestion(trimmedContent, targetFileIds);
+    } else {
+      runAgentToolLoop(finalContent, dispatch, () => reduxStore.getState());
+    }
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -239,10 +256,29 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
       timestamp: new Date().toISOString(),
     }));
 
-    runAgentToolLoop(explainMessage, dispatch, () => reduxStore.getState());
+    const allLoadedFileIds = projectFiles.map((file) => file.id);
+    const targetFileIds = allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
+    submitQuestion(explainMessage, targetFileIds);
   };
 
-  const canSend = (inputValue.trim().length > 0 || pendingAttachments.length > 0) && !isThinking && !isUploading;
+  const handleClarificationReply = (replyText: string): void => {
+    const previousQuestion = agentAskResponse?.answer ?? '';
+    const combinedQuestion = previousQuestion.length > 0
+      ? `${previousQuestion} ${replyText}`
+      : replyText;
+
+    dispatch(userMessageSent({
+      id: crypto.randomUUID(),
+      content: replyText,
+      timestamp: new Date().toISOString(),
+    }));
+
+    const allLoadedFileIds = projectFiles.map((file) => file.id);
+    const targetFileIds = allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
+    submitQuestion(combinedQuestion, targetFileIds);
+  };
+
+  const canSend = (inputValue.trim().length > 0 || pendingAttachments.length > 0) && !isThinking && !isUploading && !agentAskIsAnalyzing;
 
   return {
     inputValue,
@@ -265,5 +301,10 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
     handleSendMessage,
     handleClearConversation,
     handleExplainSelection,
+    agentAskStatus,
+    agentAskResponse,
+    agentAskError,
+    agentAskIsAnalyzing,
+    handleClarificationReply,
   };
 }
