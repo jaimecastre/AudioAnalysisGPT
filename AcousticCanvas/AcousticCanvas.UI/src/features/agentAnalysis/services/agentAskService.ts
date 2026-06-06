@@ -1,3 +1,5 @@
+import { toFriendlyAgentError } from './agentErrorMessage';
+
 const API_BASE_URL = 'http://localhost:5146';
 
 export type AgentToolExecutionRecord = {
@@ -42,7 +44,7 @@ export async function callAgentAskEndpoint(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Agent ask failed (${response.status}): ${errorText}`);
+    throw new Error(toFriendlyAgentError(response.status, errorText));
   }
 
   const data = await response.json() as AgentAskResponse;

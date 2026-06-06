@@ -10,7 +10,7 @@ import { useAppSelector, useAppDispatch } from '../../store/reduxHooks';
 import { projectFilesSelector, selectedSignalIdSelector } from '../project/projectSlice';
 import { setLoopEnabled, loopEnabledSelector, activeSelectionSelector } from '../waveform/waveformSelectionSlice';
 import { ActionIcon, Tooltip } from '@mantine/core';
-import { IconRepeat, IconX, IconUpload, IconRobot } from '@tabler/icons-react';
+import { IconRepeat, IconX, IconUpload, IconRobot, IconSelectAll } from '@tabler/icons-react';
 import { callCompareTool } from '../agent/services/compareToolService';
 import type { CompareResult } from '../agent/agentToolTypes';
 import { RightSidebar } from './RightSidebar';
@@ -34,7 +34,7 @@ export const ManualWorkspace = (): JSX.Element => {
   const analysisStatus = useAppSelector(analysisStatusSelector);
   const analysisError = useAppSelector(analysisErrorSelector);
 
-  const { isUploading, uploadFile, uploadFiles } = useAudioUpload();
+  const { isUploading, uploadFiles } = useAudioUpload();
   const { panelWidth: leftPanelWidth, handleDragHandleMouseDown } = useResizablePanel(220);
   const {
     toolPanels,
@@ -107,6 +107,13 @@ export const ManualWorkspace = (): JSX.Element => {
 
   const handleClearSelection = (): void => {
     waveSurferRef.current?.clearSelection();
+  };
+
+  const handleSelectWholeFile = (): void => {
+    if (duration <= 0) {
+      return;
+    }
+    waveSurferRef.current?.setSelection(0, duration);
   };
 
   const handleKeyboardPlayPause = (): void => {
@@ -337,6 +344,19 @@ export const ManualWorkspace = (): JSX.Element => {
                           <IconRepeat size={14} />
                         </ActionIcon>
                       </Tooltip>
+                      {!activeSelection && duration > 0 && (
+                        <Tooltip label="Select whole file" withArrow position="top">
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            size="sm"
+                            onClick={handleSelectWholeFile}
+                            aria-label="Select whole file"
+                          >
+                            <IconSelectAll size={14} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
                       {activeSelection && (
                         <Tooltip label="Clear selection" withArrow position="top">
                           <ActionIcon

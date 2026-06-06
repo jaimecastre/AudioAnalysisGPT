@@ -1,9 +1,12 @@
-import type { JSX } from 'react';
-import { SegmentedControl } from '@mantine/core';
+import type { JSX, KeyboardEvent } from 'react';
+import { useState } from 'react';
+import { SegmentedControl, TextInput, Tooltip } from '@mantine/core';
+import { IconPencil } from '@tabler/icons-react';
 import styles from './TopNav.module.scss';
 import type { ActiveMode, ProjectStatus } from '../../store/projectState';
 import { useAppDispatch } from '../../store/reduxHooks';
 import { setActiveMode } from '../navigation/navigationSlice';
+import { setProjectName } from '../project/projectSlice';
 
 interface TopNavProps {
   activeMode: ActiveMode;
@@ -68,10 +71,61 @@ interface TopNavProjectNameProps {
 }
 
 const TopNavProjectName = ({ projectName }: TopNavProjectNameProps): JSX.Element => {
+  const dispatch = useAppDispatch();
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftName, setDraftName] = useState(projectName);
+
+  const startEditing = (): void => {
+    setDraftName(projectName);
+    setIsEditing(true);
+  };
+
+  const commitEditing = (): void => {
+    const trimmedName = draftName.trim();
+    if (trimmedName.length > 0 && trimmedName !== projectName) {
+      dispatch(setProjectName(trimmedName));
+    }
+    setIsEditing(false);
+  };
+
+  const cancelEditing = (): void => {
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key === 'Enter') {
+      commitEditing();
+    } else if (event.key === 'Escape') {
+      cancelEditing();
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <TextInput
+        size="xs"
+        value={draftName}
+        onChange={(event) => setDraftName(event.currentTarget.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={commitEditing}
+        aria-label="Project name"
+        autoFocus
+      />
+    );
+  }
+
   return (
-    <span className={styles.projectName} aria-label="Project name">
-      {projectName}
-    </span>
+    <Tooltip label="Rename project" withArrow position="bottom">
+      <button
+        type="button"
+        className={styles.projectName}
+        onClick={startEditing}
+        aria-label={`Project name: ${projectName}. Click to rename.`}
+      >
+        {projectName}
+        <IconPencil size={12} className={styles.projectNameEditIcon} />
+      </button>
+    </Tooltip>
   );
 }
 

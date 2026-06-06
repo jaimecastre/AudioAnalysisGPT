@@ -29,7 +29,7 @@ export const Sidebar = ({
         {isCollapsed ? (
           <div className={styles.collapsedHeader}>
             <div className={styles.logoOnly}>
-              <img src="/logo.svg" width={36} height={36} alt="SoundLens" />
+              <img src="/logo.svg" width={36} height={36} alt="AcousticCanvas" />
             </div>
             <button
               className={styles.expandButton}
@@ -44,7 +44,7 @@ export const Sidebar = ({
           <>
             <div className={styles.brand}>
               <img src="/logo.svg" width={32} height={32} alt="" className={styles.brandIcon} />
-              <span className={styles.brandName}>SoundLens</span>
+              <span className={styles.brandName}>AcousticCanvas</span>
             </div>
             <button
               className={styles.collapseButton}
