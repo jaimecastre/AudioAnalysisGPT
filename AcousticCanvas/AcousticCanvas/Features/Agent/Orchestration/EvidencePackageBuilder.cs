@@ -130,6 +130,11 @@ public static class EvidencePackageBuilder
                 evidenceData["crestFactorDb"] = crestElement.GetDouble();
             }
 
+            if (metricsElement.TryGetProperty("dcOffsetLinear", out var dcOffsetElement))
+            {
+                evidenceData["dcOffsetLinear"] = dcOffsetElement.GetDouble();
+            }
+
             evidenceItems.Add(new EvidenceItem
             {
                 EvidenceId = evidenceId,
@@ -382,6 +387,11 @@ public static class EvidencePackageBuilder
             if (fileResult.TryGetProperty("channels", out var channelsEl))
             {
                 evidenceData["channels"] = channelsEl.GetInt32();
+            }
+
+            if (fileResult.TryGetProperty("bitDepth", out var bitDepthEl))
+            {
+                evidenceData["bitDepth"] = bitDepthEl.GetInt32();
             }
 
             evidenceItems.Add(new EvidenceItem

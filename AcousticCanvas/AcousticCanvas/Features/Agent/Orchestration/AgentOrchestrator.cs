@@ -14,6 +14,15 @@ public sealed class AgentOrchestrator(
     {
         var conversationId = "conv_" + Guid.NewGuid().ToString("N")[..8];
 
+        // Step 0: Answer plain deterministic-fact questions (peak/RMS/sample rate/etc.)
+        // straight from the backend tools, without calling the LLM. This keeps factual
+        // lookups fast and working even when no OpenAI key is configured.
+        var deterministicPlan = DeterministicFactRouter.TryRoute(command.Question);
+        if (deterministicPlan is not null && command.SelectedFileIds.Count > 0)
+        {
+            return await AnswerDeterministicFactAsync(conversationId, command, deterministicPlan, cancellationToken);
+        }
+
         // Step 1: Resolve file names for the selected file IDs.
         var selectedFileNames = ResolveFileNames(command.SelectedFileIds);
 
@@ -80,6 +89,40 @@ public sealed class AgentOrchestrator(
             SuggestedNextSteps: finalAnswer.SuggestedNextSteps,
             ToolExecutions: toolExecutionRecords,
             ValidationWarning: validationResult.HasWarning);
+    }
+
+    private async Task<AgentAskResult> AnswerDeterministicFactAsync(
+        string conversationId,
+        AgentAskCommand command,
+        DeterministicFactPlan deterministicPlan,
+        CancellationToken cancellationToken)
+    {
+        var toolRequest = new PlannerToolRequest
+        {
+            Name = deterministicPlan.ToolName,
+            Arguments = new Dictionary<string, object?> { ["fileIds"] = command.SelectedFileIds },
+        };
+
+        var toolOutput = await toolExecutionService.ExecuteToolAsync(toolRequest, cancellationToken);
+
+        var evidencePackage = EvidencePackageBuilder.Build(
+            command.Question,
+            command.SelectedFileIds,
+            [toolOutput]);
+
+        var finalAnswer = DeterministicAnswerWriter.Write(deterministicPlan, evidencePackage);
+        var toolExecutionRecords = BuildToolExecutionRecords([toolOutput]);
+
+        return new AgentAskResult(
+            ConversationId: conversationId,
+            Answer: finalAnswer.Answer,
+            EvidencePackageId: evidencePackage.EvidencePackageId,
+            EvidenceReferences: finalAnswer.EvidenceReferences,
+            Confidence: finalAnswer.Confidence,
+            Limitations: finalAnswer.Limitations,
+            SuggestedNextSteps: finalAnswer.SuggestedNextSteps,
+            ToolExecutions: toolExecutionRecords,
+            ValidationWarning: false);
     }
 
     private IReadOnlyList<string> ResolveFileNames(IReadOnlyList<string> fileIds)

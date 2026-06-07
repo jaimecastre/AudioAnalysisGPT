@@ -402,6 +402,19 @@ public sealed class ToolExecutionService(
             }
         }
 
+        if (rawFileIds is IEnumerable<string> stringList)
+        {
+            var fileIds = new List<string>();
+            foreach (var item in stringList)
+            {
+                if (!string.IsNullOrWhiteSpace(item))
+                {
+                    fileIds.Add(item.Trim());
+                }
+            }
+            return fileIds;
+        }
+
         if (rawFileIds is string rawString)
         {
             return SplitCommaSeparatedIds(rawString);
