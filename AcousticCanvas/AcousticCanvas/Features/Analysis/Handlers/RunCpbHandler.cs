@@ -33,7 +33,8 @@ public class RunCpbHandler(IReadOnlyList<ISignalFileImporter> importers)
             query.EndSeconds,
             query.BandMode,
             query.FftSize,
-            query.Overlap);
+            query.Overlap,
+            query.Weighting);
 
         return Task.FromResult(result);
     }

@@ -179,6 +179,8 @@ export type CompareCpbBand = {
   lowerFrequencyHz: number;
   upperFrequencyHz: number;
   levelDb: number | null;
+  weighting: 'z' | 'a' | 'c';
+  weightingMethod: string;
 };
 
 export type CompareFileSummary = {

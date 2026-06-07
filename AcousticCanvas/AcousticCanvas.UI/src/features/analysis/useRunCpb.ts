@@ -37,6 +37,7 @@ export const useRunCpb = (): { runCpb: (args: RunCpbArgs) => Promise<void> } => 
             bandMode: args.parameters.bandMode,
             fftSize: args.parameters.fftSize,
             overlap: args.parameters.overlap,
+            weighting: args.parameters.weighting,
           },
           signal: abortController.signal,
         },

@@ -165,6 +165,8 @@ public class RunCompareHandler(SignalAnalysisService analysisService)
             LowerFrequencyHz = band.LowerFrequencyHz,
             UpperFrequencyHz = band.UpperFrequencyHz,
             LevelDb = band.LevelDb,
+            Weighting = cpbAnalysis.Parameters.Weighting,
+            WeightingMethod = cpbAnalysis.Parameters.WeightingMethod,
         }).ToArray();
     }
 
@@ -321,6 +323,8 @@ public class RunCompareHandler(SignalAnalysisService analysisService)
                 LowerFrequencyHz = a.LowerFrequencyHz,
                 UpperFrequencyHz = a.UpperFrequencyHz,
                 LevelDb = deltaDb,
+                Weighting = a.Weighting,
+                WeightingMethod = a.WeightingMethod,
             });
         }
 

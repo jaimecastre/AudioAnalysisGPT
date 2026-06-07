@@ -24,15 +24,17 @@ public static class CpbAnalyzer
         double endSeconds,
         string bandMode,
         int fftSize,
-        double overlap)
+        double overlap,
+        string weighting = "z")
     {
         var normalizedBandMode = NormalizeBandMode(bandMode);
+        var normalizedWeighting = NormalizeWeighting(weighting);
         var bandsPerOctave = normalizedBandMode == "octave" ? 1 : 3;
         var channelResults = new List<ChannelCpbAnalysis>();
 
         foreach (var channel in channels)
         {
-            channelResults.Add(AnalyzeChannel(channel, startSeconds, endSeconds, normalizedBandMode, bandsPerOctave, fftSize, overlap));
+            channelResults.Add(AnalyzeChannel(channel, startSeconds, endSeconds, normalizedBandMode, bandsPerOctave, fftSize, overlap, normalizedWeighting));
         }
 
         var blockCount = channels.Count > 0
@@ -52,6 +54,8 @@ public static class CpbAnalyzer
                 Averaging = Averaging,
                 Scaling = Scaling,
                 Method = Method,
+                Weighting = normalizedWeighting,
+                WeightingMethod = GetWeightingMethod(normalizedWeighting),
                 StartTimeSeconds = startSeconds,
                 EndTimeSeconds = endSeconds,
                 BlockCount = blockCount,
@@ -74,7 +78,8 @@ public static class CpbAnalyzer
         string bandMode,
         int bandsPerOctave,
         int fftSize,
-        double overlap)
+        double overlap,
+        string weighting)
     {
         var startSample = Math.Clamp((int)Math.Floor(startSeconds * channel.SampleRate), 0, channel.Samples.Length);
         var endSample = Math.Clamp((int)Math.Ceiling(endSeconds * channel.SampleRate), 0, channel.Samples.Length);
@@ -98,15 +103,17 @@ public static class CpbAnalyzer
                 binCount++;
             }
 
-            var magnitude = Math.Sqrt(powerSum);
-            var levelDb = ComputeDb(magnitude, channel.DbReference);
+            var unweightedMagnitude = Math.Sqrt(powerSum);
+            var weightingCorrectionDb = ComputeWeightingCorrectionDb(band.CenterFrequencyHz, weighting);
+            var weightedMagnitude = unweightedMagnitude * Math.Pow(10.0, weightingCorrectionDb / 20.0);
+            var levelDb = ComputeDb(weightedMagnitude, channel.DbReference);
             cpbBands.Add(new CpbBand
             {
                 Label = FormatBandLabel(band.CenterFrequencyHz),
                 CenterFrequencyHz = Math.Round(band.CenterFrequencyHz, 3),
                 LowerFrequencyHz = Math.Round(band.LowerFrequencyHz, 3),
                 UpperFrequencyHz = Math.Round(band.UpperFrequencyHz, 3),
-                Magnitude = Math.Round(magnitude, 9),
+                Magnitude = Math.Round(weightedMagnitude, 9),
                 LevelDb = levelDb.HasValue ? Math.Round(levelDb.Value, 3) : null,
                 BinCount = binCount,
             });
@@ -192,6 +199,71 @@ public static class CpbAnalyzer
     private static string NormalizeBandMode(string bandMode)
     {
         return bandMode.Equals("octave", StringComparison.OrdinalIgnoreCase) ? "octave" : "third_octave";
+    }
+
+    private static string NormalizeWeighting(string weighting)
+    {
+        if (weighting.Equals("a", StringComparison.OrdinalIgnoreCase))
+        {
+            return "a";
+        }
+
+        if (weighting.Equals("c", StringComparison.OrdinalIgnoreCase))
+        {
+            return "c";
+        }
+
+        return "z";
+    }
+
+    private static string GetWeightingMethod(string weighting)
+    {
+        return weighting switch
+        {
+            "a" => "A-weighting IEC 61672 nominal frequency response",
+            "c" => "C-weighting IEC 61672 nominal frequency response",
+            _ => "Z-weighting unweighted flat response",
+        };
+    }
+
+    private static double ComputeWeightingCorrectionDb(double frequencyHz, string weighting)
+    {
+        return weighting switch
+        {
+            "a" => ComputeAWeightingCorrectionDb(frequencyHz),
+            "c" => ComputeCWeightingCorrectionDb(frequencyHz),
+            _ => 0.0,
+        };
+    }
+
+    private static double ComputeAWeightingCorrectionDb(double frequencyHz)
+    {
+        if (frequencyHz <= 0.0)
+        {
+            return double.NegativeInfinity;
+        }
+
+        var frequencySquared = frequencyHz * frequencyHz;
+        var numerator = Math.Pow(12200.0, 2.0) * frequencySquared * frequencySquared;
+        var denominator = (frequencySquared + Math.Pow(20.6, 2.0))
+            * Math.Sqrt((frequencySquared + Math.Pow(107.7, 2.0)) * (frequencySquared + Math.Pow(737.9, 2.0)))
+            * (frequencySquared + Math.Pow(12200.0, 2.0));
+
+        return 20.0 * Math.Log10(numerator / denominator) + 2.0;
+    }
+
+    private static double ComputeCWeightingCorrectionDb(double frequencyHz)
+    {
+        if (frequencyHz <= 0.0)
+        {
+            return double.NegativeInfinity;
+        }
+
+        var frequencySquared = frequencyHz * frequencyHz;
+        var numerator = Math.Pow(12200.0, 2.0) * frequencySquared;
+        var denominator = (frequencySquared + Math.Pow(20.6, 2.0)) * (frequencySquared + Math.Pow(12200.0, 2.0));
+
+        return 20.0 * Math.Log10(numerator / denominator) + 0.06;
     }
 
     private static double? ComputeDb(double magnitude, DbReference? reference)

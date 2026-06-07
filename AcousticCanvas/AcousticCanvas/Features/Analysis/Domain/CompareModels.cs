@@ -33,6 +33,8 @@ public sealed class CompareCpbBand
     public required double LowerFrequencyHz { get; init; }
     public required double UpperFrequencyHz { get; init; }
     public required double? LevelDb { get; init; }
+    public required string Weighting { get; init; }
+    public required string WeightingMethod { get; init; }
 }
 
 public sealed class CompareFileSummary

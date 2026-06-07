@@ -9,5 +9,6 @@ public record RunCpbQuery(
     double EndSeconds,
     string BandMode,
     int FftSize,
-    double Overlap
+    double Overlap,
+    string Weighting
 ) : ICommand<CpbAnalysis>;

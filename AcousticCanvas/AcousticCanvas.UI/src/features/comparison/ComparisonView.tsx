@@ -245,13 +245,15 @@ function CpbDeltaChart({
   }
 
   const maxAbsDelta = Math.max(3, ...topDeltas.map((band) => Math.abs(band.levelDb ?? 0)));
+  const weightingLabel = topDeltas[0]?.weighting?.toUpperCase() ?? 'Z';
+  const weightingMethod = topDeltas[0]?.weightingMethod ?? 'Z-weighting unweighted flat response';
 
   return (
     <div className={styles.cpbDeltaChart}>
       <div className={styles.cpbDeltaHeader}>
         <div>
           <div className={styles.cpbDeltaTitle}>Largest CPB Differences</div>
-          <div className={styles.cpbDeltaSubtitle}>Δ is {labelB} minus {labelA}</div>
+          <div className={styles.cpbDeltaSubtitle}>Δ is {labelB} minus {labelA} · {weightingLabel}-weighted · {weightingMethod}</div>
         </div>
         <div className={styles.cpbDeltaScale}>Max |Δ| {maxAbsDelta.toFixed(1)} dB</div>
       </div>

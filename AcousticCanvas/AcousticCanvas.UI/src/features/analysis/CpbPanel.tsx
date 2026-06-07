@@ -17,8 +17,10 @@ import { useRunCpb } from './useRunCpb';
 import {
   CPB_BAND_MODE_OPTIONS,
   CPB_FFT_SIZE_OPTIONS,
+  CPB_WEIGHTING_OPTIONS,
   type ChannelCpbAnalysis,
   type CpbBandMode,
+  type CpbWeighting,
 } from './cpbTypes';
 import styles from './CpbPanel.module.scss';
 
@@ -85,6 +87,8 @@ export const CpbPanel = ({
     .filter((band) => band.levelDb !== null || band.magnitude > 0)
     .sort((a, b) => resolveBandLevel(b) - resolveBandLevel(a))[0];
   const isRunning = cpbStatus === 'running';
+  const weightingLabel = cpbResult?.parameters.weighting?.toUpperCase() ?? 'Z';
+  const weightingMethod = cpbResult?.parameters.weightingMethod ?? 'Z-weighting unweighted flat response';
 
   return (
     <div className={styles.panel}>
@@ -121,6 +125,15 @@ export const CpbPanel = ({
             onChange={(value) => value && dispatch(cpbSetParameters({ bandMode: value as CpbBandMode }))}
             aria-label="CPB band mode"
             style={{ width: 92 }}
+            styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+          />
+          <Select
+            size="xs"
+            data={CPB_WEIGHTING_OPTIONS}
+            value={cpbUserParameters.weighting}
+            onChange={(value) => value && dispatch(cpbSetParameters({ weighting: value as CpbWeighting }))}
+            aria-label="CPB weighting"
+            style={{ width: 64 }}
             styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
           />
           <Select
@@ -212,6 +225,9 @@ export const CpbPanel = ({
               )}
               <span>
                 Method <span className={styles.summaryValue}>{cpbResult?.parameters.method}</span>
+              </span>
+              <span>
+                Weighting <span className={styles.summaryValue}>{weightingLabel} ({weightingMethod})</span>
               </span>
             </div>
           </>

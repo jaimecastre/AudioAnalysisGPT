@@ -1,4 +1,5 @@
 export type CpbBandMode = 'octave' | 'third_octave';
+export type CpbWeighting = 'z' | 'a' | 'c';
 
 export type CpbParameters = {
   bandMode: CpbBandMode;
@@ -9,6 +10,8 @@ export type CpbParameters = {
   averaging: string;
   scaling: string;
   method: string;
+  weighting: CpbWeighting;
+  weightingMethod: string;
   startTimeSeconds: number;
   endTimeSeconds: number;
   blockCount: number;
@@ -48,17 +51,25 @@ export type CpbUserParameters = {
   bandMode: CpbBandMode;
   fftSize: number;
   overlap: number;
+  weighting: CpbWeighting;
 };
 
 export const DEFAULT_CPB_PARAMS: CpbUserParameters = {
   bandMode: 'third_octave',
   fftSize: 8192,
   overlap: 0.5,
+  weighting: 'z',
 };
 
 export const CPB_BAND_MODE_OPTIONS = [
   { value: 'third_octave', label: '1/3 oct' },
   { value: 'octave', label: 'Octave' },
+] as const;
+
+export const CPB_WEIGHTING_OPTIONS = [
+  { value: 'z', label: 'Z' },
+  { value: 'a', label: 'A' },
+  { value: 'c', label: 'C' },
 ] as const;
 
 export const CPB_FFT_SIZE_OPTIONS = [

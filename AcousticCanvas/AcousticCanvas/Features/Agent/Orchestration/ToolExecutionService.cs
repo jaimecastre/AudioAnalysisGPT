@@ -283,6 +283,7 @@ public sealed class ToolExecutionService(
         }
 
         var bandMode = ExtractStringArgument(arguments, "bandType") ?? DefaultCpbBandMode;
+        var weighting = ExtractStringArgument(arguments, "weighting") ?? "z";
 
         var cpbResults = new List<object>();
 
@@ -304,7 +305,8 @@ public sealed class ToolExecutionService(
                 EndSeconds: effectiveEndSeconds,
                 BandMode: bandMode,
                 FftSize: DefaultFftSize,
-                Overlap: DefaultOverlap);
+                Overlap: DefaultOverlap,
+                Weighting: weighting);
 
             var cpbResult = await query.ExecuteAsync(cancellationToken);
 
@@ -332,6 +334,8 @@ public sealed class ToolExecutionService(
             {
                 fileId,
                 bandMode,
+                weighting = cpbResult.Parameters.Weighting,
+                weightingMethod = cpbResult.Parameters.WeightingMethod,
                 // TODO: Current CPB uses FFT-bin power summation. Not IEC 61260 compliant.
                 // Label as nominal CPB approximation.
                 method = "fft_bin_power_sum (nominal approximation, not IEC 61260)",

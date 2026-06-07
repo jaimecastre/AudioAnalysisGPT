@@ -362,7 +362,8 @@ function buildReportMarkdown(title: string, artifacts: AgentArtifact[], generate
           ?.filter((band) => band.levelDb !== null && Number.isFinite(band.levelDb))
           .sort((a, b) => Math.abs(b.levelDb ?? 0) - Math.abs(a.levelDb ?? 0))[0];
         if (strongestCpbDelta?.levelDb !== null && strongestCpbDelta?.levelDb !== undefined) {
-          lines.push(`Strongest CPB difference: ${strongestCpbDelta.label} Hz (${strongestCpbDelta.levelDb > 0 ? '+' : ''}${strongestCpbDelta.levelDb.toFixed(1)} dB, B − A).`);
+          const weightingLabel = strongestCpbDelta.weighting?.toUpperCase() ?? 'Z';
+          lines.push(`Strongest CPB difference: ${strongestCpbDelta.label} Hz (${strongestCpbDelta.levelDb > 0 ? '+' : ''}${strongestCpbDelta.levelDb.toFixed(1)} dB, B − A, ${weightingLabel}-weighted).`);
         }
       }
       lines.push('');

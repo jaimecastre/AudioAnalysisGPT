@@ -30,7 +30,8 @@ public class RunCpbEndpoint(UploadAudioHandler uploadAudioHandler)
             EndSeconds: request.EndSeconds,
             BandMode: request.BandMode,
             FftSize: request.FftSize,
-            Overlap: request.Overlap);
+            Overlap: request.Overlap,
+            Weighting: request.Weighting);
 
         try
         {
@@ -52,4 +53,5 @@ public class RunCpbRequest
     public string BandMode { get; set; } = "third_octave";
     public int FftSize { get; set; } = 8192;
     public double Overlap { get; set; } = 0.5;
+    public string Weighting { get; set; } = "z";
 }
