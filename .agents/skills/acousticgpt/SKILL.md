@@ -134,6 +134,24 @@ Reply with, in order:
 - Break work into small stories prioritized for end-to-end value.
 - Identify blockers and technical risks; propose a realistic sprint goal with a Definition of Done.
 
+## Testing the Sound Quality panel (end-to-end)
+
+The Sound Quality panel (`src/features/analysis/SoundQualityPanel.tsx`) calls
+`POST /api/analysis/sound-quality`, which runs a Python MoSQITo sidecar. To exercise it manually:
+
+1. **Backend prereq:** the sidecar needs a venv with MoSQITo. Recreate if missing:
+   `python3 -m venv AcousticCanvas/.venv && AcousticCanvas/.venv/bin/pip install -r AcousticCanvas/AcousticCanvas.ML/requirements.txt`, then `dotnet run` (backend :5146) and `npm run dev` (frontend :5173).
+2. **Upload an audio file**, then **select a region on the waveform** (click-and-drag). The panel only renders results once a region/selection exists — without a selection it stays empty. A 44.1 kHz WAV is a good test case (it was the previously-broken <48 kHz path).
+3. Click the **Sound quality** tool button to open the panel.
+
+What correct output looks like:
+- Two horizontal bars: **Loudness** (unit `sone`) and **Sharpness** (unit `acum`).
+- Each bar uses its **own per-metric ceiling** (a "nice" 1/2/5/10 × 10ⁿ limit), NOT a shared axis. So a metric with a much smaller raw value can have a **longer** bar — e.g. Loudness ~21 sone on a 0–50 scale (~43% fill) renders a *shorter* bar than Sharpness ~0.8 acum on a 0–1 scale (~80% fill). This relative ordering is the key discriminator that per-metric scaling works.
+- Hovering a bar shows a tooltip with value + scale (e.g. `22.46 sone (scale 0 - 50 sone)`).
+- Changing the waveform selection re-runs analysis and re-renders the bars with new fills.
+
+Note: the repo has **no CI configured**, so there are no PR checks to wait on — verify changes by running locally.
+
 ## Roadmap context (so suggestions align with the North Star)
 
 North star: help engineers understand, compare, and improve sound faster via trustworthy
