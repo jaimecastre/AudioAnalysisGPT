@@ -1,11 +1,21 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { ActionIcon, Badge, Group, Loader, Select, Text } from '@mantine/core';
+import { ActionIcon, Badge, Group, Loader, Select, Text, Tooltip } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconSparkles, IconX } from '@tabler/icons-react';
 import { useAppSelector } from '../../store/reduxHooks';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
 import { useRunSoundQuality } from './useRunSoundQuality';
+import type { SoundQualityAnalysis } from './soundQualityTypes';
 import styles from './CpbPanel.module.scss';
+import barStyles from './SoundQualityPanel.module.scss';
+
+type SoundQualityMetricBar = {
+  label: string;
+  value: number;
+  unit: string;
+  displayCeiling: number;
+  fillPercent: number;
+};
 
 interface SoundQualityPanelProps {
   panelId: string;
@@ -31,6 +41,7 @@ export const SoundQualityPanel = ({
   const hasRegion = Boolean(activeSelection && activeSelection.endSeconds > activeSelection.startSeconds);
   const regionStartSeconds = activeSelection?.startSeconds;
   const regionEndSeconds = activeSelection?.endSeconds;
+  const metricBars = result ? buildSoundQualityMetricBars(result) : [];
 
   useEffect(() => {
     if (!selectedFileId && effectiveFileId) {
@@ -103,13 +114,24 @@ export const SoundQualityPanel = ({
         )}
         {effectiveFileId && !error && result && (
           <>
+            <div className={barStyles.barChart}>
+              {metricBars.map((metricBar) => (
+                <div key={metricBar.label} className={barStyles.barRow}>
+                  <span className={barStyles.barRowLabel}>{metricBar.label}</span>
+                  <Tooltip
+                    label={`${metricBar.value.toFixed(2)} ${metricBar.unit} (scale 0 - ${metricBar.displayCeiling} ${metricBar.unit})`}
+                    withArrow
+                  >
+                    <div className={barStyles.barRowTrack}>
+                      <div className={barStyles.barRowFill} style={{ width: `${metricBar.fillPercent}%` }} />
+                    </div>
+                  </Tooltip>
+                  <span className={barStyles.barRowValue}>{metricBar.value.toFixed(2)} {metricBar.unit}</span>
+                  <span className={barStyles.barRowScale}>0 - {metricBar.displayCeiling} {metricBar.unit}</span>
+                </div>
+              ))}
+            </div>
             <div className={styles.summary}>
-              <span>
-                Loudness <span className={styles.summaryValue}>{result.loudness.value.toFixed(2)} {result.loudness.unit}</span>
-              </span>
-              <span>
-                Sharpness <span className={styles.summaryValue}>{result.sharpness.value.toFixed(2)} {result.sharpness.unit}</span>
-              </span>
               <span>
                 Method <span className={styles.summaryValue}>{result.parameters.method}</span>
               </span>
@@ -124,4 +146,57 @@ export const SoundQualityPanel = ({
       </div>
     </div>
   );
+};
+
+const computeNiceDisplayCeiling = (value: number): number => {
+  if (value <= 0) {
+    return 1;
+  }
+  const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+  const normalizedValue = value / magnitude;
+  if (normalizedValue <= 1) {
+    return 1 * magnitude;
+  }
+  if (normalizedValue <= 2) {
+    return 2 * magnitude;
+  }
+  if (normalizedValue <= 5) {
+    return 5 * magnitude;
+  }
+  return 10 * magnitude;
+};
+
+const computeBarFillPercent = (value: number, displayCeiling: number): number => {
+  if (displayCeiling <= 0) {
+    return 0;
+  }
+  const rawPercent = (value / displayCeiling) * 100;
+  if (rawPercent < 0) {
+    return 0;
+  }
+  if (rawPercent > 100) {
+    return 100;
+  }
+  return rawPercent;
+};
+
+const buildSoundQualityMetricBars = (analysis: SoundQualityAnalysis): SoundQualityMetricBar[] => {
+  const loudnessCeiling = computeNiceDisplayCeiling(analysis.loudness.value);
+  const sharpnessCeiling = computeNiceDisplayCeiling(analysis.sharpness.value);
+  return [
+    {
+      label: 'Loudness',
+      value: analysis.loudness.value,
+      unit: analysis.loudness.unit,
+      displayCeiling: loudnessCeiling,
+      fillPercent: computeBarFillPercent(analysis.loudness.value, loudnessCeiling),
+    },
+    {
+      label: 'Sharpness',
+      value: analysis.sharpness.value,
+      unit: analysis.sharpness.unit,
+      displayCeiling: sharpnessCeiling,
+      fillPercent: computeBarFillPercent(analysis.sharpness.value, sharpnessCeiling),
+    },
+  ];
 };

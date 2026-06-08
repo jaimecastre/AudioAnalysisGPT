@@ -1,0 +1,59 @@
+.barChart {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 14px 16px;
+  flex: 1;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: 86px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.barRowLabel {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.barRowTrack {
+  position: relative;
+  width: 100%;
+  height: 18px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--bg-surface);
+  overflow: hidden;
+}
+
+.barRowFill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  min-width: 2px;
+  background-color: #00b8a9;
+  border-radius: 3px 0 0 3px;
+}
+
+.barRowValue {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.barRowScale {
+  grid-column: 2 / 3;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
+}
