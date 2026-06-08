@@ -77,6 +77,7 @@ public sealed class AgentSoundQualityToolTests
         var evidencePackage = EvidencePackageBuilder.Build(
             userQuestion: "What is the loudness and roughness?",
             selectedFileIds: ["file123456789"],
+            selectedFileNames: ["test_file.wav"],
             toolOutputs: [toolOutput]);
 
         Assert.Contains("run_sound_quality_metrics", evidencePackage.AnalysesRun);

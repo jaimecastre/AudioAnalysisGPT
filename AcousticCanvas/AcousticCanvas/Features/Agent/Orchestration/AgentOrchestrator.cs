@@ -65,6 +65,7 @@ public sealed class AgentOrchestrator(
         var evidencePackage = EvidencePackageBuilder.Build(
             command.Question,
             command.SelectedFileIds,
+            selectedFileNames,
             toolExecutionOutputs);
 
         // Step 7: Generate the final grounded answer from the evidence package.
@@ -78,13 +79,13 @@ public sealed class AgentOrchestrator(
 
         // Step 9: Build and return the result.
         var toolExecutionRecords = BuildToolExecutionRecords(toolExecutionOutputs);
-        var formattedEvidenceReferences = FormatEvidenceReferencesForFrontend(finalAnswer.EvidenceReferences, evidencePackage);
+        var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(finalAnswer.Answer, finalAnswer.EvidenceReferences, evidencePackage);
 
         return new AgentAskResult(
             ConversationId: conversationId,
-            Answer: finalAnswer.Answer,
+            Answer: answerWithEmbeddedTokens,
             EvidencePackageId: evidencePackage.EvidencePackageId,
-            EvidenceReferences: formattedEvidenceReferences,
+            EvidenceReferences: [],
             Confidence: finalAnswer.Confidence,
             Limitations: MergeAndDeduplicate(finalAnswer.Limitations, evidencePackage.Limitations),
             SuggestedNextSteps: finalAnswer.SuggestedNextSteps,
@@ -106,20 +107,22 @@ public sealed class AgentOrchestrator(
 
         var toolOutput = await toolExecutionService.ExecuteToolAsync(toolRequest, cancellationToken);
 
+        var selectedFileNames = ResolveFileNames(command.SelectedFileIds);
         var evidencePackage = EvidencePackageBuilder.Build(
             command.Question,
             command.SelectedFileIds,
+            selectedFileNames,
             [toolOutput]);
 
         var finalAnswer = DeterministicAnswerWriter.Write(deterministicPlan, evidencePackage);
         var toolExecutionRecords = BuildToolExecutionRecords([toolOutput]);
-        var formattedEvidenceReferences = FormatEvidenceReferencesForFrontend(finalAnswer.EvidenceReferences, evidencePackage);
+        var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(finalAnswer.Answer, finalAnswer.EvidenceReferences, evidencePackage);
 
         return new AgentAskResult(
             ConversationId: conversationId,
-            Answer: finalAnswer.Answer,
+            Answer: answerWithEmbeddedTokens,
             EvidencePackageId: evidencePackage.EvidencePackageId,
-            EvidenceReferences: formattedEvidenceReferences,
+            EvidenceReferences: [],
             Confidence: finalAnswer.Confidence,
             Limitations: finalAnswer.Limitations,
             SuggestedNextSteps: finalAnswer.SuggestedNextSteps,
@@ -235,5 +238,54 @@ public sealed class AgentOrchestrator(
             SuggestedNextSteps: [$"To analyze this file, ask a specific question such as: 'Is there clipping in {userQuestion}'"],
             ToolExecutions: [],
             ValidationWarning: false);
+    }
+
+    private static string EmbedEvidenceTokensInAnswer(
+        string answer,
+        IReadOnlyList<string> evidenceReferences,
+        EvidencePackage evidencePackage)
+    {
+        if (evidenceReferences.Count == 0)
+        {
+            return answer;
+        }
+
+        var tokenStrings = new List<string>();
+
+        foreach (var referenceId in evidenceReferences)
+        {
+            var matchingEvidenceItem = evidencePackage.KeyEvidence
+                .FirstOrDefault(item => item.EvidenceId == referenceId);
+
+            if (matchingEvidenceItem is null)
+            {
+                continue;
+            }
+
+            var frontendType = MapBackendTypeToFrontendType(matchingEvidenceItem.Type);
+            var shortId = referenceId.Length > 8 ? referenceId[^8..] : referenceId;
+            tokenStrings.Add($"[{frontendType}:{shortId}]");
+        }
+
+        if (tokenStrings.Count == 0)
+        {
+            return answer;
+        }
+
+        return $"{answer}\n\nEvidence: {string.Join(' ', tokenStrings)}";
+    }
+
+    private static string MapBackendTypeToFrontendType(string backendType)
+    {
+        return backendType switch
+        {
+            "basic_metrics" => "analysis_result",
+            "event_detection" => "find_result",
+            "spectrum" => "analysis_result",
+            "cpb" => "analysis_result",
+            "sound_quality" => "analysis_result",
+            "metadata" => "analysis_result",
+            _ => "analysis_result"
+        };
     }
 }

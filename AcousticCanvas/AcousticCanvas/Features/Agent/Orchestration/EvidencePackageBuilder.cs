@@ -12,12 +12,19 @@ public static class EvidencePackageBuilder
     public static EvidencePackage Build(
         string userQuestion,
         IReadOnlyList<string> selectedFileIds,
+        IReadOnlyList<string> selectedFileNames,
         IReadOnlyList<ToolExecutionOutput> toolOutputs)
     {
         var evidencePackageId = "ev_" + Guid.NewGuid().ToString("N")[..8];
         var analysesRun = new List<string>();
         var keyEvidence = new List<EvidenceItem>();
         var limitations = new List<string>();
+
+        var fileIdToNameMap = new Dictionary<string, string>();
+        for (var i = 0; i < Math.Min(selectedFileIds.Count, selectedFileNames.Count); i++)
+        {
+            fileIdToNameMap[selectedFileIds[i]] = selectedFileNames[i];
+        }
 
         foreach (var toolOutput in toolOutputs)
         {
@@ -29,7 +36,7 @@ public static class EvidencePackageBuilder
 
             analysesRun.Add(toolOutput.ToolName);
 
-            var evidenceItems = ExtractEvidenceItemsFromToolOutput(toolOutput);
+            var evidenceItems = ExtractEvidenceItemsFromToolOutput(toolOutput, fileIdToNameMap);
             keyEvidence.AddRange(evidenceItems);
         }
 
@@ -46,7 +53,9 @@ public static class EvidencePackageBuilder
         };
     }
 
-    private static List<EvidenceItem> ExtractEvidenceItemsFromToolOutput(ToolExecutionOutput toolOutput)
+    private static List<EvidenceItem> ExtractEvidenceItemsFromToolOutput(
+        ToolExecutionOutput toolOutput,
+        Dictionary<string, string> fileIdToNameMap)
     {
         var evidenceItems = new List<EvidenceItem>();
 
@@ -64,33 +73,36 @@ public static class EvidencePackageBuilder
 
         if (toolOutput.ToolName == "run_basic_metrics")
         {
-            ExtractBasicMetricsEvidence(parsedData, evidenceItems);
+            ExtractBasicMetricsEvidence(parsedData, evidenceItems, fileIdToNameMap);
         }
         else if (toolOutput.ToolName == "run_event_detection")
         {
-            ExtractEventDetectionEvidence(parsedData, evidenceItems);
+            ExtractEventDetectionEvidence(parsedData, evidenceItems, fileIdToNameMap);
         }
         else if (toolOutput.ToolName == "run_spectrum")
         {
-            ExtractSpectrumEvidence(parsedData, evidenceItems);
+            ExtractSpectrumEvidence(parsedData, evidenceItems, fileIdToNameMap);
         }
         else if (toolOutput.ToolName == "run_cpb")
         {
-            ExtractCpbEvidence(parsedData, evidenceItems);
+            ExtractCpbEvidence(parsedData, evidenceItems, fileIdToNameMap);
         }
         else if (toolOutput.ToolName == "run_sound_quality_metrics")
         {
-            ExtractSoundQualityEvidence(parsedData, evidenceItems);
+            ExtractSoundQualityEvidence(parsedData, evidenceItems, fileIdToNameMap);
         }
         else if (toolOutput.ToolName == "get_metadata")
         {
-            ExtractMetadataEvidence(parsedData, evidenceItems);
+            ExtractMetadataEvidence(parsedData, evidenceItems, fileIdToNameMap);
         }
 
         return evidenceItems;
     }
 
-    private static void ExtractBasicMetricsEvidence(JsonElement parsedData, List<EvidenceItem> evidenceItems)
+    private static void ExtractBasicMetricsEvidence(
+        JsonElement parsedData,
+        List<EvidenceItem> evidenceItems,
+        Dictionary<string, string> fileIdToNameMap)
     {
         if (!parsedData.TryGetProperty("results", out var resultsArray))
         {
@@ -116,6 +128,7 @@ public static class EvidencePackageBuilder
             var evidenceData = new Dictionary<string, object?>
             {
                 ["fileId"] = fileId,
+                ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
                 ["type"] = "basic_metrics",
             };
 
@@ -148,7 +161,10 @@ public static class EvidencePackageBuilder
         }
     }
 
-    private static void ExtractEventDetectionEvidence(JsonElement parsedData, List<EvidenceItem> evidenceItems)
+    private static void ExtractEventDetectionEvidence(
+        JsonElement parsedData,
+        List<EvidenceItem> evidenceItems,
+        Dictionary<string, string> fileIdToNameMap)
     {
         var fileId = parsedData.TryGetProperty("fileId", out var fileIdEl) ? fileIdEl.GetString() ?? "unknown" : "unknown";
         var kind = parsedData.TryGetProperty("kind", out var kindEl) ? kindEl.GetString() ?? "unknown" : "unknown";
@@ -159,6 +175,7 @@ public static class EvidencePackageBuilder
         var evidenceData = new Dictionary<string, object?>
         {
             ["fileId"] = fileId,
+            ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
             ["type"] = "event_detection",
             ["kind"] = kind,
             ["eventCount"] = eventCount,
@@ -202,7 +219,10 @@ public static class EvidencePackageBuilder
         });
     }
 
-    private static void ExtractSpectrumEvidence(JsonElement parsedData, List<EvidenceItem> evidenceItems)
+    private static void ExtractSpectrumEvidence(
+        JsonElement parsedData,
+        List<EvidenceItem> evidenceItems,
+        Dictionary<string, string> fileIdToNameMap)
     {
         if (!parsedData.TryGetProperty("results", out var resultsArray))
         {
@@ -228,6 +248,7 @@ public static class EvidencePackageBuilder
             var evidenceData = new Dictionary<string, object?>
             {
                 ["fileId"] = fileId,
+                ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
                 ["type"] = "spectrum",
             };
 
@@ -277,7 +298,10 @@ public static class EvidencePackageBuilder
         }
     }
 
-    private static void ExtractCpbEvidence(JsonElement parsedData, List<EvidenceItem> evidenceItems)
+    private static void ExtractCpbEvidence(
+        JsonElement parsedData,
+        List<EvidenceItem> evidenceItems,
+        Dictionary<string, string> fileIdToNameMap)
     {
         if (!parsedData.TryGetProperty("results", out var resultsArray))
         {
@@ -303,6 +327,7 @@ public static class EvidencePackageBuilder
             var evidenceData = new Dictionary<string, object?>
             {
                 ["fileId"] = fileId,
+                ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
                 ["type"] = "cpb",
             };
 
@@ -350,7 +375,10 @@ public static class EvidencePackageBuilder
         }
     }
 
-    private static void ExtractMetadataEvidence(JsonElement parsedData, List<EvidenceItem> evidenceItems)
+    private static void ExtractMetadataEvidence(
+        JsonElement parsedData,
+        List<EvidenceItem> evidenceItems,
+        Dictionary<string, string> fileIdToNameMap)
     {
         if (!parsedData.TryGetProperty("results", out var resultsArray))
         {
@@ -370,6 +398,7 @@ public static class EvidencePackageBuilder
             var evidenceData = new Dictionary<string, object?>
             {
                 ["fileId"] = fileId,
+                ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
                 ["type"] = "metadata",
             };
 
@@ -407,7 +436,10 @@ public static class EvidencePackageBuilder
         }
     }
 
-    private static void ExtractSoundQualityEvidence(JsonElement parsedData, List<EvidenceItem> evidenceItems)
+    private static void ExtractSoundQualityEvidence(
+        JsonElement parsedData,
+        List<EvidenceItem> evidenceItems,
+        Dictionary<string, string> fileIdToNameMap)
     {
         if (!parsedData.TryGetProperty("results", out var resultsArray))
         {
@@ -427,6 +459,7 @@ public static class EvidencePackageBuilder
             var evidenceData = new Dictionary<string, object?>
             {
                 ["fileId"] = fileId,
+                ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
                 ["type"] = "sound_quality",
             };
 

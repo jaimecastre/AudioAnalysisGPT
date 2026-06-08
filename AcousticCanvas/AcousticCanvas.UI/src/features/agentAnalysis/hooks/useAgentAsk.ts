@@ -30,10 +30,6 @@ export function useAgentAsk() {
   function formatAgentResponseForChat(agentResponse: AgentAskResponse): string {
     const sections = [agentResponse.answer];
 
-    if (agentResponse.evidenceReferences.length > 0) {
-      sections.push(`Evidence: ${agentResponse.evidenceReferences.join(', ')}`);
-    }
-
     if (agentResponse.suggestedNextSteps.length > 0) {
       sections.push(`Next steps: ${agentResponse.suggestedNextSteps.join(' ')}`);
     }
