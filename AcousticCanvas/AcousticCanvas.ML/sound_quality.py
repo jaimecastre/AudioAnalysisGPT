@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import contextlib
 import json
 import math
 import sys
@@ -69,8 +70,11 @@ def main():
         return fail("Selected sound-quality region contains no samples.")
 
     mono = np.mean(region, axis=1)
-    loudness_total, _, _ = loudness_zwst(mono, sample_rate, field_type="free")
-    sharpness = sharpness_din_st(mono, sample_rate, weighting="din", field_type="free")
+    # MoSQITo prints resampling notices to stdout for sample rates below 48 kHz;
+    # keep stdout limited to the JSON result by routing those notices to stderr.
+    with contextlib.redirect_stdout(sys.stderr):
+        loudness_total, _, _ = loudness_zwst(mono, sample_rate, field_type="free")
+        sharpness = sharpness_din_st(mono, sample_rate, weighting="din", field_type="free")
 
     result = {
         "parameters": {
