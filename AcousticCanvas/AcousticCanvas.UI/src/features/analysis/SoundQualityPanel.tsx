@@ -15,7 +15,11 @@ type SoundQualityMetricBar = {
   unit: string;
   displayCeiling: number;
   fillPercent: number;
+  fillColor: string;
 };
+
+const loudnessBarColor = '#00b8a9';
+const sharpnessBarColor = '#f59f00';
 
 interface SoundQualityPanelProps {
   panelId: string;
@@ -117,17 +121,27 @@ export const SoundQualityPanel = ({
             <div className={barStyles.barChart}>
               {metricBars.map((metricBar) => (
                 <div key={metricBar.label} className={barStyles.barRow}>
-                  <span className={barStyles.barRowLabel}>{metricBar.label}</span>
+                  <span className={barStyles.barRowLabel}>
+                    <span className={barStyles.barRowSwatch} style={{ backgroundColor: metricBar.fillColor }} />
+                    {metricBar.label}
+                  </span>
                   <Tooltip
                     label={`${metricBar.value.toFixed(2)} ${metricBar.unit} (scale 0 - ${metricBar.displayCeiling} ${metricBar.unit})`}
                     withArrow
                   >
                     <div className={barStyles.barRowTrack}>
-                      <div className={barStyles.barRowFill} style={{ width: `${metricBar.fillPercent}%` }} />
+                      <div
+                        className={barStyles.barRowFill}
+                        style={{ width: `${metricBar.fillPercent}%`, backgroundColor: metricBar.fillColor }}
+                      />
                     </div>
                   </Tooltip>
                   <span className={barStyles.barRowValue}>{metricBar.value.toFixed(2)} {metricBar.unit}</span>
-                  <span className={barStyles.barRowScale}>0 - {metricBar.displayCeiling} {metricBar.unit}</span>
+                  <div className={barStyles.barRowAxis}>
+                    <span className={barStyles.barRowAxisTick}>0</span>
+                    <span className={barStyles.barRowAxisTick}>{formatAxisTickValue(metricBar.displayCeiling / 2)}</span>
+                    <span className={barStyles.barRowAxisTick}>{metricBar.displayCeiling} {metricBar.unit}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -180,6 +194,13 @@ const computeBarFillPercent = (value: number, displayCeiling: number): number =>
   return rawPercent;
 };
 
+const formatAxisTickValue = (tickValue: number): string => {
+  if (Number.isInteger(tickValue)) {
+    return String(tickValue);
+  }
+  return tickValue.toFixed(1);
+};
+
 const buildSoundQualityMetricBars = (analysis: SoundQualityAnalysis): SoundQualityMetricBar[] => {
   const loudnessCeiling = computeNiceDisplayCeiling(analysis.loudness.value);
   const sharpnessCeiling = computeNiceDisplayCeiling(analysis.sharpness.value);
@@ -190,6 +211,7 @@ const buildSoundQualityMetricBars = (analysis: SoundQualityAnalysis): SoundQuali
       unit: analysis.loudness.unit,
       displayCeiling: loudnessCeiling,
       fillPercent: computeBarFillPercent(analysis.loudness.value, loudnessCeiling),
+      fillColor: loudnessBarColor,
     },
     {
       label: 'Sharpness',
@@ -197,6 +219,7 @@ const buildSoundQualityMetricBars = (analysis: SoundQualityAnalysis): SoundQuali
       unit: analysis.sharpness.unit,
       displayCeiling: sharpnessCeiling,
       fillPercent: computeBarFillPercent(analysis.sharpness.value, sharpnessCeiling),
+      fillColor: sharpnessBarColor,
     },
   ];
 };

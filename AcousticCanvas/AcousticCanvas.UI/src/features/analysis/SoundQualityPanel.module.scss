@@ -14,12 +14,22 @@
 }
 
 .barRowLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
+}
+
+.barRowSwatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .barRowTrack {
@@ -50,10 +60,26 @@
   white-space: nowrap;
 }
 
-.barRowScale {
+.barRowAxis {
   grid-column: 2 / 3;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
   color: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 0.56rem;
   letter-spacing: 0.04em;
+}
+
+.barRowAxisTick {
+  flex: 1;
+  text-align: center;
+
+  &:first-child {
+    text-align: left;
+  }
+
+  &:last-child {
+    text-align: right;
+  }
 }
