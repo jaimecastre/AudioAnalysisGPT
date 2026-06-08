@@ -49,7 +49,7 @@ def scalar(value):
 def main():
     try:
         import numpy as np
-        from mosqito.sq_metrics import loudness_zwst, sharpness_din_st
+        from mosqito.sq_metrics import loudness_zwst, roughness_dw, sharpness_din_st
     except Exception as exception:
         return fail(f"MoSQITo sidecar dependency unavailable: {exception}")
 
@@ -75,6 +75,7 @@ def main():
     with contextlib.redirect_stdout(sys.stderr):
         loudness_total, _, _ = loudness_zwst(mono, sample_rate, field_type="free")
         sharpness = sharpness_din_st(mono, sample_rate, weighting="din", field_type="free")
+        roughness, _, _, _ = roughness_dw(mono, sample_rate)
 
     result = {
         "parameters": {
@@ -84,7 +85,7 @@ def main():
             "endTimeSeconds": end_seconds,
             "sampleRate": int(sample_rate),
             "limitations": [
-                "Stationary Zwicker loudness and DIN sharpness computed from uncalibrated digital-amplitude WAV samples.",
+                "Stationary Zwicker loudness, DIN sharpness, and Daniel-Weber roughness computed from uncalibrated digital-amplitude WAV samples.",
                 "Values are useful for relative comparison until calibration metadata maps samples to physical sound pressure.",
             ],
         },
@@ -104,6 +105,12 @@ def main():
             "value": round(scalar(sharpness), 4),
             "unit": "acum",
             "method": "MoSQITo sharpness_din_st",
+        },
+        "roughness": {
+            "name": "Daniel-Weber roughness",
+            "value": round(scalar(roughness), 4),
+            "unit": "asper",
+            "method": "MoSQITo roughness_dw",
         },
     }
     json.dump(result, sys.stdout)

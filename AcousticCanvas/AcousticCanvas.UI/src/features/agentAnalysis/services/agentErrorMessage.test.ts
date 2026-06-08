@@ -24,6 +24,18 @@ describe('toFriendlyAgentError', () => {
     expect(message).toContain('isn\u2019t configured');
   });
 
+  it('maps an invalid OpenAI API key to credential guidance instead of missing configuration', () => {
+    const rawBody =
+      'Agent orchestration error: OpenAI API returned 401: { "error": ' +
+      '{ "message": "Incorrect API key provided.", ' +
+      '"type": "invalid_request_error", "code": "invalid_api_key" } }';
+
+    const message = toFriendlyAgentError(500, rawBody);
+
+    expect(message).toContain('configured OpenAI API key was rejected');
+    expect(message).not.toContain('isn\u2019t configured');
+  });
+
   it('maps a 429 to a rate-limit message', () => {
     const message = toFriendlyAgentError(429, 'Too Many Requests');
 

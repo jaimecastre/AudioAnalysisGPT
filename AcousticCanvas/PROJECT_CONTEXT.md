@@ -83,7 +83,7 @@ The UI supports two main workspaces:
 | Findings engine (clipping, silence, crest factor, DC offset, tonal peaks) | ✅ Done | `POST /api/analysis/findings` |
 | Tonal peak detection (local prominence heuristic) | ✅ Done | Included in spectrum and findings |
 | CPB / octave band analysis | ✅ Done | `POST /api/analysis/cpb` |
-| Sound quality metrics (loudness, sharpness) | ✅ First slice done | `POST /api/analysis/sound-quality` |
+| Sound quality metrics (loudness, sharpness, roughness) | ✅ First slice done | `POST /api/analysis/sound-quality` |
 | Batch benchmarking | ❌ Not started | — |
 | Python sidecar | 🟡 Partial | CPB `python_filter_bank` and sound-quality `mosqito_stationary_zwicker` subprocess paths |
 
@@ -538,7 +538,7 @@ Implemented uses:
 
 Planned uses:
 
-- MoSQITo for additional sound-quality metrics (roughness, fluctuation strength)
+- MoSQITo for additional sound-quality metrics (fluctuation strength)
 - Scientific libraries
 - Audio embedding models
 - ML inference
@@ -556,7 +556,7 @@ Important:
 
 Strategy:
 
-- Use MoSQITo for first-pass stationary loudness and sharpness.
+- Use MoSQITo for first-pass stationary loudness, sharpness, and roughness.
 - Keep uncalibrated values explicitly labelled as relative-comparison metrics until calibration metadata maps samples to physical sound pressure.
 - Consider native C# implementations only where the standard and validation fixture set are clear.
 - Keep the interface generic so another engine can replace it later
@@ -679,9 +679,9 @@ Future method roadmap:
 
 - ✅ Stationary loudness via MoSQITo `loudness_zwst`
 - ✅ DIN sharpness via MoSQITo `sharpness_din_st`
+- ✅ Daniel-Weber roughness via MoSQITo `roughness_dw`
 - ✅ Manual sound-quality panel with method and limitations metadata
 - 🟡 Current values are computed from uncalibrated digital-amplitude WAV samples; use for relative comparison until calibration is implemented
-- ❌ Roughness
 - ❌ Fluctuation strength
 - ❌ Tonality
 - ❌ Annoyance composite metrics
@@ -807,8 +807,8 @@ Given the current state, the recommended next work is:
 2. ~~Findings Panel~~ ✅ Done — Structured findings from event detection + level analysis
 3. ~~Tonal peak detection~~ ✅ Done — Local prominence heuristic in spectrum analyzer + findings
 4. ~~CPB analysis~~ 🟡 Partial — Backend + manual CPB panel, comparison, Z/A/C weighting controls, experimental `python_filter_bank` sidecar path, and generated-WAV validation tests done; external calibrator validation pending
-5. ~~Sound quality metrics: loudness + sharpness~~ ✅ First slice done — MoSQITo sidecar, backend endpoint, manual panel, generated-WAV validation
-6. **Next: Sound-quality comparison** — Add loudness/sharpness deltas to A/B comparison and agent evidence
+5. ~~Sound quality metrics: loudness + sharpness + roughness~~ ✅ First slice done — MoSQITo sidecar, backend endpoint, manual panel, generated-WAV validation
+6. **Next: Sound-quality comparison** — Add loudness/sharpness/roughness deltas to A/B comparison and agent evidence
 
 ---
 
@@ -856,7 +856,7 @@ Acceptance criteria:
 
 ## Story 6 — Sound Quality Metrics 🟡 PARTIAL
 
-As a user, I want to calculate loudness and sharpness so that I can compare perceived sound quality.
+As a user, I want to calculate loudness, sharpness, and roughness so that I can compare perceived sound quality.
 
 Acceptance criteria:
 
@@ -1049,7 +1049,7 @@ Build huge architecture for all future metrics before one full feature works.
 10. ~~CPB weighting controls~~ ✅
 11. ~~Standards-oriented CPB filter-bank mode via Python sidecar scaffold~~ 🟡
 12. ~~Generated-WAV CPB sidecar validation tests~~ ✅
-13. ~~Sound-quality metrics: loudness + sharpness~~ ✅ First slice done
+13. ~~Sound-quality metrics: loudness + sharpness + roughness~~ ✅ First slice done
 14. **Sound-quality comparison** ← next
 15. Batch comparison
 
@@ -1175,20 +1175,20 @@ When I ask for sprint planning, please:
 
 Sprint goal:
 
-> Add sound-quality comparison evidence on top of the first loudness/sharpness metrics layer.
+> Add sound-quality comparison evidence on top of the first loudness/sharpness/roughness metrics layer.
 
 Suggested scope:
 
 ```
-Use the implemented MoSQITo loudness/sharpness sidecar
+Use the implemented MoSQITo loudness/sharpness/roughness sidecar
 → run metrics for compared files or selected regions
-→ return loudness/sharpness deltas with method metadata and limitations
+→ return loudness/sharpness/roughness deltas with method metadata and limitations
 → surface deltas in the comparison UI
 → let agent compare/report artifacts cite only measured sound-quality evidence
 → keep calibration caveats explicit until physical SPL calibration exists
 ```
 
-Findings, tonal peak detection, the first CPB graph slice, CPB comparison, CPB weighting controls, the experimental `python_filter_bank` sidecar path, generated-WAV CPB validation tests, and the first MoSQITo loudness/sharpness slice are now implemented. The next high-value task is sound-quality comparison, because it turns isolated perceived metrics into benchmark evidence.
+Findings, tonal peak detection, the first CPB graph slice, CPB comparison, CPB weighting controls, the experimental `python_filter_bank` sidecar path, generated-WAV CPB validation tests, and the first MoSQITo loudness/sharpness/roughness slice are now implemented. The next high-value task is sound-quality comparison, because it turns isolated perceived metrics into benchmark evidence.
 
 ---
 

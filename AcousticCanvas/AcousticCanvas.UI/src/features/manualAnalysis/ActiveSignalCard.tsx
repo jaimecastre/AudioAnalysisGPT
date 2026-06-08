@@ -118,7 +118,7 @@ export function ActiveSignalCard({
             panelId={panel.id}
             availableFiles={allFiles}
             selectedFileId={panel.fileId}
-            currentTimeSeconds={currentTime}
+            currentTimeSeconds={currentTime ?? 0}
             onSeek={onSeek}
             onFileSelect={onToolPanelFileSelect}
             onClose={onToolPanelClose}

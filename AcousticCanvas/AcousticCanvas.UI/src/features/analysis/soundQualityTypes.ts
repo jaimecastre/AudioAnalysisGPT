@@ -21,4 +21,5 @@ export type SoundQualityAnalysis = {
   };
   loudness: SoundQualityMetric;
   sharpness: SoundQualityMetric;
+  roughness: SoundQualityMetric;
 };

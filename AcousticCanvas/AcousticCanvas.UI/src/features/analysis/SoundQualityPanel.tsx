@@ -20,6 +20,7 @@ type SoundQualityMetricBar = {
 
 const loudnessBarColor = '#00b8a9';
 const sharpnessBarColor = '#f59f00';
+const roughnessBarColor = '#845ef7';
 
 interface SoundQualityPanelProps {
   panelId: string;
@@ -204,6 +205,7 @@ const formatAxisTickValue = (tickValue: number): string => {
 const buildSoundQualityMetricBars = (analysis: SoundQualityAnalysis): SoundQualityMetricBar[] => {
   const loudnessCeiling = computeNiceDisplayCeiling(analysis.loudness.value);
   const sharpnessCeiling = computeNiceDisplayCeiling(analysis.sharpness.value);
+  const roughnessCeiling = computeNiceDisplayCeiling(analysis.roughness.value);
   return [
     {
       label: 'Loudness',
@@ -220,6 +222,14 @@ const buildSoundQualityMetricBars = (analysis: SoundQualityAnalysis): SoundQuali
       displayCeiling: sharpnessCeiling,
       fillPercent: computeBarFillPercent(analysis.sharpness.value, sharpnessCeiling),
       fillColor: sharpnessBarColor,
+    },
+    {
+      label: 'Roughness',
+      value: analysis.roughness.value,
+      unit: analysis.roughness.unit,
+      displayCeiling: roughnessCeiling,
+      fillPercent: computeBarFillPercent(analysis.roughness.value, roughnessCeiling),
+      fillColor: roughnessBarColor,
     },
   ];
 };

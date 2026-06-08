@@ -6,6 +6,7 @@ public sealed class SoundQualityAnalysis
     public required TimeRange Region { get; init; }
     public required SoundQualityMetric Loudness { get; init; }
     public required SoundQualityMetric Sharpness { get; init; }
+    public required SoundQualityMetric Roughness { get; init; }
 }
 
 public sealed class SoundQualityMetric

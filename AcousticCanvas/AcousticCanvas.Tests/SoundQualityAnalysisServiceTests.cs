@@ -8,9 +8,13 @@ namespace AcousticCanvas.Tests;
 public sealed class SoundQualityAnalysisServiceTests
 {
     [Fact]
-    public async Task MosqitoSidecarReturnsPositiveLoudnessAndSharpness()
+    public async Task MosqitoSidecarReturnsPositiveLoudnessSharpnessAndRoughness()
     {
-        var fixturePath = WriteSineWaveFixture(frequencyHz: 1000.0, amplitude: 0.1);
+        var fixturePath = WriteAmplitudeModulatedSineWaveFixture(
+            carrierFrequencyHz: 1000.0,
+            modulationFrequencyHz: 70.0,
+            amplitude: 0.1,
+            modulationDepth: 0.8);
         var service = new SoundQualityAnalysisService(BuildPythonClient());
         var query = BuildQuery(fixturePath);
 
@@ -19,8 +23,10 @@ public sealed class SoundQualityAnalysisServiceTests
         Assert.Equal("mosqito_stationary_zwicker", result.Parameters.Method);
         Assert.True(result.Loudness.Value > 0.0);
         Assert.True(result.Sharpness.Value > 0.0);
+        Assert.True(result.Roughness.Value > 0.0);
         Assert.Equal("sone", result.Loudness.Unit);
         Assert.Equal("acum", result.Sharpness.Unit);
+        Assert.Equal("asper", result.Roughness.Unit);
         Assert.NotEmpty(result.Parameters.Limitations);
     }
 
@@ -77,9 +83,33 @@ public sealed class SoundQualityAnalysisServiceTests
 
     private static string WriteSineWaveFixture(double frequencyHz, double amplitude)
     {
+        return WriteWaveFixture(
+            label: $"{frequencyHz:0}_hz",
+            sampleGenerator: (sampleIndex, sampleRate) =>
+                amplitude * Math.Sin(2.0 * Math.PI * frequencyHz * sampleIndex / sampleRate));
+    }
+
+    private static string WriteAmplitudeModulatedSineWaveFixture(
+        double carrierFrequencyHz,
+        double modulationFrequencyHz,
+        double amplitude,
+        double modulationDepth)
+    {
+        return WriteWaveFixture(
+            label: $"{carrierFrequencyHz:0}_hz_{modulationFrequencyHz:0}_hz_mod",
+            sampleGenerator: (sampleIndex, sampleRate) =>
+            {
+                var carrier = Math.Sin(2.0 * Math.PI * carrierFrequencyHz * sampleIndex / sampleRate);
+                var modulation = 1.0 + modulationDepth * Math.Sin(2.0 * Math.PI * modulationFrequencyHz * sampleIndex / sampleRate);
+                return amplitude * modulation * carrier;
+            });
+    }
+
+    private static string WriteWaveFixture(string label, Func<int, int, double> sampleGenerator)
+    {
         const int sampleRate = 48_000;
         const int sampleCount = sampleRate;
-        var filePath = Path.Combine(Path.GetTempPath(), $"acousticcanvas_sq_{frequencyHz:0}_hz_{Guid.NewGuid():N}.wav");
+        var filePath = Path.Combine(Path.GetTempPath(), $"acousticcanvas_sq_{label}_{Guid.NewGuid():N}.wav");
 
         using var fileStream = File.Create(filePath);
         using var writer = new BinaryWriter(fileStream);
@@ -101,7 +131,7 @@ public sealed class SoundQualityAnalysisServiceTests
 
         for (var sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
         {
-            var sample = amplitude * Math.Sin(2.0 * Math.PI * frequencyHz * sampleIndex / sampleRate);
+            var sample = sampleGenerator(sampleIndex, sampleRate);
             writer.Write((short)Math.Round(sample * short.MaxValue));
         }
 
