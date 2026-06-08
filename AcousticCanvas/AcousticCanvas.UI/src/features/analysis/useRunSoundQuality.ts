@@ -29,6 +29,7 @@ export const useRunSoundQuality = (): {
     abortControllerRef.current = abortController;
     setIsRunning(true);
     setError(null);
+    setResult(null);
 
     try {
       const analysis = await apiClient.requestJson<SoundQualityAnalysis>(

@@ -682,7 +682,7 @@ Future method roadmap:
 - ✅ Stationary loudness via MoSQITo `loudness_zwst`
 - ✅ DIN sharpness via MoSQITo `sharpness_din_st`
 - ✅ Daniel-Weber roughness via MoSQITo `roughness_dw`
-- ✅ Manual sound-quality panel with method and limitations metadata; runs only on selected waveform regions and the backend time-bounds Python sidecar wait/read operations to avoid indefinite loading
+- ✅ Manual sound-quality panel with method and limitations metadata; runs full-file by default, supports selected waveform regions, and uses direct MoSQITo metric imports to avoid the broad `sq_metrics` package cold-start path
 - 🟡 Current values are computed from uncalibrated digital-amplitude WAV samples; use for relative comparison until calibration is implemented
 - ❌ Fluctuation strength
 - ❌ Tonality
@@ -809,7 +809,7 @@ Given the current state, the recommended next work is:
 2. ~~Findings Panel~~ ✅ Done — Structured findings from event detection + level analysis
 3. ~~Tonal peak detection~~ ✅ Done — Local prominence heuristic in spectrum analyzer + findings
 4. ~~CPB analysis~~ 🟡 Partial — Backend + manual CPB panel, comparison, Z/A/C weighting controls, experimental `python_filter_bank` sidecar path, and generated-WAV validation tests done; external calibrator validation pending
-5. ~~Sound quality metrics: loudness + sharpness + roughness~~ ✅ First slice done — MoSQITo sidecar, backend endpoint, manual panel, generated-WAV validation
+5. ~~Sound quality metrics: loudness + sharpness + roughness~~ ✅ First slice done — MoSQITo sidecar, backend endpoint, manual panel, direct metric imports, and generated-WAV validation
 6. **Next: Sound-quality comparison** — Add loudness/sharpness/roughness deltas to A/B comparison and agent evidence
 
 ---

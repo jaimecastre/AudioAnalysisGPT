@@ -38,7 +38,7 @@ export const SoundQualityPanel = ({
   onClose,
 }: SoundQualityPanelProps): JSX.Element => {
   const activeSelection = useAppSelector(activeSelectionSelector);
-  const { result, isRunning, error, runSoundQuality, resetSoundQuality } = useRunSoundQuality();
+  const { result, isRunning, error, runSoundQuality } = useRunSoundQuality();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const effectiveFileId = selectedFileId ?? availableFiles[0]?.id ?? null;
@@ -56,19 +56,15 @@ export const SoundQualityPanel = ({
 
   useEffect(() => {
     if (!effectiveFileId || !selectedFile) return;
-    if (!hasRegion) {
-      resetSoundQuality();
-      return;
-    }
     const timeoutId = window.setTimeout(() => {
       runSoundQuality({
         fileId: effectiveFileId,
-        startSeconds: regionStartSeconds!,
-        endSeconds: regionEndSeconds!,
+        startSeconds: hasRegion ? regionStartSeconds! : 0,
+        endSeconds: hasRegion ? regionEndSeconds! : selectedFile.durationSeconds,
       });
     }, 180);
     return () => window.clearTimeout(timeoutId);
-  }, [effectiveFileId, selectedFile, hasRegion, regionStartSeconds, regionEndSeconds, runSoundQuality, resetSoundQuality]);
+  }, [effectiveFileId, selectedFile, hasRegion, regionStartSeconds, regionEndSeconds, runSoundQuality]);
 
   return (
     <div className={styles.panel}>
@@ -96,7 +92,7 @@ export const SoundQualityPanel = ({
           <Badge size="xs" variant="light" color={hasRegion ? 'teal' : 'gray'}>
             {hasRegion
               ? `${activeSelection!.startSeconds.toFixed(3)}s - ${activeSelection!.endSeconds.toFixed(3)}s`
-              : 'Select region'}
+              : 'Full file'}
           </Badge>
           {isRunning && <Loader size="xs" color="teal" />}
         </Group>
@@ -116,17 +112,12 @@ export const SoundQualityPanel = ({
             <Text size="sm" c="dimmed">Select a file above to run sound-quality metrics</Text>
           </div>
         )}
-        {effectiveFileId && !hasRegion && (
-          <div className={styles.emptyState}>
-            <Text size="sm" c="dimmed">Select a waveform region to run sound-quality metrics</Text>
-          </div>
-        )}
         {effectiveFileId && error && (
           <div className={styles.emptyState}>
             <Text size="sm" c="red">{error}</Text>
           </div>
         )}
-        {effectiveFileId && hasRegion && !error && result && (
+        {effectiveFileId && !error && result && (
           <>
             <div className={barStyles.barChart}>
               {metricBars.map((metricBar) => (

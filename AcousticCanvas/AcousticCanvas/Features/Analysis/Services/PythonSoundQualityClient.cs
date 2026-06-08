@@ -7,7 +7,7 @@ namespace AcousticCanvas.Features.Analysis.Services;
 
 public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISoundQualityClient
 {
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(120);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -39,9 +39,20 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
             RedirectStandardError = true,
             UseShellExecute = false,
         };
-        startInfo.Environment["MPLCONFIGDIR"] = Path.Combine(
-            Path.GetTempPath(),
-            $"acousticcanvas-matplotlib-{Guid.NewGuid():N}");
+        var cacheRoot = Path.Combine(Path.GetTempPath(), "acousticcanvas-sound-quality-cache");
+        var matplotlibConfigDirectory = Path.Combine(cacheRoot, "matplotlib");
+        var xdgCacheDirectory = Path.Combine(cacheRoot, "xdg");
+        var fontconfigDirectory = Path.Combine(cacheRoot, "fontconfig");
+        var fontconfigCacheDirectory = Path.Combine(fontconfigDirectory, "cache");
+        var fontconfigFilePath = Path.Combine(fontconfigDirectory, "fonts.conf");
+        Directory.CreateDirectory(matplotlibConfigDirectory);
+        Directory.CreateDirectory(xdgCacheDirectory);
+        Directory.CreateDirectory(fontconfigCacheDirectory);
+        WriteFontconfigFileIfMissing(fontconfigFilePath, fontconfigCacheDirectory);
+        startInfo.Environment["MPLBACKEND"] = "Agg";
+        startInfo.Environment["MPLCONFIGDIR"] = matplotlibConfigDirectory;
+        startInfo.Environment["XDG_CACHE_HOME"] = xdgCacheDirectory;
+        startInfo.Environment["FONTCONFIG_FILE"] = fontconfigFilePath;
         startInfo.ArgumentList.Add(scriptPath);
 
         try
@@ -73,7 +84,7 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
                 TryKillProcess(process);
                 throw BuildUnavailableException(
                     $"MoSQITo sound-quality sidecar timed out after {DefaultTimeout.TotalSeconds:0} seconds. " +
-                    "Select a shorter waveform region or restart the backend to clear stale Python analysis processes.");
+                    "Restart the backend to clear stale Python analysis processes if this persists.");
             }
             if (process.ExitCode != 0)
             {
@@ -140,6 +151,25 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
         return new InvalidOperationException(
             "Python sound-quality sidecar unavailable. Install MoSQITo and configure the sidecar before running sound-quality metrics. " +
             $"Detail: {detail}");
+    }
+
+    private static void WriteFontconfigFileIfMissing(string fontconfigFilePath, string fontconfigCacheDirectory)
+    {
+        if (File.Exists(fontconfigFilePath))
+        {
+            return;
+        }
+
+        var fontconfigFile = $"""
+            <?xml version="1.0"?>
+            <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+            <fontconfig>
+              <dir>/System/Library/Fonts</dir>
+              <dir>/Library/Fonts</dir>
+              <cachedir>{fontconfigCacheDirectory}</cachedir>
+            </fontconfig>
+            """;
+        File.WriteAllText(fontconfigFilePath, fontconfigFile);
     }
 
     private static void TryKillProcess(Process process)

@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 import contextlib
+import importlib
+import importlib.util
 import json
 import math
 import os
+import pathlib
 import signal
 import sys
 import tempfile
+import types
 import wave
 
 
@@ -57,29 +61,84 @@ def timeout_handler(_signum, _frame):
     raise TimeoutError()
 
 
-def compute_roughness_with_timeout(mono, sample_rate, timeout_seconds=5):
-    previous_handler = signal.getsignal(signal.SIGALRM)
-    try:
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.setitimer(signal.ITIMER_REAL, timeout_seconds)
-        from mosqito.sq_metrics import roughness_dw
-        roughness, _, _, _ = roughness_dw(mono, sample_rate)
-        return scalar(roughness), None
-    except TimeoutError:
-        return 0.0, "Daniel-Weber roughness timed out for this region; select a shorter region and retry."
-    except Exception as exception:
-        return 0.0, f"Daniel-Weber roughness unavailable for this region: {exception}"
-    finally:
-        signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, previous_handler)
+def configure_runtime_environment():
+    cache_root = os.path.join(tempfile.gettempdir(), "acousticcanvas-sound-quality-cache")
+    matplotlib_config_directory = os.path.join(cache_root, "matplotlib")
+    xdg_cache_directory = os.path.join(cache_root, "xdg")
+    fontconfig_directory = os.path.join(cache_root, "fontconfig")
+    fontconfig_cache_directory = os.path.join(fontconfig_directory, "cache")
+    fontconfig_file_path = os.path.join(fontconfig_directory, "fonts.conf")
+    os.makedirs(matplotlib_config_directory, exist_ok=True)
+    os.makedirs(xdg_cache_directory, exist_ok=True)
+    os.makedirs(fontconfig_cache_directory, exist_ok=True)
+    if not os.path.exists(fontconfig_file_path):
+        with open(fontconfig_file_path, "w", encoding="utf-8") as fontconfig_file:
+            fontconfig_file.write(
+                f"""<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+<fontconfig>
+  <dir>/System/Library/Fonts</dir>
+  <dir>/Library/Fonts</dir>
+  <cachedir>{fontconfig_cache_directory}</cachedir>
+</fontconfig>
+"""
+            )
+    os.environ.setdefault("MPLBACKEND", "Agg")
+    os.environ.setdefault("MPLCONFIGDIR", matplotlib_config_directory)
+    os.environ.setdefault("XDG_CACHE_HOME", xdg_cache_directory)
+    os.environ.setdefault("FONTCONFIG_FILE", fontconfig_file_path)
+
+
+def import_metric_functions():
+    mosqito_spec = importlib.util.find_spec("mosqito")
+    if mosqito_spec is None or mosqito_spec.submodule_search_locations is None:
+        raise ImportError("MoSQITo package could not be located.")
+
+    mosqito_directory = pathlib.Path(next(iter(mosqito_spec.submodule_search_locations))).resolve()
+    register_package_stub("mosqito", mosqito_directory)
+    register_package_stub("mosqito.sq_metrics", mosqito_directory / "sq_metrics")
+    register_package_stub("mosqito.sq_metrics.loudness", mosqito_directory / "sq_metrics" / "loudness")
+    register_package_stub(
+        "mosqito.sq_metrics.loudness.loudness_zwst",
+        mosqito_directory / "sq_metrics" / "loudness" / "loudness_zwst",
+    )
+    register_package_stub("mosqito.sq_metrics.sharpness", mosqito_directory / "sq_metrics" / "sharpness")
+    register_package_stub(
+        "mosqito.sq_metrics.sharpness.sharpness_din",
+        mosqito_directory / "sq_metrics" / "sharpness" / "sharpness_din",
+    )
+    register_package_stub("mosqito.sq_metrics.roughness", mosqito_directory / "sq_metrics" / "roughness")
+    register_package_stub(
+        "mosqito.sq_metrics.roughness.roughness_dw",
+        mosqito_directory / "sq_metrics" / "roughness" / "roughness_dw",
+    )
+
+    loudness_zwst = importlib.import_module(
+        "mosqito.sq_metrics.loudness.loudness_zwst.loudness_zwst"
+    ).loudness_zwst
+    sharpness_din_from_loudness = importlib.import_module(
+        "mosqito.sq_metrics.sharpness.sharpness_din.sharpness_din_from_loudness"
+    ).sharpness_din_from_loudness
+    roughness_dw = importlib.import_module(
+        "mosqito.sq_metrics.roughness.roughness_dw.roughness_dw"
+    ).roughness_dw
+    return loudness_zwst, sharpness_din_from_loudness, roughness_dw
+
+
+def register_package_stub(package_name, package_directory):
+    package = types.ModuleType(package_name)
+    package.__path__ = [str(package_directory)]
+    package.__package__ = package_name
+    package.__file__ = str(package_directory / "__init__.py")
+    sys.modules[package_name] = package
 
 
 def main():
-    os.environ.setdefault("MPLCONFIGDIR", tempfile.mkdtemp(prefix="acousticcanvas-matplotlib-"))
+    configure_runtime_environment()
 
     try:
         import numpy as np
-        from mosqito.sq_metrics import loudness_zwst, sharpness_din_st
+        loudness_zwst, sharpness_din_from_loudness, roughness_dw = import_metric_functions()
     except Exception as exception:
         return fail(f"MoSQITo sidecar dependency unavailable: {exception}")
 
@@ -103,16 +162,14 @@ def main():
     # MoSQITo prints resampling notices to stdout for sample rates below 48 kHz;
     # keep stdout limited to the JSON result by routing those notices to stderr.
     with contextlib.redirect_stdout(sys.stderr):
-        loudness_total, _, _ = loudness_zwst(mono, sample_rate, field_type="free")
-        sharpness = sharpness_din_st(mono, sample_rate, weighting="din", field_type="free")
-        roughness, roughness_limitation = compute_roughness_with_timeout(mono, sample_rate)
+        loudness_total, specific_loudness, _ = loudness_zwst(mono, sample_rate, field_type="free")
+        sharpness = sharpness_din_from_loudness(loudness_total, specific_loudness, weighting="din")
+        roughness, _, _, _ = roughness_dw(mono, sample_rate)
 
     limitations = [
         "Stationary Zwicker loudness, DIN sharpness, and Daniel-Weber roughness computed from uncalibrated digital-amplitude WAV samples.",
         "Values are useful for relative comparison until calibration metadata maps samples to physical sound pressure.",
     ]
-    if roughness_limitation is not None:
-        limitations.append(roughness_limitation)
 
     result = {
         "parameters": {
@@ -142,7 +199,7 @@ def main():
         },
         "roughness": {
             "name": "Daniel-Weber roughness",
-            "value": round(roughness, 4),
+            "value": round(scalar(roughness), 4),
             "unit": "asper",
             "method": "MoSQITo roughness_dw",
         },

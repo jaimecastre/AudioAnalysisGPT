@@ -27,6 +27,7 @@ public sealed class SoundQualityAnalysisServiceTests
         Assert.Equal("sone", result.Loudness.Unit);
         Assert.Equal("acum", result.Sharpness.Unit);
         Assert.Equal("asper", result.Roughness.Unit);
+        Assert.Equal("MoSQITo roughness_dw", result.Roughness.Method);
         Assert.NotEmpty(result.Parameters.Limitations);
     }
 
