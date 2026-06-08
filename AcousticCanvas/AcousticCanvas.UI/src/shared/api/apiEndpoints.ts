@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
     RUN_SPECTRUM: 'api/analysis/spectrum',
     RUN_SPECTROGRAM: 'api/analysis/spectrogram',
     RUN_CPB: 'api/analysis/cpb',
+    RUN_SOUND_QUALITY: 'api/analysis/sound-quality',
     RUN_AGENT_ANALYSIS: 'api/analysis/run',
     RUN_COMPARE: 'api/analysis/compare',
     RUN_FIND: 'api/analysis/find',

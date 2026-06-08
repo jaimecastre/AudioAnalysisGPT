@@ -40,6 +40,7 @@ public sealed class CpbParameters
     public required string Method { get; init; }
     public required string Weighting { get; init; }
     public required string WeightingMethod { get; init; }
+    public required IReadOnlyList<string> Limitations { get; init; }
     public required double StartTimeSeconds { get; init; }
     public required double EndTimeSeconds { get; init; }
     public required int BlockCount { get; init; }

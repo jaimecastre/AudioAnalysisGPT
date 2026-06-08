@@ -112,3 +112,49 @@
 .spinIcon {
   animation: spin 1s linear infinite;
 }
+
+.toolRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background-color: var(--bg-overlay);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+  }
+}
+
+.toolRowIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  color: #009688;
+  background-color: rgba(0, 184, 169, 0.1);
+  flex-shrink: 0;
+}
+
+.toolRowBlue .toolRowIcon {
+  color: #1c7ed6;
+  background-color: rgba(28, 126, 214, 0.1);
+}
+
+.toolRowOrange .toolRowIcon {
+  color: #f08c00;
+  background-color: rgba(240, 140, 0, 0.12);
+}

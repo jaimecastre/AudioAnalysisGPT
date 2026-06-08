@@ -41,9 +41,11 @@ export const ManualWorkspace = (): JSX.Element => {
     hasSpectrogramPanel,
     hasSpectrumPanel,
     hasCpbPanel,
+    hasSoundQualityPanel,
     handleAddSpectrogramPanel,
     handleAddSpectrumPanel,
     handleAddCpbPanel,
+    handleAddSoundQualityPanel,
     handleToolPanelFileSelect,
     handleToolPanelClose,
   } = useToolPanels();
@@ -99,6 +101,10 @@ export const ManualWorkspace = (): JSX.Element => {
 
   const handleAddCpbPanelForActiveFile = (): void => {
     handleAddCpbPanel(selectedSignalId);
+  };
+
+  const handleAddSoundQualityPanelForActiveFile = (): void => {
+    handleAddSoundQualityPanel(selectedSignalId);
   };
 
   const handleToggleLoop = (): void => {
@@ -226,9 +232,11 @@ export const ManualWorkspace = (): JSX.Element => {
             onAddSpectrogram={handleAddSpectrogramPanelForActiveFile}
             onAddSpectrum={handleAddSpectrumPanelForActiveFile}
             onAddCpb={handleAddCpbPanelForActiveFile}
+            onAddSoundQuality={handleAddSoundQualityPanelForActiveFile}
             hasSpectrogramPanel={hasSpectrogramPanel}
             hasSpectrumPanel={hasSpectrumPanel}
             hasCpbPanel={hasCpbPanel}
+            hasSoundQualityPanel={hasSoundQualityPanel}
             hasComparisonPanel={manualCompareResult !== null}
             isCompareLoading={manualCompareStatus === 'loading'}
             onRunCompare={handleRunManualCompare}

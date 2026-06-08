@@ -39,7 +39,7 @@ The AI should behave more like a junior acoustic engineer or investigation copil
 
 ---
 
-# 2. Current State of the Application (Last updated: 2025-06-03)
+# 2. Current State of the Application (Last updated: 2026-06-07)
 
 ## Stack
 
@@ -54,7 +54,7 @@ The AI should behave more like a junior acoustic engineer or investigation copil
 | DSP | MathNet.Numerics 5.0, NAudio 2.2 |
 | API Docs | Swashbuckle (Swagger) |
 | AI/LLM | OpenAI API (gpt-4o-mini) — **connected via backend proxy** |
-| Python Sidecar | **Not implemented** |
+| Python Sidecar | **Partial** — CPB and MoSQITo sound-quality subprocess paths validated on generated WAV fixtures via repo `.venv`; broader calibration validation pending |
 
 ## Application Modes
 
@@ -83,9 +83,9 @@ The UI supports two main workspaces:
 | Findings engine (clipping, silence, crest factor, DC offset, tonal peaks) | ✅ Done | `POST /api/analysis/findings` |
 | Tonal peak detection (local prominence heuristic) | ✅ Done | Included in spectrum and findings |
 | CPB / octave band analysis | ✅ Done | `POST /api/analysis/cpb` |
-| Sound quality metrics (loudness, sharpness) | ❌ Not started | — |
+| Sound quality metrics (loudness, sharpness) | ✅ First slice done | `POST /api/analysis/sound-quality` |
 | Batch benchmarking | ❌ Not started | — |
-| Python sidecar | ❌ Not started | — |
+| Python sidecar | 🟡 Partial | CPB `python_filter_bank` and sound-quality `mosqito_stationary_zwicker` subprocess paths |
 
 ### Backend Analysis Details
 
@@ -166,7 +166,7 @@ SignalChannel {
 | Task progress panel | 🟡 Placeholder | Empty state only |
 | Calibration UI | 🟡 Referenced in types | Not implemented |
 | CPB / octave band visualization | ✅ Done | Collapsible CPB panel with octave / 1⁄3 octave modes |
-| Sound quality metrics display | ❌ Not started | — |
+| Sound quality metrics display | ✅ First slice done | Manual panel for MoSQITo stationary loudness + DIN sharpness |
 | Batch comparison table | ❌ Not started | — |
 | Findings panel | ✅ Done | Severity-coded cards, tonal peak findings, evidence chips, suggested next step, time range |
 
@@ -515,9 +515,9 @@ Backend responsibilities:
 - File metadata extraction
 - Audio loading/decoding
 - DSP pipeline (level, spectrum, spectrogram, comparison, events)
-- Finding generation (future)
+- Finding generation
 - OpenAI API orchestration (infrastructure ready)
-- Python sidecar orchestration (future)
+- Python sidecar orchestration for CPB and sound-quality metrics
 - Result caching (future)
 - Export/report data (future)
 
@@ -529,11 +529,16 @@ Local filesystem: `AudioStorage/` directory with 12-character GUID filenames.
 
 In-memory `ConcurrentDictionary` for playback state. Commands: play, pause, seek, stop.
 
-## Python Sidecar (Not Yet Implemented)
+## Python Sidecar (Partial)
+
+Implemented uses:
+
+- CPB `python_filter_bank` method through a subprocess sidecar
+- MoSQITo stationary loudness and DIN sharpness through a subprocess sidecar
 
 Planned uses:
 
-- MoSQITo for sound-quality metrics (loudness, sharpness, roughness, fluctuation strength)
+- MoSQITo for additional sound-quality metrics (roughness, fluctuation strength)
 - Scientific libraries
 - Audio embedding models
 - ML inference
@@ -551,8 +556,9 @@ Important:
 
 Strategy:
 
-- Implement basic metrics natively in C#
-- Use MoSQITo for advanced psychoacoustic metrics
+- Use MoSQITo for first-pass stationary loudness and sharpness.
+- Keep uncalibrated values explicitly labelled as relative-comparison metrics until calibration metadata maps samples to physical sound pressure.
+- Consider native C# implementations only where the standard and validation fixture set are clear.
 - Keep the interface generic so another engine can replace it later
 
 Example abstraction:
@@ -657,22 +663,24 @@ User can save finding/report as artifact
 - ✅ CPB comparison between files via existing compare workflow
 - ✅ CPB comparison UX shows the largest band deltas first, with the full band table below
 - ✅ Agent compare/report artifacts can cite strongest CPB band delta
-- ❌ Standards-oriented filter-bank mode via Python sidecar
-- ❌ A-weighting / C-weighting
+- ✅ Z / A / C weighting controls with explicit weighting metadata
+- 🟡 Standards-oriented filter-bank mode via Python sidecar scaffold (`python_filter_bank` method selector + subprocess client); generated 1 kHz and 100 Hz sine fixture validation done, external calibrator/standards validation pending
 - ❌ CPB over time
 
 Future method roadmap:
 
 - Keep `fft_bin_power_sum` as the fast interactive diagnostic CPB mode.
-- Add `python_filter_bank` as a standards-oriented CPB mode when introducing the Python sidecar.
+- `python_filter_bank` exists as an experimental subprocess sidecar path with generated sine fixture tests; validate it against known external calibrator files before standards claims.
 - First candidate library: `PyOctaveBand` (MIT; fractional octave filter bank, A/C/Z weighting, time weighting).
 - Secondary candidates: `pyfar` fractional octave filters, `pyfilterbank` fractional octave filter bank.
 - Do not claim IEC 61260 compliance for the current C# FFT-bin implementation; label it as nominal FFT-bin CPB analysis.
 
-## Sound Quality Metrics ❌ NOT STARTED
+## Sound Quality Metrics 🟡 PARTIAL
 
-- ❌ Loudness
-- ❌ Sharpness
+- ✅ Stationary loudness via MoSQITo `loudness_zwst`
+- ✅ DIN sharpness via MoSQITo `sharpness_din_st`
+- ✅ Manual sound-quality panel with method and limitations metadata
+- 🟡 Current values are computed from uncalibrated digital-amplitude WAV samples; use for relative comparison until calibration is implemented
 - ❌ Roughness
 - ❌ Fluctuation strength
 - ❌ Tonality
@@ -798,8 +806,9 @@ Given the current state, the recommended next work is:
 1. ~~Connect OpenAI API~~ ✅ Done
 2. ~~Findings Panel~~ ✅ Done — Structured findings from event detection + level analysis
 3. ~~Tonal peak detection~~ ✅ Done — Local prominence heuristic in spectrum analyzer + findings
-4. ~~CPB analysis~~ 🟡 Partial — Backend + manual CPB panel done; comparison/weighting deferred
-5. **Sound quality metrics** — Integrate MoSQITo via Python sidecar or implement basic loudness/sharpness in C#
+4. ~~CPB analysis~~ 🟡 Partial — Backend + manual CPB panel, comparison, Z/A/C weighting controls, experimental `python_filter_bank` sidecar path, and generated-WAV validation tests done; external calibrator validation pending
+5. ~~Sound quality metrics: loudness + sharpness~~ ✅ First slice done — MoSQITo sidecar, backend endpoint, manual panel, generated-WAV validation
+6. **Next: Sound-quality comparison** — Add loudness/sharpness deltas to A/B comparison and agent evidence
 
 ---
 
@@ -845,17 +854,17 @@ Acceptance criteria:
 - ✅ Parameters are visible
 - ❌ Result can be compared between files (deferred to comparison slice)
 
-## Story 6 — Sound Quality Metrics ❌ NEXT
+## Story 6 — Sound Quality Metrics 🟡 PARTIAL
 
 As a user, I want to calculate loudness and sharpness so that I can compare perceived sound quality.
 
 Acceptance criteria:
 
-- Backend calculates or orchestrates sound-quality metrics
-- MoSQITo may be used through a Python sidecar
-- Results include units and method metadata
-- Errors are handled clearly
-- Results can be compared between two files
+- ✅ Backend orchestrates sound-quality metrics
+- ✅ MoSQITo is used through a Python sidecar
+- ✅ Results include units and method metadata
+- ✅ Errors are handled clearly
+- ❌ Results can be compared between two files
 
 ## Story 7 — A/B Comparison ✅ DONE
 
@@ -1037,10 +1046,12 @@ Build huge architecture for all future metrics before one full feature works.
 7. ~~Tonal peak detection~~ ✅
 8. ~~CPB analysis~~ 🟡 Partial
 9. ~~CPB comparison~~ ✅
-10. **CPB weighting controls** ← next
-11. Standards-oriented CPB filter-bank mode via Python sidecar
-12. Sound-quality metrics
-13. Batch comparison
+10. ~~CPB weighting controls~~ ✅
+11. ~~Standards-oriented CPB filter-bank mode via Python sidecar scaffold~~ 🟡
+12. ~~Generated-WAV CPB sidecar validation tests~~ ✅
+13. ~~Sound-quality metrics: loudness + sharpness~~ ✅ First slice done
+14. **Sound-quality comparison** ← next
+15. Batch comparison
 
 ---
 
@@ -1164,19 +1175,20 @@ When I ask for sprint planning, please:
 
 Sprint goal:
 
-> Add CPB weighting controls on top of the implemented graph and comparison views.
+> Add sound-quality comparison evidence on top of the first loudness/sharpness metrics layer.
 
 Suggested scope:
 
 ```
-Run CPB analysis with selectable weighting
-→ support Z / A / C weighting metadata and per-band display correction
-→ apply weighting consistently in single-file and comparison CPB views
-→ evaluate `PyOctaveBand` for a future `python_filter_bank` CPB method
-→ agent can cite weighted or unweighted CPB evidence explicitly
+Use the implemented MoSQITo loudness/sharpness sidecar
+→ run metrics for compared files or selected regions
+→ return loudness/sharpness deltas with method metadata and limitations
+→ surface deltas in the comparison UI
+→ let agent compare/report artifacts cite only measured sound-quality evidence
+→ keep calibration caveats explicit until physical SPL calibration exists
 ```
 
-Findings, tonal peak detection, the first CPB graph slice, and CPB comparison are now implemented. The next high-value feature is weighting control, because it makes band energy interpretation clearer for perceptual and acoustic diagnostics.
+Findings, tonal peak detection, the first CPB graph slice, CPB comparison, CPB weighting controls, the experimental `python_filter_bank` sidecar path, generated-WAV CPB validation tests, and the first MoSQITo loudness/sharpness slice are now implemented. The next high-value task is sound-quality comparison, because it turns isolated perceived metrics into benchmark evidence.
 
 ---
 

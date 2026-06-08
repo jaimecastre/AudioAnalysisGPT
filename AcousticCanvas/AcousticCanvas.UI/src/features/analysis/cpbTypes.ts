@@ -1,5 +1,6 @@
 export type CpbBandMode = 'octave' | 'third_octave';
 export type CpbWeighting = 'z' | 'a' | 'c';
+export type CpbMethod = 'fft_bin_power_sum' | 'python_filter_bank';
 
 export type CpbParameters = {
   bandMode: CpbBandMode;
@@ -12,6 +13,7 @@ export type CpbParameters = {
   method: string;
   weighting: CpbWeighting;
   weightingMethod: string;
+  limitations: string[];
   startTimeSeconds: number;
   endTimeSeconds: number;
   blockCount: number;
@@ -52,6 +54,7 @@ export type CpbUserParameters = {
   fftSize: number;
   overlap: number;
   weighting: CpbWeighting;
+  method: CpbMethod;
 };
 
 export const DEFAULT_CPB_PARAMS: CpbUserParameters = {
@@ -59,6 +62,7 @@ export const DEFAULT_CPB_PARAMS: CpbUserParameters = {
   fftSize: 8192,
   overlap: 0.5,
   weighting: 'z',
+  method: 'fft_bin_power_sum',
 };
 
 export const CPB_BAND_MODE_OPTIONS = [
@@ -70,6 +74,11 @@ export const CPB_WEIGHTING_OPTIONS = [
   { value: 'z', label: 'Z' },
   { value: 'a', label: 'A' },
   { value: 'c', label: 'C' },
+] as const;
+
+export const CPB_METHOD_OPTIONS = [
+  { value: 'fft_bin_power_sum', label: 'FFT' },
+  { value: 'python_filter_bank', label: 'Filter' },
 ] as const;
 
 export const CPB_FFT_SIZE_OPTIONS = [

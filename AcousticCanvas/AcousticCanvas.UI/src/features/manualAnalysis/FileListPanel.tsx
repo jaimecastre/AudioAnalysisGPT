@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
-import { Text, Group, Stack, ActionIcon, Tooltip } from '@mantine/core';
+import { Text, Stack, ActionIcon, Tooltip } from '@mantine/core';
 import {
   IconFileMusic,
   IconWaveSine,
@@ -13,6 +13,7 @@ import {
   IconGitCompare,
   IconLoader2,
   IconBug,
+  IconSparkles,
 } from '@tabler/icons-react';
 import type { AudioFile } from '../../store/projectState';
 import styles from './FileListPanel.module.scss';
@@ -26,11 +27,13 @@ interface FileListPanelProps {
   onAddSpectrogram: () => void;
   onAddSpectrum: () => void;
   onAddCpb: () => void;
+  onAddSoundQuality: () => void;
   onRunCompare: () => void;
   onOpenFindings: () => void;
   hasSpectrogramPanel: boolean;
   hasSpectrumPanel: boolean;
   hasCpbPanel: boolean;
+  hasSoundQualityPanel: boolean;
   hasComparisonPanel: boolean;
   isCompareLoading: boolean;
   isFindingsPanelOpen: boolean;
@@ -46,11 +49,13 @@ export function FileListPanel({
   onAddSpectrogram,
   onAddSpectrum,
   onAddCpb,
+  onAddSoundQuality,
   onRunCompare,
   onOpenFindings,
   hasSpectrogramPanel,
   hasSpectrumPanel,
   hasCpbPanel,
+  hasSoundQualityPanel,
   hasComparisonPanel,
   isCompareLoading,
   isFindingsPanelOpen,
@@ -134,99 +139,88 @@ export function FileListPanel({
       <div style={{ marginTop: 24 }}>
         <Text fw={600} size="sm" mb="sm" c="dimmed">TOOLS</Text>
         <Stack gap={6}>
-          <Group gap="xs" wrap="nowrap" align="center">
-            <Tooltip label={hasSpectrogramPanel ? 'Spectrogram panel already open' : 'Add spectrogram'} withArrow position="right">
-              <span>
-                <ActionIcon
-                  variant="light"
-                  color="teal"
-                  size="lg"
-                  onClick={onAddSpectrogram}
-                  disabled={hasSpectrogramPanel}
-                  aria-label="Add spectrogram panel"
-                >
-                  <IconWaveSine size={18} />
-                </ActionIcon>
-              </span>
-            </Tooltip>
-            <Text size="xs" c="dimmed">Spectrogram</Text>
-          </Group>
-          <Group gap="xs" wrap="nowrap" align="center">
-            <Tooltip label={hasSpectrumPanel ? 'Spectrum panel already open' : 'Add spectrum'} withArrow position="right">
-              <span>
-                <ActionIcon
-                  variant="light"
-                  color="teal"
-                  size="lg"
-                  onClick={onAddSpectrum}
-                  disabled={hasSpectrumPanel}
-                  aria-label="Add spectrum panel"
-                >
-                  <IconChartLine size={18} />
-                </ActionIcon>
-              </span>
-            </Tooltip>
-            <Text size="xs" c="dimmed">Spectrum</Text>
-          </Group>
-          <Group gap="xs" wrap="nowrap" align="center">
-            <Tooltip label={hasCpbPanel ? 'CPB panel already open' : 'Add CPB analysis'} withArrow position="right">
-              <span>
-                <ActionIcon
-                  variant="light"
-                  color="teal"
-                  size="lg"
-                  onClick={onAddCpb}
-                  disabled={hasCpbPanel}
-                  aria-label="Add CPB panel"
-                >
-                  <IconChartBar size={18} />
-                </ActionIcon>
-              </span>
-            </Tooltip>
-            <Text size="xs" c="dimmed">CPB (1/3 octave)</Text>
-          </Group>
-          <Group gap="xs" wrap="nowrap" align="center">
-            <Tooltip
-              label={!canCompare ? 'Load at least 2 files to compare' : hasComparisonPanel ? 'Comparison already open' : 'Compare all loaded files'}
-              withArrow
-              position="right"
+          <Tooltip label={hasSpectrogramPanel ? 'Spectrogram panel already open' : 'Add spectrogram'} withArrow position="right">
+            <button
+              type="button"
+              className={styles.toolRow}
+              onClick={onAddSpectrogram}
+              disabled={hasSpectrogramPanel}
+              aria-label="Add spectrogram panel"
             >
-              <span>
-                <ActionIcon
-                  variant="light"
-                  color="blue"
-                  size="lg"
-                  onClick={onRunCompare}
-                  disabled={!canCompare || hasComparisonPanel || isCompareLoading}
-                  aria-label="Run A/B comparison"
-                >
-                  {isCompareLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconGitCompare size={18} />}
-                </ActionIcon>
-              </span>
-            </Tooltip>
-            <Text size="xs" c="dimmed">A/B compare</Text>
-          </Group>
-          <Group gap="xs" wrap="nowrap" align="center">
-            <Tooltip
-              label={isFindingsPanelOpen ? 'Findings panel already open' : 'Analyse findings'}
-              withArrow
-              position="right"
+              <span className={styles.toolRowIcon}><IconWaveSine size={18} /></span>
+              <Text size="xs" c="dimmed">Spectrogram</Text>
+            </button>
+          </Tooltip>
+          <Tooltip label={hasSpectrumPanel ? 'Spectrum panel already open' : 'Add spectrum'} withArrow position="right">
+            <button
+              type="button"
+              className={styles.toolRow}
+              onClick={onAddSpectrum}
+              disabled={hasSpectrumPanel}
+              aria-label="Add spectrum panel"
             >
-              <span>
-                <ActionIcon
-                  variant="light"
-                  color="orange"
-                  size="lg"
-                  onClick={onOpenFindings}
-                  disabled={isFindingsPanelOpen}
-                  aria-label="Open findings panel"
-                >
-                  <IconBug size={18} />
-                </ActionIcon>
+              <span className={styles.toolRowIcon}><IconChartLine size={18} /></span>
+              <Text size="xs" c="dimmed">Spectrum</Text>
+            </button>
+          </Tooltip>
+          <Tooltip label={hasCpbPanel ? 'CPB panel already open' : 'Add CPB analysis'} withArrow position="right">
+            <button
+              type="button"
+              className={styles.toolRow}
+              onClick={onAddCpb}
+              disabled={hasCpbPanel}
+              aria-label="Add CPB panel"
+            >
+              <span className={styles.toolRowIcon}><IconChartBar size={18} /></span>
+              <Text size="xs" c="dimmed">CPB (1/3 octave)</Text>
+            </button>
+          </Tooltip>
+          <Tooltip label={hasSoundQualityPanel ? 'Sound-quality panel already open' : 'Add sound-quality metrics'} withArrow position="right">
+            <button
+              type="button"
+              className={styles.toolRow}
+              onClick={onAddSoundQuality}
+              disabled={hasSoundQualityPanel}
+              aria-label="Add sound-quality panel"
+            >
+              <span className={styles.toolRowIcon}><IconSparkles size={18} /></span>
+              <Text size="xs" c="dimmed">Sound quality</Text>
+            </button>
+          </Tooltip>
+          <Tooltip
+            label={!canCompare ? 'Load at least 2 files to compare' : hasComparisonPanel ? 'Comparison already open' : 'Compare all loaded files'}
+            withArrow
+            position="right"
+          >
+            <button
+              type="button"
+              className={`${styles.toolRow} ${styles.toolRowBlue}`}
+              onClick={onRunCompare}
+              disabled={!canCompare || hasComparisonPanel || isCompareLoading}
+              aria-label="Run A/B comparison"
+            >
+              <span className={styles.toolRowIcon}>
+                {isCompareLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconGitCompare size={18} />}
               </span>
-            </Tooltip>
-            <Text size="xs" c="dimmed">Findings</Text>
-          </Group>
+              <Text size="xs" c="dimmed">A/B compare</Text>
+            </button>
+          </Tooltip>
+          <Tooltip
+            label={isFindingsPanelOpen ? 'Findings panel already open' : 'Analyse findings'}
+            withArrow
+            position="right"
+          >
+            <button
+              type="button"
+              className={`${styles.toolRow} ${styles.toolRowOrange}`}
+              onClick={onOpenFindings}
+              disabled={isFindingsPanelOpen}
+              aria-label="Open findings panel"
+            >
+              <span className={styles.toolRowIcon}><IconBug size={18} /></span>
+              <Text size="xs" c="dimmed">Findings</Text>
+            </button>
+          </Tooltip>
         </Stack>
       </div>
     </div>

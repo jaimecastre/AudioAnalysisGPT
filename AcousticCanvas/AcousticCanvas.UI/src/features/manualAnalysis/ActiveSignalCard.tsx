@@ -8,6 +8,7 @@ import { FindingsPanel } from '../findings/FindingsPanel';
 import { SpectrogramPanel } from '../analysis/SpectrogramPanel';
 import { SpectrumPanel } from '../analysis/SpectrumPanel';
 import { CpbPanel } from '../analysis/CpbPanel';
+import { SoundQualityPanel } from '../analysis/SoundQualityPanel';
 import type { CompareResult } from '../agent/agentToolTypes';
 import type { AudioFile } from '../../store/projectState';
 import type { WaveformSelection } from '../waveform/waveformSelectionSlice';
@@ -15,7 +16,7 @@ import styles from './ActiveSignalCard.module.scss';
 
 interface ToolPanel {
   id: string;
-  type: 'spectrogram' | 'spectrum' | 'cpb';
+  type: 'spectrogram' | 'spectrum' | 'cpb' | 'soundQuality';
   fileId: string | null;
 }
 
@@ -128,6 +129,19 @@ export function ActiveSignalCard({
         if (panel.type === 'cpb') {
           return (
             <CpbPanel
+              key={panel.id}
+              panelId={panel.id}
+              availableFiles={allFiles}
+              selectedFileId={panel.fileId}
+              onFileSelect={onToolPanelFileSelect}
+              onClose={onToolPanelClose}
+            />
+          );
+        }
+
+        if (panel.type === 'soundQuality') {
+          return (
+            <SoundQualityPanel
               key={panel.id}
               panelId={panel.id}
               availableFiles={allFiles}

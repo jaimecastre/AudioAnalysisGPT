@@ -5,16 +5,16 @@ using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
-public class RunCpbEndpoint(UploadAudioHandler uploadAudioHandler)
-    : Endpoint<RunCpbRequest, CpbAnalysis>
+public sealed class RunSoundQualityEndpoint(UploadAudioHandler uploadAudioHandler)
+    : Endpoint<RunSoundQualityRequest, SoundQualityAnalysis>
 {
     public override void Configure()
     {
-        Post("/api/analysis/cpb");
+        Post("/api/analysis/sound-quality");
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(RunCpbRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(RunSoundQualityRequest request, CancellationToken cancellationToken)
     {
         var filePath = uploadAudioHandler.GetFilePath(request.FileId);
         if (string.IsNullOrEmpty(filePath))
@@ -24,14 +24,10 @@ public class RunCpbEndpoint(UploadAudioHandler uploadAudioHandler)
             return;
         }
 
-        var query = new RunCpbQuery(
+        var query = new RunSoundQualityQuery(
             FilePath: filePath,
             StartSeconds: request.StartSeconds,
             EndSeconds: request.EndSeconds,
-            BandMode: request.BandMode,
-            FftSize: request.FftSize,
-            Overlap: request.Overlap,
-            Weighting: request.Weighting,
             Method: request.Method);
 
         try
@@ -41,19 +37,15 @@ public class RunCpbEndpoint(UploadAudioHandler uploadAudioHandler)
         catch (Exception ex)
         {
             HttpContext.Response.StatusCode = 500;
-            await HttpContext.Response.WriteAsync($"CPB analysis error: {ex.GetType().Name}: {ex.Message}", cancellationToken);
+            await HttpContext.Response.WriteAsync($"Sound-quality analysis error: {ex.GetType().Name}: {ex.Message}", cancellationToken);
         }
     }
 }
 
-public class RunCpbRequest
+public sealed class RunSoundQualityRequest
 {
     public string FileId { get; set; } = string.Empty;
     public double StartSeconds { get; set; }
     public double EndSeconds { get; set; }
-    public string BandMode { get; set; } = "third_octave";
-    public int FftSize { get; set; } = 8192;
-    public double Overlap { get; set; } = 0.5;
-    public string Weighting { get; set; } = "z";
-    public string Method { get; set; } = "fft_bin_power_sum";
+    public string Method { get; set; } = "mosqito_stationary_zwicker";
 }

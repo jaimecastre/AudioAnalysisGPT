@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 interface ToolPanel {
   id: string;
-  type: 'spectrogram' | 'spectrum' | 'cpb';
+  type: 'spectrogram' | 'spectrum' | 'cpb' | 'soundQuality';
   fileId: string | null;
 }
 
@@ -11,9 +11,11 @@ interface UseToolPanelsReturn {
   hasSpectrogramPanel: boolean;
   hasSpectrumPanel: boolean;
   hasCpbPanel: boolean;
+  hasSoundQualityPanel: boolean;
   handleAddSpectrogramPanel: (fileId: string | null) => void;
   handleAddSpectrumPanel: (fileId: string | null) => void;
   handleAddCpbPanel: (fileId: string | null) => void;
+  handleAddSoundQualityPanel: (fileId: string | null) => void;
   handleToolPanelFileSelect: (panelId: string, fileId: string | null) => void;
   handleToolPanelClose: (panelId: string) => void;
 }
@@ -24,6 +26,7 @@ export const useToolPanels = (): UseToolPanelsReturn => {
   const hasSpectrogramPanel = toolPanels.some((panel) => panel.type === 'spectrogram');
   const hasSpectrumPanel = toolPanels.some((panel) => panel.type === 'spectrum');
   const hasCpbPanel = toolPanels.some((panel) => panel.type === 'cpb');
+  const hasSoundQualityPanel = toolPanels.some((panel) => panel.type === 'soundQuality');
 
   const handleAddSpectrogramPanel = (fileId: string | null): void => {
     if (hasSpectrogramPanel) return;
@@ -43,6 +46,12 @@ export const useToolPanels = (): UseToolPanelsReturn => {
     setToolPanels((prev) => [...prev, { id: newPanelId, type: 'cpb', fileId }]);
   };
 
+  const handleAddSoundQualityPanel = (fileId: string | null): void => {
+    if (hasSoundQualityPanel) return;
+    const newPanelId = `sound-quality-${Date.now()}`;
+    setToolPanels((prev) => [...prev, { id: newPanelId, type: 'soundQuality', fileId }]);
+  };
+
   const handleToolPanelFileSelect = (panelId: string, fileId: string | null): void => {
     setToolPanels((prev) => prev.map((p) => p.id === panelId ? { ...p, fileId } : p));
   };
@@ -56,9 +65,11 @@ export const useToolPanels = (): UseToolPanelsReturn => {
     hasSpectrogramPanel,
     hasSpectrumPanel,
     hasCpbPanel,
+    hasSoundQualityPanel,
     handleAddSpectrogramPanel,
     handleAddSpectrumPanel,
     handleAddCpbPanel,
+    handleAddSoundQualityPanel,
     handleToolPanelFileSelect,
     handleToolPanelClose,
   };

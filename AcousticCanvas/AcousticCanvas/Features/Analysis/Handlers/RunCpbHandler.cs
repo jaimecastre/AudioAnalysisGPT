@@ -1,15 +1,15 @@
-using AcousticCanvas.Features.Analysis.Analyzers;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.Analysis.Importers;
+using AcousticCanvas.Features.Analysis.Services;
 using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Handlers;
 
-public class RunCpbHandler(IReadOnlyList<ISignalFileImporter> importers)
+public class RunCpbHandler(IReadOnlyList<ISignalFileImporter> importers, CpbAnalysisService cpbAnalysisService)
     : CommandHandler<RunCpbQuery, CpbAnalysis>
 {
-    public override Task<CpbAnalysis> ExecuteAsync(RunCpbQuery query, CancellationToken ct)
+    public override async Task<CpbAnalysis> ExecuteAsync(RunCpbQuery query, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -27,16 +27,12 @@ public class RunCpbHandler(IReadOnlyList<ISignalFileImporter> importers)
         var importer = ResolveImporter(query.FilePath);
         var signalFile = importer.Import(query.FilePath);
 
-        var result = CpbAnalyzer.Analyze(
+        var result = await cpbAnalysisService.AnalyzeAsync(
+            query,
             signalFile.Channels,
-            query.StartSeconds,
-            query.EndSeconds,
-            query.BandMode,
-            query.FftSize,
-            query.Overlap,
-            query.Weighting);
+            ct);
 
-        return Task.FromResult(result);
+        return result;
     }
 
     private ISignalFileImporter ResolveImporter(string filePath)

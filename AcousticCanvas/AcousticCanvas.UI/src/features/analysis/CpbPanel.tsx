@@ -17,9 +17,11 @@ import { useRunCpb } from './useRunCpb';
 import {
   CPB_BAND_MODE_OPTIONS,
   CPB_FFT_SIZE_OPTIONS,
+  CPB_METHOD_OPTIONS,
   CPB_WEIGHTING_OPTIONS,
   type ChannelCpbAnalysis,
   type CpbBandMode,
+  type CpbMethod,
   type CpbWeighting,
 } from './cpbTypes';
 import styles from './CpbPanel.module.scss';
@@ -138,6 +140,15 @@ export const CpbPanel = ({
           />
           <Select
             size="xs"
+            data={CPB_METHOD_OPTIONS}
+            value={cpbUserParameters.method}
+            onChange={(value) => value && dispatch(cpbSetParameters({ method: value as CpbMethod }))}
+            aria-label="CPB method"
+            style={{ width: 76 }}
+            styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+          />
+          <Select
+            size="xs"
             data={CPB_FFT_SIZE_OPTIONS}
             value={String(cpbUserParameters.fftSize)}
             onChange={(value) => value && dispatch(cpbSetParameters({ fftSize: Number(value) }))}
@@ -229,6 +240,11 @@ export const CpbPanel = ({
               <span>
                 Weighting <span className={styles.summaryValue}>{weightingLabel} ({weightingMethod})</span>
               </span>
+              {cpbResult?.parameters.limitations?.[0] && (
+                <span>
+                  Note <span className={styles.summaryValue}>{cpbResult.parameters.limitations[0]}</span>
+                </span>
+              )}
             </div>
           </>
         )}

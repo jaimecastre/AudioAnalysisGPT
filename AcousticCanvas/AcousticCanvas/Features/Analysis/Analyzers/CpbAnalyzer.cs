@@ -56,6 +56,10 @@ public static class CpbAnalyzer
                 Method = Method,
                 Weighting = normalizedWeighting,
                 WeightingMethod = GetWeightingMethod(normalizedWeighting),
+                Limitations =
+                [
+                    "Nominal fractional-octave bands computed by summing FFT-bin power; not an IEC 61260 filter-bank analysis.",
+                ],
                 StartTimeSeconds = startSeconds,
                 EndTimeSeconds = endSeconds,
                 BlockCount = blockCount,

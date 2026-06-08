@@ -38,6 +38,7 @@ export const useRunCpb = (): { runCpb: (args: RunCpbArgs) => Promise<void> } => 
             fftSize: args.parameters.fftSize,
             overlap: args.parameters.overlap,
             weighting: args.parameters.weighting,
+            method: args.parameters.method,
           },
           signal: abortController.signal,
         },

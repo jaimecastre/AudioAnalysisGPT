@@ -306,7 +306,8 @@ public sealed class ToolExecutionService(
                 BandMode: bandMode,
                 FftSize: DefaultFftSize,
                 Overlap: DefaultOverlap,
-                Weighting: weighting);
+                Weighting: weighting,
+                Method: "fft_bin_power_sum");
 
             var cpbResult = await query.ExecuteAsync(cancellationToken);
 

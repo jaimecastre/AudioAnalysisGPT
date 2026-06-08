@@ -1,0 +1,2 @@
+PyOctaveBand==1.2.2
+numpy==2.2.6
