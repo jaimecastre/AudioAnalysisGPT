@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { API_ENDPOINTS } from '../../shared/api/apiEndpoints';
-import { apiClient, HttpMethod } from '../../shared/api/apiClient';
+import { ApiError, apiClient, HttpMethod } from '../../shared/api/apiClient';
 import type { SoundQualityAnalysis } from './soundQualityTypes';
 
 interface RunSoundQualityArgs {
@@ -14,6 +14,7 @@ export const useRunSoundQuality = (): {
   isRunning: boolean;
   error: string | null;
   runSoundQuality: (args: RunSoundQualityArgs) => Promise<void>;
+  resetSoundQuality: () => void;
 } => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const [result, setResult] = useState<SoundQualityAnalysis | null>(null);
@@ -47,7 +48,12 @@ export const useRunSoundQuality = (): {
       setResult(analysis);
     } catch (requestError) {
       if (abortController.signal.aborted) return;
-      const message = requestError instanceof Error ? requestError.message : 'Sound-quality analysis failed';
+      const responseBody = requestError instanceof ApiError
+        ? await requestError.response?.text().catch(() => null)
+        : null;
+      const message = responseBody && responseBody.trim().length > 0
+        ? responseBody
+        : requestError instanceof Error ? requestError.message : 'Sound-quality analysis failed';
       setError(message);
     } finally {
       if (!abortController.signal.aborted) {
@@ -56,5 +62,13 @@ export const useRunSoundQuality = (): {
     }
   }, []);
 
-  return { result, isRunning, error, runSoundQuality };
+  const resetSoundQuality = useCallback((): void => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setResult(null);
+    setIsRunning(false);
+    setError(null);
+  }, []);
+
+  return { result, isRunning, error, runSoundQuality, resetSoundQuality };
 };

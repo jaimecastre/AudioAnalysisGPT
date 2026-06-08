@@ -46,6 +46,9 @@ const chatSlice = createSlice({
       });
       state.isThinking = false;
     },
+    agentThinkingFinished: (state) => {
+      state.isThinking = false;
+    },
     toolCallStarted: (state, action: PayloadAction<{ id: string; toolName: string; content: string; timestamp: string }>) => {
       state.messages.push({
         id: action.payload.id,
@@ -70,6 +73,7 @@ const chatSlice = createSlice({
 export const {
   userMessageSent,
   assistantMessageReceived,
+  agentThinkingFinished,
   toolCallStarted,
   toolCallFinished,
   conversationCleared,

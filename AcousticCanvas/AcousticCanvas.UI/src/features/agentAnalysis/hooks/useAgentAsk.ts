@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch } from '../../../store/reduxStore';
+import { agentThinkingFinished } from '../chatSlice';
 import { callAgentAskEndpoint } from '../services/agentAskService';
 import {
   agentAskStarted,
@@ -41,6 +42,7 @@ export function useAgentAsk() {
       );
 
       dispatch(agentAskSucceeded(agentResponse));
+      dispatch(agentThinkingFinished());
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         return;
@@ -48,6 +50,7 @@ export function useAgentAsk() {
 
       const errorMessage = err instanceof Error ? err.message : 'Unknown error from agent.';
       dispatch(agentAskFailed(errorMessage));
+      dispatch(agentThinkingFinished());
     }
   }
 

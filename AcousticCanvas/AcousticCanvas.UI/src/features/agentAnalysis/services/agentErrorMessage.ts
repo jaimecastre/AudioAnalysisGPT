@@ -4,8 +4,12 @@
 
 const MISSING_KEY_MESSAGE =
   'The AI agent isn\u2019t configured yet. Add an OpenAI API key on the backend ' +
-  '(set "OpenAI:ApiKey" in appsettings.json or the VITE_OPENAI_API_KEY ' +
+  '(set "OpenAI:ApiKey" in appsettings.json or the OPENAI_API_KEY backend ' +
   'environment variable), then restart the backend and try again.';
+
+const INVALID_KEY_MESSAGE =
+  'The configured OpenAI API key was rejected. Rotate or replace the backend ' +
+  'key, then restart the backend and try again.';
 
 const RATE_LIMITED_MESSAGE =
   'The AI agent is rate-limited right now. Wait a few seconds and try again.';
@@ -21,7 +25,16 @@ const looksLikeMissingApiKey = (rawBody: string): boolean => {
   const mentionsApiKey = lowerBody.includes('api key') || lowerBody.includes('api-key');
   const mentions401 = lowerBody.includes('401') || lowerBody.includes('invalid_request_error');
   const mentionsNotConfigured = lowerBody.includes('is not configured');
-  return mentionsNotConfigured || (mentionsApiKey && mentions401);
+  const mentionsNoKeyProvided = lowerBody.includes('didn\'t provide an api key')
+    || lowerBody.includes('no api key provided');
+  return mentionsNotConfigured || mentionsNoKeyProvided || (mentionsApiKey && mentions401 && !looksLikeInvalidApiKey(rawBody));
+};
+
+const looksLikeInvalidApiKey = (rawBody: string): boolean => {
+  const lowerBody = rawBody.toLowerCase();
+  return lowerBody.includes('incorrect api key')
+    || lowerBody.includes('invalid_api_key')
+    || lowerBody.includes('invalid api key');
 };
 
 const looksLikeRateLimited = (status: number, rawBody: string): boolean => {
@@ -32,6 +45,10 @@ const looksLikeRateLimited = (status: number, rawBody: string): boolean => {
 };
 
 export const toFriendlyAgentError = (status: number, rawBody: string): string => {
+  if (looksLikeInvalidApiKey(rawBody)) {
+    return INVALID_KEY_MESSAGE;
+  }
+
   if (looksLikeMissingApiKey(rawBody)) {
     return MISSING_KEY_MESSAGE;
   }

@@ -28,6 +28,13 @@ node_modules/
 __pycache__/
 *.pyc
 
+# Graphify knowledge graph
+graphify-out/
+
+# Environment files
+.env
+.env 2
+
 # Logs
 *.log
 

@@ -155,7 +155,7 @@ SignalChannel {
 | Spectrum panel | ✅ Done | FFT viz, tonal peak summary, channel selection, user params |
 | Spectrogram panel | ✅ Done | Time-frequency heatmap |
 | Comparison view | ✅ Done | Overlaid spectrum + metrics table + band deltas |
-| Agent chat panel | ✅ Done | Messages, suggestion prompts, evidence tokens |
+| Agent chat panel | ✅ Done | Messages, suggestion prompts, evidence tokens; backend-agent responses clear loading state so the composer unlocks |
 | Agent artifacts panel | ✅ Done | 7 artifact types (analysis, compare, find, markers, selections, views, reports) |
 | Agent tool execution loop | ✅ Done | Tool dispatch → API calls → artifact storage |
 | File @mentions in chat | ✅ Done | Autocomplete dropdown |
@@ -575,7 +575,9 @@ public interface ISoundQualityAnalysisService
 
 ## OpenAI API Layer
 
-**Current state**: Fully connected. The frontend tool loop dispatches tool calls, collects results, and sends conversation context to `POST /api/agent/chat`. The backend (`OpenAiChatService`) injects the system prompt, forwards to OpenAI (gpt-4o-mini), and returns the response. The API key is stored server-side in `appsettings.Development.json` (gitignored).
+**Current state**: Fully connected. The frontend tool loop dispatches tool calls, collects results, and sends conversation context to `POST /api/agent/chat`. The backend (`OpenAiChatService`) injects the system prompt, forwards to OpenAI (gpt-4o-mini), and returns the response. The API key is stored server-side in `appsettings.Development.json` (gitignored) or in the backend process environment variable `OPENAI_API_KEY`.
+
+Security rule: never put OpenAI keys in frontend `.env` files or any `VITE_*` variable. Vite exposes `VITE_*` values to browser code and debug output.
 
 OpenAI API is used for:
 
@@ -680,7 +682,7 @@ Future method roadmap:
 - ✅ Stationary loudness via MoSQITo `loudness_zwst`
 - ✅ DIN sharpness via MoSQITo `sharpness_din_st`
 - ✅ Daniel-Weber roughness via MoSQITo `roughness_dw`
-- ✅ Manual sound-quality panel with method and limitations metadata
+- ✅ Manual sound-quality panel with method and limitations metadata; runs only on selected waveform regions and the backend time-bounds Python sidecar wait/read operations to avoid indefinite loading
 - 🟡 Current values are computed from uncalibrated digital-amplitude WAV samples; use for relative comparison until calibration is implemented
 - ❌ Fluctuation strength
 - ❌ Tonality

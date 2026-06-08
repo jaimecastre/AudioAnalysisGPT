@@ -7,6 +7,8 @@ namespace AcousticCanvas.Features.Analysis.Services;
 
 public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISoundQualityClient
 {
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(20);
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -37,7 +39,9 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
             RedirectStandardError = true,
             UseShellExecute = false,
         };
-        startInfo.Environment["MPLCONFIGDIR"] = Path.Combine(Path.GetTempPath(), "acousticcanvas-matplotlib");
+        startInfo.Environment["MPLCONFIGDIR"] = Path.Combine(
+            Path.GetTempPath(),
+            $"acousticcanvas-matplotlib-{Guid.NewGuid():N}");
         startInfo.ArgumentList.Add(scriptPath);
 
         try
@@ -51,12 +55,26 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
             await process.StandardInput.WriteAsync(JsonSerializer.Serialize(request, JsonOptions));
             process.StandardInput.Close();
 
-            var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-            var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
-            await process.WaitForExitAsync(cancellationToken);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(DefaultTimeout);
 
-            var stdout = await stdoutTask;
-            var stderr = await stderrTask;
+            var stdoutTask = process.StandardOutput.ReadToEndAsync(timeoutCts.Token);
+            var stderrTask = process.StandardError.ReadToEndAsync(timeoutCts.Token);
+            string stdout;
+            string stderr;
+            try
+            {
+                await process.WaitForExitAsync(timeoutCts.Token);
+                stdout = await stdoutTask;
+                stderr = await stderrTask;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                TryKillProcess(process);
+                throw BuildUnavailableException(
+                    $"MoSQITo sound-quality sidecar timed out after {DefaultTimeout.TotalSeconds:0} seconds. " +
+                    "Select a shorter waveform region or restart the backend to clear stale Python analysis processes.");
+            }
             if (process.ExitCode != 0)
             {
                 throw BuildUnavailableException(string.IsNullOrWhiteSpace(stderr) ? $"Python exited with code {process.ExitCode}." : stderr.Trim());
@@ -122,5 +140,20 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
         return new InvalidOperationException(
             "Python sound-quality sidecar unavailable. Install MoSQITo and configure the sidecar before running sound-quality metrics. " +
             $"Detail: {detail}");
+    }
+
+    private static void TryKillProcess(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch
+        {
+            // Best-effort cleanup only; the caller receives the timeout error either way.
+        }
     }
 }

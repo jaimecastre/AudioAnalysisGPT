@@ -34,5 +34,7 @@ public sealed class OpenAiChatServiceTests
             () => service.CompleteAsync(request, CancellationToken.None));
 
         Assert.Contains("not configured", exception.Message);
+        Assert.Contains("OPENAI_API_KEY", exception.Message);
+        Assert.DoesNotContain("VITE_OPENAI_API_KEY", exception.Message);
     }
 }

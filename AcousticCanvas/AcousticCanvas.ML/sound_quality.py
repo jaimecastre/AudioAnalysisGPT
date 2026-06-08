@@ -2,7 +2,10 @@
 import contextlib
 import json
 import math
+import os
+import signal
 import sys
+import tempfile
 import wave
 
 
@@ -46,10 +49,37 @@ def scalar(value):
         return float(value[0])
 
 
+class TimeoutError(Exception):
+    pass
+
+
+def timeout_handler(_signum, _frame):
+    raise TimeoutError()
+
+
+def compute_roughness_with_timeout(mono, sample_rate, timeout_seconds=5):
+    previous_handler = signal.getsignal(signal.SIGALRM)
+    try:
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.setitimer(signal.ITIMER_REAL, timeout_seconds)
+        from mosqito.sq_metrics import roughness_dw
+        roughness, _, _, _ = roughness_dw(mono, sample_rate)
+        return scalar(roughness), None
+    except TimeoutError:
+        return 0.0, "Daniel-Weber roughness timed out for this region; select a shorter region and retry."
+    except Exception as exception:
+        return 0.0, f"Daniel-Weber roughness unavailable for this region: {exception}"
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+
+
 def main():
+    os.environ.setdefault("MPLCONFIGDIR", tempfile.mkdtemp(prefix="acousticcanvas-matplotlib-"))
+
     try:
         import numpy as np
-        from mosqito.sq_metrics import loudness_zwst, roughness_dw, sharpness_din_st
+        from mosqito.sq_metrics import loudness_zwst, sharpness_din_st
     except Exception as exception:
         return fail(f"MoSQITo sidecar dependency unavailable: {exception}")
 
@@ -75,7 +105,14 @@ def main():
     with contextlib.redirect_stdout(sys.stderr):
         loudness_total, _, _ = loudness_zwst(mono, sample_rate, field_type="free")
         sharpness = sharpness_din_st(mono, sample_rate, weighting="din", field_type="free")
-        roughness, _, _, _ = roughness_dw(mono, sample_rate)
+        roughness, roughness_limitation = compute_roughness_with_timeout(mono, sample_rate)
+
+    limitations = [
+        "Stationary Zwicker loudness, DIN sharpness, and Daniel-Weber roughness computed from uncalibrated digital-amplitude WAV samples.",
+        "Values are useful for relative comparison until calibration metadata maps samples to physical sound pressure.",
+    ]
+    if roughness_limitation is not None:
+        limitations.append(roughness_limitation)
 
     result = {
         "parameters": {
@@ -84,10 +121,7 @@ def main():
             "startTimeSeconds": start_seconds,
             "endTimeSeconds": end_seconds,
             "sampleRate": int(sample_rate),
-            "limitations": [
-                "Stationary Zwicker loudness, DIN sharpness, and Daniel-Weber roughness computed from uncalibrated digital-amplitude WAV samples.",
-                "Values are useful for relative comparison until calibration metadata maps samples to physical sound pressure.",
-            ],
+            "limitations": limitations,
         },
         "region": {
             "startSeconds": start_seconds,
@@ -108,7 +142,7 @@ def main():
         },
         "roughness": {
             "name": "Daniel-Weber roughness",
-            "value": round(scalar(roughness), 4),
+            "value": round(roughness, 4),
             "unit": "asper",
             "method": "MoSQITo roughness_dw",
         },

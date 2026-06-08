@@ -12,6 +12,8 @@ describe('toFriendlyAgentError', () => {
 
     expect(message).toContain('isn\u2019t configured');
     expect(message).toContain('OpenAI:ApiKey');
+    expect(message).toContain('OPENAI_API_KEY');
+    expect(message).not.toContain('VITE_OPENAI_API_KEY');
     expect(message).not.toContain('401');
     expect(message).not.toContain('invalid_request_error');
   });

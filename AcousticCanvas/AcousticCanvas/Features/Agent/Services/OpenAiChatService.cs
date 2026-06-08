@@ -23,7 +23,7 @@ public sealed class OpenAiChatService
         // fact answers never call the LLM, so the orchestrator must be able to start
         // even when no OpenAI key is configured. The key is enforced in CompleteAsync.
         _apiKey = configuration["OpenAI:ApiKey"]
-            ?? Environment.GetEnvironmentVariable("VITE_OPENAI_API_KEY")
+            ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY")
             ?? string.Empty;
         _model = configuration["OpenAI:Model"] ?? "gpt-4o-mini";
         _systemPrompt = configuration["OpenAI:SystemPrompt"] ?? DefaultSystemPrompt;
@@ -43,7 +43,7 @@ public sealed class OpenAiChatService
     {
         if (string.IsNullOrWhiteSpace(_apiKey))
         {
-            throw new InvalidOperationException("OpenAI:ApiKey is not configured. Set it in appsettings.json, user secrets, or the VITE_OPENAI_API_KEY environment variable.");
+            throw new InvalidOperationException("OpenAI:ApiKey is not configured. Set it in appsettings.json, user secrets, or the OPENAI_API_KEY backend environment variable.");
         }
 
         var messages = EnsureSystemPrompt(request.Messages);
