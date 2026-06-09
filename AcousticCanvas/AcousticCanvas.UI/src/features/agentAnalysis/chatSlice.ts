@@ -1,7 +1,8 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
+import { DEFAULT_MODEL_ID } from './utils/agentModels';
 
-export type ChatRole = 'user' | 'assistant' | 'tool_call';
+export type ChatRole = 'user' | 'assistant' | 'tool_call' | 'plan';
 
 export type ToolCallStatus = 'running' | 'done' | 'error';
 export type AgentMessageStatus = 'thinking' | 'completed' | 'failed';
@@ -22,16 +23,21 @@ export type ChatMessage = {
   toolStatus?: ToolCallStatus;
   toolSteps?: ToolStep[];
   confidence?: string;
+  plannedTools?: string[];
+  plannerReason?: string | null;
+  planStatus?: 'planning' | 'done';
 };
 
 interface ChatState {
   messages: ChatMessage[];
   isThinking: boolean;
+  selectedModel: string;
 }
 
 const initialState: ChatState = {
   messages: [],
   isThinking: false,
+  selectedModel: DEFAULT_MODEL_ID,
 };
 
 const chatSlice = createSlice({
@@ -115,7 +121,52 @@ const chatSlice = createSlice({
         existingMessage.content = action.payload.content;
       }
     },
+    planBubbleStarted: (state, action: PayloadAction<{ id: string; assistantMessageId: string; timestamp: string }>) => {
+      const planMessage: ChatMessage = {
+        id: action.payload.id,
+        role: 'plan',
+        content: '',
+        timestamp: action.payload.timestamp,
+        plannedTools: [],
+        plannerReason: null,
+        planStatus: 'planning',
+      };
+      const assistantIndex = state.messages.findIndex((m) => m.id === action.payload.assistantMessageId);
+      if (assistantIndex >= 0) {
+        state.messages.splice(assistantIndex, 0, planMessage);
+      } else {
+        state.messages.push(planMessage);
+      }
+    },
+    planBubbleReceived: (state, action: PayloadAction<{ id: string; assistantMessageId: string; plannedTools: string[]; plannerReason: string | null; timestamp: string }>) => {
+      const existing = state.messages.find((m) => m.id === action.payload.id);
+      if (existing) {
+        existing.plannedTools = action.payload.plannedTools;
+        existing.plannerReason = action.payload.plannerReason;
+        existing.planStatus = 'done';
+      } else {
+        // Fallback: insert before assistant message if not previously created.
+        const planMessage: ChatMessage = {
+          id: action.payload.id,
+          role: 'plan',
+          content: '',
+          timestamp: action.payload.timestamp,
+          plannedTools: action.payload.plannedTools,
+          plannerReason: action.payload.plannerReason,
+          planStatus: 'done',
+        };
+        const assistantIndex = state.messages.findIndex((m) => m.id === action.payload.assistantMessageId);
+        if (assistantIndex >= 0) {
+          state.messages.splice(assistantIndex, 0, planMessage);
+        } else {
+          state.messages.push(planMessage);
+        }
+      }
+    },
     conversationCleared: () => initialState,
+    modelSelected: (state, action: PayloadAction<string>) => {
+      state.selectedModel = action.payload;
+    },
   },
 });
 
@@ -127,7 +178,10 @@ export const {
   agentThinkingFinished,
   toolCallStarted,
   toolCallFinished,
+  planBubbleStarted,
+  planBubbleReceived,
   conversationCleared,
+  modelSelected,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
@@ -137,3 +191,6 @@ export const chatMessagesSelector = (state: { chat: ChatState }): ChatMessage[] 
 
 export const chatIsThinkingSelector = (state: { chat: ChatState }): boolean =>
   state.chat.isThinking;
+
+export const chatSelectedModelSelector = (state: { chat: ChatState }): string =>
+  state.chat.selectedModel;

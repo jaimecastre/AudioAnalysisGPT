@@ -32,7 +32,7 @@ interface ActiveSignalCardProps {
   manualCompareStatus: 'idle' | 'loading' | 'error';
   manualCompareError: string | null;
   isFindingsPanelOpen: boolean;
-  onWaveSurferReady: () => void;
+  onWaveSurferReady: (audioDuration: number) => void;
   onWaveSurferTimeUpdate: (time: number) => void;
   onWaveSurferFinish: () => void;
   onWaveSurferUserSelectionChange: (startSeconds: number, endSeconds: number) => void;

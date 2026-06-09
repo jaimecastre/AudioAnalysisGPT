@@ -213,6 +213,7 @@ export type CompareFileSummary = {
   bandEnergies: CompareBandEnergy[];
   cpbBands: CompareCpbBand[];
   soundQuality?: CompareSoundQuality;
+  soundQualityUnavailableReason?: string;
 };
 
 export type PairwiseDiff = {
@@ -230,6 +231,7 @@ export type PairwiseDiff = {
   bandEnergyDeltas: CompareBandEnergy[];
   cpbBandDeltas: CompareCpbBand[];
   soundQualityDelta?: CompareSoundQualityDelta;
+  soundQualityUnavailableReason?: string;
 };
 
 export type CompareResult = {

@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { Select, ActionIcon, Text, Group, Loader, Box, Checkbox, Badge } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconX, IconChartLine } from '@tabler/icons-react';
-import { useAppSelector } from '../../store/reduxHooks';
+import { useAppSelector, useAppDispatch } from '../../store/reduxHooks';
 import { useRunSpectrum } from './useRunSpectrum';
 import {
   spectrumResultSelector,
@@ -12,6 +12,7 @@ import {
 } from './spectrumSlice';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
 import { SpectrumCanvas } from './SpectrumCanvas';
+import { agentPromptPrefillSet, setActiveMode } from '../navigation/navigationSlice';
 import styles from './SpectrogramPanel.module.scss';
 
 interface SpectrumPanelProps {
@@ -35,6 +36,7 @@ export const SpectrumPanel = ({
   const spectrumUserParameters = useAppSelector(spectrumUserParametersSelector);
   const activeSelection = useAppSelector(activeSelectionSelector);
   const { runSpectrum } = useRunSpectrum();
+  const dispatch = useAppDispatch();
 
   const [hiddenChannelIds, setHiddenChannelIds] = useState<Set<string>>(new Set());
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -154,6 +156,19 @@ export const SpectrumPanel = ({
           )}
         </Group>
         <Group gap={2}>
+          {visibleChannels.length > 0 && (
+            <button
+              type="button"
+              className={styles.askAgentButton}
+              onClick={() => {
+                dispatch(agentPromptPrefillSet('Explain the spectrum analysis for the loaded file. What are the dominant frequencies and any notable tonal peaks or spectral content of interest?'));
+                dispatch(setActiveMode('agent'));
+              }}
+              title="Ask agent about this spectrum"
+            >
+              Explain this spectrum →
+            </button>
+          )}
           <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setIsCollapsed((value) => !value)} aria-label={isCollapsed ? 'Expand spectrum panel' : 'Collapse spectrum panel'}>
             {isCollapsed ? <IconChevronRight size={13} /> : <IconChevronDown size={13} />}
           </ActionIcon>

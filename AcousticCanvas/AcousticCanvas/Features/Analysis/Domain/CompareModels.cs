@@ -78,6 +78,9 @@ public sealed class CompareFileSummary
 
     // Psychoacoustic metrics (null if Python sidecar unavailable).
     public CompareSoundQuality? SoundQuality { get; init; }
+
+    // Explicit reason when psychoacoustic metrics are unavailable for this file.
+    public string? SoundQualityUnavailableReason { get; init; }
 }
 
 public sealed class PairwiseDiff
@@ -104,6 +107,9 @@ public sealed class PairwiseDiff
 
     // Psychoacoustic delta (null if either file's SoundQuality is null).
     public CompareSoundQualityDelta? SoundQualityDelta { get; init; }
+
+    // Explicit reason when psychoacoustic deltas are unavailable for this pair.
+    public string? SoundQualityUnavailableReason { get; init; }
 }
 
 public sealed class CompareResult

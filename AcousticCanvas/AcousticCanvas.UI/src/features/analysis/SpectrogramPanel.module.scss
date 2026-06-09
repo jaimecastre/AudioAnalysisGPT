@@ -25,6 +25,24 @@
   gap: 8px;
 }
 
+.askAgentButton {
+  background: transparent;
+  border: 1px solid rgba(0, 184, 169, 0.35);
+  color: rgba(0, 184, 169, 0.85);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background-color: rgba(0, 184, 169, 0.1);
+    color: #00b8a9;
+  }
+}
+
 .panelBody {
   position: relative;
   min-height: 40px;

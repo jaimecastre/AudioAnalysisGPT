@@ -4,12 +4,15 @@ import ReactMarkdown from 'react-markdown';
 import {
   IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX,
   IconAlignBoxLeftMiddle, IconPaperclip, IconFileMusic, IconFileText,
+  IconPlayerStop, IconUser, IconWaveSquare, IconChartBar, IconFileSearch,
+  IconVolume,
 } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
-import { chatMessagesSelector, chatIsThinkingSelector } from './chatSlice';
+import { chatMessagesSelector, chatIsThinkingSelector, chatSelectedModelSelector, modelSelected } from './chatSlice';
 import type { ToolStep } from './chatSlice';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
 import type { ChatMessage } from './chatSlice';
+import { AGENT_MODELS } from './utils/agentModels';
 import { artifactFocused } from './agentWorkspaceSlice';
 import { ATTACH_ACCEPT } from './chatAttachments';
 import { useChatInput } from './useChatInput';
@@ -17,12 +20,11 @@ import { AgentAnswerPanel } from './AgentAnswerPanel';
 import type { MentionCandidate } from './useChatInput';
 import styles from './ChatPanel.module.scss';
 
-const SUGGESTION_PROMPTS = [
-  'What is the peak level of the loaded file?',
-  'Detect findings and issues in the loaded file.',
-  'Run a spectrum analysis on the current selection.',
-  'Show me the file format and sample rate.',
-  'Where is the loudest region in this file?',
+const SUGGESTION_PROMPTS: { text: string; icon: typeof IconWaveSquare }[] = [
+  { text: 'What is the peak level of the loaded file?', icon: IconVolume },
+  { text: 'Detect findings and issues in the loaded file.', icon: IconFileSearch },
+  { text: 'Run a spectrum analysis on the current selection.', icon: IconWaveSquare },
+  { text: 'Show me the file format and sample rate.', icon: IconChartBar },
 ];
 
 function formatTimestamp(isoString: string): string {
@@ -33,9 +35,11 @@ function formatTimestamp(isoString: string): string {
 function UserMessage({ message }: { message: ChatMessage }): JSX.Element {
   return (
     <div className={`${styles.messageWrapper} ${styles.user}`}>
-      <div className={styles.messageBubble}>{message.content}</div>
-      <div className={styles.messageMeta}>
-        <span className={`${styles.messageRole} ${styles.user}`}>You</span>
+      <div className={styles.avatarIcon}>
+        <IconUser size={14} />
+      </div>
+      <div className={styles.messageContent}>
+        <div className={styles.messageBody}>{message.content}</div>
         <span className={styles.messageTime}>{formatTimestamp(message.timestamp)}</span>
       </div>
     </div>
@@ -74,6 +78,7 @@ function parseEvidenceTokens(content: string): { text: string; tokens: EvidenceT
 
   const plainText = withoutTokens
     .replace(/\n+Evidence:\s*[\s\S]*$/i, '')
+    .replace(/^\d+\.\s*$/gm, '')          // remove list items emptied by token stripping
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
@@ -95,11 +100,15 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
 
   return (
     <div className={`${styles.messageWrapper} ${styles.assistant}`}>
-      <div className={`${styles.messageBubble} ${isFailedMessage ? styles.failedMessageBubble : ''}`}>
+      <div className={styles.avatarIcon}>
+        <IconRobot size={14} />
+      </div>
+      <div className={`${styles.messageContent} ${isFailedMessage ? styles.failedMessage : ''}`}>
         {isThinkingMessage ? (
-          <div className={styles.messageStatusRow}>
-            <span className={styles.inlineSpinner} />
-            <span>{message.content}</span>
+          <div className={styles.thinkingIndicator}>
+            <span className={styles.thinkingDot} />
+            <span className={styles.thinkingDot} />
+            <span className={styles.thinkingDot} />
           </div>
         ) : (
           <>
@@ -108,7 +117,7 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
             </div>
             {parsed.tokens.length > 0 && (
               <div className={styles.evidenceRow}>
-                <span className={styles.evidenceLabel}>Evidence:</span>
+                <span className={styles.evidenceLabel}>Sources:</span>
                 {parsed.tokens.map((token) => (
                   <button
                     type="button"
@@ -127,10 +136,9 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
             )}
           </>
         )}
-      </div>
-      <div className={styles.messageMeta}>
-        <span className={`${styles.messageRole} ${styles.assistant}`}>Agent</span>
-        <span className={styles.messageTime}>{formatTimestamp(message.timestamp)}</span>
+        {!isThinkingMessage && (
+          <span className={styles.messageTime}>{formatTimestamp(message.timestamp)}</span>
+        )}
       </div>
     </div>
   );
@@ -164,6 +172,37 @@ const CONFIDENCE_LABELS: Record<string, string> = {
   medium: 'Medium confidence',
   low: 'Low confidence',
 };
+
+function PlanMessage({ message }: { message: ChatMessage }): JSX.Element {
+  const tools = message.plannedTools ?? [];
+  const isPlanning = message.planStatus === 'planning';
+  return (
+    <div className={styles.planRow}>
+      <div className={styles.planRowInner}>
+        {isPlanning ? (
+          <span className={styles.planLabelThinking}>
+            <span className={styles.inlineSpinner} />
+            <span>Thinking…</span>
+          </span>
+        ) : (
+          <>
+            <span className={styles.planLabel}>Analysing:</span>
+            {tools.length > 0 && (
+              <span className={styles.planTools}>
+                {tools.map((tool) => (
+                  <span key={tool} className={styles.planToolTag}>{TOOL_LABELS[tool] ?? tool}</span>
+                ))}
+              </span>
+            )}
+          </>
+        )}
+      </div>
+      {!isPlanning && message.plannerReason && (
+        <p className={styles.planReason}>{message.plannerReason}</p>
+      )}
+    </div>
+  );
+}
 
 function AnalysisSteps({ steps, confidence }: { steps: ToolStep[]; confidence?: string }): JSX.Element {
   const completed = steps.filter((s) => s.status === 'completed').length;
@@ -239,20 +278,23 @@ function SelectionChip({ onExplain }: { onExplain: () => void }): JSX.Element | 
 function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) => void }): JSX.Element {
   return (
     <div className={styles.emptyState}>
-      <IconRobot size={40} className={styles.emptyStateIcon} />
-      <p className={styles.emptyStateHeading}>AcousticCanvas Agent</p>
-      <p className={styles.emptyStateSubtext}>
-        Ask me to analyse your audio, inspect levels, run a spectrum, find events, or describe what you're hearing.
-      </p>
+      <div className={styles.emptyStateGreeting}>
+        <IconRobot size={32} className={styles.emptyStateIcon} />
+        <h2 className={styles.emptyStateHeading}>How can I help you?</h2>
+        <p className={styles.emptyStateSubtext}>
+          Analyse audio, inspect levels, run spectrums, detect events, or ask questions about your files.
+        </p>
+      </div>
       <div className={styles.emptyStateSuggestions}>
         {SUGGESTION_PROMPTS.map((prompt) => (
           <button
-            key={prompt}
-            className={styles.suggestionChip}
-            onClick={() => onSuggestionClick(prompt)}
+            key={prompt.text}
+            className={styles.suggestionCard}
+            onClick={() => onSuggestionClick(prompt.text)}
             type="button"
           >
-            {prompt}
+            <prompt.icon size={16} className={styles.suggestionCardIcon} />
+            <span className={styles.suggestionCardText}>{prompt.text}</span>
           </button>
         ))}
       </div>
@@ -292,6 +334,8 @@ function MentionDropdown({
 export function ChatPanel(): JSX.Element {
   const messages = useAppSelector(chatMessagesSelector);
   const isThinking = useAppSelector(chatIsThinkingSelector);
+  const selectedModel = useAppSelector(chatSelectedModelSelector);
+  const dispatch = useAppDispatch();
 
   const {
     inputValue,
@@ -314,6 +358,7 @@ export function ChatPanel(): JSX.Element {
     handleSendMessage,
     handleClearConversation,
     handleExplainSelection,
+    cancelAnalysis,
     agentAskStatus,
     agentAskResponse,
     agentAskError,
@@ -335,118 +380,148 @@ export function ChatPanel(): JSX.Element {
 
   return (
     <div className={styles.panel}>
-      <div className={styles.header}>
-        <span className={styles.headerTitle}>Agent</span>
-        {hasMessages && (
-          <div className={styles.headerActions}>
-            <button
-              type="button"
-              className={styles.clearButton}
-              onClick={handleClearConversation}
-              title="Clear conversation"
-              aria-label="Clear conversation"
-            >
-              <IconEraser size={14} />
-            </button>
-          </div>
-        )}
-      </div>
-
       <div className={styles.messageList} ref={messageListRef}>
         {!hasMessages && (
           <EmptyState onSuggestionClick={handleSuggestionClick} />
         )}
-        {messages.map((message) => {
-          if (message.role === 'user') return <UserMessage key={message.id} message={message} />;
-          if (message.role === 'tool_call') return <ToolCallMessage key={message.id} message={message} />;
-          return <AssistantMessage key={message.id} message={message} />;
-        })}
-        <AgentAnswerPanel
-          status={agentAskStatus}
-          response={agentPanelResponse}
-          error={agentAskError}
-          onReply={handleClarificationReply}
-        />
+        <div className={styles.messagesContainer}>
+          {(() => {
+            const hasPlanInProgress = messages.some((m) => m.role === 'plan' && m.planStatus === 'planning');
+            return messages.map((message) => {
+              if (message.role === 'user') return <UserMessage key={message.id} message={message} />;
+              if (message.role === 'tool_call') return <ToolCallMessage key={message.id} message={message} />;
+              if (message.role === 'plan') return <PlanMessage key={message.id} message={message} />;
+              if (message.status === 'thinking' && hasPlanInProgress) return null;
+              return <AssistantMessage key={message.id} message={message} />;
+            });
+          })()}
+          <AgentAnswerPanel
+            status={agentAskStatus}
+            response={agentPanelResponse}
+            error={agentAskError}
+            onReply={handleClarificationReply}
+          />
+        </div>
       </div>
 
       <div className={styles.inputArea}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept={ATTACH_ACCEPT}
-          className={styles.hiddenFileInput}
-          onChange={handleFileInputChange}
-          aria-label="Attach files"
-        />
-        <SelectionChip onExplain={handleExplainSelection} />
-        {pendingAttachments.length > 0 && (
-          <div className={styles.attachmentChips}>
-            {pendingAttachments.map((attachment) => (
-              <div key={attachment.name} className={styles.attachmentChip}>
-                {attachment.kind === 'audio'
-                  ? <IconFileMusic size={11} className={styles.attachmentChipIcon} />
-                  : <IconFileText size={11} className={styles.attachmentChipIcon} />}
-                <span className={styles.attachmentChipName}>{attachment.name}</span>
-                <button
-                  type="button"
-                  className={styles.attachmentChipRemove}
-                  onClick={() => handleRemoveAttachment(attachment.name)}
-                  aria-label={`Remove ${attachment.name}`}
-                >
-                  <IconX size={10} />
-                </button>
-              </div>
-            ))}
+        <div className={styles.inputContainer}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept={ATTACH_ACCEPT}
+            className={styles.hiddenFileInput}
+            onChange={handleFileInputChange}
+            aria-label="Attach files"
+          />
+          <SelectionChip onExplain={handleExplainSelection} />
+          {pendingAttachments.length > 0 && (
+            <div className={styles.attachmentChips}>
+              {pendingAttachments.map((attachment) => (
+                <div key={attachment.name} className={styles.attachmentChip}>
+                  {attachment.kind === 'audio'
+                    ? <IconFileMusic size={11} className={styles.attachmentChipIcon} />
+                    : <IconFileText size={11} className={styles.attachmentChipIcon} />}
+                  <span className={styles.attachmentChipName}>{attachment.name}</span>
+                  <button
+                    type="button"
+                    className={styles.attachmentChipRemove}
+                    onClick={() => handleRemoveAttachment(attachment.name)}
+                    aria-label={`Remove ${attachment.name}`}
+                  >
+                    <IconX size={10} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {mentionDropdownCandidates.length > 0 && (
+            <MentionDropdown
+              candidates={mentionDropdownCandidates}
+              selectedIndex={mentionDropdownSelectedIndex}
+              onSelect={handleMentionSelect}
+            />
+          )}
+          <div className={styles.inputRow}>
+            <button
+              type="button"
+              className={styles.attachButton}
+              onClick={handleAttachClick}
+              disabled={isThinking || isUploading}
+              title="Attach audio, PDF, or text file"
+              aria-label="Attach file"
+            >
+              <IconPaperclip size={15} />
+            </button>
+            <textarea
+              ref={textareaRef}
+              className={styles.textarea}
+              placeholder="Ask about your audio…"
+              value={inputValue}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                handleCursorChange(e.target.selectionStart ?? e.target.value.length);
+              }}
+              onSelect={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                handleCursorChange(target.selectionStart ?? inputValue.length);
+              }}
+              onInput={handleTextareaInput}
+              onKeyDown={handleKeyDown}
+              rows={1}
+              aria-label="Message input"
+            />
+            {isThinking ? (
+              <button
+                type="button"
+                className={styles.sendButton}
+                onClick={cancelAnalysis}
+                aria-label="Cancel analysis"
+                title="Cancel analysis"
+              >
+                <IconPlayerStop size={15} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={styles.sendButton}
+                onClick={handleSendMessage}
+                disabled={!canSend}
+                aria-label="Send message"
+              >
+                <IconArrowUp size={16} />
+              </button>
+            )}
           </div>
-        )}
-        {mentionDropdownCandidates.length > 0 && (
-          <MentionDropdown
-            candidates={mentionDropdownCandidates}
-            selectedIndex={mentionDropdownSelectedIndex}
-            onSelect={handleMentionSelect}
-          />
-        )}
-        <div className={styles.inputRow}>
-          <button
-            type="button"
-            className={styles.attachButton}
-            onClick={handleAttachClick}
-            disabled={isThinking || isUploading}
-            title="Attach audio, PDF, or text file"
-            aria-label="Attach file"
-          >
-            <IconPaperclip size={15} />
-          </button>
-          <textarea
-            ref={textareaRef}
-            className={styles.textarea}
-            placeholder="Ask the agent… (@ to mention a file)"
-            value={inputValue}
-            onChange={(e) => {
-              setInputValue(e.target.value);
-              handleCursorChange(e.target.selectionStart ?? e.target.value.length);
-            }}
-            onSelect={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              handleCursorChange(target.selectionStart ?? inputValue.length);
-            }}
-            onInput={handleTextareaInput}
-            onKeyDown={handleKeyDown}
-            rows={1}
-            aria-label="Message input"
-          />
-          <button
-            type="button"
-            className={styles.sendButton}
-            onClick={handleSendMessage}
-            disabled={!canSend}
-            aria-label="Send message"
-          >
-            <IconArrowUp size={16} />
-          </button>
+          <div className={styles.inputFooter}>
+            <select
+              className={styles.modelSelect}
+              value={selectedModel}
+              onChange={(e) => dispatch(modelSelected(e.target.value))}
+              disabled={isThinking}
+              aria-label="Select AI model"
+            >
+              {AGENT_MODELS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+            {hasMessages && (
+              <button
+                type="button"
+                className={styles.clearButton}
+                onClick={handleClearConversation}
+                title="Clear conversation"
+                aria-label="Clear conversation"
+              >
+                <IconEraser size={13} />
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
         </div>
-        <p className={styles.inputHint}>Enter to send · Shift+Enter for newline · 📎 attach audio, PDF, text</p>
       </div>
     </div>
   );

@@ -6,6 +6,8 @@ import {
   assistantMessageFailed,
   assistantMessageReceived,
   assistantResponseStarted,
+  planBubbleStarted,
+  planBubbleReceived,
 } from '../chatSlice';
 import type { ToolStep } from '../chatSlice';
 import type { AgentAskResponse } from '../services/agentAskService';
@@ -19,6 +21,7 @@ import {
   agentAskResponseSelector,
   agentAskErrorSelector,
 } from '../agentAskSlice';
+import { chatSelectedModelSelector } from '../chatSlice';
 import { findingsArtifactAdded, toolResultArtifactAdded } from '../agentWorkspaceSlice';
 import type { FindingItem, ToolResultRow } from '../agentWorkspaceSlice';
 
@@ -151,6 +154,7 @@ export function useAgentAsk() {
   const status = useSelector(agentAskStatusSelector);
   const response = useSelector(agentAskResponseSelector);
   const error = useSelector(agentAskErrorSelector);
+  const selectedModel = useSelector(chatSelectedModelSelector);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -179,10 +183,16 @@ export function useAgentAsk() {
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
     const assistantMessageId = crypto.randomUUID();
+    const planBubbleId = crypto.randomUUID();
 
     dispatch(agentAskStarted());
     dispatch(assistantResponseStarted({
       id: assistantMessageId,
+      timestamp: new Date().toISOString(),
+    }));
+    dispatch(planBubbleStarted({
+      id: planBubbleId,
+      assistantMessageId,
       timestamp: new Date().toISOString(),
     }));
 
@@ -192,11 +202,22 @@ export function useAgentAsk() {
           question,
           selectedFileIds,
           mode: 'investigate',
+          modelOverride: selectedModel,
         },
         abortController.signal,
       );
 
       dispatch(agentAskSucceeded(agentResponse));
+
+      if (agentResponse.plannedTools?.length) {
+        dispatch(planBubbleReceived({
+          id: planBubbleId,
+          assistantMessageId,
+          plannedTools: agentResponse.plannedTools,
+          plannerReason: agentResponse.plannerReason ?? null,
+          timestamp: new Date().toISOString(),
+        }));
+      }
 
       const artifactTokens: string[] = [];
       const toolData = agentResponse.toolResultsData;

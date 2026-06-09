@@ -60,7 +60,8 @@ public class RunCompareHandler(
                 var spectrumDelta = BuildSpectrumDelta(a.SpectrumCurve, b.SpectrumCurve);
                 var bandEnergyDeltas = BuildBandEnergyDeltas(a.BandEnergies, b.BandEnergies);
                 var cpbBandDeltas = BuildCpbBandDeltas(a.CpbBands, b.CpbBands);
-                var soundQualityDelta = BuildSoundQualityDelta(a, b);
+                var (soundQualityDelta, soundQualityUnavailableReason) =
+                    CompareSoundQualityBuilder.BuildDeltaAndUnavailableReason(a, b);
 
                 pairwiseDiffs.Add(new PairwiseDiff
                 {
@@ -78,6 +79,7 @@ public class RunCompareHandler(
                     BandEnergyDeltas = bandEnergyDeltas,
                     CpbBandDeltas = cpbBandDeltas,
                     SoundQualityDelta = soundQualityDelta,
+                    SoundQualityUnavailableReason = soundQualityUnavailableReason,
                 });
             }
         }
@@ -123,6 +125,7 @@ public class RunCompareHandler(
         var cpbBands = ComputeCpbBands(signalFile.Channels, resolvedStart, resolvedEnd);
 
         CompareSoundQuality? soundQuality = null;
+        string? soundQualityUnavailableReason = null;
         try
         {
             var sqQuery = new RunSoundQualityQuery(
@@ -139,9 +142,15 @@ public class RunCompareHandler(
                 Method = sqResult.Parameters.Method,
             };
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch
         {
-            // Python sidecar unavailable — SoundQuality stays null, compare still returns level/spectrum/CPB.
+            // Keep compare flow deterministic when the sidecar is unavailable.
+            soundQualityUnavailableReason =
+                "Sound-quality metrics unavailable for this file (Python sidecar unavailable or sound-quality analysis failed).";
         }
 
         var storedFileName = Path.GetFileName(filePath);
@@ -164,29 +173,7 @@ public class RunCompareHandler(
             BandEnergies = bandEnergies,
             CpbBands = cpbBands,
             SoundQuality = soundQuality,
-        };
-    }
-
-    private static CompareSoundQualityDelta? BuildSoundQualityDelta(
-        CompareFileSummary a,
-        CompareFileSummary b)
-    {
-        if (a.SoundQuality is null || b.SoundQuality is null)
-        {
-            return null;
-        }
-
-        var sqA = a.SoundQuality;
-        var sqB = b.SoundQuality;
-
-        return new CompareSoundQualityDelta
-        {
-            LoudnessDeltaSone = Math.Round(sqB.LoudnessSone - sqA.LoudnessSone, 3),
-            SharpnessDeltaAcum = Math.Round(sqB.SharpnessAcum - sqA.SharpnessAcum, 4),
-            RoughnessDeltaAsper = Math.Round(sqB.RoughnessAsper - sqA.RoughnessAsper, 4),
-            LouderFileId = sqA.LoudnessSone >= sqB.LoudnessSone ? a.FileId : b.FileId,
-            SharperFileId = sqA.SharpnessAcum >= sqB.SharpnessAcum ? a.FileId : b.FileId,
-            RougherFileId = sqA.RoughnessAsper >= sqB.RoughnessAsper ? a.FileId : b.FileId,
+            SoundQualityUnavailableReason = soundQualityUnavailableReason,
         };
     }
 

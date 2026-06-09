@@ -15,6 +15,7 @@ const emptyState: RootState = {
     activeMode: 'manual',
     activeFileId: null,
     activeView: 'home',
+    agentPromptPrefill: null,
   },
   waveformSelection: {
     activeSelection: null,
@@ -44,9 +45,35 @@ const emptyState: RootState = {
   chat: {
     messages: [],
     isThinking: false,
+    selectedModel: 'gpt-4o-mini',
   },
   agentWorkspace: {
     artifacts: [],
+    focusedArtifactId: null,
+  },
+  cpb: {
+    result: null,
+    status: 'idle',
+    error: null,
+    activeRequestId: null,
+    selectedChannelId: null,
+    userParameters: {
+      bandMode: 'third_octave',
+      fftSize: 8192,
+      overlap: 0.5,
+      weighting: 'z',
+      method: 'fft_bin_power_sum',
+    },
+  },
+  findings: {
+    result: null,
+    status: 'idle',
+    error: null,
+  },
+  agentAsk: {
+    status: 'idle',
+    lastResponse: null,
+    error: null,
   },
 };
 

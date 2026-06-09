@@ -10,7 +10,9 @@ public record AgentAskResult(
     IReadOnlyList<string> SuggestedNextSteps,
     IReadOnlyList<AgentToolExecutionRecord> ToolExecutions,
     bool ValidationWarning,
-    IReadOnlyDictionary<string, object>? ToolResultsData
+    IReadOnlyDictionary<string, object>? ToolResultsData,
+    IReadOnlyList<string> PlannedTools,
+    string? PlannerReason
 );
 
 public record AgentToolExecutionRecord(

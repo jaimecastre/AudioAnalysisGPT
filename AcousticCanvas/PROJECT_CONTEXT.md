@@ -119,7 +119,7 @@ The UI supports two main workspaces:
 - Pre-computed deltas: peak, RMS, crest factor, frequency differences
 - Named frequency bands: sub (20–80 Hz), low, low_mid, mid, presence, high, air (10–20 kHz)
 - Band energy deltas computed server-side
-- **Psychoacoustic comparison**: `CompareSoundQuality` (loudness/sharpness/roughness) per file + `CompareSoundQualityDelta` (B−A + winner fields) in pairwiseDiffs; null when Python sidecar unavailable (graceful degradation)
+- **Psychoacoustic comparison**: `CompareSoundQuality` (loudness/sharpness/roughness) per file + `CompareSoundQualityDelta` (B−A + winner fields) in pairwiseDiffs; when unavailable, compare returns explicit `soundQualityUnavailableReason` at file and pairwise levels for graceful degradation
 - **Agent evidence**: `EvidencePackageBuilder` emits `sound_quality_comparison` evidence item when ≥2 files have SQ metrics; agent can cite per-metric deltas as benchmark evidence
 
 **Event Detection:**

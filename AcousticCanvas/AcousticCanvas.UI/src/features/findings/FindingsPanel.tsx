@@ -11,6 +11,7 @@ import {
   findingsClear,
 } from './findingsSlice';
 import type { Finding, FindingSeverity } from './findingsTypes';
+import { agentPromptPrefillSet, setActiveMode } from '../navigation/navigationSlice';
 import styles from './FindingsPanel.module.scss';
 
 interface FindingsPanelProps {
@@ -240,6 +241,19 @@ export const FindingsPanel = ({ fileId, onClose }: FindingsPanelProps): JSX.Elem
           <span className={styles.findingsPanelCount}>
             {findingsResult!.findingCount} {findingsResult!.findingCount === 1 ? 'issue' : 'issues'}
           </span>
+        )}
+        {hasFindings && (
+          <button
+            type="button"
+            className={styles.findingsAskAgentButton}
+            onClick={() => {
+              dispatch(agentPromptPrefillSet('Summarise and explain the detected findings. What are the highest severity issues and what do they mean for audio quality?'));
+              dispatch(setActiveMode('agent'));
+            }}
+            title="Ask agent about these findings"
+          >
+            Explain these findings →
+          </button>
         )}
         <button
           type="button"

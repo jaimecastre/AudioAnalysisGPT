@@ -1,7 +1,10 @@
 import type { JSX } from 'react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useAppDispatch } from '../../store/reduxHooks';
+import { agentPromptPrefillSet, setActiveMode } from '../navigation/navigationSlice';
 import type { CompareResult, CompareFileSummary, PairwiseDiff, CompareBandEnergy, CompareCpbBand, CompareSoundQuality, CompareSoundQualityDelta } from '../agent/agentToolTypes';
 import { ComparisonSpectrumCanvas } from './ComparisonSpectrumCanvas';
+import { buildSoundQualityRows, getSoundQualityUnavailableMessage } from './soundQualityComparisonRows';
 import styles from './ComparisonView.module.scss';
 
 interface ComparisonViewProps {
@@ -30,37 +33,22 @@ interface SoundQualityTableProps {
   sqA: CompareSoundQuality;
   sqB: CompareSoundQuality;
   delta: CompareSoundQualityDelta;
+  fileIdA: string;
+  fileIdB: string;
   labelA: string;
   labelB: string;
 }
 
-function SoundQualityTable({ sqA, sqB, delta, labelA, labelB }: SoundQualityTableProps): JSX.Element {
-  const rows = [
-    {
-      label: 'Loudness',
-      unit: 'sone',
-      valueA: sqA.loudnessSone.toFixed(2),
-      valueB: sqB.loudnessSone.toFixed(2),
-      delta: delta.loudnessDeltaSone,
-      higherLabel: delta.louderFileId === sqA.loudnessSone.toFixed(2) ? labelA : (delta.louderFileId === sqB.loudnessSone.toFixed(2) ? labelB : (sqA.loudnessSone >= sqB.loudnessSone ? labelA : labelB)),
-    },
-    {
-      label: 'Sharpness',
-      unit: 'acum',
-      valueA: sqA.sharpnessAcum.toFixed(3),
-      valueB: sqB.sharpnessAcum.toFixed(3),
-      delta: delta.sharpnessDeltaAcum,
-      higherLabel: sqA.sharpnessAcum >= sqB.sharpnessAcum ? labelA : labelB,
-    },
-    {
-      label: 'Roughness',
-      unit: 'asper',
-      valueA: sqA.roughnessAsper.toFixed(4),
-      valueB: sqB.roughnessAsper.toFixed(4),
-      delta: delta.roughnessDeltaAsper,
-      higherLabel: sqA.roughnessAsper >= sqB.roughnessAsper ? labelA : labelB,
-    },
-  ];
+function SoundQualityTable({ sqA, sqB, delta, fileIdA, fileIdB, labelA, labelB }: SoundQualityTableProps): JSX.Element {
+  const rows = buildSoundQualityRows({
+    soundQualityA: sqA,
+    soundQualityB: sqB,
+    soundQualityDelta: delta,
+    fileIdA,
+    fileIdB,
+    labelA,
+    labelB,
+  });
 
   return (
     <table className={styles.metricsTable}>
@@ -363,14 +351,10 @@ function CpbDeltaChart({
 export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
   const [showDelta, setShowDelta] = useState(true);
   const hasCpbComparison = Boolean(result.files[0]?.cpbBands?.length && result.files[1]?.cpbBands?.length && result.pairwiseDiffs[0]?.cpbBandDeltas?.length);
-  const hasSoundQuality = Boolean(result.pairwiseDiffs[0]?.soundQualityDelta);
   const [activeTab, setActiveTab] = useState<'cpb' | 'bands' | 'level' | 'psych'>(hasCpbComparison ? 'cpb' : 'bands');
-
-  useEffect(() => {
-    if (!hasCpbComparison && activeTab === 'cpb') {
-      setActiveTab('bands');
-    }
-  }, [activeTab, hasCpbComparison]);
+  // Derive the effective tab: if CPB data is unavailable, fall back to 'bands' without a setState-in-effect.
+  const effectiveTab = activeTab === 'cpb' && !hasCpbComparison ? 'bands' : activeTab;
+  const dispatch = useAppDispatch();
 
   if (result.files.length < 2 || result.pairwiseDiffs.length === 0) {
     return (
@@ -414,9 +398,20 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
           />
           Show Δ curve
         </label>
+        <button
+          type="button"
+          className={styles.askAgentButton}
+          onClick={() => {
+            dispatch(agentPromptPrefillSet('Explain the comparison results. Which file has higher loudness, sharpness, and where are the biggest spectral differences?'));
+            dispatch(setActiveMode('agent'));
+          }}
+          title="Ask agent to explain this comparison"
+        >
+          Explain this comparison →
+        </button>
       </div>
 
-      {activeTab !== 'cpb' && (
+      {effectiveTab !== 'cpb' && (
         <div className={styles.canvasSection}>
           <ComparisonSpectrumCanvas
             curveA={fileA.spectrumCurve}
@@ -433,7 +428,7 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
       <div className={styles.tabBar}>
         <button
           type="button"
-          className={`${styles.tabButton} ${activeTab === 'cpb' ? styles.tabButtonActive : ''}`}
+          className={`${styles.tabButton} ${effectiveTab === 'cpb' ? styles.tabButtonActive : ''}`}
           onClick={() => setActiveTab('cpb')}
           disabled={!hasCpbComparison}
           title={hasCpbComparison ? 'Show CPB band deltas' : 'Run comparison again to include CPB deltas'}
@@ -442,24 +437,23 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
         </button>
         <button
           type="button"
-          className={`${styles.tabButton} ${activeTab === 'bands' ? styles.tabButtonActive : ''}`}
+          className={`${styles.tabButton} ${effectiveTab === 'bands' ? styles.tabButtonActive : ''}`}
           onClick={() => setActiveTab('bands')}
         >
           Band Energy
         </button>
         <button
           type="button"
-          className={`${styles.tabButton} ${activeTab === 'level' ? styles.tabButtonActive : ''}`}
+          className={`${styles.tabButton} ${effectiveTab === 'level' ? styles.tabButtonActive : ''}`}
           onClick={() => setActiveTab('level')}
         >
           Level Metrics
         </button>
         <button
           type="button"
-          className={`${styles.tabButton} ${activeTab === 'psych' ? styles.tabButtonActive : ''}`}
+          className={`${styles.tabButton} ${effectiveTab === 'psych' ? styles.tabButtonActive : ''}`}
           onClick={() => setActiveTab('psych')}
-          disabled={!hasSoundQuality}
-          title={hasSoundQuality ? 'Show psychoacoustic deltas (loudness, sharpness, roughness)' : 'Run comparison with Python sidecar to include psychoacoustic metrics'}
+          title={'Show psychoacoustic deltas (loudness, sharpness, roughness)'}
         >
           Psych Δ
         </button>
@@ -467,7 +461,7 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
 
       {/* Tables */}
       <div className={styles.tableSection}>
-        {activeTab === 'cpb' && (
+        {effectiveTab === 'cpb' && (
           <>
             <CpbDeltaChart cpbBandDeltas={diff.cpbBandDeltas} labelA={labelA} labelB={labelB} />
             <CpbDeltaTable
@@ -479,7 +473,7 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
             />
           </>
         )}
-        {activeTab === 'bands' && (
+        {effectiveTab === 'bands' && (
           <BandEnergyTable
             bandEnergiesA={fileA.bandEnergies}
             bandEnergiesB={fileB.bandEnergies}
@@ -488,7 +482,7 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
             labelB={labelB}
           />
         )}
-        {activeTab === 'level' && (
+        {effectiveTab === 'level' && (
           <LevelMetricsTable
             fileA={fileA}
             fileB={fileB}
@@ -497,14 +491,26 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
             labelB={labelB}
           />
         )}
-        {activeTab === 'psych' && diff.soundQualityDelta && fileA.soundQuality && fileB.soundQuality && (
-          <SoundQualityTable
-            sqA={fileA.soundQuality}
-            sqB={fileB.soundQuality}
-            delta={diff.soundQualityDelta}
-            labelA={labelA}
-            labelB={labelB}
-          />
+        {effectiveTab === 'psych' && diff.soundQualityDelta && fileA.soundQuality && fileB.soundQuality && (
+          <>
+            <SoundQualityTable
+              sqA={fileA.soundQuality}
+              sqB={fileB.soundQuality}
+              delta={diff.soundQualityDelta}
+              fileIdA={fileA.fileId}
+              fileIdB={fileB.fileId}
+              labelA={labelA}
+              labelB={labelB}
+            />
+            <div className={styles.tableEmptyState}>
+              Relative comparison only: values are computed on uncalibrated digital-amplitude samples until physical SPL calibration is configured.
+            </div>
+          </>
+        )}
+        {effectiveTab === 'psych' && (!diff.soundQualityDelta || !fileA.soundQuality || !fileB.soundQuality) && (
+          <div className={styles.tableEmptyState}>
+            {getSoundQualityUnavailableMessage(diff.soundQualityUnavailableReason)}
+          </div>
         )}
       </div>
 
