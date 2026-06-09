@@ -15,7 +15,7 @@ const AppLogoIcon = (): JSX.Element => {
       src="/logo.svg"
       width={80}
       height={80}
-      alt="AcousticCanvas logo icon"
+      alt="SoundLens logo icon"
     />
   );
 }
@@ -32,7 +32,7 @@ const AppLogoText = (): JSX.Element => {
           color: 'white',
         }}
       >
-        AcousticCanvas
+        SoundLens
       </div>
       <div
         style={{

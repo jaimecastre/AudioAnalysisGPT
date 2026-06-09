@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import { useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import {
   IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX,
   IconAlignBoxLeftMiddle, IconPaperclip, IconFileMusic, IconFileText,
@@ -17,6 +18,7 @@ import styles from './ChatPanel.module.scss';
 
 const SUGGESTION_PROMPTS = [
   'What is the peak level of the loaded file?',
+  'Detect findings and issues in the loaded file.',
   'Run a spectrum analysis on the current selection.',
   'Show me the file format and sample rate.',
   'Where is the loudest region in this file?',
@@ -40,14 +42,15 @@ function UserMessage({ message }: { message: ChatMessage }): JSX.Element {
 }
 
 type EvidenceToken = {
-  type: 'analysis_result' | 'compare_result' | 'find_result' | 'report' | 'marker_added' | 'selection_set';
+  type: 'compare_result' | 'find_result' | 'findings_result' | 'tool_result' | 'report' | 'marker_added' | 'selection_set';
   id: string;
 };
 
 const EVIDENCE_LABELS: Record<EvidenceToken['type'], string> = {
-  analysis_result: 'Analysis result',
   compare_result: 'Compare result',
   find_result: 'Find result',
+  findings_result: 'Findings',
+  tool_result: 'Analysis',
   report: 'Report',
   marker_added: 'Marker',
   selection_set: 'Selection',
@@ -58,16 +61,18 @@ function getShortArtifactId(id: string): string {
 }
 
 function parseEvidenceTokens(content: string): { text: string; tokens: EvidenceToken[] } {
-  const evidenceRegex = /\[(analysis_result|compare_result|find_result|report|marker_added|selection_set):([0-9a-fA-F-]{8,})\]/g;
+  const evidenceRegex = /\[(analysis_result|compare_result|find_result|findings_result|tool_result|report|marker_added|selection_set):([0-9a-fA-F-]{8,})\]/g;
   const tokens: EvidenceToken[] = [];
 
-  const withoutTokens = content.replace(evidenceRegex, (_, type: EvidenceToken['type'], id: string) => {
-    tokens.push({ type, id });
+  const withoutTokens = content.replace(evidenceRegex, (_, type: string, id: string) => {
+    if (type !== 'analysis_result') {
+      tokens.push({ type: type as EvidenceToken['type'], id });
+    }
     return '';
   });
 
   const plainText = withoutTokens
-    .replace(/\n?\s*Evidence:\s*$/gim, '')
+    .replace(/\n+Evidence:\s*[\s\S]*$/i, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
@@ -97,7 +102,9 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
           </div>
         ) : (
           <>
-            {parsed.text}
+            <div className={styles.markdownBody}>
+              <ReactMarkdown>{parsed.text}</ReactMarkdown>
+            </div>
             {parsed.tokens.length > 0 && (
               <div className={styles.evidenceRow}>
                 <span className={styles.evidenceLabel}>Evidence:</span>

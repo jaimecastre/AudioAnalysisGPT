@@ -373,6 +373,17 @@
   background-color: rgba(124, 108, 252, 0.1);
 }
 
+// ─── Tool result card ─────────────────────────────────────
+
+.cardToolResult {
+  border-left: 3px solid #6c8ebf;
+}
+
+.cardKindTagToolResult {
+  color: #6c8ebf;
+  background-color: rgba(108, 142, 191, 0.1);
+}
+
 // ─── Report card ──────────────────────────────────────────
 
 .cardReport {
@@ -426,4 +437,102 @@
   &:hover {
     background-color: rgba(0, 184, 169, 0.08);
   }
+}
+
+// ─── Findings card ────────────────────────────────────────
+
+.cardFindings {
+  border-left: 3px solid #f0a040;
+}
+
+.cardKindTagFindings {
+  color: #f0a040;
+  background-color: rgba(240, 160, 64, 0.1);
+}
+
+.findingsCollapsedHint {
+  font-size: 0.6rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  opacity: 0.6;
+  margin-top: 6px;
+}
+
+.findingRow {
+  border-top: 1px solid var(--border);
+  padding: 5px 0 3px;
+  margin-top: 4px;
+}
+
+.findingRowHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+.severityBadge {
+  font-size: 0.55rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.severityHigh {
+  background-color: rgba(224, 92, 92, 0.2);
+  color: #e05c5c;
+}
+
+.severityMedium {
+  background-color: rgba(240, 160, 64, 0.2);
+  color: #f0a040;
+}
+
+.severityLow {
+  background-color: rgba(72, 199, 142, 0.2);
+  color: #48c78e;
+}
+
+.findingType {
+  font-size: 0.62rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.findingTime {
+  font-size: 0.6rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  opacity: 0.7;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.findingConf {
+  font-size: 0.58rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  opacity: 0.5;
+  margin-left: auto;
+}
+
+.findingTitle {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 1px;
+}
+
+.findingDesc {
+  font-size: 0.6rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  line-height: 1.4;
 }

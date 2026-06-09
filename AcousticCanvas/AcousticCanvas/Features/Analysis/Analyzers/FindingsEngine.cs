@@ -28,7 +28,7 @@ public static class FindingsEngine
         string NextFindingId()
         {
             findingIndex++;
-            return $"finding_{fileId}_{findingIndex:D3}";
+            return $"finding_{findingIndex:D3}";
         }
 
         var firstChannel = levelAnalysis.Channels.Count > 0 ? levelAnalysis.Channels[0] : null;

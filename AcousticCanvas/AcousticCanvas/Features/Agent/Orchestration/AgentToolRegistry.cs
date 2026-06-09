@@ -55,6 +55,13 @@ public static class AgentToolRegistry
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
+            ["run_findings"] = new AgentToolDefinition
+            {
+                Name = "run_findings",
+                Description = "Run the full findings pipeline for a single file: detects clipping, silence gaps, high crest factor, DC offset, and tonal peaks. Returns a structured list of findings with severity, confidence, evidence, and suggested next steps.",
+                MaxFileCount = 1,
+                MaxFileDurationSeconds = 300.0,
+            },
         };
 
     public static bool IsToolAllowed(string toolName)
@@ -94,6 +101,8 @@ public static class AgentToolRegistry
             "  Arguments: { \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
             "- run_event_detection: Detect audio events: clipping, silence, loudest, transient.",
             "  Arguments: { \"fileId\": \"<id>\", \"kind\": \"clipping\" }  ← fileId is a single string, kind is one of: clipping, silence, loudest, transient",
+            "- run_findings: Run the full findings pipeline for one file (clipping, silence, crest factor, DC offset, tonal peaks).",
+            "  Arguments: { \"fileId\": \"<id>\" }  ← fileId is a single string",
         };
         return string.Join("\n", lines);
     }

@@ -79,6 +79,7 @@ public sealed class AgentOrchestrator(
 
         // Step 9: Build and return the result.
         var toolExecutionRecords = BuildToolExecutionRecords(toolExecutionOutputs);
+        var toolResultsData = BuildToolResultsData(toolExecutionOutputs);
         var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(finalAnswer.Answer, finalAnswer.EvidenceReferences, evidencePackage);
 
         return new AgentAskResult(
@@ -90,7 +91,8 @@ public sealed class AgentOrchestrator(
             Limitations: MergeAndDeduplicate(finalAnswer.Limitations, evidencePackage.Limitations),
             SuggestedNextSteps: finalAnswer.SuggestedNextSteps,
             ToolExecutions: toolExecutionRecords,
-            ValidationWarning: validationResult.HasWarning);
+            ValidationWarning: validationResult.HasWarning,
+            ToolResultsData: toolResultsData);
     }
 
     private async Task<AgentAskResult> AnswerDeterministicFactAsync(
@@ -116,6 +118,7 @@ public sealed class AgentOrchestrator(
 
         var finalAnswer = DeterministicAnswerWriter.Write(deterministicPlan, evidencePackage);
         var toolExecutionRecords = BuildToolExecutionRecords([toolOutput]);
+        var toolResultsData = BuildToolResultsData([toolOutput]);
         var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(finalAnswer.Answer, finalAnswer.EvidenceReferences, evidencePackage);
 
         return new AgentAskResult(
@@ -127,7 +130,8 @@ public sealed class AgentOrchestrator(
             Limitations: finalAnswer.Limitations,
             SuggestedNextSteps: finalAnswer.SuggestedNextSteps,
             ToolExecutions: toolExecutionRecords,
-            ValidationWarning: false);
+            ValidationWarning: false,
+            ToolResultsData: toolResultsData);
     }
 
     private IReadOnlyList<string> ResolveFileNames(IReadOnlyList<string> fileIds)
@@ -139,7 +143,13 @@ public sealed class AgentOrchestrator(
             var filePath = uploadAudioHandler.GetFilePath(fileId);
             if (!string.IsNullOrEmpty(filePath))
             {
-                fileNames.Add(Path.GetFileName(filePath));
+                var storedName = Path.GetFileName(filePath);
+                // Stored format is "{fileId}_{originalName}" — strip the ID prefix.
+                var prefix = fileId + "_";
+                var originalName = storedName.StartsWith(prefix, StringComparison.Ordinal)
+                    ? storedName[prefix.Length..]
+                    : storedName;
+                fileNames.Add(originalName);
             }
             else
             {
@@ -163,6 +173,18 @@ public sealed class AgentOrchestrator(
         }
 
         return allowedTools;
+    }
+
+    private static IReadOnlyDictionary<string, object>? BuildToolResultsData(
+        IEnumerable<ToolExecutionOutput> toolOutputs)
+    {
+        var dict = new Dictionary<string, object>();
+        foreach (var output in toolOutputs)
+        {
+            if (output.Status == "completed" && output.ResultData is not null && !string.IsNullOrEmpty(output.ResultRef))
+                dict[output.ResultRef] = output.ResultData;
+        }
+        return dict.Count > 0 ? dict : null;
     }
 
     private static IReadOnlyList<AgentToolExecutionRecord> BuildToolExecutionRecords(
@@ -220,7 +242,8 @@ public sealed class AgentOrchestrator(
             Limitations: ["Clarification needed before analysis can run."],
             SuggestedNextSteps: [],
             ToolExecutions: [],
-            ValidationWarning: false);
+            ValidationWarning: false,
+            ToolResultsData: null);
     }
 
     private static AgentAskResult BuildNoAnalysisResult(
@@ -237,7 +260,8 @@ public sealed class AgentOrchestrator(
             Limitations: ["No analysis was run for this response."],
             SuggestedNextSteps: [$"To analyze this file, ask a specific question such as: 'Is there clipping in {userQuestion}'"],
             ToolExecutions: [],
-            ValidationWarning: false);
+            ValidationWarning: false,
+            ToolResultsData: null);
     }
 
     private static string EmbedEvidenceTokensInAnswer(

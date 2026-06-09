@@ -38,6 +38,7 @@ public sealed class ToolExecutionService(
                 "run_spectrum" => await ExecuteRunSpectrumAsync(toolRequest.Arguments, cancellationToken),
                 "run_cpb" => await ExecuteRunCpbAsync(toolRequest.Arguments, cancellationToken),
                 "run_sound_quality_metrics" => await ExecuteRunSoundQualityMetricsAsync(toolRequest.Arguments, cancellationToken),
+                "run_findings" => await ExecuteRunFindingsAsync(toolRequest.Arguments, cancellationToken),
                 _ => BuildFailureOutput(toolName, "TOOL_NOT_IMPLEMENTED", $"Tool '{toolName}' is registered but not implemented in ToolExecutionService."),
             };
         }
@@ -420,6 +421,49 @@ public sealed class ToolExecutionService(
 
         var resultData = new { results = soundQualityResults };
         return BuildSuccessOutput("run_sound_quality_metrics", "sound_quality_" + Guid.NewGuid().ToString("N")[..8], resultData);
+    }
+
+    private async Task<ToolExecutionOutput> ExecuteRunFindingsAsync(
+        Dictionary<string, object?> arguments,
+        CancellationToken cancellationToken)
+    {
+        var fileId = ExtractSingleFileId(arguments);
+        if (string.IsNullOrEmpty(fileId))
+        {
+            return BuildFailureOutput("run_findings", "MISSING_FILE_ID", "fileId argument is required.");
+        }
+
+        var filePath = uploadAudioHandler.GetFilePath(fileId);
+        if (string.IsNullOrEmpty(filePath))
+        {
+            return BuildFailureOutput("run_findings", "FILE_NOT_FOUND", $"File '{fileId}' not found in storage.");
+        }
+
+        var command = new RunFindingsCommand(FilePath: filePath);
+        var findingsResult = await command.ExecuteAsync(cancellationToken);
+
+        var resultData = new
+        {
+            fileId,
+            findingCount = findingsResult.FindingCount,
+            ranAt = findingsResult.RanAt,
+            findings = findingsResult.Findings.Select(f => new
+            {
+                findingId = f.FindingId,
+                type = f.Type,
+                severity = f.Severity,
+                confidence = f.Confidence,
+                title = f.Title,
+                description = f.Description,
+                suggestedNextStep = f.SuggestedNextStep,
+                startSeconds = f.StartSeconds,
+                endSeconds = f.EndSeconds,
+                frequencyHz = f.FrequencyHz,
+                evidence = f.Evidence,
+            }).ToList(),
+        };
+
+        return BuildSuccessOutput("run_findings", "findings_" + Guid.NewGuid().ToString("N")[..8], resultData);
     }
 
     // ─── Helpers ───────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import type { ChangeEvent, KeyboardEvent, RefObject } from 'react';
 import { useState, useRef } from 'react';
-import { useAppDispatch, useAppSelector, useAppStore } from '../../store/reduxHooks';
+import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
 import {
   userMessageSent,
   conversationCleared,
@@ -8,7 +8,6 @@ import {
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
 import { projectFilesSelector, selectedSignalIdSelector } from '../project/projectSlice';
 import { agentWorkspaceCleared } from './agentWorkspaceSlice';
-import { runAgentToolLoop } from './agentToolRunner';
 import { useAudioUpload } from '../audioUpload/useAudioUpload';
 import {
   isAudioFile,
@@ -17,7 +16,6 @@ import {
   buildMessageWithAttachments,
 } from './chatAttachments';
 import type { PendingAttachment } from './chatAttachments';
-import { routeUserQuestion } from './llm/questionRouter';
 import { useAgentAsk } from './hooks/useAgentAsk';
 
 export type MentionCandidate = {
@@ -76,7 +74,6 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
   const activeSelection = useAppSelector(activeSelectionSelector);
   const projectFiles = useAppSelector(projectFilesSelector);
   const selectedSignalId = useAppSelector(selectedSignalIdSelector);
-  const reduxStore = useAppStore();
   const { status: agentAskStatus, response: agentAskResponse, error: agentAskError, isAnalyzing: agentAskIsAnalyzing, submitQuestion } = useAgentAsk();
   const { uploadFile, isUploading } = useAudioUpload();
 
@@ -185,15 +182,9 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
       textareaRef.current.style.height = 'auto';
     }
 
-    const route = routeUserQuestion(trimmedContent);
-
-    if (route === 'orchestrator') {
-      const allLoadedFileIds = projectFiles.map((file) => file.id);
-      const targetFileIds = allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
-      submitQuestion(trimmedContent, targetFileIds);
-    } else {
-      runAgentToolLoop(finalContent, dispatch, () => reduxStore.getState());
-    }
+    const allLoadedFileIds = projectFiles.map((file) => file.id);
+    const targetFileIds = allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
+    submitQuestion(finalContent, targetFileIds);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {

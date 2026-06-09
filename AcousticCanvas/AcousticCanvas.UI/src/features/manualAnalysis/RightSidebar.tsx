@@ -21,7 +21,7 @@ export const RightSidebar = ({
   analysisError,
   selectedFileName,
 }: RightSidebarProps): JSX.Element => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const panelIsLoading = analysisStatus === 'running';
   const { handleResizePointerDown, containerRef } = useResizableSidebar({ initialWidth: 300, minWidth: 240, maxWidth: 560 });
 
@@ -37,6 +37,7 @@ export const RightSidebar = ({
           onClick={handleToggleCollapse}
           type="button"
           aria-label="Expand inspector"
+          title="Expand inspector"
         >
           <IconChevronLeft size={14} />
         </button>

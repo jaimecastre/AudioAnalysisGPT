@@ -20,6 +20,7 @@ export type AgentAskResponse = {
   suggestedNextSteps: string[];
   toolExecutions: AgentToolExecutionRecord[];
   validationWarning: boolean;
+  toolResultsData: Record<string, unknown> | null;
 };
 
 export type AgentAskRequest = {
