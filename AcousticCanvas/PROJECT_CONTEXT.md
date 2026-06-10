@@ -220,6 +220,7 @@ The agent has two parallel execution paths:
 | `run_basic_metrics` | Peak, RMS, crest factor | `tool_result` |
 | `run_event_detection` | Clipping/silence/transient events | `tool_result` |
 | `run_spectrum` | FFT peak frequency + dominant peaks | `tool_result` |
+| `run_spectrogram` | Full-file spectrogram time-frequency summary | `tool_result` |
 | `run_cpb` | Octave/1⁄3-octave band levels | `tool_result` |
 | `run_sound_quality_metrics` | Loudness, sharpness, roughness | `tool_result` |
 | `run_findings` | Full findings pipeline (clipping, silence, crest, DC offset, tonal peaks) | `findings_result` |
@@ -227,6 +228,14 @@ The agent has two parallel execution paths:
 Routing: `questionRouter.ts` dispatches investigative keywords → orchestrator; workspace action keywords → old tool loop.
 
 All orchestrator tool outputs are forwarded to the frontend via `ToolResultsData` in `AgentAskResult`. The backend also returns `EvidenceReferences` and `EvidenceItems`, so chat citations can reference backend evidence separately from workspace artifact IDs. The frontend (`useAgentAsk`) creates workspace artifacts for every completed tool, stores evidence metadata on assistant messages, and renders compact evidence pills in chat. Clicking an evidence pill focuses the matching workspace artifact by evidence type and file ID; detail cards remain expanded after the temporary focus highlight clears.
+
+Agent file targeting: explicit `@fileName` mentions in chat narrow `selectedFileIds` to the mentioned file(s). If no file is mentioned, the Agent falls back to all loaded files for multi-file analysis.
+
+Agent behavior questions: meta-questions such as "why did you analyze both?" are answered directly without running DSP tools.
+
+Agent spectrogram artifacts: multi-file `run_spectrogram` results create one workspace artifact per file, so each spectrogram evidence pill focuses the matching file-specific artifact instead of a combined card.
+
+Agent spectrogram answer contract: compact spectrogram evidence supports duration, displayed range, Nyquist/frequency coverage, FFT size, scale, frame count, and bin count. It does not expose per-frame energy coordinates, bright-line positions, dominant bands over time, complexity, harmonic richness, or transient timestamps to the final-answer model. Duration/frame count describe time coverage/resolution only; they must not be used to infer broader frequency range or richer/less complex content. For burst/transient questions, the planner should pair `run_spectrogram` with `run_event_detection(kind="transient")`; for explicitly spectrogram-only comparisons, it should not add FFT spectrum unless peaks/tonal balance are also requested.
 
 Semantic analysis kinds available (old loop): loudness, peaks, dynamics, spectral_balance, noise, stereo_phase, distortion, dialogue_clarity.
 
@@ -432,7 +441,131 @@ Then the agent can say:
 
 > "There is a strong tonal peak around 685 Hz, with 11.2 dB prominence over nearby frequencies. This may explain a perceived whine. A useful next step is to compare this peak against RPM/order data or against a reference recording."
 
-## Principle 2 — Findings, Not Only Chat
+## Principle 2 — Controlled Autonomy for Acoustic Investigation
+
+The agent should not scale by accumulating endless hardcoded rules like "if the user asks X, run tool Y."
+
+The target product behavior is a constrained acoustic investigation system:
+
+```
+User question
+→ AgentIntentClassifier
+→ evidence requirements
+→ AgentPlanner
+→ ToolPolicyValidator
+→ ToolExecutionService
+→ EvidencePackageBuilder
+→ Findings / HypothesisRanker
+→ ActionRecommender
+→ AgentResponseValidator
+→ grounded answer / report + workspace artifacts + investigation timeline
+```
+
+The backend remains responsible for deterministic measurements. The AI may classify intent, plan approved tools, explain evidence, rank hypotheses, and suggest safe next actions, but it must not invent measurements or present unsupported interpretations as facts.
+
+### Agent Intent Layer
+
+Agent requests should first be classified into a small set of explicit acoustic intents:
+
+- `general_diagnosis`
+- `compare_files`
+- `rank_candidates`
+- `explain_perception`
+- `detect_specific_issue`
+- `suggest_modification`
+- `generate_report`
+- `ask_method_question`
+- `search_external_context`
+
+Intent classification should drive evidence requirements. For example, "why does this sound harsh?" may require sound-quality metrics, spectrum, CPB, and findings; "why did you analyze both?" should be treated as an agent behavior question and should not run DSP tools.
+
+### Evidence Layer
+
+Evidence types should be explicit and reusable across chat, workspace artifacts, findings, reports, and benchmarks:
+
+- `metadata`
+- `basic_metrics`
+- `spectrum`
+- `spectrogram`
+- `cpb`
+- `sound_quality_metrics`
+- `event_detection`
+- `findings`
+- `reference_comparison`
+- `similarity`
+- `external_context`
+
+Every evidence item should include file identity, region, parameters, method, limitations, and measured values where applicable. Evidence should remain separate from the final narrative so reports can be reproduced and audited.
+
+### Tool Layer
+
+Tools are approved deterministic capabilities, not arbitrary AI actions. The planner should select tools by required evidence type, and a policy validator should reject unknown, unsafe, or irrelevant tools before execution.
+
+Current and planned tool mapping:
+
+| Evidence needed | Approved tool |
+|-----------------|---------------|
+| `metadata` | `get_metadata` |
+| `basic_metrics` | `run_basic_metrics` |
+| `spectrum` | `run_spectrum` |
+| `spectrogram` | `run_spectrogram` |
+| `cpb` | `run_cpb` |
+| `sound_quality_metrics` | `run_sound_quality_metrics` |
+| `event_detection` | `run_event_detection` |
+| `findings` | `run_findings` |
+| `reference_comparison` | `compare_files` |
+| `similarity` | Future `run_similarity` |
+| `external_context` | Future `search_case_library` / `search_external_context` |
+
+### Safe Action Layer
+
+Agent autonomy must be bounded by action safety:
+
+| Level | Action type | Policy |
+|-------|-------------|--------|
+| 1 | Read-only analysis tools | Safe to run automatically |
+| 2 | View/navigation actions visible to the user | Safe when reversible and visible |
+| 3 | Non-destructive preview actions | Allowed only as temporary previews |
+| 4 | Destructive, external, or project-changing actions | Require explicit user confirmation |
+
+Examples of Level 4 actions include deleting files, overwriting reports, exporting externally, uploading audio to a third-party service, changing project calibration, or applying permanent processing.
+
+### Hypothesis Layer
+
+The agent should rank possible explanations from evidence instead of jumping to a single confident answer. Responses should distinguish:
+
+- Measured facts
+- Inferred hypotheses
+- Unsupported explanations
+- Limitations
+- Suggested next tests
+
+Example: a tonal peak near 1 kHz is a measured fact; "likely perceived as a whine" is an inferred hypothesis; "caused by motor order X" is unsupported unless RPM/order data or reference context exists.
+
+### External Knowledge Policy
+
+External context is allowed only with strict boundaries:
+
+- Internet or standards context is not measured evidence from the user's audio.
+- Use external sources for standards, specifications, definitions, and background, not for invented objective benchmark claims.
+- Prefer local curated case libraries and validated references before open internet search.
+- Do not upload user audio externally without explicit confirmation.
+- If external context is used, cite it separately from measured audio evidence and state its limitations.
+
+### Autonomy Modes
+
+The product should support explicit autonomy modes:
+
+- **Explain only** — answer from already available evidence; do not run new tools.
+- **Assistive autonomy** — preferred default; run safe read-only analysis tools and explain what was used.
+- **Proactive investigation** — run a broader approved investigation suite and propose next tests.
+- **Strict approval** — ask before every tool/action.
+
+The default should be assistive autonomy: the agent can run Level 1 read-only analysis, produce evidence-backed hypotheses, and suggest next actions, while leaving destructive/project-changing work to explicit confirmation.
+
+Current implementation already has important pieces of this architecture: `AgentPlanner`, `AgentToolRegistry`, `ToolExecutionService`, `EvidencePackageBuilder`, and `AgentResponseValidator`. Future agent work should make the intent classifier, tool policy validator, hypothesis ranker, action recommender, and investigation timeline explicit rather than adding isolated prompt rules.
+
+## Principle 3 — Findings, Not Only Chat
 
 The app should have a structured **Findings Panel**.
 
@@ -462,7 +595,7 @@ Each finding should include:
 - Suggested next step
 - Related plot or analysis
 
-## Principle 3 — Reproducibility
+## Principle 4 — Reproducibility
 
 Every result must be reproducible.
 
@@ -479,7 +612,7 @@ For every AI conclusion, store:
 
 No hidden calculations. No fabricated values. No placeholder values presented as real analysis.
 
-## Principle 4 — Batch Comparison Is a Key Differentiator
+## Principle 5 — Batch Comparison Is a Key Differentiator
 
 A major differentiator is the ability to compare many sounds at once.
 
@@ -496,7 +629,7 @@ The product should support:
 
 This is more commercially interesting than single-file analysis.
 
-## Principle 5 — Keep the Product Narrow at First
+## Principle 6 — Keep the Product Narrow at First
 
 Do not build: a DAW, a generic audio editor, a music-production tool, a generic chatbot, a MATLAB clone, a full replacement for enterprise NVH platforms.
 
@@ -803,12 +936,12 @@ Must-have features:
 - ✅ Agent orchestration vertical slice (planner → tools → evidence → grounded answer)
 - ✅ `POST /api/agent/ask` endpoint
 - ✅ `AgentOrchestrator`, `AgentPlanner`, `ToolExecutionService`, `EvidencePackageBuilder`, `AgentResponseValidator`
-- ✅ AgentToolRegistry whitelist (get_metadata, run_basic_metrics, run_spectrum, run_cpb, run_sound_quality_metrics, run_event_detection, run_findings)
+- ✅ AgentToolRegistry whitelist (get_metadata, run_basic_metrics, run_spectrum, run_spectrogram, run_cpb, run_sound_quality_metrics, run_event_detection, run_findings)
 - ✅ Frontend: `useAgentAsk` hook, `agentAskSlice`, orchestrator workspace artifact dispatch
 - ✅ Evidence references, evidence items, confidence, limitations, suggested next steps in response
-- ✅ `ToolResultsData` in `AgentAskResult` — all 7 tool outputs forwarded to frontend as structured data
+- ✅ `ToolResultsData` in `AgentAskResult` — all 8 tool outputs forwarded to frontend as structured data
 - ✅ `findings_result` artifact type — per-finding cards (severity, type, time range, confidence, title, description)
-- ✅ `tool_result` artifact type — labeled-metrics cards for all 6 non-findings tools
+- ✅ `tool_result` artifact type — labeled-metrics cards for all 7 non-findings tools
 - ✅ Evidence citation pills in chat → focus matching workspace artifact by evidence type/file ID; detail cards stay expanded after click
 - ✅ Referenced context panel shows files, active selection, analyses used, limitations, and validation warnings
 - ✅ Markdown rendering in assistant chat bubbles
@@ -838,7 +971,11 @@ Long-term features:
 
 - Project memory
 - Investigation timeline
+- Explicit intent classifier
+- Tool policy validator
 - AI-generated hypotheses
+- Hypothesis ranking
+- Safe action recommender
 - Suggested next tests
 - Reusable analysis cards
 - Saved findings
@@ -860,7 +997,94 @@ Given the current state, the recommended next work is:
 6. ~~Agent findings investigation flow~~ ✅ Done — `run_findings` wired into orchestrator; `findings_result` and `tool_result` workspace artifacts; compact evidence citation pills focus matching artifacts and keep detail cards expanded; markdown rendering
 7. ~~Python packages installed~~ ✅ Done — `mosqito==1.2.1`, `PyOctaveBand==1.2.2` installed in system Python 3.13; sidecar path configured
 8. ~~Sound-quality comparison~~ ✅ Done — Loudness/sharpness/roughness deltas are included in A/B comparison UI, pairwise diffs, and agent evidence
-9. **Next: Batch benchmarking** — Add multi-file ranking, clustering, outlier detection, and report-ready benchmark summaries
+9. **Next UX/UI iteration** — Turn the current analysis workspace from "many panels" into a clearer guided investigation flow before adding more large feature surface
+10. **Next: Batch benchmarking** — Add multi-file ranking, clustering, outlier detection, and report-ready benchmark summaries
+
+## UX/UI Review Backlog — Added 2026-06-10
+
+The product is directionally strong: it feels like a technical acoustic investigation tool, not a generic chatbot or DAW. The main UX risk is that the interface can feel like a collection of analysis panels rather than a guided workflow from file import to evidence, interpretation, and next action.
+
+### Critical UX Tasks
+
+1. **Agent response status clarity**
+   - Problem: Long-running agent analysis can feel stalled if the user only sees a generic loading state.
+   - Why it matters: Trust drops quickly when analysis status is ambiguous, especially for MoSQITo and multi-file workflows.
+   - Target pattern: One assistant bubble per request with visible user-facing activity states: planning, running tools, building evidence, generating answer, failed.
+   - Acceptance criteria:
+     - A request never shows duplicate temporary assistant bubbles.
+     - The active assistant bubble shows the current status.
+     - Final answer, evidence, next steps, and errors appear in that same bubble.
+     - Long-running tools show a clear tool/activity label.
+
+2. **Guided investigation workflow**
+   - Problem: After loading a file, users may not know whether to open tools, read findings, ask the agent, or inspect plots.
+   - Why it matters: New users need a clear next action; expert users need faster triage.
+   - Target pattern: File loaded -> suggested analyses -> key findings -> evidence-backed next actions.
+   - Acceptance criteria:
+     - Empty or sparse workspace states suggest the next useful analysis.
+     - Findings and key summaries are visually prioritized over raw controls.
+     - Agent and manual workflows point to the same evidence model.
+
+### Important UX Tasks
+
+3. **Manual analysis layout hierarchy**
+   - Problem: Panels can feel scattered across a large canvas and relationships between findings, spectrum, spectrogram, CPB, and sound quality are not always obvious.
+   - Why it matters: Users need to scan and compare results quickly.
+   - Target pattern: Keep the responsive grid, but strengthen hierarchy with a primary result area, key findings, and consistent secondary panels.
+   - Acceptance criteria:
+     - The default manual workspace has an obvious first reading path.
+     - Panel headers, controls, and results use consistent sizing and spacing.
+     - Empty regions are replaced with meaningful placeholders or recommended next steps.
+
+4. **Reusable analysis result card pattern**
+   - Problem: Different panels present controls, method metadata, key takeaways, and visualizations differently.
+   - Why it matters: Inconsistent presentation increases cognitive load and makes the product feel less polished.
+   - Target pattern: Each analysis card has title, compact controls, key takeaway, visualization, method/limitations, and evidence hooks.
+   - Acceptance criteria:
+     - Spectrum, CPB, sound quality, findings, and comparison cards share a recognizable structure.
+     - Key metric/takeaway text is more visually prominent than configuration metadata.
+     - Method and limitation details remain available without dominating the card.
+
+5. **Tool discoverability and click targets**
+   - Problem: Icon-only or narrow tool controls can be unclear; users may not know whether icon, label, or row is clickable.
+   - Why it matters: Tool invocation is core to the workflow.
+   - Target pattern: Full-row clickable tool items with icon, label, active state, hover state, and tooltip.
+   - Acceptance criteria:
+     - Clicking either icon or label triggers the same tool action.
+     - Active/open tools are visually distinct.
+     - Every non-obvious icon has a tooltip.
+
+6. **Readability and visual polish**
+   - Problem: Some secondary labels, timestamps, and metadata can be too faint; panel density and blank space are uneven.
+   - Why it matters: Low contrast and inconsistent density reduce trust and slow scanning.
+   - Target pattern: Stronger text contrast, consistent panel rhythm, and fewer ultra-muted labels outside disabled states.
+   - Acceptance criteria:
+     - Secondary text is readable on laptop displays.
+     - Disabled states are visually distinct from ordinary metadata.
+     - Panel padding, header height, borders, and control sizing are consistent.
+
+### Nice-To-Have UX Tasks
+
+7. **Metric education without clutter**
+   - Problem: Loudness, sharpness, roughness, CPB, and spectrogram settings can be opaque to non-expert users.
+   - Why it matters: Users need enough context to trust and interpret metrics without turning the UI into documentation.
+   - Target pattern: Tooltips, compact "what this means" affordances, or expandable method notes.
+   - Acceptance criteria:
+     - Help text is available on demand.
+     - Always-visible UI remains focused on results and next actions.
+
+8. **Usability validation script**
+   - Problem: UX assumptions need validation before heavy engineering investment.
+   - Why it matters: The product direction is specialized; real user behavior matters.
+   - Validation tasks:
+     - "You uploaded a WAV file. What would you click first?"
+     - "Find why one file sounds harsher than another."
+     - "Tell me what evidence supports the agent answer."
+     - "Find the sound-quality metrics."
+     - "Compare two files and identify the biggest difference."
+     - "Explain what the current finding means."
+     - "Identify which controls are clickable."
+     - "Tell me when the app feels stuck or unclear."
 
 ---
 
@@ -881,6 +1105,7 @@ Given the current state, the recommended next work is:
 13. Project memory
 14. Validation and feedback
 15. Export and reproducibility
+16. UX/UI investigation workflow polish
 
 ---
 

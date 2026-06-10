@@ -182,6 +182,7 @@ const TOOL_LABELS: Record<string, string> = {
   run_basic_metrics: 'Measure levels (RMS, peak, crest factor)',
   run_event_detection: 'Detect events (clipping / silence / transients)',
   run_spectrum: 'Compute FFT spectrum',
+  run_spectrogram: 'Compute spectrogram',
   run_cpb: 'Compute CPB bands (1/3 octave)',
   run_sound_quality_metrics: 'Compute psychoacoustic metrics (MoSQITo)',
   run_findings: 'Run findings pipeline',

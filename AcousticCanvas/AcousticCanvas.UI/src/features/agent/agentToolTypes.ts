@@ -107,7 +107,7 @@ export type WorkspaceResult = {
   detail: string;
 };
 
-export type AnalysisKind = 'file_info' | 'level' | 'spectrum';
+export type AnalysisKind = 'file_info' | 'level' | 'spectrum' | 'spectrogram';
 
 export type SemanticAnalyzeKind =
   | 'loudness'

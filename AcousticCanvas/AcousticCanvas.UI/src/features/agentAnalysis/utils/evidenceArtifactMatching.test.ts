@@ -32,6 +32,35 @@ const spectrumArtifact: AgentArtifact = {
   rows: [],
 };
 
+const spectrogramArtifact: AgentArtifact = {
+  type: 'tool_result',
+  id: 'spectrogram-artifact',
+  timestamp: '2026-06-10T12:00:00.000Z',
+  toolName: 'run_spectrogram',
+  title: 'Spectrogram',
+  rows: [],
+};
+
+const spectrogramArtifactA: AgentArtifact = {
+  type: 'tool_result',
+  id: 'spectrogram-artifact-a',
+  timestamp: '2026-06-10T12:00:00.000Z',
+  toolName: 'run_spectrogram',
+  title: 'Spectrogram',
+  fileId: 'file-a',
+  rows: [],
+};
+
+const spectrogramArtifactB: AgentArtifact = {
+  type: 'tool_result',
+  id: 'spectrogram-artifact-b',
+  timestamp: '2026-06-10T12:00:00.000Z',
+  toolName: 'run_spectrogram',
+  title: 'Spectrogram',
+  fileId: 'file-b',
+  rows: [],
+};
+
 describe('evidenceArtifactMatching', () => {
   it('matches findings evidence to the artifact for the same file', () => {
     const evidenceItem: AgentEvidenceItem = {
@@ -61,5 +90,35 @@ describe('evidenceArtifactMatching', () => {
     const artifactId = getEvidenceArtifactId(evidenceItem, [spectrumArtifact]);
 
     expect(artifactId).toBe('spectrum-artifact');
+  });
+
+  it('matches spectrogram evidence to the spectrogram tool result artifact', () => {
+    const evidenceItem: AgentEvidenceItem = {
+      evidenceId: 'ev_spectrogram_file_a',
+      type: 'spectrogram',
+      data: {
+        fileId: 'file-a',
+        fileName: 'Sine_500hz.wav',
+      },
+    };
+
+    const artifactId = getEvidenceArtifactId(evidenceItem, [spectrogramArtifact]);
+
+    expect(artifactId).toBe('spectrogram-artifact');
+  });
+
+  it('matches spectrogram evidence to the artifact for the same file when several spectrograms exist', () => {
+    const evidenceItem: AgentEvidenceItem = {
+      evidenceId: 'ev_spectrogram_file_b',
+      type: 'spectrogram',
+      data: {
+        fileId: 'file-b',
+        fileName: 'Sine_1000hz.wav',
+      },
+    };
+
+    const artifactId = getEvidenceArtifactId(evidenceItem, [spectrogramArtifactA, spectrogramArtifactB]);
+
+    expect(artifactId).toBe('spectrogram-artifact-b');
   });
 });

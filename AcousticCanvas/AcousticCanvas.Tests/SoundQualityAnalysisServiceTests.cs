@@ -15,7 +15,7 @@ public sealed class SoundQualityAnalysisServiceTests
             modulationFrequencyHz: 70.0,
             amplitude: 0.1,
             modulationDepth: 0.8);
-        var service = new SoundQualityAnalysisService(BuildPythonClient());
+        var service = new SoundQualityAnalysisService(BuildPythonClient(), new SoundQualityCacheStore());
         var query = BuildQuery(fixturePath);
 
         var result = await service.AnalyzeAsync(query, CancellationToken.None);
@@ -36,7 +36,7 @@ public sealed class SoundQualityAnalysisServiceTests
     {
         var lowFixturePath = WriteSineWaveFixture(frequencyHz: 500.0, amplitude: 0.1);
         var highFixturePath = WriteSineWaveFixture(frequencyHz: 4000.0, amplitude: 0.1);
-        var service = new SoundQualityAnalysisService(BuildPythonClient());
+        var service = new SoundQualityAnalysisService(BuildPythonClient(), new SoundQualityCacheStore());
 
         var lowResult = await service.AnalyzeAsync(BuildQuery(lowFixturePath), CancellationToken.None);
         var highResult = await service.AnalyzeAsync(BuildQuery(highFixturePath), CancellationToken.None);

@@ -34,6 +34,13 @@ public static class AgentToolRegistry
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
+            ["run_spectrogram"] = new AgentToolDefinition
+            {
+                Name = "run_spectrogram",
+                Description = "Compute full-file spectrogram time-frequency summary.",
+                MaxFileCount = 4,
+                MaxFileDurationSeconds = 300.0,
+            },
             ["run_cpb"] = new AgentToolDefinition
             {
                 Name = "run_cpb",
@@ -94,6 +101,8 @@ public static class AgentToolRegistry
             "- run_basic_metrics: Compute peak level, RMS, crest factor, DC offset, clipping detection.",
             "  Arguments: { \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
             "- run_spectrum: Compute averaged FFT spectrum with tonal peak detection.",
+            "  Arguments: { \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
+            "- run_spectrogram: Compute full-file spectrogram time-frequency summary.",
             "  Arguments: { \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
             "- run_cpb: Compute octave or 1/3-octave band levels.",
             "  Arguments: { \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",

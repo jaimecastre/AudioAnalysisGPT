@@ -21,6 +21,10 @@ import {
   agentPromptPrefillSelector,
   agentPromptPrefillCleared,
 } from '../navigation/navigationSlice';
+import {
+  getMentionedFileIdsFromMessage,
+  resolveMentionsInText,
+} from './utils/agentMentionTargets';
 
 export type MentionCandidate = {
   fileId: string;
@@ -64,14 +68,6 @@ function getActiveMentionToken(text: string, cursorPosition: number): string | n
   const hasSpaceAfterAt = textAfterAt.includes(' ');
   if (hasSpaceAfterAt) return null;
   return textAfterAt;
-}
-
-function resolveMentionsInText(text: string, resolvedMentions: Map<string, string>): string {
-  return text.replace(/@([\w.-]+)/g, (match, fileName: string) => {
-    const fileId = resolvedMentions.get(fileName);
-    if (!fileId) return match;
-    return `@${fileName} [fileId:${fileId}]`;
-  });
 }
 
 export function useChatInput(isThinking: boolean): UseChatInputReturn {
@@ -199,8 +195,11 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
       textareaRef.current.style.height = 'auto';
     }
 
+    const mentionedFileIds = getMentionedFileIdsFromMessage(finalContent, projectFiles);
     const allLoadedFileIds = projectFiles.map((file) => file.id);
-    const targetFileIds = allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
+    const targetFileIds = mentionedFileIds.length > 0
+      ? mentionedFileIds
+      : allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
     submitQuestion(finalContent, targetFileIds);
   };
 

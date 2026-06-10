@@ -57,6 +57,13 @@ describe('CAPABILITY_REGISTRY structure', () => {
     expect(soundQuality?.description).toContain('loudness');
     expect(soundQuality?.description).toContain('roughness');
   });
+
+  it('includes full-file spectrogram analysis for the backend agent', () => {
+    const spectrogram = CAPABILITY_REGISTRY.analysisKinds.find((e) => e.kind === 'spectrogram');
+    expect(spectrogram?.requiresRegion).toBe(false);
+    expect(spectrogram?.description).toContain('time-frequency');
+    expect(spectrogram?.defaultOptions.backendTool).toBe('run_spectrogram');
+  });
 });
 
 describe('isAnalysisKindSupported', () => {
@@ -64,6 +71,7 @@ describe('isAnalysisKindSupported', () => {
     expect(isAnalysisKindSupported('file_info')).toBe(true);
     expect(isAnalysisKindSupported('level')).toBe(true);
     expect(isAnalysisKindSupported('spectrum')).toBe(true);
+    expect(isAnalysisKindSupported('spectrogram')).toBe(true);
     expect(isAnalysisKindSupported('sound_quality')).toBe(true);
     expect(isAnalysisKindSupported('loudness')).toBe(true);
     expect(isAnalysisKindSupported('spectral_balance')).toBe(true);

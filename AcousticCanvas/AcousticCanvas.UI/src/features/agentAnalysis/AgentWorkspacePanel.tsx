@@ -25,6 +25,7 @@ const TOOL_LABELS: Record<string, string> = {
   run_basic_metrics: 'Level metrics',
   run_event_detection: 'Event detection',
   run_spectrum: 'Spectrum',
+  run_spectrogram: 'Spectrogram',
   run_cpb: 'CPB bands',
   run_sound_quality_metrics: 'Sound quality',
   run_findings: 'Findings',

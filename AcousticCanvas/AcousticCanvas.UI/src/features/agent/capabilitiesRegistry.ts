@@ -51,6 +51,17 @@ const ANALYSIS_KINDS: AnalysisKindEntry[] = [
     },
   },
   {
+    kind: 'spectrogram',
+    description: 'Computes a full-file time-frequency spectrogram summary for agent evidence.',
+    requiresRegion: false,
+    defaultOptions: {
+      backendTool: 'run_spectrogram',
+      fftSize: 2048,
+      overlap: 0.75,
+      scale: 'mel',
+    },
+  },
+  {
     kind: 'sound_quality',
     description: 'Computes MoSQITo loudness, sharpness, and roughness over the full file.',
     requiresRegion: false,

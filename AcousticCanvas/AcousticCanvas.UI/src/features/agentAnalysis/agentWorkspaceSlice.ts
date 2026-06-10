@@ -90,6 +90,7 @@ export type AgentArtifactToolResult = {
   timestamp: string;
   toolName: string;
   title: string;
+  fileId?: string;
   rows: ToolResultRow[];
 };
 

@@ -83,6 +83,10 @@ public static class EvidencePackageBuilder
         {
             ExtractSpectrumEvidence(parsedData, evidenceItems, fileIdToNameMap);
         }
+        else if (toolOutput.ToolName == "run_spectrogram")
+        {
+            ExtractSpectrogramEvidence(parsedData, evidenceItems, fileIdToNameMap);
+        }
         else if (toolOutput.ToolName == "run_cpb")
         {
             ExtractCpbEvidence(parsedData, evidenceItems, fileIdToNameMap);
@@ -308,6 +312,111 @@ public static class EvidencePackageBuilder
         // When ≥2 files were analysed, emit a pairwise comparison evidence item so the agent
         // can cite spectral differences explicitly.
         TryEmitSpectrumComparisonEvidence(resultsArray, evidenceItems, fileIdToNameMap);
+    }
+
+    private static void ExtractSpectrogramEvidence(
+        JsonElement parsedData,
+        List<EvidenceItem> evidenceItems,
+        Dictionary<string, string> fileIdToNameMap)
+    {
+        if (!parsedData.TryGetProperty("results", out var resultsArray))
+        {
+            return;
+        }
+
+        foreach (var fileResult in resultsArray.EnumerateArray())
+        {
+            if (!fileResult.TryGetProperty("fileId", out var fileIdElement))
+            {
+                continue;
+            }
+
+            var fileId = fileIdElement.GetString() ?? "unknown";
+            var evidenceId = "ev_spectrogram_" + fileId[..Math.Min(fileId.Length, 8)];
+
+            var evidenceData = new Dictionary<string, object?>
+            {
+                ["fileId"] = fileId,
+                ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
+                ["type"] = "spectrogram",
+            };
+
+            if (fileResult.TryGetProperty("region", out var regionElement))
+            {
+                if (regionElement.TryGetProperty("startSeconds", out var startElement))
+                {
+                    evidenceData["regionStartSeconds"] = startElement.GetDouble();
+                }
+
+                if (regionElement.TryGetProperty("endSeconds", out var endElement))
+                {
+                    evidenceData["regionEndSeconds"] = endElement.GetDouble();
+                }
+
+                if (regionElement.TryGetProperty("durationSeconds", out var durationElement))
+                {
+                    evidenceData["durationSeconds"] = durationElement.GetDouble();
+                }
+            }
+
+            if (fileResult.TryGetProperty("parameters", out var parametersElement))
+            {
+                if (parametersElement.TryGetProperty("fftSize", out var fftSizeElement))
+                {
+                    evidenceData["fftSize"] = fftSizeElement.GetInt32();
+                }
+
+                if (parametersElement.TryGetProperty("overlap", out var overlapElement))
+                {
+                    evidenceData["overlap"] = overlapElement.GetDouble();
+                }
+
+                if (parametersElement.TryGetProperty("scale", out var scaleElement))
+                {
+                    evidenceData["scale"] = scaleElement.GetString();
+                }
+
+                if (parametersElement.TryGetProperty("gainDb", out var gainElement))
+                {
+                    evidenceData["gainDb"] = gainElement.GetDouble();
+                }
+
+                if (parametersElement.TryGetProperty("rangeDb", out var rangeElement))
+                {
+                    evidenceData["rangeDb"] = rangeElement.GetDouble();
+                }
+            }
+
+            if (fileResult.TryGetProperty("summary", out var summaryElement))
+            {
+                if (summaryElement.TryGetProperty("frameCount", out var frameCountElement))
+                {
+                    evidenceData["frameCount"] = frameCountElement.GetInt32();
+                }
+
+                if (summaryElement.TryGetProperty("binCount", out var binCountElement))
+                {
+                    evidenceData["binCount"] = binCountElement.GetInt32();
+                }
+
+                if (summaryElement.TryGetProperty("nyquistHz", out var nyquistElement))
+                {
+                    evidenceData["nyquistHz"] = nyquistElement.GetDouble();
+                }
+            }
+
+            if (fileResult.TryGetProperty("dataRef", out var dataRefElement))
+            {
+                evidenceData["dataRef"] = dataRefElement.GetString();
+            }
+
+            evidenceItems.Add(new EvidenceItem
+            {
+                EvidenceId = evidenceId,
+                Type = "spectrogram",
+                Data = evidenceData,
+            });
+        }
     }
 
     private static void ExtractCpbEvidence(
@@ -814,11 +923,6 @@ public static class EvidencePackageBuilder
         {
             // TODO: Current CPB uses FFT-bin power summation. Not IEC 61260 compliant.
             limitations.Add("CPB analysis uses FFT-bin power summation (nominal approximation, not IEC 61260 filter-bank).");
-        }
-
-        if (!analysesRun.Contains("run_sound_quality_metrics"))
-        {
-            limitations.Add("No psychoacoustic metrics (loudness, sharpness, roughness) were computed. Sound quality interpretation is based on spectral and level data only.");
         }
     }
 }

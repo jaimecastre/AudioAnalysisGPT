@@ -39,6 +39,29 @@ describe('evidenceFormatting', () => {
     ]);
   });
 
+  it('formats spectrogram evidence with time-frequency metadata', () => {
+    const rows = buildEvidenceRows({
+      evidenceId: 'ev_spectrogram_file_1',
+      type: 'spectrogram',
+      data: {
+        scale: 'mel',
+        fftSize: 2048,
+        frameCount: 42,
+        binCount: 1025,
+        nyquistHz: 24000,
+      },
+    });
+
+    expect(getEvidenceLabel('spectrogram')).toBe('Spectrogram');
+    expect(rows).toEqual([
+      { label: 'scale', value: 'mel' },
+      { label: 'FFT size', value: '2048' },
+      { label: 'frames', value: '42' },
+      { label: 'bins', value: '1025' },
+      { label: 'Nyquist', value: '24000 Hz' },
+    ]);
+  });
+
   it('formats sound quality evidence with psychoacoustic units', () => {
     const rows = buildEvidenceRows({
       evidenceId: 'ev_sound_quality_file_1',

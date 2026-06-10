@@ -2,6 +2,8 @@ using System.Text.Json;
 using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
+using AcousticCanvas.Features.Analysis.Handlers;
+using AcousticCanvas.Features.Analysis.Importers;
 using AcousticCanvas.Features.Analysis.Services;
 using AcousticCanvas.Features.AudioUpload.Services;
 
@@ -9,12 +11,19 @@ namespace AcousticCanvas.Features.Agent.Orchestration;
 
 public sealed class ToolExecutionService(
     AudioFileRepository audioFileRepository,
-    SoundQualityAnalysisService soundQualityAnalysisService)
+    SoundQualityAnalysisService soundQualityAnalysisService,
+    IReadOnlyList<ISignalFileImporter> signalFileImporters,
+    SpectrogramCacheStore spectrogramCacheStore)
 {
     private const double DefaultSpectrumStartSeconds = 0.0;
     private const double DefaultSpectrumEndFallback = 600.0;
     private const int DefaultFftSize = 32768;
     private const double DefaultOverlap = 0.5;
+    private const int DefaultSpectrogramFftSize = 2048;
+    private const double DefaultSpectrogramOverlap = 0.75;
+    private const string DefaultSpectrogramScale = "mel";
+    private const double DefaultSpectrogramGainDb = 20.0;
+    private const double DefaultSpectrogramRangeDb = 80.0;
     private const string DefaultCpbBandMode = "third_octave";
 
     public async Task<ToolExecutionOutput> ExecuteToolAsync(
@@ -36,6 +45,7 @@ public sealed class ToolExecutionService(
                 "run_basic_metrics" => await ExecuteRunBasicMetricsAsync(toolRequest.Arguments, cancellationToken),
                 "run_event_detection" => await ExecuteRunEventDetectionAsync(toolRequest.Arguments, cancellationToken),
                 "run_spectrum" => await ExecuteRunSpectrumAsync(toolRequest.Arguments, cancellationToken),
+                "run_spectrogram" => await ExecuteRunSpectrogramAsync(toolRequest.Arguments, cancellationToken),
                 "run_cpb" => await ExecuteRunCpbAsync(toolRequest.Arguments, cancellationToken),
                 "run_sound_quality_metrics" => await ExecuteRunSoundQualityMetricsAsync(toolRequest.Arguments, cancellationToken),
                 "run_findings" => await ExecuteRunFindingsAsync(toolRequest.Arguments, cancellationToken),
@@ -354,6 +364,84 @@ public sealed class ToolExecutionService(
 
         var resultData = new { results = cpbResults };
         return BuildSuccessOutput("run_cpb", "cpb_" + Guid.NewGuid().ToString("N")[..8], resultData);
+    }
+
+    private async Task<ToolExecutionOutput> ExecuteRunSpectrogramAsync(
+        Dictionary<string, object?> arguments,
+        CancellationToken cancellationToken)
+    {
+        var fileIds = ExtractFileIds(arguments);
+        if (fileIds.Count == 0)
+        {
+            return BuildFailureOutput("run_spectrogram", "MISSING_FILE_IDS", "fileIds argument is required and must not be empty.");
+        }
+
+        var spectrogramResults = new List<object>();
+        var spectrogramHandler = new RunSpectrogramHandler(signalFileImporters, spectrogramCacheStore);
+
+        foreach (var fileId in fileIds)
+        {
+            var filePath = audioFileRepository.GetFilePath(fileId);
+            if (string.IsNullOrEmpty(filePath))
+            {
+                spectrogramResults.Add(new { fileId, error = "File not found in storage." });
+                continue;
+            }
+
+            var durationSeconds = GetFileDurationSeconds(filePath);
+            var effectiveEndSeconds = durationSeconds > 0 ? durationSeconds : DefaultSpectrumEndFallback;
+
+            var query = new RunSpectrogramQuery(
+                FilePath: filePath,
+                StartSeconds: DefaultSpectrumStartSeconds,
+                EndSeconds: effectiveEndSeconds,
+                FftSize: DefaultSpectrogramFftSize,
+                Overlap: DefaultSpectrogramOverlap,
+                Scale: DefaultSpectrogramScale,
+                GainDb: DefaultSpectrogramGainDb,
+                RangeDb: DefaultSpectrogramRangeDb);
+
+            var spectrogramResult = await spectrogramHandler.ExecuteAsync(query, cancellationToken);
+            var primaryChannel = spectrogramResult.Channels.Count > 0 ? spectrogramResult.Channels[0] : null;
+            if (primaryChannel is null)
+            {
+                spectrogramResults.Add(new { fileId, error = "No spectrogram channel data." });
+                continue;
+            }
+
+            var dataRef = "spectrogram_" + Guid.NewGuid().ToString("N")[..8];
+
+            spectrogramResults.Add(new
+            {
+                fileId,
+                region = new
+                {
+                    startSeconds = spectrogramResult.Region.StartSeconds,
+                    endSeconds = spectrogramResult.Region.EndSeconds,
+                    durationSeconds = spectrogramResult.Region.DurationSeconds,
+                },
+                parameters = new
+                {
+                    fftSize = spectrogramResult.Parameters.FftSize,
+                    windowType = spectrogramResult.Parameters.WindowType,
+                    overlap = spectrogramResult.Parameters.Overlap,
+                    scale = spectrogramResult.Parameters.Scale,
+                    gainDb = spectrogramResult.Parameters.GainDb,
+                    rangeDb = spectrogramResult.Parameters.RangeDb,
+                    sampleRate = spectrogramResult.Parameters.SampleRate,
+                },
+                summary = new
+                {
+                    frameCount = primaryChannel.FrameCount,
+                    binCount = primaryChannel.BinCount,
+                    nyquistHz = primaryChannel.NyquistHz,
+                },
+                dataRef,
+            });
+        }
+
+        var resultData = new { results = spectrogramResults };
+        return BuildSuccessOutput("run_spectrogram", "spectrogram_" + Guid.NewGuid().ToString("N")[..8], resultData);
     }
 
     private async Task<ToolExecutionOutput> ExecuteRunSoundQualityMetricsAsync(

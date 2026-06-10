@@ -14,6 +14,12 @@ public sealed class AgentOrchestrator(
     {
         var conversationId = "conv_" + Guid.NewGuid().ToString("N")[..8];
 
+        var metaAnswer = AgentMetaQuestionRouter.TryAnswer(command.Question);
+        if (metaAnswer is not null)
+        {
+            return BuildNoToolConversationResult(conversationId, metaAnswer);
+        }
+
         // Step 0: Answer plain deterministic-fact questions (peak/RMS/sample rate/etc.)
         // straight from the backend tools, without calling the LLM. This keeps factual
         // lookups fast and working even when no OpenAI key is configured.
@@ -295,6 +301,24 @@ public sealed class AgentOrchestrator(
             PlannerReason: null);
     }
 
+    private static AgentAskResult BuildNoToolConversationResult(string conversationId, string answer)
+    {
+        return new AgentAskResult(
+            ConversationId: conversationId,
+            Answer: answer,
+            EvidencePackageId: string.Empty,
+            EvidenceReferences: [],
+            EvidenceItems: [],
+            Confidence: "high",
+            Limitations: [],
+            SuggestedNextSteps: [],
+            ToolExecutions: [],
+            ValidationWarning: false,
+            ToolResultsData: null,
+            PlannedTools: [],
+            PlannerReason: "Answered as an Agent behavior question; no audio analysis was needed.");
+    }
+
     private static string EmbedEvidenceTokensInAnswer(
         string answer,
         IReadOnlyList<string> evidenceReferences,
@@ -337,6 +361,7 @@ public sealed class AgentOrchestrator(
             "basic_metrics" => "analysis_result",
             "event_detection" => "find_result",
             "spectrum" => "analysis_result",
+            "spectrogram" => "analysis_result",
             "cpb" => "analysis_result",
             "sound_quality" => "analysis_result",
             "metadata" => "analysis_result",

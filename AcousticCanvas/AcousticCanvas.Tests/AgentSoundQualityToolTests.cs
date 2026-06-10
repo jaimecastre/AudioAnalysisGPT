@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using AcousticCanvas.Features.Agent.Orchestration;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
+using AcousticCanvas.Features.Analysis.Importers;
 using AcousticCanvas.Features.Analysis.Services;
 using AcousticCanvas.Features.AudioUpload.Services;
 
@@ -19,8 +20,13 @@ public sealed class AgentSoundQualityToolTests
         await File.WriteAllBytesAsync(Path.Combine(storagePath, $"{fileId}_agent_sound_quality.wav"), BuildSineWaveBytes());
         var audioFileRepository = BuildAudioFileRepository(storagePath);
         var fakeClient = new FakeSoundQualityClient();
-        var soundQualityService = new SoundQualityAnalysisService(fakeClient);
-        var toolExecutionService = new ToolExecutionService(audioFileRepository, soundQualityService);
+        var soundQualityService = new SoundQualityAnalysisService(fakeClient, new SoundQualityCacheStore());
+        var importers = new List<ISignalFileImporter> { new WavSignalFileImporter() };
+        var toolExecutionService = new ToolExecutionService(
+            audioFileRepository,
+            soundQualityService,
+            importers,
+            new SpectrogramCacheStore());
 
         var toolOutput = await toolExecutionService.ExecuteToolAsync(
             new PlannerToolRequest
