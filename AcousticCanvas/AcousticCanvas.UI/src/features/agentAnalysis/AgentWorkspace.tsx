@@ -1,16 +1,12 @@
 import type { JSX } from 'react';
 import { ChatPanel } from './ChatPanel';
 import { AgentWorkspacePanel } from './AgentWorkspacePanel';
-import { useAppSelector } from '../../store/reduxHooks';
-import { projectFilesSelector } from '../project/projectSlice';
 import { IconGripVertical } from '@tabler/icons-react';
-import { useResizableSidebar } from '../../shared/useResizableSidebar';
+import { useAgentWorkspace } from './hooks/useAgentWorkspace';
 import styles from './AgentWorkspace.module.scss';
 
 export const AgentWorkspace = (): JSX.Element => {
-  const files = useAppSelector(projectFilesSelector);
-  const hasNoFile = files.length === 0;
-  const { handleResizePointerDown, containerRef } = useResizableSidebar({ initialWidth: 320, minWidth: 260, maxWidth: 540 });
+  const { hasNoFile, handleResizePointerDown, containerRef } = useAgentWorkspace();
 
   return (
     <div ref={containerRef} className={styles.workspace}>

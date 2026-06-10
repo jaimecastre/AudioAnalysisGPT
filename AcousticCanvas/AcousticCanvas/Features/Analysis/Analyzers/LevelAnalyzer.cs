@@ -24,6 +24,48 @@ public static class LevelAnalyzer
         };
     }
 
+    public static LevelAnalysis Analyze(
+        IReadOnlyList<SignalChannel> channels,
+        double startSeconds,
+        double endSeconds)
+    {
+        if (channels.Count == 0)
+        {
+            return new LevelAnalysis { Channels = [], Combined = null };
+        }
+
+        var sampleRate = channels[0].SampleRate;
+        var maxSamples = channels[0].Samples.Length;
+        var startSample = Math.Clamp((int)Math.Floor(startSeconds * sampleRate), 0, maxSamples);
+        var endSample = Math.Clamp((int)Math.Ceiling(endSeconds * sampleRate), 0, maxSamples);
+
+        var channelResults = new ChannelLevelAnalysis[channels.Count];
+        for (var index = 0; index < channels.Count; index++)
+        {
+            var channel = channels[index];
+            channelResults[index] = ComputeLevelAnalysis(
+                channelId: channel.Id,
+                channelName: channel.Name,
+                quantity: channel.Quantity,
+                unit: channel.Unit,
+                samples: channel.Samples,
+                dbReference: channel.DbReference,
+                isCalibrated: channel.Calibration?.IsCalibrated ?? false,
+                startIndex: startSample,
+                endIndex: endSample);
+        }
+
+        var combined = channels.Count > 1
+            ? AnalyzeCombinedRegion(channels, startSample, endSample)
+            : null;
+
+        return new LevelAnalysis
+        {
+            Channels = channelResults,
+            Combined = combined,
+        };
+    }
+
     public static ChannelLevelAnalysis AnalyzeChannel(SignalChannel channel)
     {
         return ComputeLevelAnalysis(
@@ -35,6 +77,41 @@ public static class LevelAnalyzer
             dbReference: channel.DbReference,
             isCalibrated: channel.Calibration?.IsCalibrated ?? false
         );
+    }
+
+    private static ChannelLevelAnalysis AnalyzeCombinedRegion(
+        IReadOnlyList<SignalChannel> channels,
+        int startSample,
+        int endSample)
+    {
+        var regionLength = endSample - startSample;
+        var channelCount = channels.Count;
+        var combinedSamples = new float[regionLength];
+
+        for (var frameIndex = 0; frameIndex < regionLength; frameIndex++)
+        {
+            var sum = 0.0;
+            for (var channelIndex = 0; channelIndex < channelCount; channelIndex++)
+            {
+                var samples = channels[channelIndex].Samples;
+                var sampleIndex = startSample + frameIndex;
+                if (sampleIndex < samples.Length)
+                {
+                    sum += samples[sampleIndex];
+                }
+            }
+            combinedSamples[frameIndex] = (float)(sum / channelCount);
+        }
+
+        var referenceChannel = channels[0];
+        return ComputeLevelAnalysis(
+            channelId: "combined",
+            channelName: "Combined",
+            quantity: referenceChannel.Quantity,
+            unit: referenceChannel.Unit,
+            samples: combinedSamples,
+            dbReference: referenceChannel.DbReference,
+            isCalibrated: referenceChannel.Calibration?.IsCalibrated ?? false);
     }
 
     private static ChannelLevelAnalysis AnalyzeCombined(IReadOnlyList<SignalChannel> channels)
@@ -86,9 +163,14 @@ public static class LevelAnalyzer
         string unit,
         float[] samples,
         DbReference? dbReference,
-        bool isCalibrated)
+        bool isCalibrated,
+        int startIndex = 0,
+        int endIndex = -1)
     {
-        if (samples.Length == 0)
+        var end = endIndex < 0 ? samples.Length : endIndex;
+        var sampleCount = end - startIndex;
+
+        if (sampleCount <= 0)
         {
             return BuildSilentResult(channelId, channelName, quantity, unit, dbReference, isCalibrated);
         }
@@ -98,7 +180,7 @@ public static class LevelAnalyzer
         var sumSquares = 0.0;
         var sum = 0.0;
 
-        for (var i = 0; i < samples.Length; i++)
+        for (var i = startIndex; i < end; i++)
         {
             var sample = (double)samples[i];
             if (sample < min) min = sample;
@@ -107,7 +189,6 @@ public static class LevelAnalyzer
             sumSquares += sample * sample;
         }
 
-        var sampleCount = samples.Length;
         var peak = Math.Max(Math.Abs(min), Math.Abs(max));
         var rms = Math.Sqrt(sumSquares / sampleCount);
         var dcOffset = sum / sampleCount;

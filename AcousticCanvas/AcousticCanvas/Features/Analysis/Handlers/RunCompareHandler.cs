@@ -109,7 +109,7 @@ public class RunCompareHandler(
             Method: "mosqito_stationary_zwicker");
         var sqTask = soundQualityAnalysisService.AnalyzeAsync(sqQuery, ct);
 
-        var levelAnalysis = LevelAnalyzer.Analyze(signalFile.Channels);
+        var levelAnalysis = LevelAnalyzer.Analyze(signalFile.Channels, resolvedStart, resolvedEnd);
         var firstLevelChannel = levelAnalysis.Channels.Count > 0 ? levelAnalysis.Channels[0] : null;
         var peakDb = firstLevelChannel?.PeakDb ?? 0.0;
         var rmsDb = firstLevelChannel?.RmsDb ?? 0.0;

@@ -17,6 +17,7 @@ builder.Services.AddSingleton<AudioFileRepository>();
 builder.Services.AddSingleton<UploadAudioHandler>();
 var importers = new List<ISignalFileImporter> { new WavSignalFileImporter() };
 builder.Services.AddSingleton<IReadOnlyList<ISignalFileImporter>>(importers);
+builder.Services.AddSingleton<SignalFileCacheStore>();
 builder.Services.AddSingleton<SignalAnalysisService>();
 builder.Services.AddSingleton<RunAnalysisHandler>();
 builder.Services.AddSingleton<RunAgentAnalysisHandler>();

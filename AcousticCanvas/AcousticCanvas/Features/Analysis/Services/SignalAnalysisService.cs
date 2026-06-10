@@ -7,22 +7,30 @@ namespace AcousticCanvas.Features.Analysis.Services;
 public sealed class SignalAnalysisService
 {
     private readonly IReadOnlyList<ISignalFileImporter> _importers;
+    private readonly SignalFileCacheStore _cacheStore;
 
-    public SignalAnalysisService(IReadOnlyList<ISignalFileImporter> importers)
+    public SignalAnalysisService(IReadOnlyList<ISignalFileImporter> importers, SignalFileCacheStore cacheStore)
     {
         _importers = importers;
+        _cacheStore = cacheStore;
     }
 
     public SignalFile ImportFile(string filePath)
     {
+        if (_cacheStore.TryGet(filePath, out var cached) && cached is not null)
+        {
+            return cached;
+        }
+
         var importer = ResolveImporter(filePath);
-        return importer.Import(filePath);
+        var result = importer.Import(filePath);
+        _cacheStore.Set(filePath, result);
+        return result;
     }
 
     public AnalysisResult Analyze(string filePath)
     {
-        var importer = ResolveImporter(filePath);
-        var signalFile = importer.Import(filePath);
+        var signalFile = ImportFile(filePath);
         var levelAnalysis = LevelAnalyzer.Analyze(signalFile.Channels);
 
         return new AnalysisResult

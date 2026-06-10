@@ -1,6 +1,6 @@
 import type { JSX, RefObject } from 'react';
 import { Text, Group, ActionIcon } from '@mantine/core';
-import { IconX } from '@tabler/icons-react';
+import { IconX, IconGitCompare } from '@tabler/icons-react';
 import { WaveSurferDisplay } from '../waveform/WaveSurferDisplay';
 import type { WaveSurferDisplayRef } from '../waveform/WaveSurferDisplay';
 import { ComparisonView } from '../comparison/ComparisonView';
@@ -43,6 +43,7 @@ interface ActiveSignalCardProps {
   onWaveSurferFinish: () => void;
   onWaveSurferUserSelectionChange: (startSeconds: number, endSeconds: number) => void;
   onCloseComparisonPanel: () => void;
+  onRerunCompare: () => void;
   onCloseBenchmarkPanel: () => void;
   onCloseFindingsPanel: () => void;
   onToolPanelFileSelect: (panelId: string, fileId: string | null) => void;
@@ -71,6 +72,7 @@ export function ActiveSignalCard({
   onWaveSurferFinish,
   onWaveSurferUserSelectionChange,
   onCloseComparisonPanel,
+  onRerunCompare,
   onCloseBenchmarkPanel,
   onCloseFindingsPanel,
   onToolPanelFileSelect,
@@ -98,15 +100,27 @@ export function ActiveSignalCard({
         <div className={styles.comparisonPanel}>
           <div className={styles.comparisonPanelHeader}>
             <span className={styles.comparisonPanelTitle}>A/B Comparison</span>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="xs"
-              onClick={onCloseComparisonPanel}
-              aria-label="Close comparison panel"
-            >
-              <IconX size={12} />
-            </ActionIcon>
+            <Group gap={4}>
+              <ActionIcon
+                variant="subtle"
+                color="blue"
+                size="xs"
+                onClick={onRerunCompare}
+                aria-label="Change files and re-run comparison"
+                title="Change files"
+              >
+                <IconGitCompare size={12} />
+              </ActionIcon>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="xs"
+                onClick={onCloseComparisonPanel}
+                aria-label="Close comparison panel"
+              >
+                <IconX size={12} />
+              </ActionIcon>
+            </Group>
           </div>
           {manualCompareStatus === 'error' && (
             <div className={styles.comparisonPanelError}>{manualCompareError}</div>

@@ -1,5 +1,5 @@
 import type { JSX, ChangeEvent } from 'react';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { AudioFileDropzone } from '../audioUpload/AudioFileDropzone';
 import { setActiveView } from '../navigation/navigationSlice';
 import { useAudioUpload } from '../audioUpload/useAudioUpload';
@@ -13,6 +13,7 @@ import { ActionIcon, Tooltip } from '@mantine/core';
 import { IconRepeat, IconX, IconUpload, IconRobot, IconSelectAll } from '@tabler/icons-react';
 import { callCompareTool } from '../agent/services/compareToolService';
 import type { CompareResult } from '../agent/agentToolTypes';
+import { CompareFilePickerModal } from '../comparison/CompareFilePickerModal';
 import { callBatchBenchmarkTool } from '../batchBenchmark/services/batchBenchmarkService';
 import {
   benchmarkStarted,
@@ -78,14 +79,43 @@ export const ManualWorkspace = (): JSX.Element => {
   const addFileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDraggingFileOver, setIsDraggingFileOver] = useState(false);
   const [isAgentPanelOpen, setIsAgentPanelOpen] = useState(false);
+  const [checkedFileIds, setCheckedFileIds] = useState<Set<string>>(() => new Set(files.map((f) => f.id)));
   const [manualCompareResult, setManualCompareResult] = useState<CompareResult | null>(null);
   const [manualCompareStatus, setManualCompareStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [manualCompareError, setManualCompareError] = useState<string | null>(null);
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const manualBenchmarkResult = useAppSelector(benchmarkResultSelector);
   const manualBenchmarkStatus = useAppSelector(benchmarkStatusSelector);
   const manualBenchmarkError = useAppSelector(benchmarkErrorSelector);
   const isBenchmarkPanelOpen = useAppSelector(benchmarkIsPanelOpenSelector);
   const [isFindingsPanelOpen, setIsFindingsPanelOpen] = useState(false);
+
+  // Keep checkedFileIds in sync: add new files, remove deleted ones
+  useEffect(() => {
+    const currentIds = new Set(files.map((f) => f.id));
+    setCheckedFileIds((prev) => {
+      const next = new Set<string>();
+      for (const id of currentIds) {
+        // Keep existing check state; new files default to checked
+        next.add(id);
+      }
+      // If nothing changed, avoid re-render
+      if (next.size === prev.size && [...next].every((id) => prev.has(id))) return prev;
+      return next;
+    });
+  }, [files]);
+
+  const handleToggleFileChecked = useCallback((fileId: string): void => {
+    setCheckedFileIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(fileId)) {
+        next.delete(fileId);
+      } else {
+        next.add(fileId);
+      }
+      return next;
+    });
+  }, []);
 
   const handleFilesSelected = async (files: File[]): Promise<void> => {
     const results = await uploadFiles(files);
@@ -196,13 +226,22 @@ export const ManualWorkspace = (): JSX.Element => {
     setIsAgentPanelOpen((previous) => !previous);
   };
 
-  const handleRunManualCompare = async (): Promise<void> => {
-    if (files.length < 2) return;
+  const handleOpenCompareModal = (): void => {
+    setIsCompareModalOpen(true);
+  };
+
+  const handleCloseCompareModal = (): void => {
+    setIsCompareModalOpen(false);
+  };
+
+  const handleRunManualCompare = async (fileIds: string[]): Promise<void> => {
+    if (fileIds.length < 2) return;
+    setIsCompareModalOpen(false);
     setManualCompareStatus('loading');
     setManualCompareError(null);
     try {
       const result = await callCompareTool({
-        fileIds: files.map((file) => file.id),
+        fileIds,
         startSeconds: null,
         endSeconds: null,
       });
@@ -222,12 +261,15 @@ export const ManualWorkspace = (): JSX.Element => {
   };
 
   const handleRunManualBenchmark = async (): Promise<void> => {
-    if (files.length < 2) return;
+    const targetIds = checkedFileIds.size >= 2
+      ? [...checkedFileIds]
+      : files.map((file) => file.id);
+    if (targetIds.length < 2) return;
 
     dispatch(benchmarkStarted());
     try {
       const result = await callBatchBenchmarkTool({
-        fileIds: files.map((file) => file.id),
+        fileIds: targetIds,
         startSeconds: activeSelection?.startSeconds ?? null,
         endSeconds: activeSelection?.endSeconds ?? null,
       });
@@ -261,6 +303,8 @@ export const ManualWorkspace = (): JSX.Element => {
           <FileListPanel
             files={files}
             selectedSignalId={selectedSignalId}
+            checkedFileIds={checkedFileIds}
+            onToggleFileChecked={handleToggleFileChecked}
             onSelectFile={handleSelectFile}
             onRemoveFile={handleRemoveFile}
             onAddFileClick={handleAddFileClick}
@@ -272,9 +316,8 @@ export const ManualWorkspace = (): JSX.Element => {
             hasSpectrumPanel={hasSpectrumPanel}
             hasCpbPanel={hasCpbPanel}
             hasSoundQualityPanel={hasSoundQualityPanel}
-            hasComparisonPanel={manualCompareResult !== null}
             isCompareLoading={manualCompareStatus === 'loading'}
-            onRunCompare={handleRunManualCompare}
+            onRunCompare={handleOpenCompareModal}
             hasBenchmarkPanel={isBenchmarkPanelOpen}
             isBenchmarkLoading={manualBenchmarkStatus === 'loading'}
             onRunBenchmark={handleRunManualBenchmark}
@@ -364,6 +407,7 @@ export const ManualWorkspace = (): JSX.Element => {
                       onWaveSurferFinish={handleWaveSurferFinish}
                       onWaveSurferUserSelectionChange={handleWaveSurferUserSelectionChange}
                       onCloseComparisonPanel={handleCloseComparisonPanel}
+                      onRerunCompare={handleOpenCompareModal}
                       onCloseBenchmarkPanel={handleCloseBenchmarkPanel}
                       onCloseFindingsPanel={handleCloseFindingsPanel}
                       onToolPanelFileSelect={handleToolPanelFileSelect}
@@ -447,6 +491,14 @@ export const ManualWorkspace = (): JSX.Element => {
           >
             <IconRobot size={16} />
           </button>
+          <CompareFilePickerModal
+            opened={isCompareModalOpen}
+            onClose={handleCloseCompareModal}
+            files={files}
+            initialSelectedIds={checkedFileIds}
+            onConfirm={handleRunManualCompare}
+            isLoading={manualCompareStatus === 'loading'}
+          />
         </>
       )}
     </div>
