@@ -1,35 +1,48 @@
 import type { JSX } from 'react';
 import { useState } from 'react';
 import { Modal } from '@mantine/core';
-import { IconFileMusic, IconCheck } from '@tabler/icons-react';
+import { IconCheck, IconFileMusic } from '@tabler/icons-react';
 import type { AudioFile } from '../../store/projectState';
-import { canRunCompare, clampCompareSelection, MAX_COMPARE_SELECTION, toggleCompareSelection } from './compareSelection';
-import styles from './CompareFilePickerModal.module.scss';
+import { canRunBenchmarkWithSelection } from './benchmarkSelection';
+import styles from './BenchmarkFilePickerModal.module.scss';
 
-interface CompareFilePickerModalProps {
+interface BenchmarkFilePickerModalProps {
   opened: boolean;
   onClose: () => void;
   files: AudioFile[];
   initialSelectedIds: Set<string>;
-  onConfirm: (fileIds: string[]) => void;
   isLoading: boolean;
+  onConfirm: (fileIds: string[]) => void;
 }
 
 interface PickerBodyProps {
   files: AudioFile[];
   initialSelectedIds: Set<string>;
-  onConfirm: (fileIds: string[]) => void;
   isLoading: boolean;
+  onConfirm: (fileIds: string[]) => void;
 }
 
-function PickerBody({ files, initialSelectedIds, onConfirm, isLoading }: PickerBodyProps): JSX.Element {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => clampCompareSelection(initialSelectedIds));
+const PickerBody = ({
+  files,
+  initialSelectedIds,
+  isLoading,
+  onConfirm,
+}: PickerBodyProps): JSX.Element => {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(initialSelectedIds));
 
   const handleToggle = (fileId: string): void => {
-    setSelectedIds((previousSelection) => toggleCompareSelection(previousSelection, fileId));
+    setSelectedIds((previousSelection) => {
+      const nextSelection = new Set(previousSelection);
+      if (nextSelection.has(fileId)) {
+        nextSelection.delete(fileId);
+      } else {
+        nextSelection.add(fileId);
+      }
+      return nextSelection;
+    });
   };
 
-  const canConfirm = canRunCompare(selectedIds) && !isLoading;
+  const canConfirm = canRunBenchmarkWithSelection(selectedIds) && !isLoading;
 
   return (
     <>
@@ -49,7 +62,7 @@ function PickerBody({ files, initialSelectedIds, onConfirm, isLoading }: PickerB
               <IconFileMusic size={14} className={styles.fileIcon} />
               <span className={styles.fileName} title={file.name}>{file.name}</span>
               <span className={styles.fileMeta}>
-                {(file.durationSeconds).toFixed(1)}s · {file.sampleRate / 1000}kHz · {file.channels}ch
+                {file.durationSeconds.toFixed(1)}s · {file.sampleRate / 1000}kHz · {file.channels}ch
               </span>
             </button>
           );
@@ -57,9 +70,9 @@ function PickerBody({ files, initialSelectedIds, onConfirm, isLoading }: PickerB
       </div>
       <div className={styles.footer}>
         <span className={styles.footerHint}>
-          {selectedIds.size < MAX_COMPARE_SELECTION
-            ? `Select 2 files (${selectedIds.size} selected)`
-            : '2 files selected'}
+          {selectedIds.size < 2
+            ? `Select at least 2 files (${selectedIds.size} selected)`
+            : `${selectedIds.size} files selected`}
         </span>
         <button
           type="button"
@@ -67,27 +80,27 @@ function PickerBody({ files, initialSelectedIds, onConfirm, isLoading }: PickerB
           disabled={!canConfirm}
           onClick={() => onConfirm([...selectedIds])}
         >
-          {isLoading ? 'Comparing…' : 'Compare'}
+          {isLoading ? 'Running…' : 'Run benchmark'}
         </button>
       </div>
     </>
   );
-}
+};
 
-export function CompareFilePickerModal({
+export const BenchmarkFilePickerModal = ({
   opened,
   onClose,
   files,
   initialSelectedIds,
-  onConfirm,
   isLoading,
-}: CompareFilePickerModalProps): JSX.Element {
+  onConfirm,
+}: BenchmarkFilePickerModalProps): JSX.Element => {
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Select files to compare"
-      size="480px"
+      title="Select files to benchmark"
+      size="520px"
       centered
       classNames={{
         content: styles.modalContent,
@@ -101,10 +114,10 @@ export function CompareFilePickerModal({
         <PickerBody
           files={files}
           initialSelectedIds={initialSelectedIds}
-          onConfirm={onConfirm}
           isLoading={isLoading}
+          onConfirm={onConfirm}
         />
       )}
     </Modal>
   );
-}
+};

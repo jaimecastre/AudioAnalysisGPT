@@ -1,0 +1,153 @@
+/* ---- Benchmark File Picker Modal ---- */
+
+.modalContent {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.modalHeader {
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+}
+
+.modalTitle {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.modalClose {
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--bg-base);
+  }
+}
+
+.modalBody {
+  padding: 0;
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+  width: 100%;
+  text-align: left;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: var(--bg-elevated);
+  }
+}
+
+.fileRowSelected {
+  background: rgba(25, 113, 194, 0.06);
+
+  &:hover {
+    background: rgba(25, 113, 194, 0.1);
+  }
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+  transition: border-color 0.1s ease, background-color 0.1s ease;
+}
+
+.checkboxChecked {
+  background-color: #1971c2;
+  border-color: #1971c2;
+  color: #fff;
+}
+
+.fileIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fileName {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.fileMeta {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.footerHint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.confirmButton {
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background-color: #1971c2;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: background-color 0.12s ease, opacity 0.12s ease;
+
+  &:hover:not(:disabled) {
+    background-color: #1864ab;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

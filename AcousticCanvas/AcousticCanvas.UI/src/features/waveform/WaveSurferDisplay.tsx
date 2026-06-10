@@ -137,10 +137,11 @@ export const WaveSurferDisplay = ({
   const axisCanvasRef = useRef<HTMLCanvasElement>(null);
   const [containerHeight, setContainerHeight] = useState(200);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [isHintVisible, setIsHintVisible] = useState(false);
 
   const activeSelection = useAppSelector(activeSelectionSelector);
   const hasSelection = activeSelection && activeSelection.endSeconds > activeSelection.startSeconds;
-  const showHint = !hasInteracted && !hasSelection;
+  const showHint = isHintVisible && !hasInteracted && !hasSelection;
 
   // Measure container height on mount and resize
   useEffect(() => {
@@ -187,6 +188,7 @@ export const WaveSurferDisplay = ({
 
     const handleInteraction = () => {
       setHasInteracted(true);
+      setIsHintVisible(false);
     };
 
     container.addEventListener('mousedown', handleInteraction);
@@ -197,6 +199,26 @@ export const WaveSurferDisplay = ({
       container.removeEventListener('touchstart', handleInteraction);
     };
   }, [isReady]);
+
+  // Show guidance briefly after load so it helps without blocking the waveform.
+  useEffect(() => {
+    if (!isReady || hasSelection || hasInteracted) {
+      return;
+    }
+
+    const showHintTimeoutId = window.setTimeout(() => {
+      setIsHintVisible(true);
+    }, 900);
+
+    const hideHintTimeoutId = window.setTimeout(() => {
+      setIsHintVisible(false);
+    }, 5200);
+
+    return () => {
+      window.clearTimeout(showHintTimeoutId);
+      window.clearTimeout(hideHintTimeoutId);
+    };
+  }, [isReady, hasSelection, hasInteracted]);
 
   const redrawAxis = useCallback(() => {
     const canvas = axisCanvasRef.current;
@@ -260,23 +282,23 @@ export const WaveSurferDisplay = ({
             <div
               style={{
                 position: 'absolute',
-                top: '50%',
+                bottom: '10px',
                 left: '50%',
-                transform: 'translate(-50%, -50%)',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                border: '1px solid rgba(0, 184, 169, 0.3)',
-                borderRadius: '8px',
-                padding: '12px 20px',
-                fontSize: '13px',
-                color: 'rgba(0, 0, 0, 0.6)',
+                transform: 'translateX(-50%)',
+                backgroundColor: 'rgba(255, 255, 255, 0.74)',
+                border: '1px solid rgba(0, 0, 0, 0.08)',
+                borderRadius: '6px',
+                padding: '6px 10px',
+                fontSize: '12px',
+                color: 'rgba(0, 0, 0, 0.52)',
                 fontFamily: FONT_FAMILY,
                 pointerEvents: 'none',
                 zIndex: 10,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
                 whiteSpace: 'nowrap',
               }}
             >
-              👆 Click and drag to select a region
+              Click and drag to select a region
             </div>
           )}
         </div>

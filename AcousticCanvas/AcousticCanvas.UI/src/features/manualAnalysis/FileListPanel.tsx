@@ -15,7 +15,6 @@ import {
   IconBug,
   IconSparkles,
   IconTable,
-  IconCheck,
 } from '@tabler/icons-react';
 import type { AudioFile } from '../../store/projectState';
 import styles from './FileListPanel.module.scss';
@@ -23,8 +22,6 @@ import styles from './FileListPanel.module.scss';
 interface FileListPanelProps {
   files: AudioFile[];
   selectedSignalId: string | null;
-  checkedFileIds: Set<string>;
-  onToggleFileChecked: (fileId: string) => void;
   onSelectFile: (fileId: string) => void;
   onRemoveFile: (fileId: string) => void;
   onAddFileClick: () => void;
@@ -49,8 +46,6 @@ interface FileListPanelProps {
 export function FileListPanel({
   files,
   selectedSignalId,
-  checkedFileIds,
-  onToggleFileChecked,
   onSelectFile,
   onRemoveFile,
   onAddFileClick,
@@ -71,9 +66,6 @@ export function FileListPanel({
   isFindingsPanelOpen,
   width,
 }: FileListPanelProps): JSX.Element {
-  const checkedCount = checkedFileIds.size;
-  const canCompare = checkedCount >= 2;
-  const showCheckboxes = files.length >= 3;
   const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(new Set());
 
   function handleToggleExpanded(fileId: string): void {
@@ -104,18 +96,6 @@ export function FileListPanel({
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectFile(file.id); }}
           >
             <div className={styles.fileTreeRow}>
-              {showCheckboxes && (
-                <span
-                  className={`${styles.fileCheckbox} ${checkedFileIds.has(file.id) ? styles.fileCheckboxChecked : ''}`}
-                  onClick={(e) => { e.stopPropagation(); onToggleFileChecked(file.id); }}
-                  role="checkbox"
-                  aria-checked={checkedFileIds.has(file.id) ? 'true' : 'false'}
-                  tabIndex={-1}
-                  aria-label={`Include ${file.name} in compare/benchmark`}
-                >
-                  {checkedFileIds.has(file.id) && <IconCheck size={10} />}
-                </span>
-              )}
               <span
                 className={styles.fileTreeChevron}
                 onClick={(e) => { e.stopPropagation(); handleToggleExpanded(file.id); }}
@@ -227,11 +207,10 @@ export function FileListPanel({
                 {isCompareLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconGitCompare size={18} />}
               </span>
               <Text size="xs" c="dimmed">A/B compare</Text>
-              {showCheckboxes && <span className={styles.toolBadge}>{checkedCount}</span>}
             </button>
           </Tooltip>
           <Tooltip
-            label={!canCompare ? 'Select at least 2 files to benchmark' : hasBenchmarkPanel ? 'Benchmark already open' : `Benchmark ${checkedCount} files`}
+            label={files.length < 2 ? 'Need at least 2 files to benchmark' : hasBenchmarkPanel ? 'Benchmark already open' : 'Run benchmark'}
             withArrow
             position="right"
           >
@@ -239,14 +218,13 @@ export function FileListPanel({
               type="button"
               className={`${styles.toolRow} ${styles.toolRowBlue}`}
               onClick={onRunBenchmark}
-              disabled={!canCompare || hasBenchmarkPanel || isBenchmarkLoading}
+              disabled={files.length < 2 || hasBenchmarkPanel || isBenchmarkLoading}
               aria-label="Run batch benchmark"
             >
               <span className={styles.toolRowIcon}>
                 {isBenchmarkLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconTable size={18} />}
               </span>
               <Text size="xs" c="dimmed">Benchmark</Text>
-              {showCheckboxes && <span className={styles.toolBadge}>{checkedCount}</span>}
             </button>
           </Tooltip>
           <Tooltip

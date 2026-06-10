@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { Select, ActionIcon, Text, Group, Loader, Box, Checkbox, Badge } from '@mantine/core';
-import { IconChevronDown, IconChevronRight, IconX, IconChartLine } from '@tabler/icons-react';
+import { IconArrowsMaximize, IconArrowsMinimize, IconChevronDown, IconChevronRight, IconX, IconChartLine } from '@tabler/icons-react';
 import { useAppSelector, useAppDispatch } from '../../store/reduxHooks';
 import { useRunSpectrum } from './useRunSpectrum';
 import {
@@ -11,6 +11,7 @@ import {
   spectrumUserParametersSelector,
 } from './spectrumSlice';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
+import { cursorFrequencyHovered, cursorFrequencyCleared, cursorFrequencyHzSelector } from './analysisCursorSlice';
 import { SpectrumCanvas } from './SpectrumCanvas';
 import { agentPromptPrefillSet, setActiveMode } from '../navigation/navigationSlice';
 import styles from './SpectrogramPanel.module.scss';
@@ -21,6 +22,8 @@ interface SpectrumPanelProps {
   selectedFileId: string | null;
   onFileSelect: (panelId: string, fileId: string | null) => void;
   onClose: (panelId: string) => void;
+  isWide: boolean;
+  onToggleSpan: (panelId: string) => void;
 }
 
 export const SpectrumPanel = ({
@@ -29,12 +32,15 @@ export const SpectrumPanel = ({
   selectedFileId,
   onFileSelect,
   onClose,
+  isWide,
+  onToggleSpan,
 }: SpectrumPanelProps): JSX.Element => {
   const spectrumResult = useAppSelector(spectrumResultSelector);
   const spectrumStatus = useAppSelector(spectrumStatusSelector);
   const spectrumError = useAppSelector(spectrumErrorSelector);
   const spectrumUserParameters = useAppSelector(spectrumUserParametersSelector);
   const activeSelection = useAppSelector(activeSelectionSelector);
+  const linkedFrequencyHz = useAppSelector(cursorFrequencyHzSelector);
   const { runSpectrum } = useRunSpectrum();
   const dispatch = useAppDispatch();
 
@@ -169,6 +175,9 @@ export const SpectrumPanel = ({
               Explain this spectrum →
             </button>
           )}
+          <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => onToggleSpan(panelId)} aria-label={isWide ? 'Restore panel width' : 'Widen panel to full width'}>
+            {isWide ? <IconArrowsMinimize size={13} /> : <IconArrowsMaximize size={13} />}
+          </ActionIcon>
           <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setIsCollapsed((value) => !value)} aria-label={isCollapsed ? 'Expand spectrum panel' : 'Collapse spectrum panel'}>
             {isCollapsed ? <IconChevronRight size={13} /> : <IconChevronDown size={13} />}
           </ActionIcon>
@@ -202,7 +211,11 @@ export const SpectrumPanel = ({
         )}
         {visibleChannels.length > 0 && (
           <Box style={{ height: panelHeight, padding: '8px' }}>
-            <SpectrumCanvas channels={visibleChannels} />
+            <SpectrumCanvas
+              channels={visibleChannels}
+              linkedFrequencyHz={linkedFrequencyHz}
+              onHoverFrequency={(hz) => dispatch(hz === null ? cursorFrequencyCleared() : cursorFrequencyHovered(hz))}
+            />
           </Box>
         )}
         {visibleChannels.length > 0 && (

@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
 import { ActionIcon, Tooltip } from '@mantine/core';
-import { IconChevronDown, IconChevronRight, IconRobot, IconX } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronRight, IconRobot, IconRotateClockwise2, IconX } from '@tabler/icons-react';
 import { useAppDispatch } from '../../store/reduxHooks';
 import { agentPromptPrefillSet, setActiveMode } from '../navigation/navigationSlice';
 import type { BatchBenchmarkFileRow, BatchBenchmarkResult } from './batchBenchmarkTypes';
@@ -22,6 +22,7 @@ interface BatchBenchmarkPanelProps {
   status: 'idle' | 'loading' | 'error';
   error: string | null;
   onClose: () => void;
+  onRerun: () => void;
 }
 
 type HeaderDefinition = {
@@ -50,6 +51,7 @@ export const BatchBenchmarkPanel = ({
   status,
   error,
   onClose,
+  onRerun,
 }: BatchBenchmarkPanelProps): JSX.Element => {
   const dispatch = useAppDispatch();
   const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(new Set());
@@ -106,6 +108,15 @@ export const BatchBenchmarkPanel = ({
           <button
             type="button"
             className={styles.explainButton}
+            onClick={onRerun}
+            disabled={status === 'loading'}
+          >
+            <IconRotateClockwise2 size={14} />
+            Re-run benchmark
+          </button>
+          <button
+            type="button"
+            className={styles.explainButton}
             onClick={handleExplainBenchmark}
             disabled={!result || status === 'loading'}
           >
@@ -151,7 +162,6 @@ export const BatchBenchmarkPanel = ({
                       type="button"
                       className={styles.sortButton}
                       onClick={() => handleSort(header.key)}
-                      aria-sort={sortState.key === header.key ? sortState.direction : 'none'}
                     >
                       <span>{header.label}</span>
                       <span className={styles.sortIndicator}>

@@ -14,7 +14,10 @@ import { IconRepeat, IconX, IconUpload, IconRobot, IconSelectAll } from '@tabler
 import { callCompareTool } from '../agent/services/compareToolService';
 import type { CompareResult } from '../agent/agentToolTypes';
 import { CompareFilePickerModal } from '../comparison/CompareFilePickerModal';
+import { clampCompareSelection } from '../comparison/compareSelection';
+import { BenchmarkFilePickerModal } from '../batchBenchmark/BenchmarkFilePickerModal';
 import { callBatchBenchmarkTool } from '../batchBenchmark/services/batchBenchmarkService';
+import { canRunBenchmarkWithSelection } from '../batchBenchmark/benchmarkSelection';
 import {
   benchmarkStarted,
   benchmarkCompleted,
@@ -59,6 +62,7 @@ export const ManualWorkspace = (): JSX.Element => {
     handleAddCpbPanel,
     handleAddSoundQualityPanel,
     handleToolPanelFileSelect,
+    handleToolPanelToggleSpan,
     handleToolPanelClose,
   } = useToolPanels();
   const {
@@ -79,43 +83,65 @@ export const ManualWorkspace = (): JSX.Element => {
   const addFileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDraggingFileOver, setIsDraggingFileOver] = useState(false);
   const [isAgentPanelOpen, setIsAgentPanelOpen] = useState(false);
-  const [checkedFileIds, setCheckedFileIds] = useState<Set<string>>(() => new Set(files.map((f) => f.id)));
   const [manualCompareResult, setManualCompareResult] = useState<CompareResult | null>(null);
   const [manualCompareStatus, setManualCompareStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [manualCompareError, setManualCompareError] = useState<string | null>(null);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+  const [lastCompareSelectedIds, setLastCompareSelectedIds] = useState<Set<string>>(() => new Set());
+  const [isBenchmarkModalOpen, setIsBenchmarkModalOpen] = useState(false);
+  const [lastBenchmarkSelectedIds, setLastBenchmarkSelectedIds] = useState<Set<string>>(() => new Set());
   const manualBenchmarkResult = useAppSelector(benchmarkResultSelector);
   const manualBenchmarkStatus = useAppSelector(benchmarkStatusSelector);
   const manualBenchmarkError = useAppSelector(benchmarkErrorSelector);
   const isBenchmarkPanelOpen = useAppSelector(benchmarkIsPanelOpenSelector);
   const [isFindingsPanelOpen, setIsFindingsPanelOpen] = useState(false);
 
-  // Keep checkedFileIds in sync: add new files, remove deleted ones
-  useEffect(() => {
-    const currentIds = new Set(files.map((f) => f.id));
-    setCheckedFileIds((prev) => {
-      const next = new Set<string>();
-      for (const id of currentIds) {
-        // Keep existing check state; new files default to checked
-        next.add(id);
-      }
-      // If nothing changed, avoid re-render
-      if (next.size === prev.size && [...next].every((id) => prev.has(id))) return prev;
-      return next;
-    });
-  }, [files]);
+  const getInitialCompareSelection = useCallback((): Set<string> => {
+    const availableIds = new Set(files.map((file) => file.id));
+    const persisted = new Set<string>();
 
-  const handleToggleFileChecked = useCallback((fileId: string): void => {
-    setCheckedFileIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(fileId)) {
-        next.delete(fileId);
-      } else {
-        next.add(fileId);
+    for (const fileId of lastCompareSelectedIds) {
+      if (availableIds.has(fileId)) {
+        persisted.add(fileId);
       }
-      return next;
-    });
-  }, []);
+    }
+
+    if (persisted.size > 0) {
+      return clampCompareSelection(persisted);
+    }
+
+    const defaults: string[] = [];
+    if (selectedSignalId && availableIds.has(selectedSignalId)) {
+      defaults.push(selectedSignalId);
+    }
+    for (const file of files) {
+      if (defaults.length >= 2) {
+        break;
+      }
+      if (!defaults.includes(file.id)) {
+        defaults.push(file.id);
+      }
+    }
+
+    return new Set(defaults);
+  }, [files, lastCompareSelectedIds, selectedSignalId]);
+
+  const getInitialBenchmarkSelection = useCallback((): Set<string> => {
+    const availableIds = new Set(files.map((file) => file.id));
+    const persisted = new Set<string>();
+
+    for (const fileId of lastBenchmarkSelectedIds) {
+      if (availableIds.has(fileId)) {
+        persisted.add(fileId);
+      }
+    }
+
+    if (persisted.size >= 2) {
+      return persisted;
+    }
+
+    return new Set(files.map((file) => file.id));
+  }, [files, lastBenchmarkSelectedIds]);
 
   const handleFilesSelected = async (files: File[]): Promise<void> => {
     const results = await uploadFiles(files);
@@ -234,8 +260,17 @@ export const ManualWorkspace = (): JSX.Element => {
     setIsCompareModalOpen(false);
   };
 
+  const handleOpenBenchmarkModal = (): void => {
+    setIsBenchmarkModalOpen(true);
+  };
+
+  const handleCloseBenchmarkModalConfig = (): void => {
+    setIsBenchmarkModalOpen(false);
+  };
+
   const handleRunManualCompare = async (fileIds: string[]): Promise<void> => {
-    if (fileIds.length < 2) return;
+    if (fileIds.length !== 2) return;
+    setLastCompareSelectedIds(new Set(fileIds));
     setIsCompareModalOpen(false);
     setManualCompareStatus('loading');
     setManualCompareError(null);
@@ -260,16 +295,18 @@ export const ManualWorkspace = (): JSX.Element => {
     setManualCompareError(null);
   };
 
-  const handleRunManualBenchmark = async (): Promise<void> => {
-    const targetIds = checkedFileIds.size >= 2
-      ? [...checkedFileIds]
-      : files.map((file) => file.id);
-    if (targetIds.length < 2) return;
+  const handleRunManualBenchmark = async (fileIds: string[]): Promise<void> => {
+    if (!canRunBenchmarkWithSelection(new Set(fileIds))) {
+      return;
+    }
+
+    setLastBenchmarkSelectedIds(new Set(fileIds));
+    setIsBenchmarkModalOpen(false);
 
     dispatch(benchmarkStarted());
     try {
       const result = await callBatchBenchmarkTool({
-        fileIds: targetIds,
+        fileIds,
         startSeconds: activeSelection?.startSeconds ?? null,
         endSeconds: activeSelection?.endSeconds ?? null,
       });
@@ -303,8 +340,6 @@ export const ManualWorkspace = (): JSX.Element => {
           <FileListPanel
             files={files}
             selectedSignalId={selectedSignalId}
-            checkedFileIds={checkedFileIds}
-            onToggleFileChecked={handleToggleFileChecked}
             onSelectFile={handleSelectFile}
             onRemoveFile={handleRemoveFile}
             onAddFileClick={handleAddFileClick}
@@ -320,7 +355,7 @@ export const ManualWorkspace = (): JSX.Element => {
             onRunCompare={handleOpenCompareModal}
             hasBenchmarkPanel={isBenchmarkPanelOpen}
             isBenchmarkLoading={manualBenchmarkStatus === 'loading'}
-            onRunBenchmark={handleRunManualBenchmark}
+            onRunBenchmark={handleOpenBenchmarkModal}
             isFindingsPanelOpen={isFindingsPanelOpen}
             onOpenFindings={handleOpenFindingsPanel}
             width={leftPanelWidth}
@@ -408,9 +443,11 @@ export const ManualWorkspace = (): JSX.Element => {
                       onWaveSurferUserSelectionChange={handleWaveSurferUserSelectionChange}
                       onCloseComparisonPanel={handleCloseComparisonPanel}
                       onRerunCompare={handleOpenCompareModal}
+                      onRerunBenchmark={handleOpenBenchmarkModal}
                       onCloseBenchmarkPanel={handleCloseBenchmarkPanel}
                       onCloseFindingsPanel={handleCloseFindingsPanel}
                       onToolPanelFileSelect={handleToolPanelFileSelect}
+                      onToolPanelToggleSpan={handleToolPanelToggleSpan}
                       onToolPanelClose={handleToolPanelClose}
                       onSeek={handleSeek}
                     />
@@ -495,9 +532,17 @@ export const ManualWorkspace = (): JSX.Element => {
             opened={isCompareModalOpen}
             onClose={handleCloseCompareModal}
             files={files}
-            initialSelectedIds={checkedFileIds}
+            initialSelectedIds={getInitialCompareSelection()}
             onConfirm={handleRunManualCompare}
             isLoading={manualCompareStatus === 'loading'}
+          />
+          <BenchmarkFilePickerModal
+            opened={isBenchmarkModalOpen}
+            onClose={handleCloseBenchmarkModalConfig}
+            files={files}
+            initialSelectedIds={getInitialBenchmarkSelection()}
+            onConfirm={handleRunManualBenchmark}
+            isLoading={manualBenchmarkStatus === 'loading'}
           />
         </>
       )}

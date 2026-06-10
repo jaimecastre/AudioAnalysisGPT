@@ -66,6 +66,9 @@ const emptyState: RootState = {
       method: 'fft_bin_power_sum',
     },
   },
+  analysisCursor: {
+    hoverFrequencyHz: null,
+  },
   findings: {
     result: null,
     status: 'idle',

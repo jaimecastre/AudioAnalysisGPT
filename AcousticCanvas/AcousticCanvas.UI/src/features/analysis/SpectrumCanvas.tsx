@@ -25,6 +25,9 @@ interface TooltipState {
 interface SpectrumCanvasProps {
   channels: SpectrumChannel[];
   xUnit?: string;
+  // Cross-panel linked frequency cursor (Hz) driven by hovering another panel.
+  linkedFrequencyHz?: number | null;
+  onHoverFrequency?: (frequencyHz: number | null) => void;
 }
 
 const MARGIN = { top: 12, right: 16, bottom: 44, left: 52 };
@@ -36,6 +39,7 @@ const AXIS_LINE_WIDTH = 1;
 
 // Colors for different channels
 const CHANNEL_COLORS = ['#00b8a9', '#e05252', '#4dabf7', '#fab005'];
+const LINKED_CURSOR_COLOR = 'rgba(0, 184, 169, 0.85)';
 
 function formatHz(hz: number): string {
   if (hz >= 1000) {
@@ -56,6 +60,7 @@ function toLogX(freq: number, minFreq: number, maxFreq: number, plotWidth: numbe
 function drawSpectrum(
   canvas: HTMLCanvasElement,
   channels: SpectrumChannel[],
+  linkedFrequencyHz: number | null,
 ): void {
   const dpr = window.devicePixelRatio || 1;
   const width = canvas.clientWidth;
@@ -202,6 +207,19 @@ function drawSpectrum(
 
   ctx.restore();
 
+  // Cross-panel linked frequency cursor: vertical guide at the shared frequency.
+  if (linkedFrequencyHz !== null && linkedFrequencyHz >= xMin && linkedFrequencyHz <= xMax) {
+    const xPixel = toX(linkedFrequencyHz);
+    ctx.save();
+    ctx.strokeStyle = LINKED_CURSOR_COLOR;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(xPixel, MARGIN.top);
+    ctx.lineTo(xPixel, MARGIN.top + plotHeight);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // Draw legend
   if (channels.length > 1) {
     const legendX = MARGIN.left + plotWidth - 10;
@@ -238,15 +256,17 @@ function drawSpectrum(
 export const SpectrumCanvas = ({
   channels,
   xUnit = 'Hz',
+  linkedFrequencyHz = null,
+  onHoverFrequency,
 }: SpectrumCanvasProps): JSX.Element => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   const draw = useCallback(() => {
     if (canvasRef.current) {
-      drawSpectrum(canvasRef.current, channels);
+      drawSpectrum(canvasRef.current, channels, linkedFrequencyHz);
     }
-  }, [channels]);
+  }, [channels, linkedFrequencyHz]);
 
   useEffect(() => {
     draw();
@@ -286,6 +306,7 @@ export const SpectrumCanvas = ({
 
     if (freqAtMouse < xMin || freqAtMouse > xMax * 1.05) {
       setTooltip(null);
+      onHoverFrequency?.(null);
       return;
     }
 
@@ -306,6 +327,7 @@ export const SpectrumCanvas = ({
     });
 
     const nearestChannel = channels[nearestChannelIndex];
+    onHoverFrequency?.(nearestChannel.frequenciesHz[nearestIndex]);
     setTooltip({
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
@@ -317,7 +339,10 @@ export const SpectrumCanvas = ({
     });
   };
 
-  const handleMouseLeave = (): void => setTooltip(null);
+  const handleMouseLeave = (): void => {
+    setTooltip(null);
+    onHoverFrequency?.(null);
+  };
 
   return (
     <div className={styles.wrapper}>
