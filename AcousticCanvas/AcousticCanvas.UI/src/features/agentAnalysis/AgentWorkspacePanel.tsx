@@ -1,9 +1,7 @@
 import type { JSX } from 'react';
-import { useRef, useEffect, useState } from 'react';
 import { ComparisonView } from '../comparison/ComparisonView';
 import { IconArrowRight, IconFileMusic, IconAlignBoxLeftMiddle, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
-import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
-import { agentArtifactsSelector, expandedArtifactIdsSelector, focusedArtifactIdSelector, artifactFocusCleared } from './agentWorkspaceSlice';
+import { useAppDispatch } from '../../store/reduxHooks';
 import type {
   AgentArtifact,
   AgentArtifactAnalysis,
@@ -16,10 +14,10 @@ import type {
   AgentArtifactReport,
 } from './agentWorkspaceSlice';
 import { setActiveMode } from '../navigation/navigationSlice';
-import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
-import { projectFilesSelector, selectedSignalIdSelector } from '../project/projectSlice';
-import { chatMessagesSelector } from './chatSlice';
-import type { ChatMessage } from './chatSlice';
+import { useWorkspaceContext } from './hooks/useWorkspaceContext';
+import { useArtifactFeed, useArtifactExpanded } from './hooks/useArtifactFeed';
+import { useRawDataDrawer } from './hooks/useRawDataDrawer';
+import { useReportCopy } from './hooks/useReportCopy';
 import styles from './AgentWorkspacePanel.module.scss';
 
 const TOOL_LABELS: Record<string, string> = {
@@ -32,30 +30,16 @@ const TOOL_LABELS: Record<string, string> = {
   run_findings: 'Findings',
 };
 
-function getLastCompletedAssistantMessage(messages: ChatMessage[]): ChatMessage | null {
-  for (let index = messages.length - 1; index >= 0; index--) {
-    const message = messages[index];
-    if (message.role === 'assistant' && message.status === 'completed') {
-      return message;
-    }
-  }
-
-  return null;
-}
-
 function WorkspaceContextCard(): JSX.Element {
-  const files = useAppSelector(projectFilesSelector);
-  const selectedSignalId = useAppSelector(selectedSignalIdSelector);
-  const activeSelection = useAppSelector(activeSelectionSelector);
-  const messages = useAppSelector(chatMessagesSelector);
-
-  const activeFile = files.find((file) => file.id === selectedSignalId) ?? null;
-  const lastAssistantMessage = getLastCompletedAssistantMessage(messages);
-  const plannedTools = lastAssistantMessage?.plannedTools ?? [];
-  const limitations = lastAssistantMessage?.limitations ?? [];
-  const hasValidationWarning = lastAssistantMessage?.validationWarning === true;
-
-  const hasValidSelection = activeSelection !== null && activeSelection.endSeconds > activeSelection.startSeconds;
+  const {
+    files,
+    activeFile,
+    activeSelection,
+    plannedTools,
+    limitations,
+    hasValidationWarning,
+    hasValidSelection,
+  } = useWorkspaceContext();
 
   return (
     <div className={styles.contextCard}>
@@ -124,7 +108,7 @@ function formatTimestamp(isoString: string): string {
 }
 
 function RawDataDrawer({ data }: { data: unknown }): JSX.Element {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { isExpanded, toggle } = useRawDataDrawer();
   const rawJson = JSON.stringify(data, null, 2);
 
   return (
@@ -132,8 +116,8 @@ function RawDataDrawer({ data }: { data: unknown }): JSX.Element {
       <button
         type="button"
         className={styles.rawDrawerToggle}
-        onClick={() => setIsExpanded((prev) => !prev)}
-        aria-expanded={isExpanded ? 'true' : 'false'}
+        onClick={toggle}
+        aria-expanded={isExpanded}
       >
         {isExpanded ? <IconChevronDown size={10} /> : <IconChevronRight size={10} />}
         Raw data
@@ -291,8 +275,7 @@ function getSeverityClass(severity: string): string {
 }
 
 function FindingsCard({ artifact }: { artifact: AgentArtifactFindings }): JSX.Element {
-  const expandedArtifactIds = useAppSelector(expandedArtifactIdsSelector);
-  const isExpanded = expandedArtifactIds.includes(artifact.id);
+  const isExpanded = useArtifactExpanded(artifact.id);
 
   return (
     <div className={`${styles.card} ${styles.cardFindings}`}>
@@ -372,8 +355,7 @@ function FindCard({ artifact }: { artifact: AgentArtifactFind }): JSX.Element {
 }
 
 function ToolResultCard({ artifact }: { artifact: AgentArtifactToolResult }): JSX.Element {
-  const expandedArtifactIds = useAppSelector(expandedArtifactIdsSelector);
-  const isExpanded = expandedArtifactIds.includes(artifact.id);
+  const isExpanded = useArtifactExpanded(artifact.id);
 
   return (
     <div className={`${styles.card} ${styles.cardToolResult}`}>
@@ -401,16 +383,7 @@ function ToolResultCard({ artifact }: { artifact: AgentArtifactToolResult }): JS
 }
 
 function ReportCard({ artifact }: { artifact: AgentArtifactReport }): JSX.Element {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = (): void => {
-    navigator.clipboard.writeText(artifact.markdownContent).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(() => {
-      // silently ignore clipboard errors
-    });
-  };
+  const { copied, handleCopy } = useReportCopy(artifact.markdownContent);
 
   return (
     <div className={`${styles.card} ${styles.cardReport}`}>
@@ -462,32 +435,7 @@ function ArtifactCard({ artifact }: { artifact: AgentArtifact }): JSX.Element {
 }
 
 export function AgentWorkspacePanel(): JSX.Element {
-  const artifacts = useAppSelector(agentArtifactsSelector);
-  const focusedArtifactId = useAppSelector(focusedArtifactIdSelector);
-  const dispatch = useAppDispatch();
-  const feedRef = useRef<HTMLDivElement | null>(null);
-  const artifactRefs = useRef<Record<string, HTMLDivElement | null>>({});
-
-  useEffect(() => {
-    const feed = feedRef.current;
-    if (!feed) return;
-    feed.scrollTop = feed.scrollHeight;
-  }, [artifacts]);
-
-  useEffect(() => {
-    if (!focusedArtifactId) return;
-    const artifactEl = artifactRefs.current[focusedArtifactId];
-    if (!artifactEl) return;
-    artifactEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const timeoutId = window.setTimeout(() => {
-      dispatch(artifactFocusCleared());
-    }, 1800);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [dispatch, focusedArtifactId]);
-
+  const { artifacts, focusedArtifactId, feedRef, artifactRefs } = useArtifactFeed();
   const hasArtifacts = artifacts.length > 0;
 
   return (

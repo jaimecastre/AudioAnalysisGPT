@@ -132,6 +132,10 @@
 
 .numericHeader {
   text-align: right;
+
+  .sortButton {
+    flex-direction: row-reverse;
+  }
 }
 
 .sortButton {

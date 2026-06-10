@@ -4,7 +4,7 @@ using AcousticCanvas.Features.Agent.Orchestration;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.Analysis.Services;
-using AcousticCanvas.Features.AudioUpload.Handlers;
+using AcousticCanvas.Features.AudioUpload.Services;
 
 namespace AcousticCanvas.Tests;
 
@@ -17,10 +17,10 @@ public sealed class AgentSoundQualityToolTests
         var storagePath = Path.Combine(Path.GetTempPath(), $"acousticcanvas_agent_sq_{Guid.NewGuid():N}");
         Directory.CreateDirectory(storagePath);
         await File.WriteAllBytesAsync(Path.Combine(storagePath, $"{fileId}_agent_sound_quality.wav"), BuildSineWaveBytes());
-        var uploadAudioHandler = BuildUploadAudioHandler(storagePath);
+        var audioFileRepository = BuildAudioFileRepository(storagePath);
         var fakeClient = new FakeSoundQualityClient();
         var soundQualityService = new SoundQualityAnalysisService(fakeClient);
-        var toolExecutionService = new ToolExecutionService(uploadAudioHandler, soundQualityService);
+        var toolExecutionService = new ToolExecutionService(audioFileRepository, soundQualityService);
 
         var toolOutput = await toolExecutionService.ExecuteToolAsync(
             new PlannerToolRequest
@@ -121,13 +121,13 @@ public sealed class AgentSoundQualityToolTests
         return memoryStream.ToArray();
     }
 
-    private static UploadAudioHandler BuildUploadAudioHandler(string storagePath)
+    private static AudioFileRepository BuildAudioFileRepository(string storagePath)
     {
-        var handler = (UploadAudioHandler)RuntimeHelpers.GetUninitializedObject(typeof(UploadAudioHandler));
-        var storagePathField = typeof(UploadAudioHandler).GetField("_storagePath", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            ?? throw new InvalidOperationException("Could not locate UploadAudioHandler storage path field.");
-        storagePathField.SetValue(handler, storagePath);
-        return handler;
+        var repository = (AudioFileRepository)RuntimeHelpers.GetUninitializedObject(typeof(AudioFileRepository));
+        var storagePathField = typeof(AudioFileRepository).GetField("_storagePath", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("Could not locate AudioFileRepository storage path field.");
+        storagePathField.SetValue(repository, storagePath);
+        return repository;
     }
 
     private sealed class FakeSoundQualityClient : ISoundQualityClient

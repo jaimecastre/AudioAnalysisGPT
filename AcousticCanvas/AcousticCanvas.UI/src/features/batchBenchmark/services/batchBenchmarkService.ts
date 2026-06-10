@@ -7,7 +7,6 @@ export async function callBatchBenchmarkTool(input: BatchBenchmarkRequest): Prom
     fileIds: input.fileIds,
     startSeconds: input.startSeconds,
     endSeconds: input.endSeconds,
-    includeSoundQuality: input.includeSoundQuality ?? true,
   };
 
   return apiClient.requestJson<BatchBenchmarkResult>(

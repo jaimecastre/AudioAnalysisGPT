@@ -1,11 +1,11 @@
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
-using AcousticCanvas.Features.AudioUpload.Handlers;
+using AcousticCanvas.Features.AudioUpload.Services;
 using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
-public sealed class RunSoundQualityEndpoint(UploadAudioHandler uploadAudioHandler)
+public sealed class RunSoundQualityEndpoint(AudioFileRepository audioFileRepository)
     : Endpoint<RunSoundQualityRequest, SoundQualityAnalysis>
 {
     public override void Configure()
@@ -16,7 +16,7 @@ public sealed class RunSoundQualityEndpoint(UploadAudioHandler uploadAudioHandle
 
     public override async Task HandleAsync(RunSoundQualityRequest request, CancellationToken cancellationToken)
     {
-        var filePath = uploadAudioHandler.GetFilePath(request.FileId);
+        var filePath = audioFileRepository.GetFilePath(request.FileId);
         if (string.IsNullOrEmpty(filePath))
         {
             HttpContext.Response.StatusCode = 404;

@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { ActionIcon, Badge, Group, Loader, Select, Text, Tooltip } from '@mantine/core';
-import { IconChevronDown, IconChevronRight, IconSparkles, IconX } from '@tabler/icons-react';
+import { IconArrowsMaximize, IconArrowsMinimize, IconChevronDown, IconChevronRight, IconSparkles, IconX } from '@tabler/icons-react';
 import { useAppSelector } from '../../store/reduxHooks';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
 import { useRunSoundQuality } from './useRunSoundQuality';
@@ -28,6 +28,8 @@ interface SoundQualityPanelProps {
   selectedFileId: string | null;
   onFileSelect: (panelId: string, fileId: string | null) => void;
   onClose: (panelId: string) => void;
+  isWide: boolean;
+  onToggleSpan: (panelId: string) => void;
 }
 
 export const SoundQualityPanel = ({
@@ -36,6 +38,8 @@ export const SoundQualityPanel = ({
   selectedFileId,
   onFileSelect,
   onClose,
+  isWide,
+  onToggleSpan,
 }: SoundQualityPanelProps): JSX.Element => {
   const activeSelection = useAppSelector(activeSelectionSelector);
   const { result, isRunning, error, runSoundQuality } = useRunSoundQuality();
@@ -97,6 +101,9 @@ export const SoundQualityPanel = ({
           {isRunning && <Loader size="xs" color="teal" />}
         </Group>
         <Group gap={2}>
+          <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => onToggleSpan(panelId)} aria-label={isWide ? 'Restore panel width' : 'Widen panel to full width'}>
+            {isWide ? <IconArrowsMinimize size={13} /> : <IconArrowsMaximize size={13} />}
+          </ActionIcon>
           <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setIsCollapsed((value) => !value)} aria-label={isCollapsed ? 'Expand sound-quality panel' : 'Collapse sound-quality panel'}>
             {isCollapsed ? <IconChevronRight size={13} /> : <IconChevronDown size={13} />}
           </ActionIcon>

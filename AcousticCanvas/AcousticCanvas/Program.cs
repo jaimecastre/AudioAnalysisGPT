@@ -6,15 +6,18 @@ using AcousticCanvas.Features.Analysis.Handlers;
 using AcousticCanvas.Features.Analysis.Importers;
 using AcousticCanvas.Features.Analysis.Services;
 using AcousticCanvas.Features.AudioUpload.Handlers;
+using AcousticCanvas.Features.AudioUpload.Services;
 using AcousticCanvas.Features.Playback.Handlers;
 using AcousticCanvas.Features.Playback.Services;
 using AcousticCanvas.Features.Waveform.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddFastEndpoints();
+builder.Services.AddSingleton<AudioFileRepository>();
 builder.Services.AddSingleton<UploadAudioHandler>();
 var importers = new List<ISignalFileImporter> { new WavSignalFileImporter() };
 builder.Services.AddSingleton<IReadOnlyList<ISignalFileImporter>>(importers);
+builder.Services.AddSingleton<SignalFileCacheStore>();
 builder.Services.AddSingleton<SignalAnalysisService>();
 builder.Services.AddSingleton<RunAnalysisHandler>();
 builder.Services.AddSingleton<RunAgentAnalysisHandler>();
@@ -25,6 +28,7 @@ builder.Services.AddSingleton<ICpbFilterBankClient, PythonCpbFilterBankClient>()
 builder.Services.AddSingleton<CpbAnalysisService>();
 builder.Services.AddSingleton<RunCpbHandler>();
 builder.Services.AddSingleton<ISoundQualityClient, PythonSoundQualityClient>();
+builder.Services.AddSingleton<SoundQualityCacheStore>();
 builder.Services.AddSingleton<SoundQualityAnalysisService>();
 builder.Services.AddSingleton<RunSoundQualityHandler>();
 builder.Services.AddSingleton<RunCompareHandler>();

@@ -2,7 +2,6 @@ export type BatchBenchmarkRequest = {
   fileIds: string[];
   startSeconds: number | null;
   endSeconds: number | null;
-  includeSoundQuality?: boolean;
 };
 
 export type BatchBenchmarkFindingSummary = {

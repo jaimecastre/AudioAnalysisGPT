@@ -24,19 +24,20 @@ public class RunBatchBenchmarkHandler : CommandHandler<RunBatchBenchmarkCommand,
             StartSeconds: command.StartSeconds,
             EndSeconds: command.EndSeconds);
 
-        var compareResult = await compareCommand.ExecuteAsync(ct);
-        var sources = new List<BatchBenchmarkSource>();
+        var compareTask = compareCommand.ExecuteAsync(ct);
+        var findingsTasks = command.FilePaths
+            .Select(filePath => new RunFindingsCommand(FilePath: filePath).ExecuteAsync(ct))
+            .ToArray();
 
-        for (int index = 0; index < command.FilePaths.Count; index++)
-        {
-            ct.ThrowIfCancellationRequested();
+        var compareResult = await compareTask;
+        var findingsResults = await Task.WhenAll(findingsTasks);
 
-            var filePath = command.FilePaths[index];
-            var summary = compareResult.Files[index];
-            var findingsCommand = new RunFindingsCommand(FilePath: filePath);
-            var findingsResult = await findingsCommand.ExecuteAsync(ct);
-            sources.Add(new BatchBenchmarkSource(summary, findingsResult.Findings, command.FileIds[index]));
-        }
+        var sources = command.FilePaths
+            .Select((filePath, index) => new BatchBenchmarkSource(
+                compareResult.Files[index],
+                findingsResults[index].Findings,
+                command.FileIds[index]))
+            .ToList();
 
         var result = BatchBenchmarkBuilder.Build(sources, DateTimeOffset.UtcNow);
 

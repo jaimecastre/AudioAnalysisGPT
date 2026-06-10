@@ -62,8 +62,28 @@
   min-height: 200px;
 }
 
-.comparisonPanel {
+// Responsive tile grid for analysis panels below the pinned waveform.
+// Collapses from 2 columns to 1 when the center area gets narrow.
+.analysisGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 12px;
+  padding: 12px;
   border-top: 1px solid var(--border);
+  align-items: start;
+
+  // No analysis panels open — don't reserve any space.
+  &:empty {
+    display: none;
+  }
+}
+
+// Wide panels (comparison, benchmark, findings) span the full grid width.
+.gridSpanFull {
+  grid-column: 1 / -1;
+}
+
+.comparisonPanel {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;

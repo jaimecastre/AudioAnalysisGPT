@@ -26,20 +26,14 @@ public class RunFindingsHandler(SignalAnalysisService analysisService)
         var levelAnalysis = levelAnalysisResult.Level;
         var durationSeconds = levelAnalysisResult.FileInfo.DurationSeconds;
 
-        var allEventResults = new List<FindEventsResult>();
-
-        foreach (var eventKind in AllEventKinds)
-        {
-            var findCommand = new FindEventsCommand(
-                Kind: eventKind,
+        var eventTasks = AllEventKinds
+            .Select(kind => new FindEventsCommand(
+                Kind: kind,
                 FilePath: command.FilePath,
                 StartSeconds: null,
-                EndSeconds: null
-            );
-
-            var eventResult = await findCommand.ExecuteAsync(ct);
-            allEventResults.Add(eventResult);
-        }
+                EndSeconds: null).ExecuteAsync(ct))
+            .ToArray();
+        var allEventResults = await Task.WhenAll(eventTasks);
 
         var spectrumCommand = new RunSpectrumQuery(
             FilePath: command.FilePath,

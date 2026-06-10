@@ -73,6 +73,44 @@
   flex-shrink: 0;
 }
 
+.fileCheckbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 3px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  color: transparent;
+
+  &:hover {
+    border-color: #1c7ed6;
+  }
+}
+
+.fileCheckboxChecked {
+  background-color: #1c7ed6;
+  border-color: #1c7ed6;
+  color: #fff;
+}
+
+.toolBadge {
+  margin-left: auto;
+  font-size: 0.65rem;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background-color: rgba(28, 126, 214, 0.15);
+  color: #1c7ed6;
+}
+
 .fileTreeFileIcon {
   color: var(--text-muted);
   flex-shrink: 0;

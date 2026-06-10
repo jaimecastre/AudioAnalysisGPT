@@ -66,6 +66,10 @@ const emptyState: RootState = {
       method: 'fft_bin_power_sum',
     },
   },
+  analysisCursor: {
+    hoverFrequencyHz: null,
+    hoverTimeSeconds: null,
+  },
   findings: {
     result: null,
     status: 'idle',
@@ -75,6 +79,12 @@ const emptyState: RootState = {
     status: 'idle',
     lastResponse: null,
     error: null,
+  },
+  batchBenchmark: {
+    result: null,
+    status: 'idle',
+    error: null,
+    isPanelOpen: false,
   },
 };
 

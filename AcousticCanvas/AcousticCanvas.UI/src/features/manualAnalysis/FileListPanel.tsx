@@ -36,7 +36,6 @@ interface FileListPanelProps {
   hasSpectrumPanel: boolean;
   hasCpbPanel: boolean;
   hasSoundQualityPanel: boolean;
-  hasComparisonPanel: boolean;
   isCompareLoading: boolean;
   hasBenchmarkPanel: boolean;
   isBenchmarkLoading: boolean;
@@ -61,14 +60,12 @@ export function FileListPanel({
   hasSpectrumPanel,
   hasCpbPanel,
   hasSoundQualityPanel,
-  hasComparisonPanel,
   isCompareLoading,
   hasBenchmarkPanel,
   isBenchmarkLoading,
   isFindingsPanelOpen,
   width,
 }: FileListPanelProps): JSX.Element {
-  const canCompare = files.length >= 2;
   const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(new Set());
 
   function handleToggleExpanded(fileId: string): void {
@@ -195,7 +192,7 @@ export function FileListPanel({
             </button>
           </Tooltip>
           <Tooltip
-            label={!canCompare ? 'Load at least 2 files to compare' : hasComparisonPanel ? 'Comparison already open' : 'Compare all loaded files'}
+            label={files.length < 2 ? 'Need at least 2 files to compare' : 'Compare files'}
             withArrow
             position="right"
           >
@@ -203,7 +200,7 @@ export function FileListPanel({
               type="button"
               className={`${styles.toolRow} ${styles.toolRowBlue}`}
               onClick={onRunCompare}
-              disabled={!canCompare || hasComparisonPanel || isCompareLoading}
+              disabled={files.length < 2 || isCompareLoading}
               aria-label="Run A/B comparison"
             >
               <span className={styles.toolRowIcon}>
@@ -213,7 +210,7 @@ export function FileListPanel({
             </button>
           </Tooltip>
           <Tooltip
-            label={!canCompare ? 'Load at least 2 files to benchmark' : hasBenchmarkPanel ? 'Benchmark already open' : 'Benchmark all loaded files'}
+            label={files.length < 2 ? 'Need at least 2 files to benchmark' : hasBenchmarkPanel ? 'Benchmark already open' : 'Run benchmark'}
             withArrow
             position="right"
           >
@@ -221,7 +218,7 @@ export function FileListPanel({
               type="button"
               className={`${styles.toolRow} ${styles.toolRowBlue}`}
               onClick={onRunBenchmark}
-              disabled={!canCompare || hasBenchmarkPanel || isBenchmarkLoading}
+              disabled={files.length < 2 || hasBenchmarkPanel || isBenchmarkLoading}
               aria-label="Run batch benchmark"
             >
               <span className={styles.toolRowIcon}>

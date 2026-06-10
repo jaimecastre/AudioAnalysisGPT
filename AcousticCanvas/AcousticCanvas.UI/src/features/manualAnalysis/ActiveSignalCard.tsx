@@ -1,6 +1,6 @@
 import type { JSX, RefObject } from 'react';
 import { Text, Group, ActionIcon } from '@mantine/core';
-import { IconX } from '@tabler/icons-react';
+import { IconX, IconGitCompare } from '@tabler/icons-react';
 import { WaveSurferDisplay } from '../waveform/WaveSurferDisplay';
 import type { WaveSurferDisplayRef } from '../waveform/WaveSurferDisplay';
 import { ComparisonView } from '../comparison/ComparisonView';
@@ -20,6 +20,7 @@ interface ToolPanel {
   id: string;
   type: 'spectrogram' | 'spectrum' | 'cpb' | 'soundQuality';
   fileId: string | null;
+  span: 'normal' | 'wide';
 }
 
 interface ActiveSignalCardProps {
@@ -43,9 +44,12 @@ interface ActiveSignalCardProps {
   onWaveSurferFinish: () => void;
   onWaveSurferUserSelectionChange: (startSeconds: number, endSeconds: number) => void;
   onCloseComparisonPanel: () => void;
+  onRerunCompare: () => void;
+  onRerunBenchmark: () => void;
   onCloseBenchmarkPanel: () => void;
   onCloseFindingsPanel: () => void;
   onToolPanelFileSelect: (panelId: string, fileId: string | null) => void;
+  onToolPanelToggleSpan: (panelId: string) => void;
   onToolPanelClose: (panelId: string) => void;
   onSeek: (timeSeconds: number) => void;
 }
@@ -71,9 +75,12 @@ export function ActiveSignalCard({
   onWaveSurferFinish,
   onWaveSurferUserSelectionChange,
   onCloseComparisonPanel,
+  onRerunCompare,
+  onRerunBenchmark,
   onCloseBenchmarkPanel,
   onCloseFindingsPanel,
   onToolPanelFileSelect,
+  onToolPanelToggleSpan,
   onToolPanelClose,
   onSeek,
 }: ActiveSignalCardProps): JSX.Element {
@@ -94,19 +101,32 @@ export function ActiveSignalCard({
         />
       </div>
 
+      <div className={styles.analysisGrid}>
       {manualCompareResult !== null && (
-        <div className={styles.comparisonPanel}>
+        <div className={`${styles.comparisonPanel} ${styles.gridSpanFull}`}>
           <div className={styles.comparisonPanelHeader}>
             <span className={styles.comparisonPanelTitle}>A/B Comparison</span>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="xs"
-              onClick={onCloseComparisonPanel}
-              aria-label="Close comparison panel"
-            >
-              <IconX size={12} />
-            </ActionIcon>
+            <Group gap={4}>
+              <ActionIcon
+                variant="subtle"
+                color="blue"
+                size="xs"
+                onClick={onRerunCompare}
+                aria-label="Change files and re-run comparison"
+                title="Change files"
+              >
+                <IconGitCompare size={12} />
+              </ActionIcon>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="xs"
+                onClick={onCloseComparisonPanel}
+                aria-label="Close comparison panel"
+              >
+                <IconX size={12} />
+              </ActionIcon>
+            </Group>
           </div>
           {manualCompareStatus === 'error' && (
             <div className={styles.comparisonPanelError}>{manualCompareError}</div>
@@ -116,74 +136,90 @@ export function ActiveSignalCard({
       )}
 
       {isBenchmarkPanelOpen && (
-        <BatchBenchmarkPanel
-          result={manualBenchmarkResult}
-          status={manualBenchmarkStatus}
-          error={manualBenchmarkError}
-          onClose={onCloseBenchmarkPanel}
-        />
+        <div className={styles.gridSpanFull}>
+          <BatchBenchmarkPanel
+            result={manualBenchmarkResult}
+            status={manualBenchmarkStatus}
+            error={manualBenchmarkError}
+            onRerun={onRerunBenchmark}
+            onClose={onCloseBenchmarkPanel}
+          />
+        </div>
       )}
 
       {isFindingsPanelOpen && (
-        <FindingsPanel
-          fileId={file.id}
-          onClose={onCloseFindingsPanel}
-        />
+        <div className={styles.gridSpanFull}>
+          <FindingsPanel
+            fileId={file.id}
+            onClose={onCloseFindingsPanel}
+          />
+        </div>
       )}
 
       {toolPanels.map((panel) => {
-        if (panel.type === 'spectrogram') {
-          return (
-          <SpectrogramPanel
-            key={panel.id}
-            panelId={panel.id}
-            availableFiles={allFiles}
-            selectedFileId={panel.fileId}
-            currentTimeSeconds={currentTime ?? 0}
-            onSeek={onSeek}
-            onFileSelect={onToolPanelFileSelect}
-            onClose={onToolPanelClose}
-          />
-          );
-        }
+        const isWide = panel.span === 'wide';
+        const wrapperClassName = isWide ? styles.gridSpanFull : undefined;
 
-        if (panel.type === 'cpb') {
-          return (
-            <CpbPanel
-              key={panel.id}
+        let panelElement: JSX.Element;
+        if (panel.type === 'spectrogram') {
+          panelElement = (
+            <SpectrogramPanel
               panelId={panel.id}
               availableFiles={allFiles}
               selectedFileId={panel.fileId}
+              currentTimeSeconds={currentTime ?? 0}
+              onSeek={onSeek}
               onFileSelect={onToolPanelFileSelect}
               onClose={onToolPanelClose}
+              isWide={isWide}
+              onToggleSpan={onToolPanelToggleSpan}
             />
           );
-        }
-
-        if (panel.type === 'soundQuality') {
-          return (
-            <SoundQualityPanel
-              key={panel.id}
+        } else if (panel.type === 'cpb') {
+          panelElement = (
+            <CpbPanel
               panelId={panel.id}
               availableFiles={allFiles}
               selectedFileId={panel.fileId}
               onFileSelect={onToolPanelFileSelect}
               onClose={onToolPanelClose}
+              isWide={isWide}
+              onToggleSpan={onToolPanelToggleSpan}
+            />
+          );
+        } else if (panel.type === 'soundQuality') {
+          panelElement = (
+            <SoundQualityPanel
+              panelId={panel.id}
+              availableFiles={allFiles}
+              selectedFileId={panel.fileId}
+              onFileSelect={onToolPanelFileSelect}
+              onClose={onToolPanelClose}
+              isWide={isWide}
+              onToggleSpan={onToolPanelToggleSpan}
+            />
+          );
+        } else {
+          panelElement = (
+            <SpectrumPanel
+              panelId={panel.id}
+              availableFiles={allFiles}
+              selectedFileId={panel.fileId}
+              onFileSelect={onToolPanelFileSelect}
+              onClose={onToolPanelClose}
+              isWide={isWide}
+              onToggleSpan={onToolPanelToggleSpan}
             />
           );
         }
 
         return (
-          <SpectrumPanel
-            key={panel.id}
-            panelId={panel.id}
-            availableFiles={allFiles}
-            selectedFileId={panel.fileId}
-            onFileSelect={onToolPanelFileSelect}
-            onClose={onToolPanelClose}
-          />
+          <div key={panel.id} className={wrapperClassName}>
+            {panelElement}
+          </div>
         );
       })}
+      </div>
 
       {activeSelection && activeSelection.endSeconds > activeSelection.startSeconds && (
         <div className={styles.regionInfoBar}>

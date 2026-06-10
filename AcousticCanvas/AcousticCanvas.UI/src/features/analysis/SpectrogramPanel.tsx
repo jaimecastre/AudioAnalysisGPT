@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Select, ActionIcon, Text, Group, Loader, Badge } from '@mantine/core';
-import { IconChevronDown, IconChevronRight, IconX, IconWaveSine } from '@tabler/icons-react';
+import { IconArrowsMaximize, IconArrowsMinimize, IconChevronDown, IconChevronRight, IconX, IconWaveSine } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
 import { useRunSpectrogram } from './useRunSpectrogram';
 import {
@@ -12,6 +12,7 @@ import {
   spectrogramSetParameters,
 } from './spectrogramSlice';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
+import { cursorFrequencyHovered, cursorFrequencyCleared, cursorFrequencyHzSelector, cursorTimeHovered, cursorTimeCleared, cursorTimeSecondsSelector } from './analysisCursorSlice';
 import {
   SPECTROGRAM_FFT_SIZE_OPTIONS,
   SPECTROGRAM_GAIN_OPTIONS,
@@ -166,6 +167,8 @@ interface SpectrogramPanelProps {
   onSeek: (timeSeconds: number) => void;
   onFileSelect: (panelId: string, fileId: string | null) => void;
   onClose: (panelId: string) => void;
+  isWide: boolean;
+  onToggleSpan: (panelId: string) => void;
 }
 
 interface SpectrogramHover {
@@ -183,6 +186,8 @@ export const SpectrogramPanel = ({
   onSeek,
   onFileSelect,
   onClose,
+  isWide,
+  onToggleSpan,
 }: SpectrogramPanelProps): JSX.Element => {
   const dispatch = useAppDispatch();
   const spectrogramResult = useAppSelector(spectrogramResultSelector);
@@ -190,6 +195,8 @@ export const SpectrogramPanel = ({
   const spectrogramError = useAppSelector(spectrogramErrorSelector);
   const spectrogramUserParameters = useAppSelector(spectrogramUserParametersSelector);
   const activeSelection = useAppSelector(activeSelectionSelector);
+  const linkedFrequencyHz = useAppSelector(cursorFrequencyHzSelector);
+  const linkedTimeSeconds = useAppSelector(cursorTimeSecondsSelector);
   const { runSpectrogram } = useRunSpectrogram();
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -252,6 +259,19 @@ export const SpectrogramPanel = ({
     : -1;
   const showPlayhead = playheadPercent >= 0 && playheadPercent <= 100;
 
+  // Map a frequency (Hz) to a vertical position for the cross-panel linked cursor.
+  // Inverse of the hover mapping: frequencyHz = scaleToFrequency((1 - yFraction) * scaledMax).
+  const linkedFrequencyPercent = (renderedScale && renderedNyquistHz > 0 && linkedFrequencyHz !== null)
+    ? (1 - frequencyToScale(linkedFrequencyHz, renderedScale) / frequencyToScale(renderedNyquistHz, renderedScale)) * 100
+    : -1;
+  const showLinkedFrequency = !hover && linkedFrequencyPercent >= 0 && linkedFrequencyPercent <= 100;
+
+  // Map a time (s) to a horizontal position for the cross-panel linked time cursor.
+  const linkedTimePercent = (renderedRegion && renderedRegion.durationSeconds > 0 && linkedTimeSeconds !== null)
+    ? (linkedTimeSeconds - renderedRegion.startSeconds) / renderedRegion.durationSeconds * 100
+    : -1;
+  const showLinkedTime = !hover && linkedTimePercent >= 0 && linkedTimePercent <= 100;
+
   const getSpectrogramPosition = (event: React.MouseEvent<HTMLDivElement>): SpectrogramHover | null => {
     if (!renderedRegion || !renderedScale || renderedRegion.durationSeconds <= 0 || renderedNyquistHz <= 0) {
       return null;
@@ -269,7 +289,12 @@ export const SpectrogramPanel = ({
   };
 
   const handleSpectrogramMouseMove = (event: React.MouseEvent<HTMLDivElement>): void => {
-    setHover(getSpectrogramPosition(event));
+    const position = getSpectrogramPosition(event);
+    setHover(position);
+    if (position) {
+      dispatch(cursorFrequencyHovered(position.frequencyHz));
+      dispatch(cursorTimeHovered(position.timeSeconds));
+    }
   };
 
   const handleSpectrogramClick = (event: React.MouseEvent<HTMLDivElement>): void => {
@@ -358,6 +383,9 @@ export const SpectrogramPanel = ({
           {isRunning && <Loader size="xs" color="teal" />}
         </Group>
         <Group gap={2}>
+          <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => onToggleSpan(panelId)} aria-label={isWide ? 'Restore panel width' : 'Widen panel to full width'}>
+            {isWide ? <IconArrowsMinimize size={13} /> : <IconArrowsMaximize size={13} />}
+          </ActionIcon>
           <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setIsCollapsed((value) => !value)} aria-label={isCollapsed ? 'Expand spectrogram panel' : 'Collapse spectrogram panel'}>
             {isCollapsed ? <IconChevronRight size={13} /> : <IconChevronDown size={13} />}
           </ActionIcon>
@@ -389,7 +417,7 @@ export const SpectrogramPanel = ({
               style={{ height: canvasHeight }}
               onClick={handleSpectrogramClick}
               onMouseMove={handleSpectrogramMouseMove}
-              onMouseLeave={() => setHover(null)}
+              onMouseLeave={() => { setHover(null); dispatch(cursorFrequencyCleared()); dispatch(cursorTimeCleared()); }}
             >
               <canvas
                 key={canvasKey}
@@ -399,6 +427,19 @@ export const SpectrogramPanel = ({
               />
               {showPlayhead && (
                 <div className={styles.playhead} style={{ left: `${playheadPercent}%` }} />
+              )}
+              {showLinkedTime && (
+                <div className={styles.linkedTimeLine} style={{ left: `${linkedTimePercent}%` }} />
+              )}
+              {showLinkedFrequency && (
+                <>
+                  <div className={styles.linkedFrequencyLine} style={{ top: `${linkedFrequencyPercent}%` }} />
+                  <div className={styles.linkedReadout} style={{ top: `${linkedFrequencyPercent}%` }}>
+                    {linkedFrequencyHz! >= 1000
+                      ? `${(linkedFrequencyHz! / 1000).toFixed(2)} kHz`
+                      : `${Math.round(linkedFrequencyHz!)} Hz`}
+                  </div>
+                </>
               )}
               {hover && (
                 <>

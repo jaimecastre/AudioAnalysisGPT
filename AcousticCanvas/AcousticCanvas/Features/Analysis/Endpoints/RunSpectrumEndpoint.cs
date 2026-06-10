@@ -1,11 +1,11 @@
 using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
-using AcousticCanvas.Features.AudioUpload.Handlers;
+using AcousticCanvas.Features.AudioUpload.Services;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
-public class RunSpectrumEndpoint(UploadAudioHandler uploadAudioHandler)
+public class RunSpectrumEndpoint(AudioFileRepository audioFileRepository)
     : Endpoint<RunSpectrumRequest, SpectrumAnalysis>
 {
     public override void Configure()
@@ -16,7 +16,7 @@ public class RunSpectrumEndpoint(UploadAudioHandler uploadAudioHandler)
 
     public override async Task HandleAsync(RunSpectrumRequest request, CancellationToken cancellationToken)
     {
-        var filePath = uploadAudioHandler.GetFilePath(request.FileId);
+        var filePath = audioFileRepository.GetFilePath(request.FileId);
         if (string.IsNullOrEmpty(filePath))
         {
             HttpContext.Response.StatusCode = 404;

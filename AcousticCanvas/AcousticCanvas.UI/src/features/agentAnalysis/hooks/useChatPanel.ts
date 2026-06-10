@@ -1,0 +1,66 @@
+import { useRef, useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
+import { chatMessagesSelector, chatIsThinkingSelector, chatSelectedModelSelector, modelSelected } from '../chatSlice';
+import { agentArtifactsSelector, artifactFocused } from '../agentWorkspaceSlice';
+import { activeSelectionSelector } from '../../waveform/waveformSelectionSlice';
+import type { AgentEvidenceItem } from '../utils/evidenceFormatting';
+import { getEvidenceArtifactId } from '../utils/evidenceArtifactMatching';
+import { useChatInput } from '../useChatInput';
+
+export function useChatPanel() {
+  const messages = useAppSelector(chatMessagesSelector);
+  const isThinking = useAppSelector(chatIsThinkingSelector);
+  const selectedModel = useAppSelector(chatSelectedModelSelector);
+  const dispatch = useAppDispatch();
+
+  const chatInput = useChatInput(isThinking);
+
+  const messageListRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const messageList = messageListRef.current;
+    if (!messageList) return;
+    messageList.scrollTop = messageList.scrollHeight;
+  }, [messages, isThinking]);
+
+  const hasMessages = messages.length > 0;
+  const agentPanelResponse = chatInput.agentAskResponse !== null && chatInput.agentAskResponse.toolExecutions.length === 0
+    ? chatInput.agentAskResponse
+    : null;
+
+  const handleModelChange = (modelId: string): void => {
+    dispatch(modelSelected(modelId));
+  };
+
+  return {
+    messages,
+    isThinking,
+    selectedModel,
+    messageListRef,
+    hasMessages,
+    agentPanelResponse,
+    handleModelChange,
+    ...chatInput,
+  };
+}
+
+export function useAssistantMessage() {
+  const dispatch = useAppDispatch();
+  const artifacts = useAppSelector(agentArtifactsSelector);
+
+  const handleEvidenceClick = (evidenceItem: AgentEvidenceItem): void => {
+    const artifactId = getEvidenceArtifactId(evidenceItem, artifacts);
+    if (artifactId !== null) {
+      dispatch(artifactFocused(artifactId));
+    }
+  };
+
+  return { artifacts, handleEvidenceClick };
+}
+
+export function useSelectionChip() {
+  const activeSelection = useAppSelector(activeSelectionSelector);
+  const hasValidSelection = activeSelection !== null && activeSelection.endSeconds > activeSelection.startSeconds;
+
+  return { activeSelection, hasValidSelection };
+}

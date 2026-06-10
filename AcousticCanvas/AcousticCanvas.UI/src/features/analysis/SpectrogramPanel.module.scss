@@ -96,11 +96,54 @@
   background: rgba(255, 255, 255, 0.38);
 }
 
+// Cross-panel linked time cursor (driven by hovering the waveform). Teal vertical line.
+.linkedTimeLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  z-index: 3;
+  pointer-events: none;
+  background: rgba(0, 184, 169, 0.85);
+  transition: left 0.08s linear;
+}
+
 .hoverFrequencyLine {
   position: absolute;
   right: 0;
   left: 0;
   height: 1px;
+}
+
+// Cross-panel linked frequency cursor (driven by hovering another panel).
+// Teal to distinguish it from the white local crosshair.
+.linkedFrequencyLine {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 1px;
+  z-index: 3;
+  pointer-events: none;
+  background: rgba(0, 184, 169, 0.85);
+  transition: top 0.08s linear;
+}
+
+.linkedReadout {
+  position: absolute;
+  right: 4px;
+  z-index: 5;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(0, 184, 169, 0.92);
+  color: #04201d;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  transition: top 0.08s linear;
+  line-height: 1.3;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translateY(-50%);
 }
 
 .hoverReadout {

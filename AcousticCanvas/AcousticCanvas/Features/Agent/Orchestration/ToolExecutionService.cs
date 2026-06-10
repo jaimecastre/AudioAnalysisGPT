@@ -3,12 +3,12 @@ using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.Analysis.Services;
-using AcousticCanvas.Features.AudioUpload.Handlers;
+using AcousticCanvas.Features.AudioUpload.Services;
 
 namespace AcousticCanvas.Features.Agent.Orchestration;
 
 public sealed class ToolExecutionService(
-    UploadAudioHandler uploadAudioHandler,
+    AudioFileRepository audioFileRepository,
     SoundQualityAnalysisService soundQualityAnalysisService)
 {
     private const double DefaultSpectrumStartSeconds = 0.0;
@@ -70,7 +70,7 @@ public sealed class ToolExecutionService(
 
         foreach (var fileId in fileIds)
         {
-            var filePath = uploadAudioHandler.GetFilePath(fileId);
+            var filePath = audioFileRepository.GetFilePath(fileId);
             if (string.IsNullOrEmpty(filePath))
             {
                 metadataResults.Add(new { fileId, error = "File not found in storage." });
@@ -110,7 +110,7 @@ public sealed class ToolExecutionService(
 
         foreach (var fileId in fileIds)
         {
-            var filePath = uploadAudioHandler.GetFilePath(fileId);
+            var filePath = audioFileRepository.GetFilePath(fileId);
             if (string.IsNullOrEmpty(filePath))
             {
                 metricsResults.Add(new { fileId, error = "File not found in storage." });
@@ -162,7 +162,7 @@ public sealed class ToolExecutionService(
             return BuildFailureOutput("run_event_detection", "INVALID_KIND", $"kind '{kind}' is not valid. Supported: {string.Join(", ", validKinds)}.");
         }
 
-        var filePath = uploadAudioHandler.GetFilePath(fileId);
+        var filePath = audioFileRepository.GetFilePath(fileId);
         if (string.IsNullOrEmpty(filePath))
         {
             return BuildFailureOutput("run_event_detection", "FILE_NOT_FOUND", $"File '{fileId}' not found in storage.");
@@ -210,7 +210,7 @@ public sealed class ToolExecutionService(
 
         foreach (var fileId in fileIds)
         {
-            var filePath = uploadAudioHandler.GetFilePath(fileId);
+            var filePath = audioFileRepository.GetFilePath(fileId);
             if (string.IsNullOrEmpty(filePath))
             {
                 spectrumResults.Add(new { fileId, error = "File not found in storage." });
@@ -293,7 +293,7 @@ public sealed class ToolExecutionService(
 
         foreach (var fileId in fileIds)
         {
-            var filePath = uploadAudioHandler.GetFilePath(fileId);
+            var filePath = audioFileRepository.GetFilePath(fileId);
             if (string.IsNullOrEmpty(filePath))
             {
                 cpbResults.Add(new { fileId, error = "File not found in storage." });
@@ -370,7 +370,7 @@ public sealed class ToolExecutionService(
 
         foreach (var fileId in fileIds)
         {
-            var filePath = uploadAudioHandler.GetFilePath(fileId);
+            var filePath = audioFileRepository.GetFilePath(fileId);
             if (string.IsNullOrEmpty(filePath))
             {
                 soundQualityResults.Add(new { fileId, error = "File not found in storage." });
@@ -433,7 +433,7 @@ public sealed class ToolExecutionService(
             return BuildFailureOutput("run_findings", "MISSING_FILE_ID", "fileId argument is required.");
         }
 
-        var filePath = uploadAudioHandler.GetFilePath(fileId);
+        var filePath = audioFileRepository.GetFilePath(fileId);
         if (string.IsNullOrEmpty(filePath))
         {
             return BuildFailureOutput("run_findings", "FILE_NOT_FOUND", $"File '{fileId}' not found in storage.");

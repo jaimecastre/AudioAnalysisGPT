@@ -1,9 +1,10 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { ActionIcon, Badge, Group, Loader, Select, Text, Tooltip } from '@mantine/core';
-import { IconChartBar, IconChevronDown, IconChevronRight, IconX } from '@tabler/icons-react';
+import { IconArrowsMaximize, IconArrowsMinimize, IconChartBar, IconChevronDown, IconChevronRight, IconX } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
+import { cursorFrequencyHovered, cursorFrequencyCleared, cursorFrequencyHzSelector } from './analysisCursorSlice';
 import {
   cpbErrorSelector,
   cpbResultSelector,
@@ -32,6 +33,8 @@ interface CpbPanelProps {
   selectedFileId: string | null;
   onFileSelect: (panelId: string, fileId: string | null) => void;
   onClose: (panelId: string) => void;
+  isWide: boolean;
+  onToggleSpan: (panelId: string) => void;
 }
 
 export const CpbPanel = ({
@@ -40,6 +43,8 @@ export const CpbPanel = ({
   selectedFileId,
   onFileSelect,
   onClose,
+  isWide,
+  onToggleSpan,
 }: CpbPanelProps): JSX.Element => {
   const dispatch = useAppDispatch();
   const activeSelection = useAppSelector(activeSelectionSelector);
@@ -48,6 +53,7 @@ export const CpbPanel = ({
   const cpbError = useAppSelector(cpbErrorSelector);
   const cpbUserParameters = useAppSelector(cpbUserParametersSelector);
   const selectedChannelId = useAppSelector(cpbSelectedChannelIdSelector);
+  const linkedFrequencyHz = useAppSelector(cursorFrequencyHzSelector);
   const { runCpb } = useRunCpb();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -170,6 +176,9 @@ export const CpbPanel = ({
           {isRunning && <Loader size="xs" color="teal" />}
         </Group>
         <Group gap={2}>
+          <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => onToggleSpan(panelId)} aria-label={isWide ? 'Restore panel width' : 'Widen panel to full width'}>
+            {isWide ? <IconArrowsMinimize size={13} /> : <IconArrowsMaximize size={13} />}
+          </ActionIcon>
           <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setIsCollapsed((value) => !value)} aria-label={isCollapsed ? 'Expand CPB panel' : 'Collapse CPB panel'}>
             {isCollapsed ? <IconChevronRight size={13} /> : <IconChevronDown size={13} />}
           </ActionIcon>
@@ -193,19 +202,25 @@ export const CpbPanel = ({
         {effectiveFileId && cpbStatus !== 'error' && selectedChannel && (
           <>
             <div className={styles.chartWrap}>
-              <div className={styles.chart}>
+              <div className={styles.chart} onMouseLeave={() => dispatch(cursorFrequencyCleared())}>
                 {selectedChannel.bands.map((band) => {
                   const level = resolveBandLevel(band);
                   const percent = ceilingLevel > floorLevel
                     ? Math.max(0, Math.min(100, (level - floorLevel) / (ceilingLevel - floorLevel) * 100))
                     : 0;
+                  const isLinked = linkedFrequencyHz !== null
+                    && linkedFrequencyHz >= band.lowerFrequencyHz
+                    && linkedFrequencyHz < band.upperFrequencyHz;
                   return (
                     <Tooltip
                       key={band.label}
                       label={`${band.label} Hz: ${level.toFixed(1)} ${selectedChannel.dbUnit ?? 'dB'} (${band.lowerFrequencyHz.toFixed(1)}-${band.upperFrequencyHz.toFixed(1)} Hz)`}
                       withArrow
                     >
-                      <div className={styles.barColumn}>
+                      <div
+                        className={isLinked ? `${styles.barColumn} ${styles.barColumnLinked}` : styles.barColumn}
+                        onMouseEnter={() => dispatch(cursorFrequencyHovered(band.centerFrequencyHz))}
+                      >
                         <div className={styles.barTrack}>
                           <div className={styles.barFill} style={{ height: `${percent}%` }} />
                         </div>

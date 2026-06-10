@@ -1,40 +1,22 @@
 using FastEndpoints;
 using NAudio.Wave;
 using AcousticCanvas.Features.AudioUpload.Commands;
+using AcousticCanvas.Features.AudioUpload.Services;
 
 namespace AcousticCanvas.Features.AudioUpload.Handlers;
 
-public class UploadAudioHandler : CommandHandler<UploadAudioCommand, UploadAudioResult>
+public class UploadAudioHandler(AudioFileRepository audioFileRepository)
+    : CommandHandler<UploadAudioCommand, UploadAudioResult>
 {
-    private readonly string _storagePath;
-
-    public UploadAudioHandler()
-    {
-        _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "AudioStorage");
-        Directory.CreateDirectory(_storagePath);
-    }
-
     public override Task<UploadAudioResult> ExecuteAsync(UploadAudioCommand command, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         var fileId = Guid.NewGuid().ToString("N")[..12];
-        var storedFileName = $"{fileId}_{command.FileName}";
-        var storagePath = Path.Combine(_storagePath, storedFileName);
-
-        using (var fileOutput = File.Create(storagePath))
-        {
-            command.FileStream.CopyTo(fileOutput);
-        }
+        var storagePath = audioFileRepository.SaveFile(fileId, command.FileName, command.FileStream);
 
         var result = ReadAudioMetadata(storagePath, fileId, command.FileName);
         return Task.FromResult(result);
-    }
-
-    public string GetFilePath(string fileId)
-    {
-        var files = Directory.GetFiles(_storagePath, $"{fileId}_*");
-        return files.FirstOrDefault() ?? string.Empty;
     }
 
     private static UploadAudioResult ReadAudioMetadata(string filePath, string fileId, string fileName)

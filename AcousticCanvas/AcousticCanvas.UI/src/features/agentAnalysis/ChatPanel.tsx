@@ -1,5 +1,4 @@
 import type { JSX } from 'react';
-import { useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX,
@@ -7,21 +6,17 @@ import {
   IconPlayerStop, IconUser, IconWaveSquare, IconChartBar, IconFileSearch,
   IconVolume,
 } from '@tabler/icons-react';
-import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
-import { chatMessagesSelector, chatIsThinkingSelector, chatSelectedModelSelector, modelSelected } from './chatSlice';
 import type { ToolStep } from './chatSlice';
-import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
 import type { ChatMessage } from './chatSlice';
 import { AGENT_MODELS } from './utils/agentModels';
-import { agentArtifactsSelector, artifactFocused } from './agentWorkspaceSlice';
 import { ATTACH_ACCEPT } from './chatAttachments';
-import { useChatInput } from './useChatInput';
 import { AgentAnswerPanel } from './AgentAnswerPanel';
 import type { MentionCandidate } from './useChatInput';
 import type { AgentEvidenceItem } from './utils/evidenceFormatting';
 import { getEvidenceLabel } from './utils/evidenceFormatting';
 import { getEvidenceArtifactId } from './utils/evidenceArtifactMatching';
 import type { AgentArtifact } from './agentWorkspaceSlice';
+import { useChatPanel, useAssistantMessage, useSelectionChip } from './hooks/useChatPanel';
 import styles from './ChatPanel.module.scss';
 
 const SUGGESTION_PROMPTS: { text: string; icon: typeof IconWaveSquare }[] = [
@@ -128,18 +123,10 @@ function EvidenceCitations({
 }
 
 function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
-  const dispatch = useAppDispatch();
-  const artifacts = useAppSelector(agentArtifactsSelector);
+  const { artifacts, handleEvidenceClick } = useAssistantMessage();
   const parsedText = parseEvidenceTokens(message.content);
   const isThinkingMessage = message.status === 'thinking';
   const isFailedMessage = message.status === 'failed';
-
-  const handleEvidenceClick = (evidenceItem: AgentEvidenceItem): void => {
-    const artifactId = getEvidenceArtifactId(evidenceItem, artifacts);
-    if (artifactId !== null) {
-      dispatch(artifactFocused(artifactId));
-    }
-  };
 
   return (
     <div className={`${styles.messageWrapper} ${styles.assistant}`}>
@@ -282,8 +269,7 @@ function AnalysisSteps({ steps, confidence }: { steps: ToolStep[]; confidence?: 
 }
 
 function SelectionChip({ onExplain }: { onExplain: () => void }): JSX.Element | null {
-  const activeSelection = useAppSelector(activeSelectionSelector);
-  const hasValidSelection = activeSelection !== null && activeSelection.endSeconds > activeSelection.startSeconds;
+  const { activeSelection, hasValidSelection } = useSelectionChip();
 
   if (!hasValidSelection || !activeSelection) return null;
 
@@ -368,12 +354,14 @@ function MentionDropdown({
 }
 
 export function ChatPanel(): JSX.Element {
-  const messages = useAppSelector(chatMessagesSelector);
-  const isThinking = useAppSelector(chatIsThinkingSelector);
-  const selectedModel = useAppSelector(chatSelectedModelSelector);
-  const dispatch = useAppDispatch();
-
   const {
+    messages,
+    isThinking,
+    selectedModel,
+    messageListRef,
+    hasMessages,
+    agentPanelResponse,
+    handleModelChange,
     inputValue,
     setInputValue,
     pendingAttachments,
@@ -396,23 +384,9 @@ export function ChatPanel(): JSX.Element {
     handleExplainSelection,
     cancelAnalysis,
     agentAskStatus,
-    agentAskResponse,
     agentAskError,
     handleClarificationReply,
-  } = useChatInput(isThinking);
-
-  const messageListRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const messageList = messageListRef.current;
-    if (!messageList) return;
-    messageList.scrollTop = messageList.scrollHeight;
-  }, [messages, isThinking]);
-
-  const hasMessages = messages.length > 0;
-  const agentPanelResponse = agentAskResponse !== null && agentAskResponse.toolExecutions.length === 0
-    ? agentAskResponse
-    : null;
+  } = useChatPanel();
 
   return (
     <div className={styles.panel}>
@@ -534,7 +508,7 @@ export function ChatPanel(): JSX.Element {
             <select
               className={styles.modelSelect}
               value={selectedModel}
-              onChange={(e) => dispatch(modelSelected(e.target.value))}
+              onChange={(e) => handleModelChange(e.target.value)}
               disabled={isThinking}
               aria-label="Select AI model"
             >
