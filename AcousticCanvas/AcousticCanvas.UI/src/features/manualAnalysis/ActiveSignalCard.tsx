@@ -4,12 +4,14 @@ import { IconX } from '@tabler/icons-react';
 import { WaveSurferDisplay } from '../waveform/WaveSurferDisplay';
 import type { WaveSurferDisplayRef } from '../waveform/WaveSurferDisplay';
 import { ComparisonView } from '../comparison/ComparisonView';
+import { BatchBenchmarkPanel } from '../batchBenchmark/BatchBenchmarkPanel';
 import { FindingsPanel } from '../findings/FindingsPanel';
 import { SpectrogramPanel } from '../analysis/SpectrogramPanel';
 import { SpectrumPanel } from '../analysis/SpectrumPanel';
 import { CpbPanel } from '../analysis/CpbPanel';
 import { SoundQualityPanel } from '../analysis/SoundQualityPanel';
 import type { CompareResult } from '../agent/agentToolTypes';
+import type { BatchBenchmarkResult } from '../batchBenchmark/batchBenchmarkTypes';
 import type { AudioFile } from '../../store/projectState';
 import type { WaveformSelection } from '../waveform/waveformSelectionSlice';
 import styles from './ActiveSignalCard.module.scss';
@@ -31,12 +33,17 @@ interface ActiveSignalCardProps {
   manualCompareResult: CompareResult | null;
   manualCompareStatus: 'idle' | 'loading' | 'error';
   manualCompareError: string | null;
+  manualBenchmarkResult: BatchBenchmarkResult | null;
+  manualBenchmarkStatus: 'idle' | 'loading' | 'error';
+  manualBenchmarkError: string | null;
+  isBenchmarkPanelOpen: boolean;
   isFindingsPanelOpen: boolean;
   onWaveSurferReady: (audioDuration: number) => void;
   onWaveSurferTimeUpdate: (time: number) => void;
   onWaveSurferFinish: () => void;
   onWaveSurferUserSelectionChange: (startSeconds: number, endSeconds: number) => void;
   onCloseComparisonPanel: () => void;
+  onCloseBenchmarkPanel: () => void;
   onCloseFindingsPanel: () => void;
   onToolPanelFileSelect: (panelId: string, fileId: string | null) => void;
   onToolPanelClose: (panelId: string) => void;
@@ -54,12 +61,17 @@ export function ActiveSignalCard({
   manualCompareResult,
   manualCompareStatus,
   manualCompareError,
+  manualBenchmarkResult,
+  manualBenchmarkStatus,
+  manualBenchmarkError,
+  isBenchmarkPanelOpen,
   isFindingsPanelOpen,
   onWaveSurferReady,
   onWaveSurferTimeUpdate,
   onWaveSurferFinish,
   onWaveSurferUserSelectionChange,
   onCloseComparisonPanel,
+  onCloseBenchmarkPanel,
   onCloseFindingsPanel,
   onToolPanelFileSelect,
   onToolPanelClose,
@@ -101,6 +113,15 @@ export function ActiveSignalCard({
           )}
           <ComparisonView result={manualCompareResult} />
         </div>
+      )}
+
+      {isBenchmarkPanelOpen && (
+        <BatchBenchmarkPanel
+          result={manualBenchmarkResult}
+          status={manualBenchmarkStatus}
+          error={manualBenchmarkError}
+          onClose={onCloseBenchmarkPanel}
+        />
       )}
 
       {isFindingsPanelOpen && (

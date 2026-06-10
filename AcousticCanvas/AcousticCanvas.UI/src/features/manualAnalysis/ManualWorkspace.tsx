@@ -13,6 +13,8 @@ import { ActionIcon, Tooltip } from '@mantine/core';
 import { IconRepeat, IconX, IconUpload, IconRobot, IconSelectAll } from '@tabler/icons-react';
 import { callCompareTool } from '../agent/services/compareToolService';
 import type { CompareResult } from '../agent/agentToolTypes';
+import { callBatchBenchmarkTool } from '../batchBenchmark/services/batchBenchmarkService';
+import type { BatchBenchmarkResult } from '../batchBenchmark/batchBenchmarkTypes';
 import { RightSidebar } from './RightSidebar';
 import { FileListPanel } from './FileListPanel';
 import { ActiveSignalCard } from './ActiveSignalCard';
@@ -70,6 +72,10 @@ export const ManualWorkspace = (): JSX.Element => {
   const [manualCompareResult, setManualCompareResult] = useState<CompareResult | null>(null);
   const [manualCompareStatus, setManualCompareStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [manualCompareError, setManualCompareError] = useState<string | null>(null);
+  const [manualBenchmarkResult, setManualBenchmarkResult] = useState<BatchBenchmarkResult | null>(null);
+  const [manualBenchmarkStatus, setManualBenchmarkStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [manualBenchmarkError, setManualBenchmarkError] = useState<string | null>(null);
+  const [isBenchmarkPanelOpen, setIsBenchmarkPanelOpen] = useState(false);
   const [isFindingsPanelOpen, setIsFindingsPanelOpen] = useState(false);
 
   const handleFilesSelected = async (files: File[]): Promise<void> => {
@@ -206,6 +212,36 @@ export const ManualWorkspace = (): JSX.Element => {
     setManualCompareError(null);
   };
 
+  const handleRunManualBenchmark = async (): Promise<void> => {
+    if (files.length < 2) return;
+
+    setIsBenchmarkPanelOpen(true);
+    setManualBenchmarkStatus('loading');
+    setManualBenchmarkError(null);
+
+    try {
+      const result = await callBatchBenchmarkTool({
+        fileIds: files.map((file) => file.id),
+        startSeconds: activeSelection?.startSeconds ?? null,
+        endSeconds: activeSelection?.endSeconds ?? null,
+        includeSoundQuality: true,
+      });
+      setManualBenchmarkResult(result);
+      setManualBenchmarkStatus('idle');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Benchmark failed';
+      setManualBenchmarkError(errorMessage);
+      setManualBenchmarkStatus('error');
+    }
+  };
+
+  const handleCloseBenchmarkPanel = (): void => {
+    setManualBenchmarkResult(null);
+    setManualBenchmarkStatus('idle');
+    setManualBenchmarkError(null);
+    setIsBenchmarkPanelOpen(false);
+  };
+
   const handleOpenFindingsPanel = (): void => {
     setIsFindingsPanelOpen(true);
   };
@@ -240,6 +276,9 @@ export const ManualWorkspace = (): JSX.Element => {
             hasComparisonPanel={manualCompareResult !== null}
             isCompareLoading={manualCompareStatus === 'loading'}
             onRunCompare={handleRunManualCompare}
+            hasBenchmarkPanel={isBenchmarkPanelOpen}
+            isBenchmarkLoading={manualBenchmarkStatus === 'loading'}
+            onRunBenchmark={handleRunManualBenchmark}
             isFindingsPanelOpen={isFindingsPanelOpen}
             onOpenFindings={handleOpenFindingsPanel}
             width={leftPanelWidth}
@@ -316,12 +355,17 @@ export const ManualWorkspace = (): JSX.Element => {
                       manualCompareResult={manualCompareResult}
                       manualCompareStatus={manualCompareStatus}
                       manualCompareError={manualCompareError}
+                      manualBenchmarkResult={manualBenchmarkResult}
+                      manualBenchmarkStatus={manualBenchmarkStatus}
+                      manualBenchmarkError={manualBenchmarkError}
+                      isBenchmarkPanelOpen={isBenchmarkPanelOpen}
                       isFindingsPanelOpen={isFindingsPanelOpen}
                       onWaveSurferReady={handleWaveSurferReady}
                       onWaveSurferTimeUpdate={handleWaveSurferTimeUpdate}
                       onWaveSurferFinish={handleWaveSurferFinish}
                       onWaveSurferUserSelectionChange={handleWaveSurferUserSelectionChange}
                       onCloseComparisonPanel={handleCloseComparisonPanel}
+                      onCloseBenchmarkPanel={handleCloseBenchmarkPanel}
                       onCloseFindingsPanel={handleCloseFindingsPanel}
                       onToolPanelFileSelect={handleToolPanelFileSelect}
                       onToolPanelClose={handleToolPanelClose}

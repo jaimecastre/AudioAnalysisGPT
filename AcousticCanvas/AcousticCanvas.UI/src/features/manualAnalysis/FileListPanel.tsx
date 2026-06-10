@@ -14,6 +14,7 @@ import {
   IconLoader2,
   IconBug,
   IconSparkles,
+  IconTable,
 } from '@tabler/icons-react';
 import type { AudioFile } from '../../store/projectState';
 import styles from './FileListPanel.module.scss';
@@ -29,6 +30,7 @@ interface FileListPanelProps {
   onAddCpb: () => void;
   onAddSoundQuality: () => void;
   onRunCompare: () => void;
+  onRunBenchmark: () => void;
   onOpenFindings: () => void;
   hasSpectrogramPanel: boolean;
   hasSpectrumPanel: boolean;
@@ -36,6 +38,8 @@ interface FileListPanelProps {
   hasSoundQualityPanel: boolean;
   hasComparisonPanel: boolean;
   isCompareLoading: boolean;
+  hasBenchmarkPanel: boolean;
+  isBenchmarkLoading: boolean;
   isFindingsPanelOpen: boolean;
   width: number;
 }
@@ -51,6 +55,7 @@ export function FileListPanel({
   onAddCpb,
   onAddSoundQuality,
   onRunCompare,
+  onRunBenchmark,
   onOpenFindings,
   hasSpectrogramPanel,
   hasSpectrumPanel,
@@ -58,6 +63,8 @@ export function FileListPanel({
   hasSoundQualityPanel,
   hasComparisonPanel,
   isCompareLoading,
+  hasBenchmarkPanel,
+  isBenchmarkLoading,
   isFindingsPanelOpen,
   width,
 }: FileListPanelProps): JSX.Element {
@@ -203,6 +210,24 @@ export function FileListPanel({
                 {isCompareLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconGitCompare size={18} />}
               </span>
               <Text size="xs" c="dimmed">A/B compare</Text>
+            </button>
+          </Tooltip>
+          <Tooltip
+            label={!canCompare ? 'Load at least 2 files to benchmark' : hasBenchmarkPanel ? 'Benchmark already open' : 'Benchmark all loaded files'}
+            withArrow
+            position="right"
+          >
+            <button
+              type="button"
+              className={`${styles.toolRow} ${styles.toolRowBlue}`}
+              onClick={onRunBenchmark}
+              disabled={!canCompare || hasBenchmarkPanel || isBenchmarkLoading}
+              aria-label="Run batch benchmark"
+            >
+              <span className={styles.toolRowIcon}>
+                {isBenchmarkLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconTable size={18} />}
+              </span>
+              <Text size="xs" c="dimmed">Benchmark</Text>
             </button>
           </Tooltip>
           <Tooltip

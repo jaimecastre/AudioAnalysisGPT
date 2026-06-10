@@ -28,6 +28,7 @@ builder.Services.AddSingleton<ISoundQualityClient, PythonSoundQualityClient>();
 builder.Services.AddSingleton<SoundQualityAnalysisService>();
 builder.Services.AddSingleton<RunSoundQualityHandler>();
 builder.Services.AddSingleton<RunCompareHandler>();
+builder.Services.AddSingleton<RunBatchBenchmarkHandler>();
 builder.Services.AddSingleton<FindEventsHandler>();
 builder.Services.AddSingleton<RunFindingsHandler>();
 builder.Services.AddSingleton<GetWaveformHandler>();

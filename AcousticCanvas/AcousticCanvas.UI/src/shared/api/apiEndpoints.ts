@@ -12,6 +12,7 @@ export const API_ENDPOINTS = {
     RUN_SOUND_QUALITY: 'api/analysis/sound-quality',
     RUN_AGENT_ANALYSIS: 'api/analysis/run',
     RUN_COMPARE: 'api/analysis/compare',
+    RUN_BATCH_BENCHMARK: 'api/analysis/batch-benchmark',
     RUN_FIND: 'api/analysis/find',
     RUN_FINDINGS: 'api/analysis/findings',
   },
