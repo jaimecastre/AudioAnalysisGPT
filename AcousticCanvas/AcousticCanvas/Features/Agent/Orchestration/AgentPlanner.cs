@@ -15,7 +15,8 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         string userQuestion,
         IReadOnlyList<string> selectedFileIds,
         IReadOnlyList<string> selectedFileNames,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? modelOverride = null)
     {
         var availableToolsSummary = AgentToolRegistry.BuildToolListSummaryForPrompt();
         var systemPrompt = AgentPromptBuilder.BuildPlannerSystemPrompt(availableToolsSummary, selectedFileIds, selectedFileNames);
@@ -33,7 +34,7 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
             MaxTokens = 512,
         };
 
-        var openAiResponse = await openAiChatService.CompleteAsync(plannerRequest, cancellationToken);
+        var openAiResponse = await openAiChatService.CompleteAsync(plannerRequest, cancellationToken, modelOverride);
 
         var rawContent = openAiResponse.Choices[0].Message.Content ?? string.Empty;
         var cleanedContent = StripMarkdownCodeFences(rawContent);
@@ -63,7 +64,8 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
     public async Task<FinalAnswerResponse> GenerateFinalAnswerAsync(
         string userQuestion,
         EvidencePackage evidencePackage,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? modelOverride = null)
     {
         var systemPrompt = AgentPromptBuilder.BuildFinalAnswerSystemPrompt();
 
@@ -79,7 +81,7 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
             Evidence package:
             {evidenceJson}
 
-            Explain the evidence clearly. Reference the evidenceId fields. Return valid JSON only.
+            Explain the evidence clearly. Put evidenceId values only in the evidenceReferences array — never in the answer text. Do not write an "Evidence:" section. Return valid JSON only.
             """;
 
         var answerRequest = new ChatCompletionRequest
@@ -93,7 +95,7 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
             MaxTokens = 1024,
         };
 
-        var openAiResponse = await openAiChatService.CompleteAsync(answerRequest, cancellationToken);
+        var openAiResponse = await openAiChatService.CompleteAsync(answerRequest, cancellationToken, modelOverride);
 
         var rawContent = openAiResponse.Choices[0].Message.Content ?? string.Empty;
         var cleanedContent = StripMarkdownCodeFences(rawContent);

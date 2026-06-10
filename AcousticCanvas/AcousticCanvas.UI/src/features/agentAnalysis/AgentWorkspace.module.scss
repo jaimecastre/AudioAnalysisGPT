@@ -1,6 +1,6 @@
 .workspace {
   display: grid;
-  grid-template-columns: 180px 1fr var(--resizable-sidebar-width, 320px);
+  grid-template-columns: 1fr var(--resizable-sidebar-width, 320px);
   grid-template-rows: 100%;
   height: 100%;
   overflow: hidden;

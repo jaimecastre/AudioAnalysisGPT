@@ -10,7 +10,7 @@ interface UseResizableSidebarOptions {
 interface UseResizableSidebarReturn {
   panelWidth: number;
   handleResizePointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
-  containerRef: RefObject<HTMLDivElement>;
+  containerRef: RefObject<HTMLDivElement | null>;
 }
 
 export const useResizableSidebar = ({

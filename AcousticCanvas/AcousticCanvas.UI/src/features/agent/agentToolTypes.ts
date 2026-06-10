@@ -183,6 +183,22 @@ export type CompareCpbBand = {
   weightingMethod: string;
 };
 
+export type CompareSoundQuality = {
+  loudnessSone: number;
+  sharpnessAcum: number;
+  roughnessAsper: number;
+  method: string;
+};
+
+export type CompareSoundQualityDelta = {
+  loudnessDeltaSone: number;
+  sharpnessDeltaAcum: number;
+  roughnessDeltaAsper: number;
+  louderFileId: string;
+  sharperFileId: string;
+  rougherFileId: string;
+};
+
 export type CompareFileSummary = {
   fileId: string;
   fileName: string;
@@ -196,6 +212,8 @@ export type CompareFileSummary = {
   spectrumCurve: CompareSpectrumCurve;
   bandEnergies: CompareBandEnergy[];
   cpbBands: CompareCpbBand[];
+  soundQuality?: CompareSoundQuality;
+  soundQualityUnavailableReason?: string;
 };
 
 export type PairwiseDiff = {
@@ -212,6 +230,8 @@ export type PairwiseDiff = {
   spectrumDelta: CompareSpectrumDelta;
   bandEnergyDeltas: CompareBandEnergy[];
   cpbBandDeltas: CompareCpbBand[];
+  soundQualityDelta?: CompareSoundQualityDelta;
+  soundQualityUnavailableReason?: string;
 };
 
 export type CompareResult = {

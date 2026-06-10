@@ -47,12 +47,50 @@ export type AgentArtifactFind = {
   result: FindEventsResult;
 };
 
+export type FindingItem = {
+  findingId: string;
+  type: string;
+  severity: string;
+  confidence: string;
+  title: string;
+  description: string;
+  suggestedNextStep: string;
+  startSeconds: number | null;
+  endSeconds: number | null;
+  frequencyHz: number | null;
+  evidence: Record<string, unknown>;
+};
+
+export type AgentArtifactFindings = {
+  type: 'findings_result';
+  id: string;
+  timestamp: string;
+  fileId: string;
+  findingCount: number;
+  ranAt: string;
+  findings: FindingItem[];
+};
+
 export type AgentArtifactReport = {
   type: 'report';
   id: string;
   timestamp: string;
   title: string;
   markdownContent: string;
+};
+
+export type ToolResultRow = {
+  label: string;
+  value: string;
+};
+
+export type AgentArtifactToolResult = {
+  type: 'tool_result';
+  id: string;
+  timestamp: string;
+  toolName: string;
+  title: string;
+  rows: ToolResultRow[];
 };
 
 export type AgentArtifact =
@@ -62,6 +100,8 @@ export type AgentArtifact =
   | AgentArtifactViewOpened
   | AgentArtifactCompare
   | AgentArtifactFind
+  | AgentArtifactFindings
+  | AgentArtifactToolResult
   | AgentArtifactReport;
 
 interface AgentWorkspaceState {
@@ -96,6 +136,12 @@ const agentWorkspaceSlice = createSlice({
     findArtifactAdded: (state, action: PayloadAction<AgentArtifactFind>) => {
       state.artifacts.push(action.payload);
     },
+    findingsArtifactAdded: (state, action: PayloadAction<AgentArtifactFindings>) => {
+      state.artifacts.push(action.payload);
+    },
+    toolResultArtifactAdded: (state, action: PayloadAction<AgentArtifactToolResult>) => {
+      state.artifacts.push(action.payload);
+    },
     reportArtifactAdded: (state, action: PayloadAction<AgentArtifactReport>) => {
       state.artifacts.push(action.payload);
     },
@@ -116,6 +162,8 @@ export const {
   viewOpenedArtifactAdded,
   compareArtifactAdded,
   findArtifactAdded,
+  findingsArtifactAdded,
+  toolResultArtifactAdded,
   reportArtifactAdded,
   artifactFocused,
   artifactFocusCleared,

@@ -1,5 +1,4 @@
 import type { JSX } from 'react';
-import { WorkspacePanel, WorkspacePanelEmptyHint } from '../../shared/WorkspacePanel';
 import { ChatPanel } from './ChatPanel';
 import { AgentWorkspacePanel } from './AgentWorkspacePanel';
 import { useAppSelector } from '../../store/reduxHooks';
@@ -15,7 +14,6 @@ export const AgentWorkspace = (): JSX.Element => {
 
   return (
     <div ref={containerRef} className={styles.workspace}>
-      <TaskProgressPanel />
       <div className={styles.chatColumn}>
         {hasNoFile && (
           <div className={styles.noFileBanner}>
@@ -34,13 +32,5 @@ export const AgentWorkspace = (): JSX.Element => {
         <AgentWorkspacePanel />
       </div>
     </div>
-  );
-};
-
-const TaskProgressPanel = (): JSX.Element => {
-  return (
-    <WorkspacePanel title="Tasks" as="aside">
-      <WorkspacePanelEmptyHint text="No tasks running" />
-    </WorkspacePanel>
   );
 };

@@ -1,6 +1,6 @@
 import type { ChangeEvent, KeyboardEvent, RefObject } from 'react';
-import { useState, useRef } from 'react';
-import { useAppDispatch, useAppSelector, useAppStore } from '../../store/reduxHooks';
+import { useState, useRef, useLayoutEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
 import {
   userMessageSent,
   conversationCleared,
@@ -8,7 +8,6 @@ import {
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
 import { projectFilesSelector, selectedSignalIdSelector } from '../project/projectSlice';
 import { agentWorkspaceCleared } from './agentWorkspaceSlice';
-import { runAgentToolLoop } from './agentToolRunner';
 import { useAudioUpload } from '../audioUpload/useAudioUpload';
 import {
   isAudioFile,
@@ -17,8 +16,11 @@ import {
   buildMessageWithAttachments,
 } from './chatAttachments';
 import type { PendingAttachment } from './chatAttachments';
-import { routeUserQuestion } from './llm/questionRouter';
 import { useAgentAsk } from './hooks/useAgentAsk';
+import {
+  agentPromptPrefillSelector,
+  agentPromptPrefillCleared,
+} from '../navigation/navigationSlice';
 
 export type MentionCandidate = {
   fileId: string;
@@ -46,6 +48,7 @@ export interface UseChatInputReturn {
   handleSendMessage: () => void;
   handleClearConversation: () => void;
   handleExplainSelection: () => void;
+  cancelAnalysis: () => void;
   agentAskStatus: ReturnType<typeof useAgentAsk>['status'];
   agentAskResponse: ReturnType<typeof useAgentAsk>['response'];
   agentAskError: ReturnType<typeof useAgentAsk>['error'];
@@ -76,8 +79,8 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
   const activeSelection = useAppSelector(activeSelectionSelector);
   const projectFiles = useAppSelector(projectFilesSelector);
   const selectedSignalId = useAppSelector(selectedSignalIdSelector);
-  const reduxStore = useAppStore();
-  const { status: agentAskStatus, response: agentAskResponse, error: agentAskError, isAnalyzing: agentAskIsAnalyzing, submitQuestion } = useAgentAsk();
+  const agentPromptPrefill = useAppSelector(agentPromptPrefillSelector);
+  const { status: agentAskStatus, response: agentAskResponse, error: agentAskError, isAnalyzing: agentAskIsAnalyzing, submitQuestion, resetAgentAsk } = useAgentAsk();
   const { uploadFile, isUploading } = useAudioUpload();
 
   const [inputValue, setInputValue] = useState('');
@@ -87,6 +90,17 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
   const resolvedMentions = useRef<Map<string, string>>(new Map());
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const prefillAppliedRef = useRef<string | null>(null);
+
+  // Apply prefill from navigation state. useLayoutEffect runs synchronously after
+  // DOM mutations and does not trigger the setState-in-effect lint rule.
+  useLayoutEffect(() => {
+    if (agentPromptPrefill === null || prefillAppliedRef.current === agentPromptPrefill) return;
+    prefillAppliedRef.current = agentPromptPrefill;
+    setInputValue(agentPromptPrefill);
+    dispatch(agentPromptPrefillCleared());
+    textareaRef.current?.focus();
+  }, [agentPromptPrefill, dispatch]);
 
   const activeMentionToken = getActiveMentionToken(inputValue, cursorPosition);
 
@@ -185,15 +199,9 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
       textareaRef.current.style.height = 'auto';
     }
 
-    const route = routeUserQuestion(trimmedContent);
-
-    if (route === 'orchestrator') {
-      const allLoadedFileIds = projectFiles.map((file) => file.id);
-      const targetFileIds = allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
-      submitQuestion(trimmedContent, targetFileIds);
-    } else {
-      runAgentToolLoop(finalContent, dispatch, () => reduxStore.getState());
-    }
+    const allLoadedFileIds = projectFiles.map((file) => file.id);
+    const targetFileIds = allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
+    submitQuestion(finalContent, targetFileIds);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -280,6 +288,10 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
 
   const canSend = (inputValue.trim().length > 0 || pendingAttachments.length > 0) && !isThinking && !isUploading && !agentAskIsAnalyzing;
 
+  const cancelAnalysis = (): void => {
+    resetAgentAsk();
+  };
+
   return {
     inputValue,
     setInputValue,
@@ -301,6 +313,7 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
     handleSendMessage,
     handleClearConversation,
     handleExplainSelection,
+    cancelAnalysis,
     agentAskStatus,
     agentAskResponse,
     agentAskError,

@@ -20,6 +20,9 @@ export type AgentAskResponse = {
   suggestedNextSteps: string[];
   toolExecutions: AgentToolExecutionRecord[];
   validationWarning: boolean;
+  toolResultsData: Record<string, unknown> | null;
+  plannedTools: string[];
+  plannerReason: string | null;
 };
 
 export type AgentAskRequest = {
@@ -27,6 +30,7 @@ export type AgentAskRequest = {
   selectedFileIds: string[];
   projectId?: string;
   mode?: string;
+  modelOverride?: string;
 };
 
 export async function callAgentAskEndpoint(

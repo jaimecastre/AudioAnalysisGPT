@@ -11,6 +11,8 @@ import type {
   AgentArtifactSelection,
   AgentArtifactCompare,
   AgentArtifactFind,
+  AgentArtifactFindings,
+  AgentArtifactToolResult,
   AgentArtifactReport,
 } from './agentWorkspaceSlice';
 import { setActiveMode } from '../navigation/navigationSlice';
@@ -220,6 +222,53 @@ function SelectionCard({ artifact }: { artifact: AgentArtifactSelection }): JSX.
   );
 }
 
+function getSeverityClass(severity: string): string {
+  if (severity === 'high') return styles.severityHigh;
+  if (severity === 'medium') return styles.severityMedium;
+  return styles.severityLow;
+}
+
+function FindingsCard({ artifact }: { artifact: AgentArtifactFindings }): JSX.Element {
+  const [expanded, setExpanded] = useState(false);
+  const focusedId = useAppSelector(focusedArtifactIdSelector);
+
+  useEffect(() => {
+    if (focusedId === artifact.id) setExpanded(true);
+  }, [focusedId, artifact.id]);
+
+  return (
+    <div className={`${styles.card} ${styles.cardFindings}`}>
+      <div className={styles.cardHeader}>
+        <span className={`${styles.cardKindTag} ${styles.cardKindTagFindings}`}>Findings</span>
+        <span className={styles.cardTimestamp}>{formatTimestamp(artifact.timestamp)}</span>
+      </div>
+      <div className={styles.cardBody}>
+        <div className={styles.metricRow}>
+          <span className={styles.metricLabel}>issues found</span>
+          <span className={`${styles.metricValue} ${styles.metricValueHighlight}`}>{artifact.findingCount}</span>
+        </div>
+        {!expanded && (
+          <div className={styles.findingsCollapsedHint}>Click the Findings badge in the chat to see details</div>
+        )}
+        {expanded && artifact.findings.map((f) => (
+          <div key={f.findingId} className={styles.findingRow}>
+            <div className={styles.findingRowHeader}>
+              <span className={`${styles.severityBadge} ${getSeverityClass(f.severity)}`}>{f.severity}</span>
+              <span className={styles.findingType}>{f.type.replace(/_/g, ' ')}</span>
+              {f.startSeconds !== null && f.endSeconds !== null && (
+                <span className={styles.findingTime}>{f.startSeconds.toFixed(2)}s&ndash;{f.endSeconds.toFixed(2)}s</span>
+              )}
+              <span className={styles.findingConf}>{f.confidence}</span>
+            </div>
+            <div className={styles.findingTitle}>{f.title}</div>
+            <div className={styles.findingDesc}>{f.description}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function FindCard({ artifact }: { artifact: AgentArtifactFind }): JSX.Element {
   const result = artifact.result;
   const kindLabel = result.kind
@@ -260,6 +309,39 @@ function FindCard({ artifact }: { artifact: AgentArtifactFind }): JSX.Element {
         )}
       </div>
       <RawDataDrawer data={result} />
+    </div>
+  );
+}
+
+function ToolResultCard({ artifact }: { artifact: AgentArtifactToolResult }): JSX.Element {
+  const [expanded, setExpanded] = useState(false);
+  const focusedId = useAppSelector(focusedArtifactIdSelector);
+
+  useEffect(() => {
+    if (focusedId === artifact.id) setExpanded(true);
+  }, [focusedId, artifact.id]);
+
+  return (
+    <div className={`${styles.card} ${styles.cardToolResult}`}>
+      <div className={styles.cardHeader}>
+        <span className={`${styles.cardKindTag} ${styles.cardKindTagToolResult}`}>{artifact.title}</span>
+        <span className={styles.cardTimestamp}>{formatTimestamp(artifact.timestamp)}</span>
+      </div>
+      {!expanded && (
+        <div className={styles.cardBody}>
+          <div className={styles.findingsCollapsedHint}>Click the badge in the chat to see details</div>
+        </div>
+      )}
+      {expanded && (
+        <div className={styles.cardBody}>
+          {artifact.rows.map((row, i) => (
+            <div key={i} className={styles.metricRow}>
+              <span className={styles.metricLabel}>{row.label}</span>
+              <span className={styles.metricValue}>{row.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -312,6 +394,12 @@ function ArtifactCard({ artifact }: { artifact: AgentArtifact }): JSX.Element {
   }
   if (artifact.type === 'find_result') {
     return <FindCard artifact={artifact} />;
+  }
+  if (artifact.type === 'findings_result') {
+    return <FindingsCard artifact={artifact} />;
+  }
+  if (artifact.type === 'tool_result') {
+    return <ToolResultCard artifact={artifact} />;
   }
   if (artifact.type === 'report') {
     return <ReportCard artifact={artifact} />;

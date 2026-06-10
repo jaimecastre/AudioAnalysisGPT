@@ -39,22 +39,44 @@ public sealed class OpenAiChatService
         }
     }
 
-    public async Task<ChatCompletionResponse> CompleteAsync(ChatCompletionRequest request, CancellationToken ct)
+    // Reasoning models use max_completion_tokens and do not support temperature.
+    private static readonly HashSet<string> ReasoningModels =
+    [
+        "o1", "o1-mini", "o1-preview",
+        "o3", "o3-mini",
+        "o4-mini",
+    ];
+
+    public async Task<ChatCompletionResponse> CompleteAsync(
+        ChatCompletionRequest request,
+        CancellationToken ct,
+        string? modelOverride = null)
     {
         if (string.IsNullOrWhiteSpace(_apiKey))
         {
             throw new InvalidOperationException("OpenAI:ApiKey is not configured. Set it in appsettings.json, user secrets, or the OPENAI_API_KEY backend environment variable.");
         }
 
+        var effectiveModel = !string.IsNullOrWhiteSpace(modelOverride) ? modelOverride : _model;
+        var isReasoning = ReasoningModels.Contains(effectiveModel);
+
         var messages = EnsureSystemPrompt(request.Messages);
 
         var payload = new Dictionary<string, object?>
         {
-            ["model"] = _model,
+            ["model"] = effectiveModel,
             ["messages"] = messages,
-            ["temperature"] = request.Temperature ?? 0.2,
-            ["max_tokens"] = request.MaxTokens ?? 1024,
         };
+
+        if (isReasoning)
+        {
+            payload["max_completion_tokens"] = request.MaxTokens ?? 1024;
+        }
+        else
+        {
+            payload["temperature"] = request.Temperature ?? 0.2;
+            payload["max_tokens"] = request.MaxTokens ?? 1024;
+        }
 
         if (request.Tools is { Count: > 0 })
         {

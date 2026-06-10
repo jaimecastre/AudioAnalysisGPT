@@ -91,6 +91,10 @@ public static class EvidencePackageBuilder
         {
             ExtractSoundQualityEvidence(parsedData, evidenceItems, fileIdToNameMap);
         }
+        else if (toolOutput.ToolName == "run_findings")
+        {
+            ExtractFindingsEvidence(parsedData, evidenceItems, fileIdToNameMap);
+        }
         else if (toolOutput.ToolName == "get_metadata")
         {
             ExtractMetadataEvidence(parsedData, evidenceItems, fileIdToNameMap);
@@ -159,6 +163,10 @@ public static class EvidencePackageBuilder
                 Data = evidenceData,
             });
         }
+
+        // When ≥2 files were analysed, emit a pairwise comparison evidence item so the agent
+        // can cite level/dynamic differences explicitly.
+        TryEmitBasicMetricsComparisonEvidence(resultsArray, evidenceItems, fileIdToNameMap);
     }
 
     private static void ExtractEventDetectionEvidence(
@@ -296,6 +304,10 @@ public static class EvidencePackageBuilder
                 Data = evidenceData,
             });
         }
+
+        // When ≥2 files were analysed, emit a pairwise comparison evidence item so the agent
+        // can cite spectral differences explicitly.
+        TryEmitSpectrumComparisonEvidence(resultsArray, evidenceItems, fileIdToNameMap);
     }
 
     private static void ExtractCpbEvidence(
@@ -492,6 +504,150 @@ public static class EvidencePackageBuilder
                 Data = evidenceData,
             });
         }
+
+        // When ≥2 files were analysed, also emit a pairwise comparison evidence item so the agent
+        // can cite loudness/sharpness/roughness deltas as benchmark evidence.
+        TryEmitSoundQualityComparisonEvidence(resultsArray, evidenceItems, fileIdToNameMap);
+    }
+
+    private static void TryEmitSoundQualityComparisonEvidence(
+        JsonElement resultsArray,
+        List<EvidenceItem> evidenceItems,
+        Dictionary<string, string> fileIdToNameMap)
+    {
+        var fileResults = new List<(string FileId, double Loudness, double Sharpness, double Roughness)>();
+
+        foreach (var fileResult in resultsArray.EnumerateArray())
+        {
+            if (!fileResult.TryGetProperty("fileId", out var fileIdEl))
+            {
+                continue;
+            }
+
+            var fileId = fileIdEl.GetString() ?? "unknown";
+
+            if (!fileResult.TryGetProperty("loudness", out var loudnessEl)
+                || !loudnessEl.TryGetProperty("value", out var loudnessValEl))
+            {
+                continue;
+            }
+
+            if (!fileResult.TryGetProperty("sharpness", out var sharpnessEl)
+                || !sharpnessEl.TryGetProperty("value", out var sharpnessValEl))
+            {
+                continue;
+            }
+
+            if (!fileResult.TryGetProperty("roughness", out var roughnessEl)
+                || !roughnessEl.TryGetProperty("value", out var roughnessValEl))
+            {
+                continue;
+            }
+
+            fileResults.Add((fileId, loudnessValEl.GetDouble(), sharpnessValEl.GetDouble(), roughnessValEl.GetDouble()));
+        }
+
+        if (fileResults.Count < 2)
+        {
+            return;
+        }
+
+        var a = fileResults[0];
+        var b = fileResults[1];
+
+        var loudnessDelta = Math.Round(b.Loudness - a.Loudness, 3);
+        var sharpnessDelta = Math.Round(b.Sharpness - a.Sharpness, 4);
+        var roughnessDelta = Math.Round(b.Roughness - a.Roughness, 4);
+
+        var cmpEvidenceId = "ev_sq_cmp_" + a.FileId[..Math.Min(a.FileId.Length, 8)];
+
+        evidenceItems.Add(new EvidenceItem
+        {
+            EvidenceId = cmpEvidenceId,
+            Type = "sound_quality_comparison",
+            Data = new Dictionary<string, object?>
+            {
+                ["type"] = "sound_quality_comparison",
+                ["fileIdA"] = a.FileId,
+                ["fileNameA"] = fileIdToNameMap.GetValueOrDefault(a.FileId, a.FileId),
+                ["fileIdB"] = b.FileId,
+                ["fileNameB"] = fileIdToNameMap.GetValueOrDefault(b.FileId, b.FileId),
+                ["loudnessASone"] = Math.Round(a.Loudness, 3),
+                ["loudnessBSone"] = Math.Round(b.Loudness, 3),
+                ["loudnessDeltaSone"] = loudnessDelta,
+                ["louderFileId"] = a.Loudness >= b.Loudness ? a.FileId : b.FileId,
+                ["sharpnessAAcum"] = Math.Round(a.Sharpness, 4),
+                ["sharpnessBAcum"] = Math.Round(b.Sharpness, 4),
+                ["sharpnessDeltaAcum"] = sharpnessDelta,
+                ["sharperFileId"] = a.Sharpness >= b.Sharpness ? a.FileId : b.FileId,
+                ["roughnessAAsper"] = Math.Round(a.Roughness, 4),
+                ["roughnessBAsper"] = Math.Round(b.Roughness, 4),
+                ["roughnessDeltaAsper"] = roughnessDelta,
+                ["rougherFileId"] = a.Roughness >= b.Roughness ? a.FileId : b.FileId,
+            },
+        });
+    }
+
+    private static void ExtractFindingsEvidence(
+        JsonElement parsedData,
+        List<EvidenceItem> evidenceItems,
+        Dictionary<string, string> fileIdToNameMap)
+    {
+        var fileId = parsedData.TryGetProperty("fileId", out var fileIdEl) ? fileIdEl.GetString() ?? "unknown" : "unknown";
+        var findingCount = parsedData.TryGetProperty("findingCount", out var countEl) ? countEl.GetInt32() : 0;
+
+        var evidenceId = "ev_findings_" + fileId[..Math.Min(fileId.Length, 8)];
+
+        var evidenceData = new Dictionary<string, object?>
+        {
+            ["fileId"] = fileId,
+            ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
+            ["type"] = "findings",
+            ["findingCount"] = findingCount,
+        };
+
+        if (parsedData.TryGetProperty("findings", out var findingsArray))
+        {
+            var findingsList = new List<object?>();
+
+            foreach (var finding in findingsArray.EnumerateArray())
+            {
+                var findingType = finding.TryGetProperty("type", out var typeEl) ? typeEl.GetString() : null;
+                var severity = finding.TryGetProperty("severity", out var sevEl) ? sevEl.GetString() : null;
+                var confidence = finding.TryGetProperty("confidence", out var confEl) ? confEl.GetString() : null;
+                var title = finding.TryGetProperty("title", out var titleEl) ? titleEl.GetString() : null;
+                var description = finding.TryGetProperty("description", out var descEl) ? descEl.GetString() : null;
+                var suggestedNextStep = finding.TryGetProperty("suggestedNextStep", out var nextEl) ? nextEl.GetString() : null;
+                double? startSeconds = finding.TryGetProperty("startSeconds", out var startEl) && startEl.ValueKind != JsonValueKind.Null
+                    ? startEl.GetDouble() : null;
+                double? endSeconds = finding.TryGetProperty("endSeconds", out var endEl) && endEl.ValueKind != JsonValueKind.Null
+                    ? endEl.GetDouble() : null;
+                double? frequencyHz = finding.TryGetProperty("frequencyHz", out var freqEl) && freqEl.ValueKind != JsonValueKind.Null
+                    ? freqEl.GetDouble() : null;
+
+                findingsList.Add(new
+                {
+                    type = findingType,
+                    severity,
+                    confidence,
+                    title,
+                    description,
+                    suggestedNextStep,
+                    startSeconds,
+                    endSeconds,
+                    frequencyHz,
+                });
+            }
+
+            evidenceData["findings"] = findingsList;
+        }
+
+        evidenceItems.Add(new EvidenceItem
+        {
+            EvidenceId = evidenceId,
+            Type = "findings",
+            Data = evidenceData,
+        });
     }
 
     private static void AddSoundQualityMetricEvidence(
@@ -515,6 +671,141 @@ public static class EvidencePackageBuilder
         {
             evidenceData[methodEvidenceKey] = methodElement.GetString();
         }
+    }
+
+    private static void TryEmitBasicMetricsComparisonEvidence(
+        JsonElement resultsArray,
+        List<EvidenceItem> evidenceItems,
+        Dictionary<string, string> fileIdToNameMap)
+    {
+        var fileResults = new List<(string FileId, double Rms, double Peak, double CrestFactor)>();
+
+        foreach (var fileResult in resultsArray.EnumerateArray())
+        {
+            if (!fileResult.TryGetProperty("fileId", out var fileIdEl))
+                continue;
+            var fileId = fileIdEl.GetString() ?? "unknown";
+
+            if (!fileResult.TryGetProperty("metrics", out var metricsEl))
+                continue;
+
+            var rms = metricsEl.TryGetProperty("rmsDbFs", out var rmsEl) ? rmsEl.GetDouble() : double.NaN;
+            var peak = metricsEl.TryGetProperty("peakDbFs", out var peakEl) ? peakEl.GetDouble() : double.NaN;
+            var crest = metricsEl.TryGetProperty("crestFactorDb", out var crestEl) ? crestEl.GetDouble() : double.NaN;
+
+            if (double.IsNaN(rms) || double.IsNaN(peak))
+                continue;
+
+            fileResults.Add((fileId, rms, peak, crest));
+        }
+
+        if (fileResults.Count < 2)
+            return;
+
+        var a = fileResults[0];
+        var b = fileResults[1];
+
+        var rmsDelta = Math.Round(b.Rms - a.Rms, 2);
+        var peakDelta = Math.Round(b.Peak - a.Peak, 2);
+        var crestDelta = Math.Round(b.CrestFactor - a.CrestFactor, 2);
+
+        var evidenceId = "ev_level_cmp_" + a.FileId[..Math.Min(a.FileId.Length, 8)];
+
+        evidenceItems.Add(new EvidenceItem
+        {
+            EvidenceId = evidenceId,
+            Type = "level_comparison",
+            Data = new Dictionary<string, object?>
+            {
+                ["type"] = "level_comparison",
+                ["fileIdA"] = a.FileId,
+                ["fileNameA"] = fileIdToNameMap.GetValueOrDefault(a.FileId, a.FileId),
+                ["fileIdB"] = b.FileId,
+                ["fileNameB"] = fileIdToNameMap.GetValueOrDefault(b.FileId, b.FileId),
+                ["rmsADbFs"] = a.Rms,
+                ["rmsBDbFs"] = b.Rms,
+                ["rmsDeltaDb"] = rmsDelta,
+                ["louderFileId"] = a.Rms >= b.Rms ? a.FileId : b.FileId,
+                ["peakADbFs"] = a.Peak,
+                ["peakBDbFs"] = b.Peak,
+                ["peakDeltaDb"] = peakDelta,
+                ["higherPeakFileId"] = a.Peak >= b.Peak ? a.FileId : b.FileId,
+                ["crestFactorADb"] = a.CrestFactor,
+                ["crestFactorBDb"] = b.CrestFactor,
+                ["crestFactorDeltaDb"] = crestDelta,
+                ["moreDynamicFileId"] = a.CrestFactor >= b.CrestFactor ? a.FileId : b.FileId,
+            },
+        });
+    }
+
+    private static void TryEmitSpectrumComparisonEvidence(
+        JsonElement resultsArray,
+        List<EvidenceItem> evidenceItems,
+        Dictionary<string, string> fileIdToNameMap)
+    {
+        var fileResults = new List<(string FileId, double PeakFreq, double MaxMag, List<object?> Peaks)>();
+
+        foreach (var fileResult in resultsArray.EnumerateArray())
+        {
+            if (!fileResult.TryGetProperty("fileId", out var fileIdEl))
+                continue;
+            var fileId = fileIdEl.GetString() ?? "unknown";
+
+            if (!fileResult.TryGetProperty("summary", out var summaryEl))
+                continue;
+
+            var peakFreq = summaryEl.TryGetProperty("peakFrequencyHz", out var freqEl) ? freqEl.GetDouble() : double.NaN;
+            var maxMag = summaryEl.TryGetProperty("maxMagnitudeDb", out var magEl) ? magEl.GetDouble() : double.NaN;
+
+            if (double.IsNaN(peakFreq))
+                continue;
+
+            var peaks = new List<object?>();
+            if (summaryEl.TryGetProperty("dominantPeaks", out var peaksArray))
+            {
+                foreach (var peak in peaksArray.EnumerateArray())
+                {
+                    var freqHz = peak.TryGetProperty("frequencyHz", out var f) ? f.GetDouble() : 0.0;
+                    var magDb = peak.TryGetProperty("magnitudeDb", out var m) ? m.GetDouble() : 0.0;
+                    peaks.Add(new { frequencyHz = freqHz, magnitudeDb = magDb });
+                }
+            }
+
+            fileResults.Add((fileId, peakFreq, maxMag, peaks));
+        }
+
+        if (fileResults.Count < 2)
+            return;
+
+        var a = fileResults[0];
+        var b = fileResults[1];
+
+        var peakFreqDelta = Math.Round(b.PeakFreq - a.PeakFreq, 1);
+        var maxMagDelta = Math.Round(b.MaxMag - a.MaxMag, 2);
+
+        var evidenceId = "ev_spectrum_cmp_" + a.FileId[..Math.Min(a.FileId.Length, 8)];
+
+        evidenceItems.Add(new EvidenceItem
+        {
+            EvidenceId = evidenceId,
+            Type = "spectrum_comparison",
+            Data = new Dictionary<string, object?>
+            {
+                ["type"] = "spectrum_comparison",
+                ["fileIdA"] = a.FileId,
+                ["fileNameA"] = fileIdToNameMap.GetValueOrDefault(a.FileId, a.FileId),
+                ["fileIdB"] = b.FileId,
+                ["fileNameB"] = fileIdToNameMap.GetValueOrDefault(b.FileId, b.FileId),
+                ["peakFrequencyAHz"] = a.PeakFreq,
+                ["peakFrequencyBHz"] = b.PeakFreq,
+                ["peakFrequencyDeltaHz"] = peakFreqDelta,
+                ["maxMagnitudeADb"] = a.MaxMag,
+                ["maxMagnitudeBDb"] = b.MaxMag,
+                ["maxMagnitudeDeltaDb"] = maxMagDelta,
+                ["dominantPeaksA"] = a.Peaks,
+                ["dominantPeaksB"] = b.Peaks,
+            },
+        });
     }
 
     private static void AddStandardLimitations(List<string> limitations, List<string> analysesRun)

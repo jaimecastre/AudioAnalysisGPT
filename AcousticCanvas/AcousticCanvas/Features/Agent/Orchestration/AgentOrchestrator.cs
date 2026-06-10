@@ -31,7 +31,8 @@ public sealed class AgentOrchestrator(
             command.Question,
             command.SelectedFileIds,
             selectedFileNames,
-            cancellationToken);
+            cancellationToken,
+            command.ModelOverride);
 
         // Step 3: Handle non-tool actions.
         if (plannerResponse.Action == "ask_clarification")
@@ -51,6 +52,8 @@ public sealed class AgentOrchestrator(
 
         // Step 4: Validate requested tools against the registry whitelist.
         var requestedTools = plannerResponse.Tools ?? [];
+        var plannedToolNames = requestedTools.Select(t => t.Name).ToList();
+        var plannerReason = plannerResponse.Reason;
         var validatedToolRequests = FilterToAllowedTools(requestedTools);
 
         // Step 5: Execute all allowed tools.
@@ -72,13 +75,15 @@ public sealed class AgentOrchestrator(
         var finalAnswer = await agentPlanner.GenerateFinalAnswerAsync(
             command.Question,
             evidencePackage,
-            cancellationToken);
+            cancellationToken,
+            command.ModelOverride);
 
         // Step 8: Validate the final answer.
         var validationResult = AgentResponseValidator.Validate(finalAnswer, evidencePackage);
 
         // Step 9: Build and return the result.
         var toolExecutionRecords = BuildToolExecutionRecords(toolExecutionOutputs);
+        var toolResultsData = BuildToolResultsData(toolExecutionOutputs);
         var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(finalAnswer.Answer, finalAnswer.EvidenceReferences, evidencePackage);
 
         return new AgentAskResult(
@@ -90,7 +95,10 @@ public sealed class AgentOrchestrator(
             Limitations: MergeAndDeduplicate(finalAnswer.Limitations, evidencePackage.Limitations),
             SuggestedNextSteps: finalAnswer.SuggestedNextSteps,
             ToolExecutions: toolExecutionRecords,
-            ValidationWarning: validationResult.HasWarning);
+            ValidationWarning: validationResult.HasWarning,
+            ToolResultsData: toolResultsData,
+            PlannedTools: plannedToolNames,
+            PlannerReason: plannerReason);
     }
 
     private async Task<AgentAskResult> AnswerDeterministicFactAsync(
@@ -116,6 +124,7 @@ public sealed class AgentOrchestrator(
 
         var finalAnswer = DeterministicAnswerWriter.Write(deterministicPlan, evidencePackage);
         var toolExecutionRecords = BuildToolExecutionRecords([toolOutput]);
+        var toolResultsData = BuildToolResultsData([toolOutput]);
         var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(finalAnswer.Answer, finalAnswer.EvidenceReferences, evidencePackage);
 
         return new AgentAskResult(
@@ -127,7 +136,10 @@ public sealed class AgentOrchestrator(
             Limitations: finalAnswer.Limitations,
             SuggestedNextSteps: finalAnswer.SuggestedNextSteps,
             ToolExecutions: toolExecutionRecords,
-            ValidationWarning: false);
+            ValidationWarning: false,
+            ToolResultsData: toolResultsData,
+            PlannedTools: [deterministicPlan.ToolName],
+            PlannerReason: null);
     }
 
     private IReadOnlyList<string> ResolveFileNames(IReadOnlyList<string> fileIds)
@@ -139,7 +151,13 @@ public sealed class AgentOrchestrator(
             var filePath = uploadAudioHandler.GetFilePath(fileId);
             if (!string.IsNullOrEmpty(filePath))
             {
-                fileNames.Add(Path.GetFileName(filePath));
+                var storedName = Path.GetFileName(filePath);
+                // Stored format is "{fileId}_{originalName}" — strip the ID prefix.
+                var prefix = fileId + "_";
+                var originalName = storedName.StartsWith(prefix, StringComparison.Ordinal)
+                    ? storedName[prefix.Length..]
+                    : storedName;
+                fileNames.Add(originalName);
             }
             else
             {
@@ -163,6 +181,18 @@ public sealed class AgentOrchestrator(
         }
 
         return allowedTools;
+    }
+
+    private static IReadOnlyDictionary<string, object>? BuildToolResultsData(
+        IEnumerable<ToolExecutionOutput> toolOutputs)
+    {
+        var dict = new Dictionary<string, object>();
+        foreach (var output in toolOutputs)
+        {
+            if (output.Status == "completed" && output.ResultData is not null && !string.IsNullOrEmpty(output.ResultRef))
+                dict[output.ResultRef] = output.ResultData;
+        }
+        return dict.Count > 0 ? dict : null;
     }
 
     private static IReadOnlyList<AgentToolExecutionRecord> BuildToolExecutionRecords(
@@ -220,7 +250,10 @@ public sealed class AgentOrchestrator(
             Limitations: ["Clarification needed before analysis can run."],
             SuggestedNextSteps: [],
             ToolExecutions: [],
-            ValidationWarning: false);
+            ValidationWarning: false,
+            ToolResultsData: null,
+            PlannedTools: [],
+            PlannerReason: null);
     }
 
     private static AgentAskResult BuildNoAnalysisResult(
@@ -237,7 +270,10 @@ public sealed class AgentOrchestrator(
             Limitations: ["No analysis was run for this response."],
             SuggestedNextSteps: [$"To analyze this file, ask a specific question such as: 'Is there clipping in {userQuestion}'"],
             ToolExecutions: [],
-            ValidationWarning: false);
+            ValidationWarning: false,
+            ToolResultsData: null,
+            PlannedTools: [],
+            PlannerReason: null);
     }
 
     private static string EmbedEvidenceTokensInAnswer(

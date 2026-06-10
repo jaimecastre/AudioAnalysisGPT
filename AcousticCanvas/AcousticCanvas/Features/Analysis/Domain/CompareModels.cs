@@ -1,5 +1,23 @@
 namespace AcousticCanvas.Features.Analysis.Domain;
 
+public sealed class CompareSoundQuality
+{
+    public required double LoudnessSone { get; init; }
+    public required double SharpnessAcum { get; init; }
+    public required double RoughnessAsper { get; init; }
+    public required string Method { get; init; }
+}
+
+public sealed class CompareSoundQualityDelta
+{
+    public required double LoudnessDeltaSone { get; init; }
+    public required double SharpnessDeltaAcum { get; init; }
+    public required double RoughnessDeltaAsper { get; init; }
+    public required string LouderFileId { get; init; }
+    public required string SharperFileId { get; init; }
+    public required string RougherFileId { get; init; }
+}
+
 public sealed class CompareSpectrumCurve
 {
     // Parallel arrays: frequenciesHz[k] corresponds to magnitudesDb[k].
@@ -57,6 +75,12 @@ public sealed class CompareFileSummary
 
     // Nominal 1/3 octave CPB bands for A/B diagnostic comparison.
     public required IReadOnlyList<CompareCpbBand> CpbBands { get; init; }
+
+    // Psychoacoustic metrics (null if Python sidecar unavailable).
+    public CompareSoundQuality? SoundQuality { get; init; }
+
+    // Explicit reason when psychoacoustic metrics are unavailable for this file.
+    public string? SoundQualityUnavailableReason { get; init; }
 }
 
 public sealed class PairwiseDiff
@@ -80,6 +104,12 @@ public sealed class PairwiseDiff
 
     // Per-CPB-band delta: B minus A in dB for each nominal 1/3 octave band.
     public required IReadOnlyList<CompareCpbBand> CpbBandDeltas { get; init; }
+
+    // Psychoacoustic delta (null if either file's SoundQuality is null).
+    public CompareSoundQualityDelta? SoundQualityDelta { get; init; }
+
+    // Explicit reason when psychoacoustic deltas are unavailable for this pair.
+    public string? SoundQualityUnavailableReason { get; init; }
 }
 
 public sealed class CompareResult

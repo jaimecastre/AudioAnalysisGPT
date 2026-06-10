@@ -8,12 +8,14 @@ export interface INavigationState {
   activeMode: ActiveMode;
   activeFileId: AudioFileId | null;
   activeView: 'home' | 'import' | 'analysis';
+  agentPromptPrefill: string | null;
 }
 
 const initialState: INavigationState = {
   activeMode: 'manual',
   activeFileId: null,
   activeView: 'home',
+  agentPromptPrefill: null,
 };
 
 const navigationSlice = createSlice({
@@ -29,10 +31,16 @@ const navigationSlice = createSlice({
     setActiveView: (state, action: PayloadAction<'home' | 'import' | 'analysis'>) => {
       state.activeView = action.payload;
     },
+    agentPromptPrefillSet: (state, action: PayloadAction<string>) => {
+      state.agentPromptPrefill = action.payload;
+    },
+    agentPromptPrefillCleared: (state) => {
+      state.agentPromptPrefill = null;
+    },
   },
 });
 
-export const { setActiveMode, setActiveFileId, setActiveView } = navigationSlice.actions;
+export const { setActiveMode, setActiveFileId, setActiveView, agentPromptPrefillSet, agentPromptPrefillCleared } = navigationSlice.actions;
 
 export default navigationSlice.reducer;
 
@@ -44,3 +52,6 @@ export const activeFileIdSelector = (state: { navigation: INavigationState }): A
 
 export const activeViewSelector = (state: { navigation: INavigationState }): 'home' | 'import' | 'analysis' =>
   state.navigation.activeView;
+
+export const agentPromptPrefillSelector = (state: { navigation: INavigationState }): string | null =>
+  state.navigation.agentPromptPrefill;

@@ -9,6 +9,7 @@ public sealed class AgentAskRequest
     public List<string> SelectedFileIds { get; set; } = [];
     public string? ProjectId { get; set; }
     public string? Mode { get; set; }
+    public string? ModelOverride { get; set; }
 }
 
 public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
@@ -39,7 +40,8 @@ public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
             Question: request.Question,
             SelectedFileIds: request.SelectedFileIds,
             ProjectId: request.ProjectId,
-            Mode: request.Mode);
+            Mode: request.Mode,
+            ModelOverride: request.ModelOverride);
 
         try
         {

@@ -5,6 +5,8 @@ import chatReducer, {
   assistantMessageFailed,
   assistantResponseStarted,
   chatIsThinkingSelector,
+  planBubbleStarted,
+  planBubbleReceived,
   userMessageSent,
 } from './chatSlice';
 
@@ -88,5 +90,86 @@ describe('chatSlice', () => {
       status: 'failed',
     });
     expect(chatIsThinkingSelector({ chat: failedState })).toBe(false);
+  });
+
+  it('appends a plan bubble message when planBubbleReceived is dispatched', () => {
+    const state = chatReducer(undefined, planBubbleReceived({
+      id: 'plan-1',
+      assistantMessageId: 'assistant-99',
+      plannedTools: ['run_basic_metrics', 'run_spectrum'],
+      plannerReason: 'Checking levels and spectral peaks.',
+      timestamp: '2026-06-08T00:00:02.000Z',
+    }));
+
+    expect(state.messages).toHaveLength(1);
+    expect(state.messages[0]).toMatchObject({
+      id: 'plan-1',
+      role: 'plan',
+      plannedTools: ['run_basic_metrics', 'run_spectrum'],
+      plannerReason: 'Checking levels and spectral peaks.',
+      planStatus: 'done',
+    });
+  });
+
+  it('planBubbleStarted shows planning state immediately, planBubbleReceived updates it in-place', () => {
+    const withAssistant = chatReducer(undefined, assistantResponseStarted({
+      id: 'assistant-1',
+      timestamp: '2026-06-08T00:00:01.000Z',
+    }));
+
+    const withPlanStarted = chatReducer(withAssistant, planBubbleStarted({
+      id: 'plan-1',
+      assistantMessageId: 'assistant-1',
+      timestamp: '2026-06-08T00:00:01.000Z',
+    }));
+
+    expect(withPlanStarted.messages[0]).toMatchObject({ role: 'plan', planStatus: 'planning', plannedTools: [] });
+    expect(withPlanStarted.messages[1]).toMatchObject({ role: 'assistant' });
+
+    const withPlanDone = chatReducer(withPlanStarted, planBubbleReceived({
+      id: 'plan-1',
+      assistantMessageId: 'assistant-1',
+      plannedTools: ['run_spectrum'],
+      plannerReason: null,
+      timestamp: '2026-06-08T00:00:05.000Z',
+    }));
+
+    // Still 2 messages — updated in-place, not a new entry
+    expect(withPlanDone.messages).toHaveLength(2);
+    expect(withPlanDone.messages[0]).toMatchObject({ role: 'plan', planStatus: 'done', plannedTools: ['run_spectrum'] });
+  });
+
+  it('planBubbleReceived inserts before the assistant message when it exists', () => {
+    const withAssistant = chatReducer(undefined, assistantResponseStarted({
+      id: 'assistant-1',
+      timestamp: '2026-06-08T00:00:01.000Z',
+    }));
+
+    const withPlan = chatReducer(withAssistant, planBubbleReceived({
+      id: 'plan-1',
+      assistantMessageId: 'assistant-1',
+      plannedTools: ['run_spectrum'],
+      plannerReason: null,
+      timestamp: '2026-06-08T00:00:02.000Z',
+    }));
+
+    expect(withPlan.messages).toHaveLength(2);
+    expect(withPlan.messages[0]).toMatchObject({ role: 'plan' });
+    expect(withPlan.messages[1]).toMatchObject({ role: 'assistant' });
+  });
+
+  it('planBubbleReceived with null plannerReason stores null', () => {
+    const state = chatReducer(undefined, planBubbleReceived({
+      id: 'plan-2',
+      assistantMessageId: 'assistant-99',
+      plannedTools: ['run_basic_metrics'],
+      plannerReason: null,
+      timestamp: '2026-06-08T00:00:02.000Z',
+    }));
+
+    expect(state.messages[0]).toMatchObject({
+      role: 'plan',
+      plannerReason: null,
+    });
   });
 });
