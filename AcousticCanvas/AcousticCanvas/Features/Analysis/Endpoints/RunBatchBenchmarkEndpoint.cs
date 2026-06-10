@@ -1,10 +1,10 @@
 using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
-using AcousticCanvas.Features.AudioUpload.Handlers;
+using AcousticCanvas.Features.AudioUpload.Services;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
-public class RunBatchBenchmarkEndpoint(UploadAudioHandler uploadAudioHandler)
+public class RunBatchBenchmarkEndpoint(AudioFileRepository audioFileRepository)
     : Endpoint<RunBatchBenchmarkRequest, BatchBenchmarkResult>
 {
     public override void Configure()
@@ -25,7 +25,7 @@ public class RunBatchBenchmarkEndpoint(UploadAudioHandler uploadAudioHandler)
         var filePaths = new List<string>();
         for (int index = 0; index < request.FileIds.Count; index++)
         {
-            var filePath = uploadAudioHandler.GetFilePath(request.FileIds[index]);
+            var filePath = audioFileRepository.GetFilePath(request.FileIds[index]);
             if (string.IsNullOrEmpty(filePath))
             {
                 HttpContext.Response.StatusCode = 404;
@@ -40,8 +40,7 @@ public class RunBatchBenchmarkEndpoint(UploadAudioHandler uploadAudioHandler)
             FileIds: request.FileIds,
             FilePaths: filePaths,
             StartSeconds: request.StartSeconds,
-            EndSeconds: request.EndSeconds,
-            IncludeSoundQuality: request.IncludeSoundQuality ?? true);
+            EndSeconds: request.EndSeconds);
 
         try
         {
@@ -60,5 +59,4 @@ public class RunBatchBenchmarkRequest
     public List<string> FileIds { get; set; } = [];
     public double? StartSeconds { get; set; }
     public double? EndSeconds { get; set; }
-    public bool? IncludeSoundQuality { get; set; }
 }

@@ -14,7 +14,16 @@ import { IconRepeat, IconX, IconUpload, IconRobot, IconSelectAll } from '@tabler
 import { callCompareTool } from '../agent/services/compareToolService';
 import type { CompareResult } from '../agent/agentToolTypes';
 import { callBatchBenchmarkTool } from '../batchBenchmark/services/batchBenchmarkService';
-import type { BatchBenchmarkResult } from '../batchBenchmark/batchBenchmarkTypes';
+import {
+  benchmarkStarted,
+  benchmarkCompleted,
+  benchmarkFailed,
+  benchmarkPanelClosed,
+  benchmarkResultSelector,
+  benchmarkStatusSelector,
+  benchmarkErrorSelector,
+  benchmarkIsPanelOpenSelector,
+} from '../batchBenchmark/batchBenchmarkSlice';
 import { RightSidebar } from './RightSidebar';
 import { FileListPanel } from './FileListPanel';
 import { ActiveSignalCard } from './ActiveSignalCard';
@@ -72,10 +81,10 @@ export const ManualWorkspace = (): JSX.Element => {
   const [manualCompareResult, setManualCompareResult] = useState<CompareResult | null>(null);
   const [manualCompareStatus, setManualCompareStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [manualCompareError, setManualCompareError] = useState<string | null>(null);
-  const [manualBenchmarkResult, setManualBenchmarkResult] = useState<BatchBenchmarkResult | null>(null);
-  const [manualBenchmarkStatus, setManualBenchmarkStatus] = useState<'idle' | 'loading' | 'error'>('idle');
-  const [manualBenchmarkError, setManualBenchmarkError] = useState<string | null>(null);
-  const [isBenchmarkPanelOpen, setIsBenchmarkPanelOpen] = useState(false);
+  const manualBenchmarkResult = useAppSelector(benchmarkResultSelector);
+  const manualBenchmarkStatus = useAppSelector(benchmarkStatusSelector);
+  const manualBenchmarkError = useAppSelector(benchmarkErrorSelector);
+  const isBenchmarkPanelOpen = useAppSelector(benchmarkIsPanelOpenSelector);
   const [isFindingsPanelOpen, setIsFindingsPanelOpen] = useState(false);
 
   const handleFilesSelected = async (files: File[]): Promise<void> => {
@@ -215,31 +224,21 @@ export const ManualWorkspace = (): JSX.Element => {
   const handleRunManualBenchmark = async (): Promise<void> => {
     if (files.length < 2) return;
 
-    setIsBenchmarkPanelOpen(true);
-    setManualBenchmarkStatus('loading');
-    setManualBenchmarkError(null);
-
+    dispatch(benchmarkStarted());
     try {
       const result = await callBatchBenchmarkTool({
         fileIds: files.map((file) => file.id),
         startSeconds: activeSelection?.startSeconds ?? null,
         endSeconds: activeSelection?.endSeconds ?? null,
-        includeSoundQuality: true,
       });
-      setManualBenchmarkResult(result);
-      setManualBenchmarkStatus('idle');
+      dispatch(benchmarkCompleted(result));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Benchmark failed';
-      setManualBenchmarkError(errorMessage);
-      setManualBenchmarkStatus('error');
+      dispatch(benchmarkFailed(error instanceof Error ? error.message : 'Benchmark failed'));
     }
   };
 
   const handleCloseBenchmarkPanel = (): void => {
-    setManualBenchmarkResult(null);
-    setManualBenchmarkStatus('idle');
-    setManualBenchmarkError(null);
-    setIsBenchmarkPanelOpen(false);
+    dispatch(benchmarkPanelClosed());
   };
 
   const handleOpenFindingsPanel = (): void => {

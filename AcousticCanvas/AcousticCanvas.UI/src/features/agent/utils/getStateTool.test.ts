@@ -76,6 +76,12 @@ const emptyState: RootState = {
     lastResponse: null,
     error: null,
   },
+  batchBenchmark: {
+    result: null,
+    status: 'idle',
+    error: null,
+    isPanelOpen: false,
+  },
 };
 
 const stateWithFile: RootState = {

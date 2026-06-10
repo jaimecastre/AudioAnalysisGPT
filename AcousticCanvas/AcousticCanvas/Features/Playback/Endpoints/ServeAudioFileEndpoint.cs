@@ -1,9 +1,9 @@
-using AcousticCanvas.Features.AudioUpload.Handlers;
+using AcousticCanvas.Features.AudioUpload.Services;
 using FastEndpoints;
 
 namespace AcousticCanvas.Features.Playback.Endpoints;
 
-public class ServeAudioFileEndpoint(UploadAudioHandler audioHandler)
+public class ServeAudioFileEndpoint(AudioFileRepository audioFileRepository)
     : Endpoint<ServeAudioFileRequest>
 {
     public override void Configure()
@@ -14,7 +14,7 @@ public class ServeAudioFileEndpoint(UploadAudioHandler audioHandler)
 
     public override async Task HandleAsync(ServeAudioFileRequest request, CancellationToken cancellationToken)
     {
-        var filePath = audioHandler.GetFilePath(request.FileId);
+        var filePath = audioFileRepository.GetFilePath(request.FileId);
 
         if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
         {

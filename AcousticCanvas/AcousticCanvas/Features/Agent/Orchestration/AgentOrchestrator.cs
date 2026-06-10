@@ -1,12 +1,12 @@
 using AcousticCanvas.Features.Agent.Commands;
-using AcousticCanvas.Features.AudioUpload.Handlers;
+using AcousticCanvas.Features.AudioUpload.Services;
 
 namespace AcousticCanvas.Features.Agent.Orchestration;
 
 public sealed class AgentOrchestrator(
     AgentPlanner agentPlanner,
     ToolExecutionService toolExecutionService,
-    UploadAudioHandler uploadAudioHandler)
+    AudioFileRepository audioFileRepository)
 {
     public async Task<AgentAskResult> HandleUserQuestionAsync(
         AgentAskCommand command,
@@ -150,7 +150,7 @@ public sealed class AgentOrchestrator(
 
         foreach (var fileId in fileIds)
         {
-            var filePath = uploadAudioHandler.GetFilePath(fileId);
+            var filePath = audioFileRepository.GetFilePath(fileId);
             if (!string.IsNullOrEmpty(filePath))
             {
                 var storedName = Path.GetFileName(filePath);

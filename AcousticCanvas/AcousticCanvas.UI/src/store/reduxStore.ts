@@ -10,6 +10,7 @@ import chatReducer from '../features/agentAnalysis/chatSlice';
 import agentWorkspaceReducer from '../features/agentAnalysis/agentWorkspaceSlice';
 import findingsReducer from '../features/findings/findingsSlice';
 import agentAskReducer from '../features/agentAnalysis/agentAskSlice';
+import batchBenchmarkReducer from '../features/batchBenchmark/batchBenchmarkSlice';
 
 export const store = configureStore({
   reducer: {
@@ -24,6 +25,7 @@ export const store = configureStore({
     agentWorkspace: agentWorkspaceReducer,
     findings: findingsReducer,
     agentAsk: agentAskReducer,
+    batchBenchmark: batchBenchmarkReducer,
   },
 });
 

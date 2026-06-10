@@ -43,17 +43,15 @@ public class RunCompareHandler(
             }
         }
 
-        var summaries = new List<CompareFileSummary>();
-        for (int index = 0; index < command.FilePaths.Count; index++)
-        {
-            var summary = await BuildFileSummaryAsync(command.FilePaths[index], command.StartSeconds, command.EndSeconds, ct);
-            summaries.Add(summary);
-        }
+        var summaryTasks = command.FilePaths
+            .Select(filePath => BuildFileSummaryAsync(filePath, command.StartSeconds, command.EndSeconds, ct))
+            .ToArray();
+        var summaries = await Task.WhenAll(summaryTasks);
 
         var pairwiseDiffs = new List<PairwiseDiff>();
-        for (int i = 0; i < summaries.Count; i++)
+        for (int i = 0; i < summaries.Length; i++)
         {
-            for (int j = i + 1; j < summaries.Count; j++)
+            for (int j = i + 1; j < summaries.Length; j++)
             {
                 var a = summaries[i];
                 var b = summaries[j];

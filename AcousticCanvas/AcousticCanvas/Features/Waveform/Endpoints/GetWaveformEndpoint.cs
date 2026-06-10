@@ -1,10 +1,10 @@
 using FastEndpoints;
-using AcousticCanvas.Features.AudioUpload.Handlers;
+using AcousticCanvas.Features.AudioUpload.Services;
 using AcousticCanvas.Features.Waveform.Commands;
 
 namespace AcousticCanvas.Features.Waveform.Endpoints;
 
-public class GetWaveformEndpoint(UploadAudioHandler uploadAudioHandler)
+public class GetWaveformEndpoint(AudioFileRepository audioFileRepository)
     : Endpoint<GetWaveformRequest, WaveformResult>
 {
     public override void Configure()
@@ -23,7 +23,7 @@ public class GetWaveformEndpoint(UploadAudioHandler uploadAudioHandler)
 
         var resolvedPoints = request.Points is > 0 ? request.Points.Value : 1000;
 
-        var filePath = uploadAudioHandler.GetFilePath(request.FileId);
+        var filePath = audioFileRepository.GetFilePath(request.FileId);
         if (string.IsNullOrEmpty(filePath))
         {
             HttpContext.Response.StatusCode = 404;

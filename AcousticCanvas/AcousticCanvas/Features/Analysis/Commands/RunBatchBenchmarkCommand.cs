@@ -7,8 +7,7 @@ public record RunBatchBenchmarkCommand(
     IReadOnlyList<string> FileIds,
     IReadOnlyList<string> FilePaths,
     double? StartSeconds,
-    double? EndSeconds,
-    bool IncludeSoundQuality
+    double? EndSeconds
 ) : ICommand<BatchBenchmarkResult>;
 
 public record BatchBenchmarkFileRow(

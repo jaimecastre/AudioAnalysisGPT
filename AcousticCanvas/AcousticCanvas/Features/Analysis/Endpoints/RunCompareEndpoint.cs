@@ -1,11 +1,11 @@
 using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
-using AcousticCanvas.Features.AudioUpload.Handlers;
+using AcousticCanvas.Features.AudioUpload.Services;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
-public class RunCompareEndpoint(UploadAudioHandler uploadAudioHandler)
+public class RunCompareEndpoint(AudioFileRepository audioFileRepository)
     : Endpoint<RunCompareRequest, CompareResult>
 {
     public override void Configure()
@@ -26,7 +26,7 @@ public class RunCompareEndpoint(UploadAudioHandler uploadAudioHandler)
         var filePaths = new List<string>();
         for (int index = 0; index < request.FileIds.Count; index++)
         {
-            var filePath = uploadAudioHandler.GetFilePath(request.FileIds[index]);
+            var filePath = audioFileRepository.GetFilePath(request.FileIds[index]);
             if (string.IsNullOrEmpty(filePath))
             {
                 HttpContext.Response.StatusCode = 404;
