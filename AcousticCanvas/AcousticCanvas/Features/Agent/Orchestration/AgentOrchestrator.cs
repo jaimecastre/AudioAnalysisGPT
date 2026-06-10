@@ -20,6 +20,14 @@ public sealed class AgentOrchestrator(
             return BuildNoToolConversationResult(conversationId, metaAnswer);
         }
 
+        // Check if no files are loaded and the question appears to be about audio analysis
+        if (command.SelectedFileIds.Count == 0 && AppearsToBeAudioAnalysisQuestion(command.Question))
+        {
+            return BuildNoToolConversationResult(
+                conversationId,
+                "No audio files are currently loaded. Please upload and select an audio file first, then ask your question about that file.");
+        }
+
         // Step 0: Answer plain deterministic-fact questions (peak/RMS/sample rate/etc.)
         // straight from the backend tools, without calling the LLM. This keeps factual
         // lookups fast and working even when no OpenAI key is configured.
@@ -367,5 +375,67 @@ public sealed class AgentOrchestrator(
             "metadata" => "analysis_result",
             _ => "analysis_result"
         };
+    }
+
+    private static bool AppearsToBeAudioAnalysisQuestion(string question)
+    {
+        var normalized = question.Trim().ToLowerInvariant();
+
+        // These are meta questions already handled by AgentMetaQuestionRouter
+        // If they got here, the meta router didn't handle them, so they're likely audio questions
+        var metaHandledPhrases = new[]
+        {
+            "why did you analyse both",
+            "why did you analyze both",
+            "why did you analyse all",
+            "why did you analyze all",
+            "why are you analysing both",
+            "why are you analyzing both",
+            "why are you analysing all",
+            "why are you analyzing all",
+            "click spectrogram evidence pill",
+            "click the spectrogram evidence pill",
+            "click evidence pill",
+            "click the evidence pill",
+            "inspect workspace card",
+            "inspect the workspace card",
+            "open workspace card",
+            "open the workspace card",
+        };
+
+        foreach (var phrase in metaHandledPhrases)
+        {
+            if (normalized.Contains(phrase))
+            {
+                return false;
+            }
+        }
+
+        // Audio-related keywords that suggest the user wants to analyze audio
+        var audioKeywords = new[]
+        {
+            "sound", "audio", "file", "waveform", "spectrogram", "spectrum",
+            "frequency", "hz", "khz", "peak", "rms", "db", "decibel",
+            "loud", "quiet", "noise", "clip", "silence", "click",
+            "analyze", "analysis", "measure", "show", "display",
+            "what is the", "what's the", "how does", "does it",
+            "energy", "band", "tone", "harmonic", "distortion"
+        };
+
+        foreach (var keyword in audioKeywords)
+        {
+            if (normalized.Contains(keyword))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // Test helper method to expose the private AppearsToBeAudioAnalysisQuestion for unit testing
+    internal static bool TestAppearsToBeAudioAnalysisQuestion(string question)
+    {
+        return AppearsToBeAudioAnalysisQuestion(question);
     }
 }
