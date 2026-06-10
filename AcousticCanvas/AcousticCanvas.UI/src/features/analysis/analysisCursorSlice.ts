@@ -1,16 +1,19 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 
-// Cross-panel "linked cursor" for frequency-domain analysis panels.
-// When the user hovers a frequency in one panel (spectrum, spectrogram, …),
-// the same frequency is highlighted in the others so spectral features can be
-// correlated across views.
+// Cross-panel "linked cursor" for analysis panels.
+// - hoverFrequencyHz links the frequency-domain panels (spectrum, spectrogram, CPB):
+//   hovering a frequency in one highlights the same frequency in the others.
+// - hoverTimeSeconds links the time-domain views (waveform, spectrogram):
+//   hovering a time in one highlights the same instant in the other.
 interface AnalysisCursorState {
   hoverFrequencyHz: number | null;
+  hoverTimeSeconds: number | null;
 }
 
 const initialState: AnalysisCursorState = {
   hoverFrequencyHz: null,
+  hoverTimeSeconds: null,
 };
 
 const analysisCursorSlice = createSlice({
@@ -23,12 +26,26 @@ const analysisCursorSlice = createSlice({
     cursorFrequencyCleared: (state) => {
       state.hoverFrequencyHz = null;
     },
+    cursorTimeHovered: (state, action: PayloadAction<number>) => {
+      state.hoverTimeSeconds = action.payload;
+    },
+    cursorTimeCleared: (state) => {
+      state.hoverTimeSeconds = null;
+    },
   },
 });
 
-export const { cursorFrequencyHovered, cursorFrequencyCleared } = analysisCursorSlice.actions;
+export const {
+  cursorFrequencyHovered,
+  cursorFrequencyCleared,
+  cursorTimeHovered,
+  cursorTimeCleared,
+} = analysisCursorSlice.actions;
 
 export default analysisCursorSlice.reducer;
 
 export const cursorFrequencyHzSelector = (state: { analysisCursor: AnalysisCursorState }): number | null =>
   state.analysisCursor.hoverFrequencyHz;
+
+export const cursorTimeSecondsSelector = (state: { analysisCursor: AnalysisCursorState }): number | null =>
+  state.analysisCursor.hoverTimeSeconds;

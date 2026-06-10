@@ -96,6 +96,18 @@
   background: rgba(255, 255, 255, 0.38);
 }
 
+// Cross-panel linked time cursor (driven by hovering the waveform). Teal vertical line.
+.linkedTimeLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  z-index: 3;
+  pointer-events: none;
+  background: rgba(0, 184, 169, 0.85);
+  transition: left 0.08s linear;
+}
+
 .hoverFrequencyLine {
   position: absolute;
   right: 0;

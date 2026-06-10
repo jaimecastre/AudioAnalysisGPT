@@ -4,8 +4,9 @@ import { useWaveformData } from './hooks/useWaveformData';
 import { useWaveSurfer } from './hooks/useWaveSurfer';
 import { useRegions } from './hooks/useRegions';
 import { useMarkers } from './hooks/useMarkers';
-import { useAppSelector } from '../../store/reduxHooks';
+import { useAppSelector, useAppDispatch } from '../../store/reduxHooks';
 import { activeSelectionSelector } from './waveformSelectionSlice';
+import { cursorTimeHovered, cursorTimeCleared, cursorTimeSecondsSelector } from '../analysis/analysisCursorSlice';
 
 // Y-axis layout constants
 const Y_AXIS_WIDTH = 72;
@@ -136,12 +137,32 @@ export const WaveSurferDisplay = ({
   const waveContainerRef = useRef<HTMLDivElement>(null);
   const axisCanvasRef = useRef<HTMLCanvasElement>(null);
   const [containerHeight, setContainerHeight] = useState(200);
+  const [durationSeconds, setDurationSeconds] = useState(0);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isHintVisible, setIsHintVisible] = useState(false);
 
+  const dispatch = useAppDispatch();
   const activeSelection = useAppSelector(activeSelectionSelector);
+  const linkedTimeSeconds = useAppSelector(cursorTimeSecondsSelector);
   const hasSelection = activeSelection && activeSelection.endSeconds > activeSelection.startSeconds;
   const showHint = isHintVisible && !hasInteracted && !hasSelection;
+
+  const handleReady = useCallback((audioDuration: number) => {
+    setDurationSeconds(audioDuration);
+    onReady?.(audioDuration);
+  }, [onReady]);
+
+  const linkedTimePercent = durationSeconds > 0 && linkedTimeSeconds !== null
+    ? (linkedTimeSeconds / durationSeconds) * 100
+    : -1;
+  const showLinkedTime = linkedTimePercent >= 0 && linkedTimePercent <= 100;
+
+  const handleWaveformMouseMove = (event: React.MouseEvent<HTMLDivElement>): void => {
+    if (durationSeconds <= 0) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const fraction = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+    dispatch(cursorTimeHovered(fraction * durationSeconds));
+  };
 
   // Measure container height on mount and resize
   useEffect(() => {
@@ -166,7 +187,7 @@ export const WaveSurferDisplay = ({
     height: containerHeight,
     waveformData,
     displayRef,
-    onReady,
+    onReady: handleReady,
     onTimeUpdate,
     onFinish,
   });
@@ -269,6 +290,8 @@ export const WaveSurferDisplay = ({
         />
         <div
           ref={waveContainerRef}
+          onMouseMove={handleWaveformMouseMove}
+          onMouseLeave={() => dispatch(cursorTimeCleared())}
           style={{
             flex: 1,
             minWidth: 0,
@@ -278,6 +301,21 @@ export const WaveSurferDisplay = ({
             position: 'relative',
           }}
         >
+          {showLinkedTime && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: `${linkedTimePercent}%`,
+                width: '1px',
+                background: 'rgba(0, 184, 169, 0.85)',
+                pointerEvents: 'none',
+                zIndex: 9,
+                transition: 'left 0.08s linear',
+              }}
+            />
+          )}
           {showHint && (
             <div
               style={{

@@ -12,7 +12,7 @@ import {
   spectrogramSetParameters,
 } from './spectrogramSlice';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
-import { cursorFrequencyHovered, cursorFrequencyCleared, cursorFrequencyHzSelector } from './analysisCursorSlice';
+import { cursorFrequencyHovered, cursorFrequencyCleared, cursorFrequencyHzSelector, cursorTimeHovered, cursorTimeCleared, cursorTimeSecondsSelector } from './analysisCursorSlice';
 import {
   SPECTROGRAM_FFT_SIZE_OPTIONS,
   SPECTROGRAM_GAIN_OPTIONS,
@@ -196,6 +196,7 @@ export const SpectrogramPanel = ({
   const spectrogramUserParameters = useAppSelector(spectrogramUserParametersSelector);
   const activeSelection = useAppSelector(activeSelectionSelector);
   const linkedFrequencyHz = useAppSelector(cursorFrequencyHzSelector);
+  const linkedTimeSeconds = useAppSelector(cursorTimeSecondsSelector);
   const { runSpectrogram } = useRunSpectrogram();
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -265,6 +266,12 @@ export const SpectrogramPanel = ({
     : -1;
   const showLinkedFrequency = !hover && linkedFrequencyPercent >= 0 && linkedFrequencyPercent <= 100;
 
+  // Map a time (s) to a horizontal position for the cross-panel linked time cursor.
+  const linkedTimePercent = (renderedRegion && renderedRegion.durationSeconds > 0 && linkedTimeSeconds !== null)
+    ? (linkedTimeSeconds - renderedRegion.startSeconds) / renderedRegion.durationSeconds * 100
+    : -1;
+  const showLinkedTime = !hover && linkedTimePercent >= 0 && linkedTimePercent <= 100;
+
   const getSpectrogramPosition = (event: React.MouseEvent<HTMLDivElement>): SpectrogramHover | null => {
     if (!renderedRegion || !renderedScale || renderedRegion.durationSeconds <= 0 || renderedNyquistHz <= 0) {
       return null;
@@ -286,6 +293,7 @@ export const SpectrogramPanel = ({
     setHover(position);
     if (position) {
       dispatch(cursorFrequencyHovered(position.frequencyHz));
+      dispatch(cursorTimeHovered(position.timeSeconds));
     }
   };
 
@@ -409,7 +417,7 @@ export const SpectrogramPanel = ({
               style={{ height: canvasHeight }}
               onClick={handleSpectrogramClick}
               onMouseMove={handleSpectrogramMouseMove}
-              onMouseLeave={() => { setHover(null); dispatch(cursorFrequencyCleared()); }}
+              onMouseLeave={() => { setHover(null); dispatch(cursorFrequencyCleared()); dispatch(cursorTimeCleared()); }}
             >
               <canvas
                 key={canvasKey}
@@ -419,6 +427,9 @@ export const SpectrogramPanel = ({
               />
               {showPlayhead && (
                 <div className={styles.playhead} style={{ left: `${playheadPercent}%` }} />
+              )}
+              {showLinkedTime && (
+                <div className={styles.linkedTimeLine} style={{ left: `${linkedTimePercent}%` }} />
               )}
               {showLinkedFrequency && (
                 <>

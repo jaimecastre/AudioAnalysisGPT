@@ -75,6 +75,20 @@
   background-color: #00b8a9;
 }
 
+// Band highlighted by the cross-panel linked frequency cursor.
+.barColumnLinked {
+  .barTrack {
+    border-color: rgba(0, 184, 169, 0.9);
+    background-color: rgba(0, 184, 169, 0.1);
+    box-shadow: 0 0 0 1px rgba(0, 184, 169, 0.45);
+  }
+
+  .barLabel {
+    color: #00b8a9;
+    font-weight: 600;
+  }
+}
+
 .barLabel {
   max-width: 44px;
   color: var(--text-muted);

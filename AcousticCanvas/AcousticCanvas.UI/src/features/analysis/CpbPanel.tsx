@@ -4,6 +4,7 @@ import { ActionIcon, Badge, Group, Loader, Select, Text, Tooltip } from '@mantin
 import { IconArrowsMaximize, IconArrowsMinimize, IconChartBar, IconChevronDown, IconChevronRight, IconX } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
+import { cursorFrequencyHovered, cursorFrequencyCleared, cursorFrequencyHzSelector } from './analysisCursorSlice';
 import {
   cpbErrorSelector,
   cpbResultSelector,
@@ -52,6 +53,7 @@ export const CpbPanel = ({
   const cpbError = useAppSelector(cpbErrorSelector);
   const cpbUserParameters = useAppSelector(cpbUserParametersSelector);
   const selectedChannelId = useAppSelector(cpbSelectedChannelIdSelector);
+  const linkedFrequencyHz = useAppSelector(cursorFrequencyHzSelector);
   const { runCpb } = useRunCpb();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -200,19 +202,25 @@ export const CpbPanel = ({
         {effectiveFileId && cpbStatus !== 'error' && selectedChannel && (
           <>
             <div className={styles.chartWrap}>
-              <div className={styles.chart}>
+              <div className={styles.chart} onMouseLeave={() => dispatch(cursorFrequencyCleared())}>
                 {selectedChannel.bands.map((band) => {
                   const level = resolveBandLevel(band);
                   const percent = ceilingLevel > floorLevel
                     ? Math.max(0, Math.min(100, (level - floorLevel) / (ceilingLevel - floorLevel) * 100))
                     : 0;
+                  const isLinked = linkedFrequencyHz !== null
+                    && linkedFrequencyHz >= band.lowerFrequencyHz
+                    && linkedFrequencyHz < band.upperFrequencyHz;
                   return (
                     <Tooltip
                       key={band.label}
                       label={`${band.label} Hz: ${level.toFixed(1)} ${selectedChannel.dbUnit ?? 'dB'} (${band.lowerFrequencyHz.toFixed(1)}-${band.upperFrequencyHz.toFixed(1)} Hz)`}
                       withArrow
                     >
-                      <div className={styles.barColumn}>
+                      <div
+                        className={isLinked ? `${styles.barColumn} ${styles.barColumnLinked}` : styles.barColumn}
+                        onMouseEnter={() => dispatch(cursorFrequencyHovered(band.centerFrequencyHz))}
+                      >
                         <div className={styles.barTrack}>
                           <div className={styles.barFill} style={{ height: `${percent}%` }} />
                         </div>

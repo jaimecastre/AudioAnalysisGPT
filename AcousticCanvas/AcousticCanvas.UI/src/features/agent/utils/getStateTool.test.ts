@@ -68,6 +68,7 @@ const emptyState: RootState = {
   },
   analysisCursor: {
     hoverFrequencyHz: null,
+    hoverTimeSeconds: null,
   },
   findings: {
     result: null,
