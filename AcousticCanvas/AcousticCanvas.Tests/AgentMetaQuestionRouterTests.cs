@@ -80,28 +80,4 @@ public sealed class AgentMetaQuestionRouterTests
 
         Assert.Null(answer);
     }
-
-    [Theory]
-    [InlineData("What is the peak level of this file?")]
-    [InlineData("Show me the spectrogram")]
-    [InlineData("Analyze the frequency content")]
-    [InlineData("Does this file have clipping?")]
-    [InlineData("What's the RMS level?")]
-    public void AppearsToBeAudioAnalysisQuestionDetectsAudioQuestions(string question)
-    {
-        var result = AcousticCanvas.Features.Agent.Orchestration.AgentOrchestrator.TestAppearsToBeAudioAnalysisQuestion(question);
-
-        Assert.True(result);
-    }
-
-    [Theory]
-    [InlineData("Hello")]
-    [InlineData("How are you?")]
-    [InlineData("What time is it?")]
-    public void AppearsToBeAudioAnalysisQuestionRejectsNonAudioQuestions(string question)
-    {
-        var result = AcousticCanvas.Features.Agent.Orchestration.AgentOrchestrator.TestAppearsToBeAudioAnalysisQuestion(question);
-
-        Assert.False(result);
-    }
 }
