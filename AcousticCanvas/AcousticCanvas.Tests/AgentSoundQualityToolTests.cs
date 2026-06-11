@@ -12,6 +12,51 @@ namespace AcousticCanvas.Tests;
 public sealed class AgentSoundQualityToolTests
 {
     [Fact]
+    public void AgentToolRegistryIncludesRunSoundQualityMetrics()
+    {
+        var definition = AgentToolRegistry.GetToolDefinition("run_sound_quality_metrics");
+        var promptSummary = AgentToolRegistry.BuildToolListSummaryForPrompt();
+
+        Assert.NotNull(definition);
+        Assert.Contains("loudness", definition.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("sharpness", definition.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("roughness", definition.Description, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("run_sound_quality_metrics", promptSummary);
+    }
+
+    [Fact]
+    public void PlannerPromptCoversSoundQualityScenarios()
+    {
+        var prompt = AgentPromptBuilder.BuildPlannerSystemPrompt(
+            AgentToolRegistry.BuildToolListSummaryForPrompt(),
+            ["file-a", "file-b"],
+            ["a.wav", "b.wav"]);
+
+        Assert.Contains("loudness, sharpness, roughness", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("perceived quality", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("psychoacoustic questions", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("run_sound_quality_metrics on each file", prompt, StringComparison.Ordinal);
+        Assert.Contains("sound-quality comparisons", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("run_sound_quality_metrics on all referenced or loaded files", prompt, StringComparison.Ordinal);
+        Assert.Contains("unsupported sound-quality conversions", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("harshness or spectral questions", prompt, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void FinalAnswerPromptCoversSoundQualityInterpretationRules()
+    {
+        var prompt = AgentPromptBuilder.BuildFinalAnswerSystemPrompt();
+
+        Assert.Contains("When a sound_quality_comparison evidence item exists", prompt, StringComparison.Ordinal);
+        Assert.Contains("always cite loudness/sharpness/roughness deltas with units", prompt, StringComparison.Ordinal);
+        Assert.Contains("sone is NOT convertible to LUFS", prompt, StringComparison.Ordinal);
+        Assert.Contains("For harshness comparisons: use sharpness", prompt, StringComparison.Ordinal);
+        Assert.Contains("Do NOT cite peakFrequencyHz as a harshness proxy", prompt, StringComparison.Ordinal);
+        Assert.Contains("Sound-quality evidence is psychoacoustic metric evidence", prompt, StringComparison.Ordinal);
+        Assert.Contains("they do not identify the mechanical/electrical source", prompt, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ToolExecutionServiceRunsFullFileSoundQualityMetrics()
     {
         var fileId = Guid.NewGuid().ToString("N")[..12];
@@ -94,6 +139,60 @@ public sealed class AgentSoundQualityToolTests
         Assert.Equal(1.25, evidence.Data["sharpnessAcum"]);
         Assert.Equal(0.75, evidence.Data["roughnessAsper"]);
         Assert.Equal("MoSQITo roughness_dw", evidence.Data["roughnessMethod"]);
+    }
+
+    [Fact]
+    public void EvidencePackageBuilderEmitsSoundQualityComparisonEvidenceForTwoFiles()
+    {
+        var toolOutput = new ToolExecutionOutput
+        {
+            ToolName = "run_sound_quality_metrics",
+            Status = "completed",
+            ResultRef = "sound_quality_12345678",
+            ResultData = new
+            {
+                results = new[]
+                {
+                    new
+                    {
+                        fileId = "fileA123456",
+                        region = new { startSeconds = 0.0, endSeconds = 1.0, durationSeconds = 1.0 },
+                        method = "mosqito_stationary_zwicker",
+                        loudness = new { value = 10.5, unit = "sone", method = "MoSQITo loudness_zwst" },
+                        sharpness = new { value = 1.25, unit = "acum", method = "MoSQITo sharpness_din_from_loudness" },
+                        roughness = new { value = 0.75, unit = "asper", method = "MoSQITo roughness_dw" },
+                    },
+                    new
+                    {
+                        fileId = "fileB123456",
+                        region = new { startSeconds = 0.0, endSeconds = 1.0, durationSeconds = 1.0 },
+                        method = "mosqito_stationary_zwicker",
+                        loudness = new { value = 12.25, unit = "sone", method = "MoSQITo loudness_zwst" },
+                        sharpness = new { value = 0.95, unit = "acum", method = "MoSQITo sharpness_din_from_loudness" },
+                        roughness = new { value = 0.04, unit = "asper", method = "MoSQITo roughness_dw" },
+                    },
+                },
+            },
+        };
+
+        var evidencePackage = EvidencePackageBuilder.Build(
+            userQuestion: "Compare sound quality.",
+            selectedFileIds: ["fileA123456", "fileB123456"],
+            selectedFileNames: ["a.wav", "b.wav"],
+            toolOutputs: [toolOutput]);
+
+        Assert.Equal(2, evidencePackage.KeyEvidence.Count(item => item.Type == "sound_quality"));
+        var comparison = Assert.Single(evidencePackage.KeyEvidence, item => item.Type == "sound_quality_comparison");
+        Assert.Equal("a.wav", comparison.Data["fileNameA"]);
+        Assert.Equal("b.wav", comparison.Data["fileNameB"]);
+        Assert.Equal(10.5, comparison.Data["loudnessASone"]);
+        Assert.Equal(12.25, comparison.Data["loudnessBSone"]);
+        Assert.Equal(1.75, comparison.Data["loudnessDeltaSone"]);
+        Assert.Equal(-0.3, comparison.Data["sharpnessDeltaAcum"]);
+        Assert.Equal(-0.71, comparison.Data["roughnessDeltaAsper"]);
+        Assert.Equal("fileB123456", comparison.Data["louderFileId"]);
+        Assert.Equal("fileA123456", comparison.Data["sharperFileId"]);
+        Assert.Equal("fileA123456", comparison.Data["rougherFileId"]);
     }
 
     private static byte[] BuildSineWaveBytes()

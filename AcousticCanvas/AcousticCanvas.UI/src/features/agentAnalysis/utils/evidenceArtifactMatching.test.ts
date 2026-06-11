@@ -32,12 +32,72 @@ const spectrumArtifact: AgentArtifact = {
   rows: [],
 };
 
+const spectrumArtifactA: AgentArtifact = {
+  type: 'tool_result',
+  id: 'spectrum-artifact-a',
+  timestamp: '2026-06-10T12:00:00.000Z',
+  toolName: 'run_spectrum',
+  title: 'Spectrum',
+  fileId: 'file-a',
+  rows: [],
+};
+
+const spectrumArtifactB: AgentArtifact = {
+  type: 'tool_result',
+  id: 'spectrum-artifact-b',
+  timestamp: '2026-06-10T12:00:00.000Z',
+  toolName: 'run_spectrum',
+  title: 'Spectrum',
+  fileId: 'file-b',
+  rows: [],
+};
+
 const spectrogramArtifact: AgentArtifact = {
   type: 'tool_result',
   id: 'spectrogram-artifact',
   timestamp: '2026-06-10T12:00:00.000Z',
   toolName: 'run_spectrogram',
   title: 'Spectrogram',
+  rows: [],
+};
+
+const cpbArtifactA: AgentArtifact = {
+  type: 'tool_result',
+  id: 'cpb-artifact-a',
+  timestamp: '2026-06-10T12:00:00.000Z',
+  toolName: 'run_cpb',
+  title: 'CPB',
+  fileId: 'file-a',
+  rows: [],
+};
+
+const cpbArtifactB: AgentArtifact = {
+  type: 'tool_result',
+  id: 'cpb-artifact-b',
+  timestamp: '2026-06-10T12:00:00.000Z',
+  toolName: 'run_cpb',
+  title: 'CPB',
+  fileId: 'file-b',
+  rows: [],
+};
+
+const soundQualityArtifactA: AgentArtifact = {
+  type: 'tool_result',
+  id: 'sq-artifact-a',
+  timestamp: '2026-06-10T12:00:00.000Z',
+  toolName: 'run_sound_quality_metrics',
+  title: 'Sound quality',
+  fileId: 'file-a',
+  rows: [],
+};
+
+const soundQualityArtifactB: AgentArtifact = {
+  type: 'tool_result',
+  id: 'sq-artifact-b',
+  timestamp: '2026-06-10T12:00:00.000Z',
+  toolName: 'run_sound_quality_metrics',
+  title: 'Sound quality',
+  fileId: 'file-b',
   rows: [],
 };
 
@@ -92,6 +152,21 @@ describe('evidenceArtifactMatching', () => {
     expect(artifactId).toBe('spectrum-artifact');
   });
 
+  it('matches spectrum evidence to the artifact for the same file when several spectra exist', () => {
+    const evidenceItem: AgentEvidenceItem = {
+      evidenceId: 'ev_spectrum_file_b',
+      type: 'spectrum',
+      data: {
+        fileId: 'file-b',
+        fileName: 'Sine_1000hz.wav',
+      },
+    };
+
+    const artifactId = getEvidenceArtifactId(evidenceItem, [spectrumArtifactA, spectrumArtifactB]);
+
+    expect(artifactId).toBe('spectrum-artifact-b');
+  });
+
   it('matches spectrogram evidence to the spectrogram tool result artifact', () => {
     const evidenceItem: AgentEvidenceItem = {
       evidenceId: 'ev_spectrogram_file_a',
@@ -120,5 +195,35 @@ describe('evidenceArtifactMatching', () => {
     const artifactId = getEvidenceArtifactId(evidenceItem, [spectrogramArtifactA, spectrogramArtifactB]);
 
     expect(artifactId).toBe('spectrogram-artifact-b');
+  });
+
+  it('matches CPB evidence to the artifact for the same file when several CPB artifacts exist', () => {
+    const evidenceItem: AgentEvidenceItem = {
+      evidenceId: 'ev_cpb_file_b',
+      type: 'cpb',
+      data: {
+        fileId: 'file-b',
+        fileName: 'Noise_B.wav',
+      },
+    };
+
+    const artifactId = getEvidenceArtifactId(evidenceItem, [cpbArtifactA, cpbArtifactB]);
+
+    expect(artifactId).toBe('cpb-artifact-b');
+  });
+
+  it('matches sound quality evidence to the artifact for the same file when several sound quality artifacts exist', () => {
+    const evidenceItem: AgentEvidenceItem = {
+      evidenceId: 'ev_sound_quality_file_b',
+      type: 'sound_quality',
+      data: {
+        fileId: 'file-b',
+        fileName: 'Rough_B.wav',
+      },
+    };
+
+    const artifactId = getEvidenceArtifactId(evidenceItem, [soundQualityArtifactA, soundQualityArtifactB]);
+
+    expect(artifactId).toBe('sq-artifact-b');
   });
 });

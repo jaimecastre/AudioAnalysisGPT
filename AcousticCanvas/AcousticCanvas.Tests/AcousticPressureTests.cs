@@ -299,7 +299,7 @@ public sealed class AcousticPressureTests
     }
 
     // -----------------------------------------------------------------
-    // 14. Spectrogram colorbar label is "Sound pressure level [dB SPL]"
+    // 14. Spectrogram colorbar label uses calibrated pressure reference wording.
     // -----------------------------------------------------------------
 
     [Fact]
@@ -309,7 +309,7 @@ public sealed class AcousticPressureTests
 
         var analysis = SpectrogramAnalyzer.Analyze([channel], 0.0, 1.0, 512, 0.5, "linear", 20.0, 80.0);
 
-        Assert.Equal("Sound pressure level [dB SPL]", analysis.Channels[0].ColorbandLabel);
+        Assert.Equal("Level [dB re 20 µPa]", analysis.Channels[0].ColorbandLabel);
     }
 
     // -----------------------------------------------------------------

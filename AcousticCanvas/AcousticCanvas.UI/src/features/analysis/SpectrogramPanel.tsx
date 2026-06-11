@@ -25,8 +25,8 @@ import styles from './SpectrogramPanel.module.scss';
 const DEFAULT_CANVAS_HEIGHT = 200;
 const MIN_CANVAS_HEIGHT = 140;
 const MAX_CANVAS_HEIGHT = 420;
-const AXIS_WIDTH = 52;
-const COLORBAR_WIDTH = 52;
+const AXIS_WIDTH = 60;
+const COLORBAR_WIDTH = 85;
 const TIME_AXIS_HEIGHT = 24;
 const FONT = "10px 'JetBrains Mono', ui-monospace, monospace";
 const LABEL_COLOR = 'rgba(0,0,0,0.45)';
@@ -143,7 +143,7 @@ function drawFrequencyAxis(
 
   for (const tick of ticks) {
     const y = tick.positionPercent / 100 * height;
-    const clampedY = Math.max(6, Math.min(y, height - 6));
+    const clampedY = Math.max(2, Math.min(y, height - 10));
     // Tick line flush against the right edge of the axis canvas.
     ctx.beginPath();
     ctx.moveTo(AXIS_WIDTH, clampedY);
@@ -325,6 +325,7 @@ export const SpectrogramPanel = ({
   const renderedRegion = spectrogramResult?.region;
   const renderedScale = spectrogramResult?.parameters.scale;
   const renderedNyquistHz = spectrogramResult ? spectrogramResult.parameters.sampleRate / 2 : 0;
+  const colorbandLabel = spectrogramResult?.channels[0]?.colorbandLabel;
   const playheadPercent = renderedRegion && renderedRegion.durationSeconds > 0
     ? (currentTimeSeconds - renderedRegion.startSeconds) / renderedRegion.durationSeconds * 100
     : -1;
@@ -558,11 +559,18 @@ export const SpectrogramPanel = ({
                   </div>
                 )}
               </div>
-              <canvas
-                ref={colorbarCanvasRef}
-                style={{ flexShrink: 0, display: 'block' }}
-                aria-label="Spectrogram color scale"
-              />
+              <div className={styles.colorbarAxis} style={{ height: canvasHeight }}>
+                <canvas
+                  ref={colorbarCanvasRef}
+                  style={{ flexShrink: 0, display: 'block' }}
+                  aria-label="Spectrogram color scale"
+                />
+                {colorbandLabel && (
+                  <Text size="xs" ff="var(--font-mono)" c="dimmed" className={styles.colorbarAxisLabel}>
+                    {colorbandLabel}
+                  </Text>
+                )}
+              </div>
             </div>
             <div className={styles.timeAxisRow} aria-label="Spectrogram time axis">
               <div className={styles.timeAxisSpacer} />
@@ -576,18 +584,9 @@ export const SpectrogramPanel = ({
                     {tick.label}
                   </span>
                 ))}
-                <span className={styles.timeAxisTitle}>Time (s)</span>
               </div>
               <div style={{ width: COLORBAR_WIDTH, flexShrink: 0 }} />
             </div>
-            {/* Colorbar label */}
-            {spectrogramResult?.channels[0]?.colorbandLabel && (
-              <div style={{ paddingLeft: AXIS_WIDTH, paddingTop: 2 }}>
-                <Text size="xs" ff="var(--font-mono)" c="dimmed">
-                  {spectrogramResult.channels[0].colorbandLabel}
-                </Text>
-              </div>
-            )}
           </div>
         )}
         {effectiveFileId && spectrogramStatus !== 'error' && (

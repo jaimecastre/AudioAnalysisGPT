@@ -37,13 +37,14 @@ describe('createToolResultArtifactDrafts', () => {
   });
 
   it('keeps non-spectrogram tool output as a single artifact draft', () => {
-    const drafts = createToolResultArtifactDrafts('run_spectrum', {
+    const drafts = createToolResultArtifactDrafts('run_basic_metrics', {
       results: [
         {
           fileId: 'file-a',
-          summary: {
-            peakFrequencyHz: 1000,
-            maxMagnitudeDb: -12.5,
+          metrics: {
+            rmsDbFs: -18.25,
+            peakDbFs: -3.5,
+            crestFactorDb: 14.75,
           },
         },
       ],
@@ -51,10 +52,136 @@ describe('createToolResultArtifactDrafts', () => {
 
     expect(drafts).toHaveLength(1);
     expect(drafts[0]).toMatchObject({
-      toolName: 'run_spectrum',
+      toolName: 'run_basic_metrics',
       rows: [
-        { label: 'peak frequency', value: '1000 Hz' },
+        { label: 'RMS', value: '-18.25 dBFS' },
+        { label: 'peak', value: '-3.50 dBFS' },
+        { label: 'crest factor', value: '14.75 dBFS' },
+      ],
+    });
+  });
+
+  it('splits multi-file spectrum output into one artifact draft per file', () => {
+    const drafts = createToolResultArtifactDrafts('run_spectrum', {
+      results: [
+        {
+          fileId: 'file-a',
+          summary: {
+            peakFrequencyHz: 257,
+            maxMagnitudeDb: -12.5,
+          },
+        },
+        {
+          fileId: 'file-b',
+          summary: {
+            peakFrequencyHz: 86,
+            maxMagnitudeDb: -18.25,
+          },
+        },
+      ],
+    });
+
+    expect(drafts).toHaveLength(2);
+    expect(drafts[0]).toMatchObject({
+      toolName: 'run_spectrum',
+      fileId: 'file-a',
+      rows: [
+        { label: 'peak frequency', value: '257 Hz' },
         { label: 'max magnitude', value: '-12.50 dBFS' },
+      ],
+    });
+    expect(drafts[1]).toMatchObject({
+      toolName: 'run_spectrum',
+      fileId: 'file-b',
+      rows: [
+        { label: 'peak frequency', value: '86 Hz' },
+        { label: 'max magnitude', value: '-18.25 dBFS' },
+      ],
+    });
+  });
+
+  it('splits multi-file CPB output into one artifact draft per file', () => {
+    const drafts = createToolResultArtifactDrafts('run_cpb', {
+      results: [
+        {
+          fileId: 'file-a',
+          bandMode: 'third_octave',
+          weighting: 'Z',
+          summary: {
+            highestBands: [
+              { label: '1k', levelDb: -12.5 },
+            ],
+          },
+        },
+        {
+          fileId: 'file-b',
+          bandMode: 'octave',
+          weighting: 'A',
+          summary: {
+            highestBands: [
+              { label: '500', levelDb: -18.25 },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(drafts).toHaveLength(2);
+    expect(drafts[0]).toMatchObject({
+      toolName: 'run_cpb',
+      fileId: 'file-a',
+      rows: [
+        { label: 'band mode', value: 'third_octave' },
+        { label: 'weighting', value: 'Z' },
+        { label: '1k', value: '-12.50 dBFS' },
+      ],
+    });
+    expect(drafts[1]).toMatchObject({
+      toolName: 'run_cpb',
+      fileId: 'file-b',
+      rows: [
+        { label: 'band mode', value: 'octave' },
+        { label: 'weighting', value: 'A' },
+        { label: '500', value: '-18.25 dBFS' },
+      ],
+    });
+  });
+
+  it('splits multi-file sound quality output into one artifact draft per file', () => {
+    const drafts = createToolResultArtifactDrafts('run_sound_quality_metrics', {
+      results: [
+        {
+          fileId: 'file-a',
+          loudness: { value: 10.5, unit: 'sone' },
+          sharpness: { value: 1.25, unit: 'acum' },
+          roughness: { value: 0.75, unit: 'asper' },
+        },
+        {
+          fileId: 'file-b',
+          loudness: { value: 12.25, unit: 'sone' },
+          sharpness: { value: 0.95, unit: 'acum' },
+          roughness: { value: 0.04, unit: 'asper' },
+        },
+      ],
+    });
+
+    expect(drafts).toHaveLength(2);
+    expect(drafts[0]).toMatchObject({
+      toolName: 'run_sound_quality_metrics',
+      fileId: 'file-a',
+      rows: [
+        { label: 'loudness', value: '10.500 sone' },
+        { label: 'sharpness', value: '1.250 acum' },
+        { label: 'roughness', value: '0.750 asper' },
+      ],
+    });
+    expect(drafts[1]).toMatchObject({
+      toolName: 'run_sound_quality_metrics',
+      fileId: 'file-b',
+      rows: [
+        { label: 'loudness', value: '12.250 sone' },
+        { label: 'sharpness', value: '0.950 acum' },
+        { label: 'roughness', value: '0.040 asper' },
       ],
     });
   });

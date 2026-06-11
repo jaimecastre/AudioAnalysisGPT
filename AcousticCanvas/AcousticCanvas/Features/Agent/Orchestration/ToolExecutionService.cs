@@ -1,8 +1,8 @@
 using System.Text.Json;
 using FastEndpoints;
+using AcousticCanvas.Features.Analysis.Analyzers;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
-using AcousticCanvas.Features.Analysis.Handlers;
 using AcousticCanvas.Features.Analysis.Importers;
 using AcousticCanvas.Features.Analysis.Services;
 using AcousticCanvas.Features.AudioUpload.Services;
@@ -366,18 +366,17 @@ public sealed class ToolExecutionService(
         return BuildSuccessOutput("run_cpb", "cpb_" + Guid.NewGuid().ToString("N")[..8], resultData);
     }
 
-    private async Task<ToolExecutionOutput> ExecuteRunSpectrogramAsync(
+    private Task<ToolExecutionOutput> ExecuteRunSpectrogramAsync(
         Dictionary<string, object?> arguments,
         CancellationToken cancellationToken)
     {
         var fileIds = ExtractFileIds(arguments);
         if (fileIds.Count == 0)
         {
-            return BuildFailureOutput("run_spectrogram", "MISSING_FILE_IDS", "fileIds argument is required and must not be empty.");
+            return Task.FromResult(BuildFailureOutput("run_spectrogram", "MISSING_FILE_IDS", "fileIds argument is required and must not be empty."));
         }
 
         var spectrogramResults = new List<object>();
-        var spectrogramHandler = new RunSpectrogramHandler(signalFileImporters, spectrogramCacheStore);
 
         foreach (var fileId in fileIds)
         {
@@ -401,7 +400,7 @@ public sealed class ToolExecutionService(
                 GainDb: DefaultSpectrogramGainDb,
                 RangeDb: DefaultSpectrogramRangeDb);
 
-            var spectrogramResult = await spectrogramHandler.ExecuteAsync(query, cancellationToken);
+            var spectrogramResult = RunSpectrogramAnalysis(query, cancellationToken);
             var primaryChannel = spectrogramResult.Channels.Count > 0 ? spectrogramResult.Channels[0] : null;
             if (primaryChannel is null)
             {
@@ -441,7 +440,69 @@ public sealed class ToolExecutionService(
         }
 
         var resultData = new { results = spectrogramResults };
-        return BuildSuccessOutput("run_spectrogram", "spectrogram_" + Guid.NewGuid().ToString("N")[..8], resultData);
+        return Task.FromResult(BuildSuccessOutput("run_spectrogram", "spectrogram_" + Guid.NewGuid().ToString("N")[..8], resultData));
+    }
+
+    private SpectrogramAnalysis RunSpectrogramAnalysis(RunSpectrogramQuery query, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (spectrogramCacheStore.TryGet(
+            query.FilePath,
+            query.StartSeconds,
+            query.EndSeconds,
+            query.FftSize,
+            query.Overlap,
+            query.Scale,
+            query.GainDb,
+            query.RangeDb,
+            query.MinDbSpl,
+            query.MaxDbSpl,
+            out var cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        var importer = ResolveSignalImporter(query.FilePath);
+        var signalFile = importer.Import(query.FilePath);
+        var result = SpectrogramAnalyzer.Analyze(
+            signalFile.Channels,
+            query.StartSeconds,
+            query.EndSeconds,
+            query.FftSize,
+            query.Overlap,
+            query.Scale,
+            query.GainDb,
+            query.RangeDb,
+            query.MinDbSpl,
+            query.MaxDbSpl);
+
+        spectrogramCacheStore.Set(
+            query.FilePath,
+            query.StartSeconds,
+            query.EndSeconds,
+            query.FftSize,
+            query.Overlap,
+            query.Scale,
+            query.GainDb,
+            query.RangeDb,
+            query.MinDbSpl,
+            query.MaxDbSpl,
+            result);
+
+        return result;
+    }
+
+    private ISignalFileImporter ResolveSignalImporter(string filePath)
+    {
+        foreach (var importer in signalFileImporters)
+        {
+            if (importer.CanImport(filePath))
+            {
+                return importer;
+            }
+        }
+        throw new NotSupportedException($"No importer found for file: {Path.GetFileName(filePath)}");
     }
 
     private async Task<ToolExecutionOutput> ExecuteRunSoundQualityMetricsAsync(

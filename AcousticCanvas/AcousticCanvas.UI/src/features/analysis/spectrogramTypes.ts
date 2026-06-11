@@ -31,7 +31,7 @@ export type ChannelSpectrogramAnalysis = {
   // Acoustic calibration metadata from backend.
   // 'digital_full_scale' | 'pressure_signal' | 'calibrated' | 'assumed_pressure'
   calibrationState: string | null;
-  // 'Sound pressure level [dB SPL]' or 'Amplitude [dBFS]'
+  // 'Level [dB re 20 µPa]' or 'Amplitude [dBFS]'
   colorbandLabel: string | null;
 };
 

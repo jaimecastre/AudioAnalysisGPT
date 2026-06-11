@@ -94,7 +94,9 @@ public sealed class AgentSpectrogramToolTests
             },
             CancellationToken.None);
 
-        Assert.Equal("completed", toolOutput.Status);
+        Assert.True(
+            toolOutput.Status == "completed",
+            $"Expected completed status, got '{toolOutput.Status}': {toolOutput.ErrorCode} {toolOutput.ErrorMessage}");
         Assert.Equal("run_spectrogram", toolOutput.ToolName);
         Assert.NotNull(toolOutput.ResultData);
 

@@ -46,6 +46,7 @@
 .panelBody {
   position: relative;
   min-height: 40px;
+  padding-top: 8px;
 }
 
 .spectrogramFrame {
@@ -58,6 +59,22 @@
   display: flex;
   flex-direction: row;
   width: 100%;
+}
+
+.colorbarAxis {
+  position: relative;
+  width: 85px;
+  flex-shrink: 0;
+}
+
+.colorbarAxisLabel {
+  position: absolute;
+  left: 19px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: center center;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .emptyState {
@@ -94,7 +111,7 @@
 }
 
 .timeAxisSpacer {
-  width: 52px;
+  width: 60px;
   flex-shrink: 0;
 }
 
@@ -125,14 +142,6 @@
     height: 4px;
     background: rgba(0, 0, 0, 0.35);
   }
-}
-
-.timeAxisTitle {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  color: rgba(0, 0, 0, 0.32);
-  pointer-events: none;
 }
 
 .playhead,

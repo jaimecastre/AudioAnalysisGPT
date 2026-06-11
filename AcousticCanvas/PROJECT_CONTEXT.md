@@ -241,7 +241,23 @@ Agent file loading check: if no files are loaded and the user asks an audio-rela
 
 Agent spectrogram artifacts: multi-file `run_spectrogram` results create one workspace artifact per file, so each spectrogram evidence pill focuses the matching file-specific artifact instead of a combined card.
 
+Agent spectrum artifacts: multi-file `run_spectrum` results create one workspace artifact per file, so each Spectrum evidence pill focuses the matching file-specific artifact instead of a combined card.
+
+Agent CPB artifacts: multi-file `run_cpb` results create one workspace artifact per file, so each CPB evidence pill focuses the matching file-specific artifact instead of a combined card.
+
+Agent Sound Quality artifacts: multi-file `run_sound_quality_metrics` results create one workspace artifact per file, so each Sound quality evidence pill focuses the matching file-specific artifact instead of a combined card.
+
 Agent spectrogram answer contract: compact spectrogram evidence supports duration, displayed range, Nyquist/frequency coverage, FFT size, scale, frame count, and bin count. It does not expose per-frame energy coordinates, bright-line positions, dominant bands over time, complexity, harmonic richness, or transient timestamps to the final-answer model. Duration/frame count describe time coverage/resolution only; they must not be used to infer broader frequency range or richer/less complex content. For burst/transient questions, the planner should pair `run_spectrogram` with `run_event_detection(kind="transient")`; for explicitly spectrogram-only comparisons, it should not add FFT spectrum unless peaks/tonal balance are also requested. For "what causes this band?" the cause remains unknown unless supported by matching spectrum/reference/order evidence. For "energy near X Hz throughout" the Agent must not use overall FFT spectrum alone as proof of time persistence.
+
+Spectrogram axis wording: avoid legacy SPL colorbar wording. Pressure-calibrated spectrograms use `Level [dB re 20 µPa]`; uncalibrated digital spectrograms use `Amplitude [dBFS]`. The spectrogram time axis shows tick labels only; do not render a separate `Time (s)` footer title.
+
+Agent spectrum answer contract: spectrum evidence supports full-file/region averaged FFT peak frequency, max magnitude, dominant peaks, and comparison deltas. It must not be used as time-continuity evidence, SPL evidence without calibration, LUFS evidence, compliance evidence, or proof of a physical source/cause. Definition questions such as "what is an FFT spectrum?" should be answered without tools; measurement questions such as "what is the peak frequency?" should run `run_spectrum`.
+
+Agent CPB answer contract: CPB evidence supports octave/third-octave band balance, highest-band summaries, and broad boomy/muddy/bright/dull descriptions. It must not be used as exact tonal-peak evidence, SPL evidence without calibration, or standards-compliance evidence. Current default CPB method is `fft_bin_power_sum` and must be described as a nominal approximation, not IEC 61260 compliant, unless a validated filter-bank method is explicitly used.
+
+Agent Sound Quality answer contract: sound-quality evidence supports MoSQITo loudness (`sone`), sharpness (`acum`), and roughness (`asper`) for relative perceived-quality comparisons. It must not be converted to LUFS, SPL, gain change, standards compliance, or physical root cause. Harshness explanations should use sharpness/roughness as primary psychoacoustic evidence, optionally supported by CPB/spectrum evidence. Definition questions such as "what is roughness?" should be answered without tools; measurement questions such as "what is the roughness of @file.wav?", "what is the loudness?", or "what is the loudness and roughness?" should run `run_sound_quality_metrics`.
+
+Agent behavior evals: `AcousticCanvas.Tests/AgentBehavior/agent_eval_cases.jsonl` plus `AgentBehaviorEvalTests` define deterministic, no-tool, planner-prompt, and final-answer grounding contracts for spectrum, spectrogram, CPB, Sound Quality, clipping, comparison, UI-action, and unsupported-conversion scenarios. These are local workflow/contract tests, not live LLM answer-quality evals; a production `AgentRunTrace` and model-graded eval loop remain future work.
 
 Semantic analysis kinds available (old loop): loudness, peaks, dynamics, spectral_balance, noise, stereo_phase, distortion, dialogue_clarity.
 
@@ -1101,6 +1117,7 @@ Must-have features:
 - ✅ `run_findings` suggestion chip in agent chat
 - ✅ Routing fix: `findings`/`issues` keywords route to orchestrator
 - ✅ Agent can summarize findings with grounded evidence
+- ✅ JSONL-based Agent behavior eval harness for deterministic facts, no-tool answers, planner prompt contracts, and final-answer grounding rules
 - Agent can explain A/B differences
 - Integrate fuller agent answer into investigation timeline (future)
 
@@ -1208,6 +1225,7 @@ What it is **not yet**:
 - There is no structured hypothesis ranking
 - There is no persistent investigation trace
 - There is no multi-step observation loop
+- There is no full trace-based agent eval harness with multi-trial scoring, model-graded answer quality, or production monitoring metrics
 
 ---
 
@@ -1794,6 +1812,34 @@ TODO [Concept 9]:  Add KnowledgeSourceType enum to EvidenceItem and FinalAnswerR
 TODO [Concept 10]: Design bounded observation loop as a separate orchestration path
                    Add MaxToolCallsPerQuestion and MaxPlanningIterations configuration
                    Implement stopping condition check in loop controller
+
+TODO [Concept 11]: Add AgentRunTrace and trace-based eval harness
+                   Implement after the current JSONL contract evals are stable and before
+                   adding higher-autonomy investigation loops, batch-ranking explanations,
+                   or report generation.
+                   Trace must capture: user question, selected files, deterministic route/no-tool route,
+                   planner response, planned tools, tool args, tool output refs, evidence package,
+                   final answer, validation warnings, latency, token usage, and model id.
+
+TODO [Concept 12]: Add end-to-end agent eval suite with audio fixtures
+                   Implement after AgentRunTrace exists and before changing planner prompts,
+                   upgrading models, or expanding Agent tools beyond the current DSP suite.
+                   Each eval case should define expected tools, expected evidence types,
+                   prohibited claims, required answer facts, and outcome graders over the
+                   trace/final answer.
+
+TODO [Concept 13]: Add multi-trial and model-graded evals
+                   Implement when the Agent begins producing richer comparative reports,
+                   recommendations, or autonomous next-step plans where deterministic graders
+                   are insufficient.
+                   Track pass@1/pass^k-style consistency, tool-call stability,
+                   unsupported-claim rate, latency, cost, and answer-quality rubric score.
+
+TODO [Concept 14]: Add human calibration loop for agent evals
+                   Implement before treating model-graded eval scores as release gates.
+                   Acoustic/domain experts should periodically review sampled traces and
+                   calibrate rubric prompts for groundedness, usefulness, uncertainty,
+                   and acoustic validity.
 
 TODO [General]:    All future architecture work should be introduced as thin vertical slices.
                    Do not implement the full multi-concept stack at once.

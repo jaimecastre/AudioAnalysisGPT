@@ -24,7 +24,12 @@ export function createToolResultArtifactDrafts(
   toolName: string,
   raw: unknown,
 ): ToolResultArtifactDraft[] {
-  if (toolName === 'run_spectrogram') {
+  if (
+    toolName === 'run_spectrogram'
+    || toolName === 'run_spectrum'
+    || toolName === 'run_cpb'
+    || toolName === 'run_sound_quality_metrics'
+  ) {
     const results = getResults(raw);
     if (!results?.length) return [];
 

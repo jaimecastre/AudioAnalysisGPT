@@ -118,7 +118,7 @@ public static class AcousticPressureConverter
     public static string ResolveYAxisLabel(SignalPhysicalMetadata? metadata) =>
         metadata?.UnitKind switch
         {
-            SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure => "Level [dB re 20 µPa]",
+            SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure => "dB re 20 µPa",
             _ => "[dBFS]",
         };
 
@@ -128,7 +128,7 @@ public static class AcousticPressureConverter
     public static string ResolveColorbandLabel(SignalPhysicalMetadata? metadata) =>
         metadata?.UnitKind switch
         {
-            SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure => "Sound pressure level [dB SPL]",
+            SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure => "dB re 20 µPa",
             _ => "Amplitude [dBFS]",
         };
 

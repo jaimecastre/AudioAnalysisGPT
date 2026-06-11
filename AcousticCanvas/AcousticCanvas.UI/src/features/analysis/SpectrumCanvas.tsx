@@ -171,7 +171,7 @@ function drawSpectrum(
   ctx.fillStyle = LABEL_COLOR;
   const yAxisLabel = firstChannel.yAxisLabel
     ? firstChannel.yAxisLabel
-    : yUnit ? `Magnitude [${yUnit}]` : 'Magnitude';
+    : yUnit ? yUnit : '';
   ctx.fillText(yAxisLabel, 0, 0);
   ctx.restore();
 
