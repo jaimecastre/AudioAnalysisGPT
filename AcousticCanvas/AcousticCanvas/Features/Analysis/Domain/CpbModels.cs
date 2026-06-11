@@ -23,6 +23,10 @@ public sealed class CpbBand
     public required double CenterFrequencyHz { get; init; }
     public required double LowerFrequencyHz { get; init; }
     public required double UpperFrequencyHz { get; init; }
+    // Contiguous staircase edges for plotting: PlotUpperFrequencyHz of a band equals
+    // PlotLowerFrequencyHz of the next band, so the rendered step line has vertical risers.
+    public required double PlotLowerFrequencyHz { get; init; }
+    public required double PlotUpperFrequencyHz { get; init; }
     public required double Magnitude { get; init; }
     public required double? LevelDb { get; init; }
     public required int BinCount { get; init; }

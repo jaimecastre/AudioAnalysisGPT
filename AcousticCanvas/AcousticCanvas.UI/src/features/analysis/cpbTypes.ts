@@ -25,6 +25,10 @@ export type CpbBand = {
   centerFrequencyHz: number;
   lowerFrequencyHz: number;
   upperFrequencyHz: number;
+  // Contiguous staircase edges supplied by the backend: plotUpperFrequencyHz of a band
+  // equals plotLowerFrequencyHz of the next, so the step line renders with vertical risers.
+  plotLowerFrequencyHz: number;
+  plotUpperFrequencyHz: number;
   magnitude: number;
   levelDb: number | null;
   binCount: number;

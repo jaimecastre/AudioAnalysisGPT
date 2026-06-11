@@ -56,10 +56,7 @@ public static class CpbAnalyzer
                 Method = Method,
                 Weighting = normalizedWeighting,
                 WeightingMethod = GetWeightingMethod(normalizedWeighting),
-                Limitations =
-                [
-                    "Nominal fractional-octave bands computed by summing FFT-bin power; not an IEC 61260 filter-bank analysis.",
-                ],
+                Limitations = BuildLimitations(normalizedWeighting, channels.Select(channel => channel.Quantity)),
                 StartTimeSeconds = startSeconds,
                 EndTimeSeconds = endSeconds,
                 BlockCount = blockCount,
@@ -114,10 +111,7 @@ public static class CpbAnalyzer
                 Method = Method,
                 Weighting = normalizedWeighting,
                 WeightingMethod = GetWeightingMethod(normalizedWeighting),
-                Limitations =
-                [
-                    "Nominal fractional-octave bands computed by summing FFT-bin power; not an IEC 61260 filter-bank analysis.",
-                ],
+                Limitations = BuildLimitations(normalizedWeighting, spectrumAnalysis.Channels.Select(channel => channel.Quantity)),
                 StartTimeSeconds = startSeconds,
                 EndTimeSeconds = endSeconds,
                 BlockCount = spectrumAnalysis.Parameters.BlockCount,
@@ -154,6 +148,9 @@ public static class CpbAnalyzer
         var bands = BuildBands(bandMode, bandsPerOctave, nyquistHz);
         var cpbBands = new List<CpbBand>(bands.Count);
 
+        // BS/ISO 7196 "As Signal(s)": A/C weighting only applies to sound-pressure signals.
+        var effectiveWeighting = ResolveEffectiveWeighting(weighting, channelSpectrum.Quantity);
+
         foreach (var band in bands)
         {
             var powerSum = 0.0;
@@ -172,7 +169,7 @@ public static class CpbAnalyzer
             }
 
             var unweightedMagnitude = Math.Sqrt(powerSum);
-            var weightingCorrectionDb = ComputeWeightingCorrectionDb(band.CenterFrequencyHz, weighting);
+            var weightingCorrectionDb = ComputeWeightingCorrectionDb(band.CenterFrequencyHz, effectiveWeighting);
             var weightedMagnitude = unweightedMagnitude * Math.Pow(10.0, weightingCorrectionDb / 20.0);
             var levelDb = ComputeDb(weightedMagnitude, dbReference);
 
@@ -182,6 +179,8 @@ public static class CpbAnalyzer
                 CenterFrequencyHz = Math.Round(band.CenterFrequencyHz, 3),
                 LowerFrequencyHz = Math.Round(band.LowerFrequencyHz, 3),
                 UpperFrequencyHz = Math.Round(band.UpperFrequencyHz, 3),
+                PlotLowerFrequencyHz = Math.Round(band.PlotLowerFrequencyHz, 3),
+                PlotUpperFrequencyHz = Math.Round(band.PlotUpperFrequencyHz, 3),
                 Magnitude = Math.Round(weightedMagnitude, 9),
                 LevelDb = levelDb.HasValue ? Math.Round(levelDb.Value, 3) : null,
                 BinCount = binCount,
@@ -215,6 +214,9 @@ public static class CpbAnalyzer
         var bands = BuildBands(bandMode, bandsPerOctave, channel.SampleRate / 2.0);
         var cpbBands = new List<CpbBand>(bands.Count);
 
+        // BS/ISO 7196 "As Signal(s)": A/C weighting only applies to sound-pressure signals.
+        var effectiveWeighting = ResolveEffectiveWeighting(weighting, channel.Quantity);
+
         foreach (var band in bands)
         {
             var powerSum = 0.0;
@@ -232,7 +234,7 @@ public static class CpbAnalyzer
             }
 
             var unweightedMagnitude = Math.Sqrt(powerSum);
-            var weightingCorrectionDb = ComputeWeightingCorrectionDb(band.CenterFrequencyHz, weighting);
+            var weightingCorrectionDb = ComputeWeightingCorrectionDb(band.CenterFrequencyHz, effectiveWeighting);
             var weightedMagnitude = unweightedMagnitude * Math.Pow(10.0, weightingCorrectionDb / 20.0);
             var levelDb = ComputeDb(weightedMagnitude, channel.DbReference);
             cpbBands.Add(new CpbBand
@@ -241,6 +243,8 @@ public static class CpbAnalyzer
                 CenterFrequencyHz = Math.Round(band.CenterFrequencyHz, 3),
                 LowerFrequencyHz = Math.Round(band.LowerFrequencyHz, 3),
                 UpperFrequencyHz = Math.Round(band.UpperFrequencyHz, 3),
+                PlotLowerFrequencyHz = Math.Round(band.PlotLowerFrequencyHz, 3),
+                PlotUpperFrequencyHz = Math.Round(band.PlotUpperFrequencyHz, 3),
                 Magnitude = Math.Round(weightedMagnitude, 9),
                 LevelDb = levelDb.HasValue ? Math.Round(levelDb.Value, 3) : null,
                 BinCount = binCount,
@@ -318,10 +322,28 @@ public static class CpbAnalyzer
     {
         var centers = bandMode == "octave" ? OctaveCentersHz : ThirdOctaveCentersHz;
         var edgeRatio = Math.Pow(2.0, 1.0 / (2.0 * bandsPerOctave));
-        return centers
+        var bands = centers
             .Select(center => new CpbBandDefinition(center, center / edgeRatio, center * edgeRatio))
             .Where(band => band.UpperFrequencyHz >= 20.0 && band.LowerFrequencyHz < nyquistHz)
             .ToArray();
+
+        // Nominal fractional-octave band edges do not coincide between neighbours, so
+        // derive contiguous plot edges: adjacent bands share a boundary at the geometric
+        // mean of one band's upper edge and the next band's lower edge. This keeps the
+        // rendered staircase risers vertical with no gaps, leaving the frontend to only
+        // draw the supplied points.
+        for (var i = 0; i < bands.Length; i++)
+        {
+            var plotLower = i == 0
+                ? bands[i].LowerFrequencyHz
+                : Math.Sqrt(bands[i - 1].UpperFrequencyHz * bands[i].LowerFrequencyHz);
+            var plotUpper = i == bands.Length - 1
+                ? bands[i].UpperFrequencyHz
+                : Math.Sqrt(bands[i].UpperFrequencyHz * bands[i + 1].LowerFrequencyHz);
+            bands[i] = bands[i] with { PlotLowerFrequencyHz = plotLower, PlotUpperFrequencyHz = plotUpper };
+        }
+
+        return bands;
     }
 
     private static string NormalizeBandMode(string bandMode)
@@ -352,6 +374,38 @@ public static class CpbAnalyzer
             "c" => "C-weighting IEC 61672 nominal frequency response",
             _ => "Z-weighting unweighted flat response",
         };
+    }
+
+    // BS/ISO 7196 / BK Connect "As Signal(s)": frequency weighting (A/C) is defined for
+    // sound-pressure signals only. For any other quantity the requested weighting is
+    // suppressed and the flat (Z) response is used.
+    private static string ResolveEffectiveWeighting(string requestedWeighting, string quantity)
+    {
+        if (requestedWeighting == "z")
+        {
+            return "z";
+        }
+
+        return string.Equals(quantity, "sound_pressure", StringComparison.OrdinalIgnoreCase)
+            ? requestedWeighting
+            : "z";
+    }
+
+    private static IReadOnlyList<string> BuildLimitations(string requestedWeighting, IEnumerable<string> quantities)
+    {
+        var limitations = new List<string>
+        {
+            "Nominal fractional-octave bands computed by summing FFT-bin power; not an IEC 61260 filter-bank analysis.",
+        };
+
+        if (requestedWeighting != "z"
+            && quantities.Any(quantity => !string.Equals(quantity, "sound_pressure", StringComparison.OrdinalIgnoreCase)))
+        {
+            limitations.Add(
+                $"{requestedWeighting.ToUpperInvariant()}-weighting was not applied to non-sound-pressure channels (BS/ISO 7196): frequency weighting is defined for sound pressure signals only.");
+        }
+
+        return limitations;
     }
 
     private static double ComputeWeightingCorrectionDb(double frequencyHz, string weighting)
@@ -444,5 +498,10 @@ public static class CpbAnalyzer
     }
 
     private readonly record struct SpectrumPowerData(double[] FrequenciesHz, double[] Powers);
-    private readonly record struct CpbBandDefinition(double CenterFrequencyHz, double LowerFrequencyHz, double UpperFrequencyHz);
+    private readonly record struct CpbBandDefinition(
+        double CenterFrequencyHz,
+        double LowerFrequencyHz,
+        double UpperFrequencyHz,
+        double PlotLowerFrequencyHz = 0.0,
+        double PlotUpperFrequencyHz = 0.0);
 }

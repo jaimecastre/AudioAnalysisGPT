@@ -72,7 +72,46 @@ public sealed class CpbAnalyzerTests
         Assert.InRange(cBand1kHz.LevelDb.Value - zBand1kHz.LevelDb.Value, -0.2, 0.2);
     }
 
-    private static SignalChannel BuildSineChannel(double frequencyHz, int sampleRate, double durationSeconds)
+    [Fact]
+    public void WeightingIsSuppressedForNonSoundPressureSignals()
+    {
+        var channel = BuildSineChannel(frequencyHz: 100.0, sampleRate: 48_000, durationSeconds: 1.0, quantity: "acceleration");
+
+        var zWeighted = CpbAnalyzer.Analyze(
+            [channel],
+            startSeconds: 0.0,
+            endSeconds: 1.0,
+            bandMode: "third_octave",
+            fftSize: 8192,
+            overlap: 0.5,
+            weighting: "z");
+
+        var aWeighted = CpbAnalyzer.Analyze(
+            [channel],
+            startSeconds: 0.0,
+            endSeconds: 1.0,
+            bandMode: "third_octave",
+            fftSize: 8192,
+            overlap: 0.5,
+            weighting: "a");
+
+        var zBand100Hz = FindBand(zWeighted, 100.0);
+        var aBand100Hz = FindBand(aWeighted, 100.0);
+
+        // Requested weighting is still reported, but BS/ISO 7196 suppresses it for
+        // non-sound-pressure signals, so the levels must be identical to the Z (flat) result.
+        Assert.Equal("a", aWeighted.Parameters.Weighting);
+        Assert.NotNull(zBand100Hz.LevelDb);
+        Assert.NotNull(aBand100Hz.LevelDb);
+        Assert.Equal(zBand100Hz.LevelDb!.Value, aBand100Hz.LevelDb!.Value, precision: 6);
+        Assert.Contains(aWeighted.Parameters.Limitations, limitation => limitation.Contains("BS/ISO 7196"));
+    }
+
+    private static SignalChannel BuildSineChannel(
+        double frequencyHz,
+        int sampleRate,
+        double durationSeconds,
+        string quantity = "sound_pressure")
     {
         var sampleCount = (int)(sampleRate * durationSeconds);
         var samples = new float[sampleCount];
@@ -88,7 +127,7 @@ public sealed class CpbAnalyzerTests
             Name = "Mono",
             SampleRate = sampleRate,
             SampleCount = sampleCount,
-            Quantity = "digital_amplitude",
+            Quantity = quantity,
             Unit = "FS",
             DbReference = new DbReference
             {

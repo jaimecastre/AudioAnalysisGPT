@@ -36,69 +36,9 @@
 }
 
 .chart {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(26px, 1fr));
-  align-items: end;
-  gap: 4px;
-  min-height: 220px;
-  padding: 14px 12px 8px;
-}
-
-.barColumn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  min-width: 0;
-  height: 100%;
-  gap: 4px;
-}
-
-.barTrack {
-  position: relative;
   width: 100%;
-  min-width: 12px;
-  max-width: 32px;
-  height: 168px;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  background-color: var(--bg-surface);
-  overflow: hidden;
-}
-
-.barFill {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  min-height: 2px;
-  background-color: #00b8a9;
-}
-
-// Band highlighted by the cross-panel linked frequency cursor.
-.barColumnLinked {
-  .barTrack {
-    border-color: rgba(0, 184, 169, 0.9);
-    background-color: rgba(0, 184, 169, 0.1);
-    box-shadow: 0 0 0 1px rgba(0, 184, 169, 0.45);
-  }
-
-  .barLabel {
-    color: #00b8a9;
-    font-weight: 600;
-  }
-}
-
-.barLabel {
-  max-width: 44px;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 0.58rem;
-  line-height: 1;
-  text-align: center;
-  white-space: nowrap;
-  transform: rotate(-42deg);
-  transform-origin: center top;
+  height: 340px;
+  padding: 6px 8px 0;
 }
 
 .summary {

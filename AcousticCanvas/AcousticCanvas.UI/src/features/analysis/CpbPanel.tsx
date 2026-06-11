@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { ActionIcon, Badge, Group, Loader, Select, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Badge, Group, Loader, Select, Text } from '@mantine/core';
 import { IconArrowsMaximize, IconArrowsMinimize, IconChartBar, IconChevronDown, IconChevronRight, IconX } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
 import { activeSelectionSelector } from '../waveform/waveformSelectionSlice';
@@ -15,6 +15,7 @@ import {
   cpbUserParametersSelector,
 } from './cpbSlice';
 import { useRunCpb } from './useRunCpb';
+import { CpbCanvas } from './CpbCanvas';
 import {
   CPB_BAND_MODE_OPTIONS,
   CPB_FFT_SIZE_OPTIONS,
@@ -85,15 +86,15 @@ export const CpbPanel = ({
   const fileSelectOptions = availableFiles.map((file) => ({ value: file.id, label: file.name }));
   const selectedChannel = resolveSelectedChannel(cpbResult?.channels ?? [], selectedChannelId);
   const bandLevels = selectedChannel?.bands
-    .map((band) => band.levelDb ?? (band.magnitude > 0 ? 20 * Math.log10(band.magnitude) : null))
+    .map((band) => band.levelDb)
     .filter((value): value is number => value !== null) ?? [];
   const maxLevel = bandLevels.length > 0 ? Math.max(...bandLevels) : 0;
   const minLevel = bandLevels.length > 0 ? Math.min(...bandLevels) : -100;
   const floorLevel = Math.floor((minLevel - 6) / 10) * 10;
   const ceilingLevel = Math.ceil((maxLevel + 3) / 10) * 10;
   const topBand = selectedChannel?.bands
-    .filter((band) => band.levelDb !== null || band.magnitude > 0)
-    .sort((a, b) => resolveBandLevel(b) - resolveBandLevel(a))[0];
+    .filter((band) => band.levelDb !== null)
+    .sort((a, b) => (b.levelDb as number) - (a.levelDb as number))[0];
   const isRunning = cpbStatus === 'running';
   const weightingLabel = cpbResult?.parameters.weighting?.toUpperCase() ?? 'Z';
   const weightingMethod = cpbResult?.parameters.weightingMethod ?? 'Z-weighting unweighted flat response';
@@ -202,33 +203,17 @@ export const CpbPanel = ({
         {effectiveFileId && cpbStatus !== 'error' && selectedChannel && (
           <>
             <div className={styles.chartWrap}>
-              <div className={styles.chart} onMouseLeave={() => dispatch(cursorFrequencyCleared())}>
-                {selectedChannel.bands.map((band) => {
-                  const level = resolveBandLevel(band);
-                  const percent = ceilingLevel > floorLevel
-                    ? Math.max(0, Math.min(100, (level - floorLevel) / (ceilingLevel - floorLevel) * 100))
-                    : 0;
-                  const isLinked = linkedFrequencyHz !== null
-                    && linkedFrequencyHz >= band.lowerFrequencyHz
-                    && linkedFrequencyHz < band.upperFrequencyHz;
-                  return (
-                    <Tooltip
-                      key={band.label}
-                      label={`${band.label} Hz: ${level.toFixed(1)} ${selectedChannel.dbUnit ?? 'dB'} (${band.lowerFrequencyHz.toFixed(1)}-${band.upperFrequencyHz.toFixed(1)} Hz)`}
-                      withArrow
-                    >
-                      <div
-                        className={isLinked ? `${styles.barColumn} ${styles.barColumnLinked}` : styles.barColumn}
-                        onMouseEnter={() => dispatch(cursorFrequencyHovered(band.centerFrequencyHz))}
-                      >
-                        <div className={styles.barTrack}>
-                          <div className={styles.barFill} style={{ height: `${percent}%` }} />
-                        </div>
-                        <span className={styles.barLabel}>{band.label}</span>
-                      </div>
-                    </Tooltip>
-                  );
-                })}
+              <div className={styles.chart}>
+                <CpbCanvas
+                  bands={selectedChannel.bands}
+                  dbUnit={selectedChannel.dbUnit}
+                  linkedFrequencyHz={linkedFrequencyHz}
+                  onHoverFrequency={(frequencyHz) =>
+                    dispatch(frequencyHz === null
+                      ? cursorFrequencyCleared()
+                      : cursorFrequencyHovered(frequencyHz))
+                  }
+                />
               </div>
               {isRunning && (
                 <div className={styles.loadingOverlay}>
@@ -246,7 +231,7 @@ export const CpbPanel = ({
               </span>
               {topBand && (
                 <span>
-                  Max <span className={styles.summaryValue}>{topBand.label} Hz / {resolveBandLevel(topBand).toFixed(1)} {selectedChannel.dbUnit ?? 'dB'}</span>
+                  Max <span className={styles.summaryValue}>{topBand.label} Hz / {(topBand.levelDb as number).toFixed(1)} {selectedChannel.dbUnit ?? 'dB'}</span>
                 </span>
               )}
               <span>
@@ -270,11 +255,4 @@ export const CpbPanel = ({
 
 function resolveSelectedChannel(channels: ChannelCpbAnalysis[], selectedChannelId: string | null): ChannelCpbAnalysis | null {
   return channels.find((channel) => channel.channelId === selectedChannelId) ?? channels[0] ?? null;
-}
-
-function resolveBandLevel(band: { levelDb: number | null; magnitude: number }): number {
-  if (band.levelDb !== null) {
-    return band.levelDb;
-  }
-  return band.magnitude > 0 ? 20 * Math.log10(band.magnitude) : -140;
 }
