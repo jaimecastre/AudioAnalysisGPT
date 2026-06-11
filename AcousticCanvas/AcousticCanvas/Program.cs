@@ -42,6 +42,7 @@ builder.Services.AddSingleton<GetPlaybackStateHandler>();
 builder.Services.AddSingleton<OpenAiChatService>();
 builder.Services.AddSingleton<AgentPlanner>();
 builder.Services.AddSingleton<ToolExecutionService>();
+builder.Services.AddSingleton<IInvestigationTraceStore, InvestigationTraceStore>();
 builder.Services.AddSingleton<AgentOrchestrator>();
 builder.Services.AddSingleton<AgentAskHandler>();
 

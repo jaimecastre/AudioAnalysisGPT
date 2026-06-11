@@ -89,6 +89,7 @@ The UI supports two main workspaces:
 | Agent orchestration — `run_findings` tool | ✅ Done | Findings pipeline wired into `AgentToolRegistry` + `ToolExecutionService` |
 | Agent orchestration — `ToolResultsData` in response | ✅ Done | All 7 tool outputs forwarded to frontend as structured data |
 | Agent orchestration — evidence contract | ✅ Done | `AgentAskResult` returns `EvidenceReferences` + `EvidenceItems` so frontend citations can point to measured backend evidence |
+| Agent orchestration — investigation trace | ✅ Done | `InvestigationTrace` record + in-memory store exposed in `AgentAskResult` for reproducibility |
 | Batch benchmarking | ❌ Not started | — |
 | Python sidecar | ✅ Active | `mosqito==1.2.1`, `PyOctaveBand==1.2.2` installed; executable path in `appsettings.Development.json` |
 
@@ -1098,7 +1099,7 @@ Must-have features:
 - Metric ranking table across imported files
 - Basic sound-quality summary
 
-## 🟡 Milestone 3 — Evidence-Based Agent — IN PROGRESS
+## ✅ Milestone 3 — Evidence-Based Agent — COMPLETE
 
 Must-have features:
 
@@ -1118,8 +1119,8 @@ Must-have features:
 - ✅ Routing fix: `findings`/`issues` keywords route to orchestrator
 - ✅ Agent can summarize findings with grounded evidence
 - ✅ JSONL-based Agent behavior eval harness for deterministic facts, no-tool answers, planner prompt contracts, and final-answer grounding rules
-- Agent can explain A/B differences
-- Integrate fuller agent answer into investigation timeline (future)
+- ✅ Agent can explain A/B differences
+- ✅ Investigation trace integration (InvestigationTrace record, in-memory store, exposed in AgentAskResult)
 
 ## ❌ Milestone 4 — Batch Benchmarking — NOT STARTED
 

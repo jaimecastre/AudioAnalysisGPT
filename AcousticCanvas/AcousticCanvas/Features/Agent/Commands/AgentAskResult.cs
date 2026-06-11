@@ -13,7 +13,8 @@ public record AgentAskResult(
     bool ValidationWarning,
     IReadOnlyDictionary<string, object>? ToolResultsData,
     IReadOnlyList<string> PlannedTools,
-    string? PlannerReason
+    string? PlannerReason,
+    InvestigationTrace? InvestigationTrace
 );
 
 public record AgentEvidenceItem(

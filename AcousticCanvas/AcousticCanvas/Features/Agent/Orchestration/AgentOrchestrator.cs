@@ -1,4 +1,5 @@
 using AcousticCanvas.Features.Agent.Commands;
+using AcousticCanvas.Features.Agent.Services;
 using AcousticCanvas.Features.AudioUpload.Services;
 
 namespace AcousticCanvas.Features.Agent.Orchestration;
@@ -6,7 +7,8 @@ namespace AcousticCanvas.Features.Agent.Orchestration;
 public sealed class AgentOrchestrator(
     AgentPlanner agentPlanner,
     ToolExecutionService toolExecutionService,
-    AudioFileRepository audioFileRepository)
+    AudioFileRepository audioFileRepository,
+    IInvestigationTraceStore investigationTraceStore)
 {
     public async Task<AgentAskResult> HandleUserQuestionAsync(
         AgentAskCommand command,
@@ -17,15 +19,36 @@ public sealed class AgentOrchestrator(
         var metaAnswer = AgentMetaQuestionRouter.TryAnswer(command.Question);
         if (metaAnswer is not null)
         {
-            return BuildNoToolConversationResult(conversationId, metaAnswer);
+            var metaInvestigationTrace = BuildInvestigationTrace(
+                conversationId,
+                command.Question,
+                InvestigationPath.MetaQuestion,
+                [],
+                [],
+                metaAnswer,
+                "high");
+
+            investigationTraceStore.Store(metaInvestigationTrace);
+
+            return BuildNoToolConversationResult(conversationId, metaAnswer, metaInvestigationTrace);
         }
 
         // Check if no files are loaded and the question appears to be about audio analysis
         if (command.SelectedFileIds.Count == 0 && AppearsToBeAudioAnalysisQuestion(command.Question))
         {
-            return BuildNoToolConversationResult(
+            var answer = "No audio files are currently loaded. Please upload and select an audio file first, then ask your question about that file.";
+            var noFilesInvestigationTrace = BuildInvestigationTrace(
                 conversationId,
-                "No audio files are currently loaded. Please upload and select an audio file first, then ask your question about that file.");
+                command.Question,
+                InvestigationPath.NoFiles,
+                [],
+                [],
+                answer,
+                "low");
+
+            investigationTraceStore.Store(noFilesInvestigationTrace);
+
+            return BuildNoToolConversationResult(conversationId, answer, noFilesInvestigationTrace);
         }
 
         // Step 0: Answer plain deterministic-fact questions (peak/RMS/sample rate/etc.)
@@ -100,6 +123,20 @@ public sealed class AgentOrchestrator(
         var toolResultsData = BuildToolResultsData(toolExecutionOutputs);
         var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(finalAnswer.Answer, finalAnswer.EvidenceReferences, evidencePackage);
 
+        var plannedToolTraces = BuildPlannedToolTraces(validatedToolRequests);
+        var toolExecutionTraces = BuildToolExecutionTraces(toolExecutionOutputs);
+
+        var investigationTrace = BuildInvestigationTrace(
+            conversationId,
+            command.Question,
+            InvestigationPath.LlmPlanned,
+            plannedToolTraces,
+            toolExecutionTraces,
+            answerWithEmbeddedTokens,
+            finalAnswer.Confidence);
+
+        investigationTraceStore.Store(investigationTrace);
+
         return new AgentAskResult(
             ConversationId: conversationId,
             Answer: answerWithEmbeddedTokens,
@@ -113,7 +150,8 @@ public sealed class AgentOrchestrator(
             ValidationWarning: validationResult.HasWarning,
             ToolResultsData: toolResultsData,
             PlannedTools: plannedToolNames,
-            PlannerReason: plannerReason);
+            PlannerReason: plannerReason,
+            InvestigationTrace: investigationTrace);
     }
 
     private async Task<AgentAskResult> AnswerDeterministicFactAsync(
@@ -142,6 +180,19 @@ public sealed class AgentOrchestrator(
         var toolResultsData = BuildToolResultsData([toolOutput]);
         var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(finalAnswer.Answer, finalAnswer.EvidenceReferences, evidencePackage);
 
+        var toolExecutionTraces = BuildToolExecutionTraces([toolOutput]);
+
+        var investigationTrace = BuildInvestigationTrace(
+            conversationId,
+            command.Question,
+            InvestigationPath.DeterministicFact,
+            [],
+            toolExecutionTraces,
+            answerWithEmbeddedTokens,
+            finalAnswer.Confidence);
+
+        investigationTraceStore.Store(investigationTrace);
+
         return new AgentAskResult(
             ConversationId: conversationId,
             Answer: answerWithEmbeddedTokens,
@@ -155,7 +206,8 @@ public sealed class AgentOrchestrator(
             ValidationWarning: false,
             ToolResultsData: toolResultsData,
             PlannedTools: [deterministicPlan.ToolName],
-            PlannerReason: null);
+            PlannerReason: null,
+            InvestigationTrace: investigationTrace);
     }
 
     private IReadOnlyList<string> ResolveFileNames(IReadOnlyList<string> fileIds)
@@ -285,7 +337,8 @@ public sealed class AgentOrchestrator(
             ValidationWarning: false,
             ToolResultsData: null,
             PlannedTools: [],
-            PlannerReason: null);
+            PlannerReason: null,
+            InvestigationTrace: null);
     }
 
     private static AgentAskResult BuildNoAnalysisResult(
@@ -306,10 +359,11 @@ public sealed class AgentOrchestrator(
             ValidationWarning: false,
             ToolResultsData: null,
             PlannedTools: [],
-            PlannerReason: null);
+            PlannerReason: null,
+            InvestigationTrace: null);
     }
 
-    private static AgentAskResult BuildNoToolConversationResult(string conversationId, string answer)
+    private static AgentAskResult BuildNoToolConversationResult(string conversationId, string answer, InvestigationTrace investigationTrace)
     {
         return new AgentAskResult(
             ConversationId: conversationId,
@@ -324,7 +378,55 @@ public sealed class AgentOrchestrator(
             ValidationWarning: false,
             ToolResultsData: null,
             PlannedTools: [],
-            PlannerReason: "Answered as an Agent behavior question; no audio analysis was needed.");
+            PlannerReason: "Answered as an Agent behavior question; no audio analysis was needed.",
+            InvestigationTrace: investigationTrace);
+    }
+
+    private static InvestigationTrace BuildInvestigationTrace(
+        string conversationId,
+        string question,
+        InvestigationPath path,
+        IReadOnlyList<PlannedToolTrace> plannedTools,
+        IReadOnlyList<ToolExecutionTrace> toolExecutions,
+        string finalAnswer,
+        string confidence)
+    {
+        return new InvestigationTrace(
+            Question: question,
+            ConversationId: conversationId,
+            Path: path,
+            PlannedTools: plannedTools,
+            ToolExecutions: toolExecutions,
+            FinalAnswer: finalAnswer,
+            Confidence: confidence,
+            TimestampUtc: DateTime.UtcNow);
+    }
+
+    private static IReadOnlyList<PlannedToolTrace> BuildPlannedToolTraces(List<PlannerToolRequest> toolRequests)
+    {
+        var traces = new List<PlannedToolTrace>();
+        foreach (var request in toolRequests)
+        {
+            traces.Add(new PlannedToolTrace(
+                Name: request.Name,
+                Arguments: request.Arguments));
+        }
+        return traces;
+    }
+
+    private static IReadOnlyList<ToolExecutionTrace> BuildToolExecutionTraces(List<ToolExecutionOutput> toolOutputs)
+    {
+        var traces = new List<ToolExecutionTrace>();
+        foreach (var output in toolOutputs)
+        {
+            traces.Add(new ToolExecutionTrace(
+                Name: output.ToolName,
+                Status: output.Status,
+                StartedAtUtc: null,
+                FinishedAtUtc: null,
+                ErrorMessage: output.ErrorMessage));
+        }
+        return traces;
     }
 
     private static string EmbedEvidenceTokensInAnswer(
