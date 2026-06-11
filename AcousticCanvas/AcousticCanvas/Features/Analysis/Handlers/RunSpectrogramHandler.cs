@@ -27,7 +27,7 @@ public class RunSpectrogramHandler(
                 $"Region end ({query.EndSeconds:F3}s) must be greater than start ({query.StartSeconds:F3}s).");
         }
 
-        if (cacheStore.TryGet(query.FilePath, query.StartSeconds, query.EndSeconds, query.FftSize, query.Overlap, query.Scale, query.GainDb, query.RangeDb, out var cached) && cached != null)
+        if (cacheStore.TryGet(query.FilePath, query.StartSeconds, query.EndSeconds, query.FftSize, query.Overlap, query.Scale, query.GainDb, query.RangeDb, query.MinDbSpl, query.MaxDbSpl, out var cached) && cached != null)
         {
             return Task.FromResult(cached);
         }
@@ -43,9 +43,11 @@ public class RunSpectrogramHandler(
             query.Overlap,
             query.Scale,
             query.GainDb,
-            query.RangeDb);
+            query.RangeDb,
+            query.MinDbSpl,
+            query.MaxDbSpl);
 
-        cacheStore.Set(query.FilePath, query.StartSeconds, query.EndSeconds, query.FftSize, query.Overlap, query.Scale, query.GainDb, query.RangeDb, result);
+        cacheStore.Set(query.FilePath, query.StartSeconds, query.EndSeconds, query.FftSize, query.Overlap, query.Scale, query.GainDb, query.RangeDb, query.MinDbSpl, query.MaxDbSpl, result);
 
         return Task.FromResult(result);
     }

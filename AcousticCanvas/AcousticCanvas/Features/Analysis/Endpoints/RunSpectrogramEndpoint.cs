@@ -32,7 +32,9 @@ public class RunSpectrogramEndpoint(AudioFileRepository audioFileRepository)
             Overlap: request.Overlap,
             Scale: request.Scale,
             GainDb: request.GainDb,
-            RangeDb: request.RangeDb);
+            RangeDb: request.RangeDb,
+            MinDbSpl: request.MinDbSpl,
+            MaxDbSpl: request.MaxDbSpl);
 
         try
         {
@@ -56,4 +58,6 @@ public class RunSpectrogramRequest
     public string Scale { get; set; } = "mel";
     public double GainDb { get; set; } = 20.0;
     public double RangeDb { get; set; } = 80.0;
+    public double MinDbSpl { get; set; } = -68.0;
+    public double MaxDbSpl { get; set; } = 55.0;
 }

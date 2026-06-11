@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { Select, ActionIcon, Text, Group, Loader, Badge } from '@mantine/core';
-import { IconArrowsMaximize, IconArrowsMinimize, IconChevronDown, IconChevronRight, IconX, IconWaveSine } from '@tabler/icons-react';
+import { Select, ActionIcon, Text, Group, Loader, Badge, Alert } from '@mantine/core';
+import { IconArrowsMaximize, IconArrowsMinimize, IconChevronDown, IconChevronRight, IconX, IconWaveSine, IconAlertTriangle } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../store/reduxHooks';
 import { useRunSpectrogram } from './useRunSpectrogram';
 import {
@@ -26,23 +26,27 @@ const DEFAULT_CANVAS_HEIGHT = 200;
 const MIN_CANVAS_HEIGHT = 140;
 const MAX_CANVAS_HEIGHT = 420;
 const AXIS_WIDTH = 52;
+const COLORBAR_WIDTH = 52;
 const TIME_AXIS_HEIGHT = 24;
 const FONT = "10px 'JetBrains Mono', ui-monospace, monospace";
 const LABEL_COLOR = 'rgba(0,0,0,0.45)';
 
-// Pre-built 256-entry magma-style RGBA lookup table.
+// BK Connect-style colormap: black → navy → blue → magenta → red → orange → yellow → white
 function buildColorTable(): Uint8ClampedArray {
   const table = new Uint8ClampedArray(256 * 4);
   const stops = [
-    { pos: 0,    r: 0,   g: 0,   b: 4   },
-    { pos: 0.13, r: 27,  g: 12,  b: 65  },
-    { pos: 0.25, r: 79,  g: 12,  b: 107 },
-    { pos: 0.38, r: 120, g: 28,  b: 109 },
-    { pos: 0.5,  r: 165, g: 44,  b: 96  },
-    { pos: 0.63, r: 207, g: 68,  b: 70  },
-    { pos: 0.75, r: 237, g: 105, b: 37  },
-    { pos: 0.88, r: 251, g: 155, b: 6   },
-    { pos: 1.0,  r: 252, g: 253, b: 191 },
+    { pos: 0.00, r: 0,   g: 0,   b: 0   },  // black  (below floor)
+    { pos: 0.12, r: 10,  g: 0,   b: 60  },  // dark navy
+    { pos: 0.23, r: 0,   g: 30,  b: 160 },  // blue
+    { pos: 0.35, r: 50,  g: 40,  b: 230 },  // bright blue
+    { pos: 0.46, r: 150, g: 0,   b: 230 },  // blue-magenta
+    { pos: 0.55, r: 255, g: 0,   b: 210 },  // magenta
+    { pos: 0.63, r: 255, g: 0,   b: 110 },  // pink-red
+    { pos: 0.72, r: 255, g: 0,   b: 0   },  // red
+    { pos: 0.80, r: 255, g: 90,  b: 0   },  // orange
+    { pos: 0.88, r: 255, g: 210, b: 0   },  // yellow
+    { pos: 0.95, r: 255, g: 250, b: 150 },  // light yellow
+    { pos: 1.00, r: 255, g: 255, b: 255 },  // white (peak)
   ];
   for (let i = 0; i < 256; i++) {
     const t = i / 255;
@@ -149,6 +153,61 @@ function drawFrequencyAxis(
   }
 }
 
+// Draws a vertical colorbar showing the jet gradient with dB tick labels.
+function drawColorbar(
+  colorbarCanvas: HTMLCanvasElement,
+  minDbSpl: number,
+  maxDbSpl: number,
+  height: number,
+): void {
+  const dpr = window.devicePixelRatio || 1;
+  colorbarCanvas.width = COLORBAR_WIDTH * dpr;
+  colorbarCanvas.height = height * dpr;
+  colorbarCanvas.style.width = `${COLORBAR_WIDTH}px`;
+  colorbarCanvas.style.height = `${height}px`;
+
+  const ctx = colorbarCanvas.getContext('2d');
+  if (!ctx) return;
+
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, COLORBAR_WIDTH, height);
+
+  const BAR_X = 4;
+  const BAR_W = 10;
+  for (let py = 0; py < height; py++) {
+    const fraction = 1 - py / Math.max(1, height - 1); // top = max, bottom = min
+    const byteVal = Math.round(fraction * 255);
+    const r = COLOR_TABLE[byteVal * 4 + 0];
+    const g = COLOR_TABLE[byteVal * 4 + 1];
+    const b = COLOR_TABLE[byteVal * 4 + 2];
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(BAR_X, py, BAR_W, 1);
+  }
+
+  const TICK_X = BAR_X + BAR_W;
+  const TICK_LEN = 3;
+  const dbRange = maxDbSpl - minDbSpl;
+
+  ctx.font = FONT;
+  ctx.fillStyle = LABEL_COLOR;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.strokeStyle = LABEL_COLOR;
+  ctx.lineWidth = 1;
+
+  const firstTick = Math.ceil(minDbSpl / 10) * 10;
+  for (let db = firstTick; db <= maxDbSpl; db += 10) {
+    const fraction = (db - minDbSpl) / dbRange;
+    const y = height - fraction * height;
+    const cy = Math.max(5, Math.min(y, height - 5));
+    ctx.beginPath();
+    ctx.moveTo(TICK_X, cy);
+    ctx.lineTo(TICK_X + TICK_LEN, cy);
+    ctx.stroke();
+    ctx.fillText(`${db}`, TICK_X + TICK_LEN + 2, cy);
+  }
+}
+
 function frequencyToScale(frequencyHz: number, scale: SpectrogramScale): number {
   if (scale === 'mel') return 2595 * Math.log10(1 + frequencyHz / 700);
   if (scale === 'logarithmic') return Math.log10(1 + frequencyHz);
@@ -203,6 +262,7 @@ export const SpectrogramPanel = ({
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const axisCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const colorbarCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [hover, setHover] = useState<SpectrogramHover | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [canvasHeight, setCanvasHeight] = useState(DEFAULT_CANVAS_HEIGHT);
@@ -248,6 +308,16 @@ export const SpectrogramPanel = ({
     drawSpectrogramToCanvas(canvas, channelData.frequencyData);
 
     drawFrequencyAxis(axisCanvas, spectrogramResult.frequencyAxisTicks ?? [], canvasHeight);
+
+    const colorbarCanvas = colorbarCanvasRef.current;
+    if (colorbarCanvas) {
+      drawColorbar(
+        colorbarCanvas,
+        spectrogramResult.parameters.minDbSpl,
+        spectrogramResult.parameters.maxDbSpl,
+        canvasHeight,
+      );
+    }
   }, [canvasHeight, spectrogramResult]);
 
   const fileSelectOptions = availableFiles.map((f) => ({ value: f.id, label: f.name }));
@@ -360,8 +430,9 @@ export const SpectrogramPanel = ({
             data={SPECTROGRAM_FFT_SIZE_OPTIONS}
             value={String(spectrogramUserParameters.fftSize)}
             onChange={(value) => value && dispatch(spectrogramSetParameters({ fftSize: Number(value) }))}
-            aria-label="Spectrogram FFT size"
-            style={{ width: 82 }}
+            aria-label="FFT lines (frequency resolution)"
+            title="FFT lines — higher = more frequency resolution, lower = more time resolution"
+            style={{ width: 102 }}
             styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
           />
           <Select
@@ -408,6 +479,22 @@ export const SpectrogramPanel = ({
             <Text size="sm" c="red">{spectrogramError ?? 'Analysis failed'}</Text>
           </div>
         )}
+        {/* Calibration state warnings */}
+        {spectrogramResult && spectrogramResult.channels[0]?.calibrationState === 'digital_full_scale' && (
+          <Alert
+            icon={<IconAlertTriangle size={14} />}
+            color="yellow"
+            variant="light"
+            p="xs"
+            m="xs"
+            title="dB SPL unavailable"
+          >
+            <Text size="xs">
+              This file does not contain calibration information. The spectrogram shows relative amplitude [dBFS]. To display sound pressure level, provide a calibration factor.
+            </Text>
+          </Alert>
+        )}
+
         {effectiveFileId && spectrogramStatus !== 'error' && (
           <div className={styles.spectrogramFrame} style={{ height: canvasHeight + TIME_AXIS_HEIGHT }}>
             <div className={styles.spectrogramPlotRow} style={{ height: canvasHeight }}>
@@ -471,6 +558,11 @@ export const SpectrogramPanel = ({
                   </div>
                 )}
               </div>
+              <canvas
+                ref={colorbarCanvasRef}
+                style={{ flexShrink: 0, display: 'block' }}
+                aria-label="Spectrogram color scale"
+              />
             </div>
             <div className={styles.timeAxisRow} aria-label="Spectrogram time axis">
               <div className={styles.timeAxisSpacer} />
@@ -486,7 +578,16 @@ export const SpectrogramPanel = ({
                 ))}
                 <span className={styles.timeAxisTitle}>Time (s)</span>
               </div>
+              <div style={{ width: COLORBAR_WIDTH, flexShrink: 0 }} />
             </div>
+            {/* Colorbar label */}
+            {spectrogramResult?.channels[0]?.colorbandLabel && (
+              <div style={{ paddingLeft: AXIS_WIDTH, paddingTop: 2 }}>
+                <Text size="xs" ff="var(--font-mono)" c="dimmed">
+                  {spectrogramResult.channels[0].colorbandLabel}
+                </Text>
+              </div>
+            )}
           </div>
         )}
         {effectiveFileId && spectrogramStatus !== 'error' && (

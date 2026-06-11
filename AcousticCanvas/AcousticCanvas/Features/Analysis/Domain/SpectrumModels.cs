@@ -27,6 +27,16 @@ public sealed class ChannelSpectrumAnalysis
     public string? DbUnit { get; init; }
     public double? DbReferenceValue { get; init; }
     public string? DbReferenceUnit { get; init; }
+
+    // Acoustic calibration metadata for display.
+    // YAxisLabel: "Level [dB re 20 µPa]" or "[dBFS]"
+    public string? YAxisLabel { get; init; }
+
+    // "digital_full_scale" | "pressure_signal" | "calibrated" | "assumed_pressure"
+    public string? CalibrationState { get; init; }
+
+    // "Sound pressure" or "Digital amplitude"
+    public string? PhysicalQuantity { get; init; }
 }
 
 public sealed class TonalPeak

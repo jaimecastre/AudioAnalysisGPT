@@ -38,6 +38,8 @@ export const useRunSpectrogram = (): { runSpectrogram: (args: RunSpectrogramArgs
             scale: args.parameters.scale,
             gainDb: args.parameters.gainDb,
             rangeDb: args.parameters.rangeDb,
+            minDbSpl: args.parameters.minDbSpl,
+            maxDbSpl: args.parameters.maxDbSpl,
           },
           signal: abortController.signal,
         },

@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import { Text, Select, Alert, Loader, Stack, Tooltip, Group } from '@mantine/core';
-import { IconAlertCircle, IconChartLine, IconCursorText, IconInfoCircle, IconRefresh } from '@tabler/icons-react';
+import { IconAlertCircle, IconAlertTriangle, IconChartLine, IconCursorText, IconInfoCircle, IconRefresh } from '@tabler/icons-react';
 import type { SpectrumAnalysis, SpectrumUserParameters } from './spectrumTypes';
 import { FFT_SIZE_OPTIONS } from './spectrumTypes';
 import type { SpectrumStatus } from './spectrumSlice';
@@ -169,8 +169,33 @@ export const SpectrumCard = ({
                     tooltip="Calibration reference for converting to absolute units"
                   />
                 )}
-                {!result.channels[0]?.dbUnit && (
-                  <div className={styles.warning}>No dB reference — showing relative magnitude in FS (full scale).</div>
+                {result.channels[0]?.yAxisLabel && (
+                  <ParamRow
+                    label="Y-axis"
+                    value={result.channels[0].yAxisLabel}
+                    tooltip="Unit convention for spectrum level display"
+                  />
+                )}
+                {result.channels[0]?.physicalQuantity && (
+                  <ParamRow
+                    label="Quantity"
+                    value={result.channels[0].physicalQuantity}
+                    tooltip="Physical quantity represented by this signal"
+                  />
+                )}
+                {result.channels[0]?.calibrationState === 'digital_full_scale' && (
+                  <Alert
+                    icon={<IconAlertTriangle size={14} />}
+                    color="yellow"
+                    variant="light"
+                    p="xs"
+                    mt="xs"
+                    title="dB SPL unavailable"
+                  >
+                    <Text size="xs">
+                      This file does not contain calibration information. Showing relative level [dBFS]. Provide a calibration factor to display dB SPL.
+                    </Text>
+                  </Alert>
                 )}
               </>
             )}
@@ -212,6 +237,7 @@ export const SpectrumCard = ({
                   magnitudesDb: ch.magnitudesDb,
                   yMode: ch.dbUnit ? 'db' : 'linear',
                   yUnit: ch.dbUnit ?? ch.unit ?? '',
+                  yAxisLabel: ch.yAxisLabel ?? null,
                 }))}
               />
             </div>

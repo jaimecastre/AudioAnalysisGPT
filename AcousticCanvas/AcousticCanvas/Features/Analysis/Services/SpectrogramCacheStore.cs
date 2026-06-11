@@ -13,7 +13,9 @@ public sealed class SpectrogramCacheStore
         double Overlap,
         string Scale,
         double GainDb,
-        double RangeDb);
+        double RangeDb,
+        double MinDbSpl,
+        double MaxDbSpl);
 
     private readonly ConcurrentDictionary<SpectrogramCacheKey, SpectrogramAnalysis> _cache = new();
 
@@ -26,9 +28,11 @@ public sealed class SpectrogramCacheStore
         string scale,
         double gainDb,
         double rangeDb,
+        double minDbSpl,
+        double maxDbSpl,
         out SpectrogramAnalysis? result)
     {
-        var key = new SpectrogramCacheKey(filePath, startSeconds, endSeconds, fftSize, overlap, scale, gainDb, rangeDb);
+        var key = new SpectrogramCacheKey(filePath, startSeconds, endSeconds, fftSize, overlap, scale, gainDb, rangeDb, minDbSpl, maxDbSpl);
         return _cache.TryGetValue(key, out result);
     }
 
@@ -41,9 +45,11 @@ public sealed class SpectrogramCacheStore
         string scale,
         double gainDb,
         double rangeDb,
+        double minDbSpl,
+        double maxDbSpl,
         SpectrogramAnalysis result)
     {
-        var key = new SpectrogramCacheKey(filePath, startSeconds, endSeconds, fftSize, overlap, scale, gainDb, rangeDb);
+        var key = new SpectrogramCacheKey(filePath, startSeconds, endSeconds, fftSize, overlap, scale, gainDb, rangeDb, minDbSpl, maxDbSpl);
         _cache[key] = result;
     }
 }

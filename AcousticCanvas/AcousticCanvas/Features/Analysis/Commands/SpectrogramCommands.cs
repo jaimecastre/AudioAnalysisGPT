@@ -11,5 +11,7 @@ public record RunSpectrogramQuery(
     double Overlap,
     string Scale,
     double GainDb,
-    double RangeDb
+    double RangeDb,
+    double MinDbSpl = -68.0,
+    double MaxDbSpl = 55.0
 ) : ICommand<SpectrogramAnalysis>;

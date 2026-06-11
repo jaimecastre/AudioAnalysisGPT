@@ -40,7 +40,7 @@ const emptyState: RootState = {
     error: null,
     activeRequestId: null,
     selectedChannelId: null,
-    userParameters: { fftSize: 1024, overlap: 0.75, scale: 'linear', rangeDb: 80, gainDb: 0 },
+    userParameters: { fftSize: 1024, overlap: 0.75, scale: 'linear', rangeDb: 80, gainDb: 0, minDbSpl: 20, maxDbSpl: 100 },
   },
   chat: {
     messages: [],

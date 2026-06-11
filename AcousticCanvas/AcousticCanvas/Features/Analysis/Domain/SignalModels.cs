@@ -29,6 +29,10 @@ public sealed class SignalChannel
     // Optional calibration metadata — always present, IsCalibrated = false for raw digital.
     public CalibrationInfo? Calibration { get; init; }
 
+    // Physical metadata: unit kind (digital / Pa / calibrated) and optional acoustic calibration.
+    // Null means unknown — behaves the same as DigitalFullScale for analysis purposes.
+    public SignalPhysicalMetadata? PhysicalMetadata { get; init; }
+
     // Raw sample values in the channel's physical unit after import.
     public required float[] Samples { get; init; }
 }

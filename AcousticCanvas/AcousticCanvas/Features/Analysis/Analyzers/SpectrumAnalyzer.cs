@@ -80,7 +80,17 @@ public static class SpectrumAnalyzer
 
         var spectrumData = ComputeAveragedSpectrum(samples, startSample, endSample, sampleRate, fftSize, overlap);
 
-        if (channel.DbReference != null)
+        var isPressure = channel.PhysicalMetadata is
+        {
+            UnitKind: SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure
+        };
+
+        if (isPressure)
+        {
+            var scaleFactor = AcousticPressureConverter.GetScaleFactor(channel.PhysicalMetadata!);
+            ApplyAcousticPressureDbInPlace(spectrumData.Magnitudes, spectrumData.MagnitudesDb, scaleFactor);
+        }
+        else if (channel.DbReference != null)
         {
             ApplyDbReferenceInPlace(spectrumData.Magnitudes, spectrumData.MagnitudesDb, channel.DbReference);
         }
@@ -129,9 +139,12 @@ public static class SpectrumAnalyzer
             MaxMagnitudeDb = maxMagnitudeDb.HasValue ? Math.Round(maxMagnitudeDb.Value, 3) : null,
             PeakFrequencyHz = peakFrequencyHz.HasValue ? Math.Round(peakFrequencyHz.Value, 3) : null,
             TonalPeaks = tonalPeaks,
-            DbUnit = channel.DbReference?.DbUnit,
-            DbReferenceValue = channel.DbReference?.Value,
-            DbReferenceUnit = channel.DbReference?.Unit,
+            DbUnit = isPressure ? "dB re 20 µPa" : channel.DbReference?.DbUnit,
+            DbReferenceValue = isPressure ? AcousticPressureConverter.PressureReferencePa : channel.DbReference?.Value,
+            DbReferenceUnit = isPressure ? "Pa" : channel.DbReference?.Unit,
+            YAxisLabel = AcousticPressureConverter.ResolveYAxisLabel(channel.PhysicalMetadata),
+            CalibrationState = AcousticPressureConverter.ResolveCalibrationState(channel.PhysicalMetadata),
+            PhysicalQuantity = AcousticPressureConverter.ResolvePhysicalQuantity(channel.PhysicalMetadata),
         };
     }
 
@@ -444,6 +457,23 @@ public static class SpectrumAnalyzer
             {
                 magnitudesDb[i] = Math.Round(20.0 * Math.Log10(magnitudes[i] / dbReference.Value), 3);
             }
+        }
+    }
+
+    // Applies acoustic pressure dB SPL in-place.
+    // FFT magnitudes are peak amplitudes; applies peak-to-RMS conversion (1/sqrt(2)) before
+    // computing dB re 20 µPa, so a 1 Pa RMS sine maps to approximately 94 dB SPL.
+    // scaleFactor: Pa per FS unit (1.0 for PressurePascal, PascalsPerFullScale for CalibratedPressure).
+    private static void ApplyAcousticPressureDbInPlace(
+        double[] magnitudes,
+        double?[] magnitudesDb,
+        double scaleFactor)
+    {
+        for (var i = 0; i < magnitudes.Length; i++)
+        {
+            var peakAmplitudePa = magnitudes[i] * scaleFactor;
+            magnitudesDb[i] = Math.Round(
+                AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(peakAmplitudePa), 3);
         }
     }
 

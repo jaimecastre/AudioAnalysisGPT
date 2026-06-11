@@ -1,4 +1,5 @@
 using NAudio.Wave;
+using AcousticCanvas.Features.Analysis.Analyzers;
 using AcousticCanvas.Features.Analysis.Domain;
 
 namespace AcousticCanvas.Features.Analysis.Importers;
@@ -95,19 +96,32 @@ public sealed class WavSignalFileImporter : ISignalFileImporter
                 Name = ResolveChannelName(channelIndex, channelCount),
                 SampleRate = sampleRate,
                 SampleCount = totalFrames,
-                Quantity = "digital_amplitude",
-                Unit = "FS",
+                // Default convention: 1 FS = 1 Pa (peak).
+                // 0 dBFS peak → 1 Pa peak → 1/√2 Pa RMS → 20×log10(0.7071/20e-6) ≈ 91 dB SPL.
+                // IsUserAssumed = true because this is a convention, not a measured calibration.
+                Quantity = "sound_pressure",
+                Unit = "Pa",
                 DbReference = new DbReference
                 {
-                    Value = 1.0,
-                    Unit = "FS",
-                    DbUnit = "dBFS",
+                    Value = AcousticPressureConverter.PressureReferencePa,
+                    Unit = "Pa",
+                    DbUnit = "dB re 20 µPa",
                 },
                 Calibration = new CalibrationInfo
                 {
                     IsCalibrated = false,
                     Scale = 1.0,
                     Offset = 0.0,
+                },
+                PhysicalMetadata = new SignalPhysicalMetadata
+                {
+                    UnitKind = SignalUnitKind.PressurePascal,
+                    Calibration = new AcousticCalibration
+                    {
+                        PascalsPerFullScale = 1.0,
+                        IsUserAssumed = true,
+                        Source = "Default: 1 FS = 1 Pa (peak). 0 dBFS ≈ 91 dB SPL.",
+                    },
                 },
                 Samples = channelSamples,
             };

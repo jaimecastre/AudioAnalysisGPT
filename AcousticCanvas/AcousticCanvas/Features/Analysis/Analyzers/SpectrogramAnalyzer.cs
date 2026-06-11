@@ -22,11 +22,15 @@ public static class SpectrogramAnalyzer
         double overlap,
         string scale,
         double gainDb,
-        double rangeDb)
+        double rangeDb,
+        double minDbSpl = 20.0,
+        double maxDbSpl = 100.0)
     {
         scale = NormalizeScale(scale);
         gainDb = Math.Clamp(gainDb, -10.0, 30.0);
         rangeDb = Math.Clamp(rangeDb, 20.0, 120.0);
+        minDbSpl = Math.Clamp(minDbSpl, -120.0, 120.0);
+        maxDbSpl = Math.Clamp(maxDbSpl, minDbSpl + 1.0, 200.0);
         var firstChannel = channels[0];
         var sampleRate = firstChannel.SampleRate;
         var binCount = fftSize / 2 + 1;
@@ -70,7 +74,9 @@ public static class SpectrogramAnalyzer
                 sampleRate,
                 scale,
                 gainDb,
-                rangeDb);
+                rangeDb,
+                minDbSpl,
+                maxDbSpl);
 
             channelResults.Add(channelResult);
         }
@@ -90,6 +96,8 @@ public static class SpectrogramAnalyzer
             FrameCount = actualFrameCount,
             BinCount = binCount,
             SampleRate = sampleRate,
+            MinDbSpl = minDbSpl,
+            MaxDbSpl = maxDbSpl,
         };
 
         var region = new TimeRange
@@ -124,7 +132,9 @@ public static class SpectrogramAnalyzer
         int sampleRate,
         string scale,
         double gainDb,
-        double rangeDb)
+        double rangeDb,
+        double minDbSpl,
+        double maxDbSpl)
     {
         var samples = channel.Samples;
         var frames = new List<double[]>();
@@ -144,48 +154,72 @@ public static class SpectrogramAnalyzer
             frames.Add(RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0));
         }
 
-        // Find global max amplitude across all frames for normalisation.
-        var globalMaxAmplitude = 0.0;
-        foreach (var frame in frames)
+        var isPressure = channel.PhysicalMetadata is
         {
-            foreach (var amplitude in frame)
-            {
-                if (amplitude > globalMaxAmplitude)
-                {
-                    globalMaxAmplitude = amplitude;
-                }
-            }
-        }
-
-        // Normalise each amplitude to 0-255 using dB scale relative to global max.
-        // This matches what wavesurfer's SpectrogramPlugin expects: Uint8Array[][] where
-        // 255 = loudest, 0 = silence / below floor.
-        // Dynamic range window: 0 dB at peak, -gainDB dB at floor.
-        var floorDb = -(gainDb + rangeDb);
+            UnitKind: SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure
+        };
 
         var frequencyData = new List<byte[]>();
 
-        foreach (var frame in frames)
+        if (isPressure)
         {
-            var frameBytes = new byte[binCount];
-            for (var k = 0; k < binCount; k++)
+            // dB SPL path: fixed physical display range, no normalisation to global max.
+            // FFT amplitudes are peak amplitudes; AcousticPressureConverter applies peak-to-RMS
+            // conversion before computing dB re 20 µPa.
+            var scaleFactor = AcousticPressureConverter.GetScaleFactor(channel.PhysicalMetadata!);
+
+            foreach (var frame in frames)
             {
-                double byteValue;
-
-                if (globalMaxAmplitude <= 0.0 || frame[k] <= 0.0)
+                var frameBytes = new byte[binCount];
+                for (var k = 0; k < binCount; k++)
                 {
-                    byteValue = 0.0;
+                    var peakAmplitudePa = frame[k] * scaleFactor;
+                    var dbSpl = AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(peakAmplitudePa);
+                    frameBytes[k] = AcousticPressureConverter.MapDbSplToByte(dbSpl, minDbSpl, maxDbSpl);
                 }
-                else
-                {
-                    var db = 20.0 * Math.Log10(frame[k] / globalMaxAmplitude) + gainDb;
-                    var normalised = (db - floorDb) / (gainDb - floorDb);
-                    byteValue = Math.Clamp(normalised * 255.0, 0.0, 255.0);
-                }
-
-                frameBytes[k] = (byte)Math.Round(byteValue);
+                frequencyData.Add(frameBytes);
             }
-            frequencyData.Add(frameBytes);
+        }
+        else
+        {
+            // Relative dB path: normalised to global max (original behaviour).
+            // 255 = loudest bin in the region, 0 = below floor.
+            var globalMaxAmplitude = 0.0;
+            foreach (var frame in frames)
+            {
+                foreach (var amplitude in frame)
+                {
+                    if (amplitude > globalMaxAmplitude)
+                    {
+                        globalMaxAmplitude = amplitude;
+                    }
+                }
+            }
+
+            var floorDb = -(gainDb + rangeDb);
+
+            foreach (var frame in frames)
+            {
+                var frameBytes = new byte[binCount];
+                for (var k = 0; k < binCount; k++)
+                {
+                    double byteValue;
+
+                    if (globalMaxAmplitude <= 0.0 || frame[k] <= 0.0)
+                    {
+                        byteValue = 0.0;
+                    }
+                    else
+                    {
+                        var db = 20.0 * Math.Log10(frame[k] / globalMaxAmplitude) + gainDb;
+                        var normalised = (db - floorDb) / (gainDb - floorDb);
+                        byteValue = Math.Clamp(normalised * 255.0, 0.0, 255.0);
+                    }
+
+                    frameBytes[k] = (byte)Math.Round(byteValue);
+                }
+                frequencyData.Add(frameBytes);
+            }
         }
 
         return new ChannelSpectrogramAnalysis
@@ -196,6 +230,8 @@ public static class SpectrogramAnalyzer
             FrameCount = frames.Count,
             NyquistHz = sampleRate / 2.0,
             FrequencyData = frequencyData,
+            ColorbandLabel = AcousticPressureConverter.ResolveColorbandLabel(channel.PhysicalMetadata),
+            CalibrationState = AcousticPressureConverter.ResolveCalibrationState(channel.PhysicalMetadata),
         };
     }
 

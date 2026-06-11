@@ -15,6 +15,9 @@ export type SpectrogramParameters = {
   frameCount: number;
   binCount: number;
   sampleRate: number;
+  // SPL display range — only meaningful for pressure-calibrated channels
+  minDbSpl: number;
+  maxDbSpl: number;
 };
 
 export type ChannelSpectrogramAnalysis = {
@@ -25,6 +28,11 @@ export type ChannelSpectrogramAnalysis = {
   nyquistHz: number;
   // Each backend byte[] frame is serialized by System.Text.Json as a base64 string.
   frequencyData: string[];
+  // Acoustic calibration metadata from backend.
+  // 'digital_full_scale' | 'pressure_signal' | 'calibrated' | 'assumed_pressure'
+  calibrationState: string | null;
+  // 'Sound pressure level [dB SPL]' or 'Amplitude [dBFS]'
+  colorbandLabel: string | null;
 };
 
 export type SpectrogramAnalysis = {
@@ -45,6 +53,8 @@ export type SpectrogramUserParameters = {
   scale: SpectrogramScale;
   gainDb: number;
   rangeDb: number;
+  minDbSpl: number;
+  maxDbSpl: number;
 };
 
 export type SpectrogramScale = 'mel' | 'linear' | 'logarithmic';
@@ -55,12 +65,18 @@ export const DEFAULT_SPECTROGRAM_PARAMS: SpectrogramUserParameters = {
   scale: 'mel',
   gainDb: 20,
   rangeDb: 80,
+  // BK Connect-style default: –68 to +55 dB SPL.
+  // With 1 FS = 1 Pa convention, 0 dBFS ≈ 91 dB SPL.
+  minDbSpl: -68,
+  maxDbSpl: 55,
 };
 
 export const SPECTROGRAM_FFT_SIZE_OPTIONS = [
-  { value: '1024', label: '1024' },
-  { value: '2048', label: '2048' },
-  { value: '4096', label: '4096' },
+  { value: '512',  label: '256 lines' },
+  { value: '1024', label: '512 lines' },
+  { value: '2048', label: '1024 lines' },
+  { value: '4096', label: '2048 lines' },
+  { value: '8192', label: '4096 lines' },
 ] as const;
 
 export const SPECTROGRAM_SCALE_OPTIONS = [

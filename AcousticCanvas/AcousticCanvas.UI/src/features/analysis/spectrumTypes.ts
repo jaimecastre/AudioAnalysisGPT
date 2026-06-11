@@ -25,6 +25,13 @@ export type ChannelSpectrumAnalysis = {
   dbUnit: string | null;
   dbReferenceValue: number | null;
   dbReferenceUnit: string | null;
+  // Acoustic calibration metadata from backend.
+  // 'Level [dB re 20 µPa]' or '[dBFS]'
+  yAxisLabel: string | null;
+  // 'digital_full_scale' | 'pressure_signal' | 'calibrated' | 'assumed_pressure'
+  calibrationState: string | null;
+  // 'Sound pressure' or 'Digital amplitude'
+  physicalQuantity: string | null;
 };
 
 export type TonalPeak = {
