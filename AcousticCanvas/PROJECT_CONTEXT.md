@@ -535,6 +535,153 @@ Frontend responsibilities:
 | Analysis Inspector | Multi-channel level metrics grid |
 | Transport Controls | Play/pause/seek/loop |
 
+## Engineering Visualization Standards
+
+AcousticGPT/SoundLens visualizations must be engineering-grade, not merely decorative.
+Every plot must make it clear what data is shown, what units are used, how it was computed,
+and how it supports the acoustic investigation.
+
+### 1. Axis labels and units are required
+
+- Every graph labels both axes unless one axis is truly not applicable to the visual form.
+- Axis labels must include quantity + unit.
+- Preferred examples: `Time (s)`, `Frequency (Hz)`, `Level (dBFS)`, `Level (dB SPL)` when calibrated,
+  `Magnitude (dB)`, `Amplitude (FS)`, `Loudness (sone)`, `Sharpness (acum)`, `Roughness (asper)`,
+  `Band center frequency (Hz)`.
+- Avoid vague labels like `Value`, `Data`, `Y`, or `Magnitude` without unit context.
+
+### 2. Legends are required for multi-series data
+
+- Any graph with more than one file, channel, metric, or overlay must provide a visible legend.
+- Do not rely on color alone to identify traces.
+- Legend labels should be human-readable and investigation-specific (for example: `Reference - left channel`,
+  `Candidate B - averaged channels`, `Original`, `Notch preview`).
+
+### 3. Color mapping must be consistent and meaningful
+
+- File, channel, and role colors should stay stable across panels when possible.
+- Reference/candidate colors should remain stable across comparison surfaces.
+- Findings severities and status colors must use a documented, consistent meaning.
+- Colors must not be re-randomized on each refresh or rerun.
+
+### 4. Axis scaling must be fair and non-misleading
+
+- Default scaling must support interpretation, not visual exaggeration.
+- Comparison views should use shared axes by default.
+- Do not auto-scale each compared signal independently in ways that hide differences.
+- Spectrum should support suitable frequency scaling modes (linear/log) where appropriate.
+- CPB x-axis must clearly represent octave or one-third-octave centers.
+- Spectrogram color scale ranges should be stable enough for side-by-side comparison.
+- Rule: when comparing signals, use consistent scales unless the UI explicitly states otherwise.
+- If auto-scale is active, expose this state clearly and keep room for future lock/reset scale controls.
+
+### 5. Calibration and unit trust state must be explicit
+
+- Graphs must state whether values are FS amplitude, dBFS, calibrated dB SPL, or relative-only metrics.
+- Uncalibrated files must carry explicit caveats, for example:
+  `Uncalibrated WAV: levels are relative dBFS, not absolute dB SPL.`
+- Sound-quality metrics on uncalibrated signals must be presented as relative-comparison values,
+  not physical acoustic truth.
+
+### 6. Analysis parameters must be accessible
+
+- Each analysis visualization must expose, or link to, the parameters used to generate it.
+- Parameter examples: FFT size, window, overlap, averaging, frequency scale, dynamic range,
+  weighting (A/C/Z), CPB method, sound-quality method, selected region, selected channel,
+  sample rate, calibration state.
+- Parameters can live in compact UI elements (subtitle, tooltip, details panel, metadata card)
+  but must remain inspectable.
+
+### 7. Spectrogram/heatmap color scales are mandatory
+
+- Spectrograms and heatmaps must include a visible color scale or equivalent legend.
+- The color scale must describe what color encodes, with unit or relative-scale meaning,
+  and min/max (or dynamic range) context.
+- Avoid heatmaps where color meaning is ambiguous.
+
+### 8. Comparison plots must optimize fair comparison
+
+- Comparison surfaces must clearly show file names, units, legends, and deltas where relevant.
+- Highlight largest differences when it improves interpretation.
+- Avoid independent auto-scaling unless explicitly labeled.
+- CPB comparison should show band center frequency, per-file level, delta, weighting, and method.
+- Sound-quality comparison should show per-file value, delta, interpretation (higher/lower/winner when meaningful),
+  method, and known limitations.
+
+### 9. Engineering inspectability is a product requirement
+
+- Visualizations should support engineering investigation workflows such as:
+  hover tooltips with exact values, zoom/pan where applicable, reset zoom, region selection,
+  frequency-band focus, finding highlight, and future data/image export paths.
+- Not all controls are required immediately, but this capability is part of the roadmap quality bar.
+
+### 10. Empty/loading/error states must be explicit
+
+- Visualization panels must not fail silently.
+- Required states include: no file selected, analysis not run, unsupported file, tool failure,
+  Python sidecar unavailable, insufficient data, region too short, and calibration missing.
+- Each state should communicate what happened and what the user can do next.
+
+### 11. Titles/subtitles must carry investigation context
+
+- Titles should answer: what is shown, for which file(s), and for which region/channel.
+- Good examples:
+  `Spectrum - Product B, left channel`
+  `One-third-octave CPB comparison - Reference vs Candidate`
+  `Spectrogram - selected 2.0 to 4.5 s region`
+  `Sound-quality metrics - full file, uncalibrated`
+- Avoid generic titles like `Chart`, `Analysis`, `Result`, `Graph`.
+
+### 12. Accessibility and readability requirements
+
+- Plots must remain readable in normal engineering use: adequate font size, sufficient contrast,
+  readable tick labels, sensible density, and no reliance on color alone.
+- Avoid overplotting and excessive grid clutter.
+- For many-series views, support progressive disclosure approaches (legend filtering, focus/solo view,
+  summary table + selected plot).
+
+### 13. Evidence-linked visualization requirement
+
+- Plots are evidence surfaces, not decoration.
+- Agent claims that depend on a plot must be traceable to file, channel, region, metric,
+  parameters, and the corresponding visualization surface.
+- Example requirement: if the agent cites a tonal peak around 685 Hz, the UI should allow users
+  to open the related spectrum evidence with frequency marker and relevant analysis metadata.
+
+### 14. Future reusable chart metadata contract
+
+- Future chart components should converge on a shared metadata contract to enforce consistency.
+- Suggested target contract for future implementation (not required to implement in this slice):
+
+```ts
+type ChartMetadata = {
+  title: string;
+  subtitle?: string;
+  xLabel: string;
+  yLabel: string;
+  xUnit?: string;
+  yUnit?: string;
+  series: ChartSeriesMetadata[];
+  analysisParameters?: Record<string, unknown>;
+  calibrationState?: 'uncalibrated' | 'calibrated' | 'unknown';
+  scalingMode?: 'auto' | 'shared' | 'locked' | 'manual';
+  warnings?: string[];
+};
+
+type ChartSeriesMetadata = {
+  id: string;
+  label: string;
+  fileId?: string;
+  channelId?: string;
+  regionId?: string;
+  colorKey?: string;
+  unit?: string;
+};
+```
+
+This contract is a roadmap requirement for future chart abstractions and should be applied
+incrementally without rewriting existing plotting surfaces in one large change.
+
 ## Backend
 
 .NET 8 + FastEndpoints + MathNet.Numerics + NAudio

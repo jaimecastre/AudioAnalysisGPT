@@ -12,11 +12,7 @@ import { AGENT_MODELS } from './utils/agentModels';
 import { ATTACH_ACCEPT } from './chatAttachments';
 import { AgentAnswerPanel } from './AgentAnswerPanel';
 import type { MentionCandidate } from './useChatInput';
-import type { AgentEvidenceItem } from './utils/evidenceFormatting';
-import { getEvidenceLabel } from './utils/evidenceFormatting';
-import { getEvidenceArtifactId } from './utils/evidenceArtifactMatching';
-import type { AgentArtifact } from './agentWorkspaceSlice';
-import { useChatPanel, useAssistantMessage, useSelectionChip } from './hooks/useChatPanel';
+import { useChatPanel, useSelectionChip } from './hooks/useChatPanel';
 import styles from './ChatPanel.module.scss';
 
 const SUGGESTION_PROMPTS: { text: string; icon: typeof IconWaveSquare }[] = [
@@ -45,86 +41,8 @@ function UserMessage({ message }: { message: ChatMessage }): JSX.Element {
   );
 }
 
-function getShortArtifactId(id: string): string {
-  return id.length > 6 ? id.slice(-6) : id;
-}
-
-function parseEvidenceTokens(content: string): string {
-  const evidenceRegex = /\[(analysis_result|compare_result|find_result|findings_result|tool_result|report|marker_added|selection_set):([0-9a-fA-F-]{8,})\]/g;
-  const withoutTokens = content.replace(evidenceRegex, '');
-
-  return withoutTokens
-    .replace(/\n+Evidence:\s*[\s\S]*$/i, '')
-    .replace(/^\d+\.\s*$/gm, '')          // remove list items emptied by token stripping
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
-function EvidenceCitations({
-  evidenceReferences,
-  evidenceItems,
-  artifacts,
-  onArtifactClick,
-}: {
-  evidenceReferences: string[] | undefined;
-  evidenceItems: AgentEvidenceItem[] | undefined;
-  artifacts: AgentArtifact[];
-  onArtifactClick: (evidenceItem: AgentEvidenceItem) => void;
-}): JSX.Element | null {
-  if (!evidenceReferences || !evidenceItems || evidenceReferences.length === 0) {
-    return null;
-  }
-
-  const referencedEvidenceItems = evidenceReferences
-    .map((referenceId) => evidenceItems.find((item) => item.evidenceId === referenceId) ?? null)
-    .filter((item): item is AgentEvidenceItem => item !== null);
-
-  if (referencedEvidenceItems.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className={styles.evidenceCitationSection}>
-      <div className={styles.evidenceCitationHeading}>Evidence</div>
-      <div className={styles.evidenceCitationList}>
-        {referencedEvidenceItems.map((item) => {
-          const artifactId = getEvidenceArtifactId(item, artifacts);
-          const label = getEvidenceLabel(item.type);
-          const fileName = typeof item.data.fileName === 'string' ? item.data.fileName : null;
-          const fileNameA = typeof item.data.fileNameA === 'string' ? item.data.fileNameA : null;
-          const fileNameB = typeof item.data.fileNameB === 'string' ? item.data.fileNameB : null;
-          const subject = fileName ?? (fileNameA && fileNameB ? `${fileNameA} vs ${fileNameB}` : null);
-
-          return (
-            artifactId ? (
-              <button
-                key={item.evidenceId}
-                type="button"
-                className={styles.evidenceCitationPill}
-                onClick={() => onArtifactClick(item)}
-                title="Open related workspace artifact"
-              >
-                <span>{label}</span>
-                {subject && <span className={styles.evidenceCitationSubject}>{subject}</span>}
-                <span className={styles.evidenceCitationId}>{getShortArtifactId(item.evidenceId)}</span>
-              </button>
-            ) : (
-              <span key={item.evidenceId} className={styles.evidenceCitationPill}>
-                <span>{label}</span>
-                {subject && <span className={styles.evidenceCitationSubject}>{subject}</span>}
-                <span className={styles.evidenceCitationId}>{getShortArtifactId(item.evidenceId)}</span>
-              </span>
-            )
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
-  const { artifacts, handleEvidenceClick } = useAssistantMessage();
-  const parsedText = parseEvidenceTokens(message.content);
+  const parsedText = message.content;
   const isThinkingMessage = message.status === 'thinking';
   const isFailedMessage = message.status === 'failed';
 
@@ -145,12 +63,6 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
             <div className={styles.markdownBody}>
               <ReactMarkdown>{parsedText}</ReactMarkdown>
             </div>
-            <EvidenceCitations
-              evidenceReferences={message.evidenceReferences}
-              evidenceItems={message.evidenceItems}
-              artifacts={artifacts}
-              onArtifactClick={handleEvidenceClick}
-            />
             {message.toolSteps && message.toolSteps.length > 0 && (
               <AnalysisSteps steps={message.toolSteps} confidence={message.confidence} />
             )}

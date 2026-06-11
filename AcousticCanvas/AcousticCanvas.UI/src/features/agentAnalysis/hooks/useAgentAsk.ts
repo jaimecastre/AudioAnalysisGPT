@@ -268,8 +268,6 @@ export function useAgentAsk() {
           errorMessage: e.errorMessage,
         })),
         confidence: agentResponse.confidence,
-        evidenceReferences: agentResponse.evidenceReferences,
-        evidenceItems: agentResponse.evidenceItems,
         limitations: agentResponse.limitations,
         validationWarning: agentResponse.validationWarning,
         plannedTools: agentResponse.plannedTools,

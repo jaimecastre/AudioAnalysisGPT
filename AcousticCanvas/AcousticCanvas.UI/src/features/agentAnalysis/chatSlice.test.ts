@@ -70,21 +70,11 @@ describe('chatSlice', () => {
     expect(chatIsThinkingSelector({ chat: completedState })).toBe(false);
   });
 
-  it('stores evidence metadata on completed assistant responses', () => {
+  it('stores metadata on completed assistant responses', () => {
     const completedState = chatReducer(undefined, assistantMessageReceived({
       id: 'assistant-1',
       content: 'Peak: -3.2 dBFS.',
       timestamp: '2026-06-08T00:00:05.000Z',
-      evidenceReferences: ['ev_metrics_file_1'],
-      evidenceItems: [
-        {
-          evidenceId: 'ev_metrics_file_1',
-          type: 'basic_metrics',
-          data: {
-            peakDbFs: -3.2,
-          },
-        },
-      ],
       limitations: ['Only digital clipping was assessed.'],
       validationWarning: true,
       plannerReason: 'A peak-level question only needs basic metrics.',
@@ -92,12 +82,10 @@ describe('chatSlice', () => {
 
     expect(completedState.messages[0]).toMatchObject({
       id: 'assistant-1',
-      evidenceReferences: ['ev_metrics_file_1'],
       limitations: ['Only digital clipping was assessed.'],
       validationWarning: true,
       plannerReason: 'A peak-level question only needs basic metrics.',
     });
-    expect(completedState.messages[0]?.evidenceItems).toHaveLength(1);
   });
 
   it('updates the pending assistant response in place when the backend answer fails', () => {

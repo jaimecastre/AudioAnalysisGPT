@@ -1,10 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
 import { chatMessagesSelector, chatIsThinkingSelector, chatSelectedModelSelector, modelSelected } from '../chatSlice';
-import { agentArtifactsSelector, artifactFocused } from '../agentWorkspaceSlice';
 import { activeSelectionSelector } from '../../waveform/waveformSelectionSlice';
-import type { AgentEvidenceItem } from '../utils/evidenceFormatting';
-import { getEvidenceArtifactId } from '../utils/evidenceArtifactMatching';
 import { useChatInput } from '../useChatInput';
 
 export function useChatPanel() {
@@ -42,20 +39,6 @@ export function useChatPanel() {
     handleModelChange,
     ...chatInput,
   };
-}
-
-export function useAssistantMessage() {
-  const dispatch = useAppDispatch();
-  const artifacts = useAppSelector(agentArtifactsSelector);
-
-  const handleEvidenceClick = (evidenceItem: AgentEvidenceItem): void => {
-    const artifactId = getEvidenceArtifactId(evidenceItem, artifacts);
-    if (artifactId !== null) {
-      dispatch(artifactFocused(artifactId));
-    }
-  };
-
-  return { artifacts, handleEvidenceClick };
 }
 
 export function useSelectionChip() {

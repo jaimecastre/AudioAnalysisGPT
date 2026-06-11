@@ -92,7 +92,7 @@ function WorkspaceContextCard(): JSX.Element {
         <div className={styles.contextSection}>
           <div className={styles.contextSectionLabel}>Limits</div>
           {hasValidationWarning && (
-            <div className={styles.contextWarning}>Evidence references need review</div>
+            <div className={styles.contextWarning}>Response validation warning</div>
           )}
           {limitations.slice(0, 3).map((limitation) => (
             <div key={limitation} className={styles.contextLimitation}>{limitation}</div>
