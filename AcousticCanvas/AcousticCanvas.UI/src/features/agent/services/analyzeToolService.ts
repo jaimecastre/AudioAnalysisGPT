@@ -1,6 +1,6 @@
 import { apiClient, HttpMethod } from '../../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../../shared/api/apiEndpoints';
-import type { AnalyzeInput, AgentAnalysisResult } from '../agentToolTypes';
+import type { AnalyzeInput, AgentAnalysisResult } from '../types/agentToolTypes';
 
 const analysisCache = new Map<string, AgentAnalysisResult>();
 

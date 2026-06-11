@@ -1,4 +1,4 @@
-import type { ToolResultRow } from '../agentWorkspaceSlice';
+import type { ToolResultRow } from '../store/agentWorkspaceSlice';
 import { extractAgentToolRows } from './agentToolRows';
 
 export type ToolResultArtifactDraft = {

@@ -1,4 +1,4 @@
-import type { ToolResultRow } from '../agentWorkspaceSlice';
+import type { ToolResultRow } from '../store/agentWorkspaceSlice';
 
 function fmtDb(value: unknown): string {
   return typeof value === 'number' ? `${value.toFixed(2)} dBFS` : String(value);

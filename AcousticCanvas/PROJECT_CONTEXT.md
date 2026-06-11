@@ -1086,18 +1086,17 @@ All acceptance criteria met:
 - ✅ Agent suggests next analysis steps
 - ✅ API key secured server-side (appsettings.Development.json, gitignored)
 
-## 🟡 Milestone 2 — CPB and Sound Quality Layer — PARTIAL
+## ✅ Milestone 2 — CPB and Sound Quality Layer — COMPLETE
 
 Must-have features:
 
 - ✅ CPB / octave / 1⁄3 octave graphs
-- Loudness
-- Sharpness
-- Roughness (if feasible)
-- Fluctuation strength (if feasible)
-- A/B sound-quality comparison
-- Metric ranking table across imported files
-- Basic sound-quality summary
+- ✅ Loudness
+- ✅ Sharpness
+- ✅ Roughness
+- ✅ A/B sound-quality comparison
+- ✅ Metric ranking table across imported files
+- ✅ Basic sound-quality summary
 
 ## ✅ Milestone 3 — Evidence-Based Agent — COMPLETE
 

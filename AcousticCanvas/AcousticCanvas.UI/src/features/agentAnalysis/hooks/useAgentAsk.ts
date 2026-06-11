@@ -9,8 +9,8 @@ import {
   planBubbleStarted,
   planBubbleReceived,
   planBubbleRemoved,
-} from '../chatSlice';
-import type { ToolStep } from '../chatSlice';
+} from '../store/chatSlice';
+import type { ToolStep } from '../store/chatSlice';
 import type { AgentAskResponse } from '../services/agentAskService';
 import { callAgentAskEndpoint } from '../services/agentAskService';
 import {
@@ -21,10 +21,10 @@ import {
   agentAskStatusSelector,
   agentAskResponseSelector,
   agentAskErrorSelector,
-} from '../agentAskSlice';
-import { chatSelectedModelSelector } from '../chatSlice';
-import { findingsArtifactAdded, toolResultArtifactAdded } from '../agentWorkspaceSlice';
-import type { FindingItem } from '../agentWorkspaceSlice';
+} from '../store/agentAskSlice';
+import { chatSelectedModelSelector } from '../store/chatSlice';
+import { findingsArtifactAdded, toolResultArtifactAdded } from '../store/agentWorkspaceSlice';
+import type { FindingItem } from '../store/agentWorkspaceSlice';
 import { createToolResultArtifactDrafts } from '../utils/agentToolArtifacts';
 
 const TOOL_TITLES: Record<string, string> = {

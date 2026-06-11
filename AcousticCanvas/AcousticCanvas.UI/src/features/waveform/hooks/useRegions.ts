@@ -8,7 +8,7 @@ import {
   clearActiveSelection,
   activeSelectionSelector,
   loopEnabledSelector,
-} from '../waveformSelectionSlice';
+} from '../store/waveformSelectionSlice';
 
 const REGION_COLOR = 'rgba(0, 184, 169, 0.25)';
 const LOOP_CHECK_EPSILON_SECONDS = 0.05;

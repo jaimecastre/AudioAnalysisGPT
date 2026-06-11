@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
-import { agentArtifactsSelector, expandedArtifactIdsSelector, focusedArtifactIdSelector, artifactFocusCleared } from '../agentWorkspaceSlice';
+import { agentArtifactsSelector, expandedArtifactIdsSelector, focusedArtifactIdSelector, artifactFocusCleared } from '../store/agentWorkspaceSlice';
 
 export function useArtifactFeed() {
   const artifacts = useAppSelector(agentArtifactsSelector);

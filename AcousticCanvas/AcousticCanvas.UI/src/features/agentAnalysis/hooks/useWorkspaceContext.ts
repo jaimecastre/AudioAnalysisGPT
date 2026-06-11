@@ -1,8 +1,8 @@
 import { useAppSelector } from '../../../store/reduxHooks';
-import { activeSelectionSelector } from '../../waveform/waveformSelectionSlice';
-import { projectFilesSelector, selectedSignalIdSelector } from '../../project/projectSlice';
-import { chatMessagesSelector } from '../chatSlice';
-import type { ChatMessage } from '../chatSlice';
+import { activeSelectionSelector } from '../../waveform/store/waveformSelectionSlice';
+import { projectFilesSelector, selectedSignalIdSelector } from '../../project/store/projectSlice';
+import { chatMessagesSelector } from '../store/chatSlice';
+import type { ChatMessage } from '../store/chatSlice';
 
 function getLastCompletedAssistantMessage(messages: ChatMessage[]): ChatMessage | null {
   for (let index = messages.length - 1; index >= 0; index--) {

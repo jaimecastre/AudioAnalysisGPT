@@ -1,4 +1,5 @@
 using FastEndpoints;
+using System.Text.Json.Serialization;
 using AcousticCanvas.Features.Agent.Handlers;
 using AcousticCanvas.Features.Agent.Orchestration;
 using AcousticCanvas.Features.Agent.Services;
@@ -13,6 +14,10 @@ using AcousticCanvas.Features.Waveform.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddFastEndpoints();
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 builder.Services.AddSingleton<AudioFileRepository>();
 builder.Services.AddSingleton<UploadAudioHandler>();
 var importers = new List<ISignalFileImporter> { new WavSignalFileImporter() };
@@ -31,6 +36,8 @@ builder.Services.AddSingleton<ISoundQualityClient, PythonSoundQualityClient>();
 builder.Services.AddSingleton<SoundQualityCacheStore>();
 builder.Services.AddSingleton<SoundQualityAnalysisService>();
 builder.Services.AddSingleton<RunSoundQualityHandler>();
+builder.Services.AddSingleton<MetricRankingHandler>();
+builder.Services.AddSingleton<SoundQualitySummaryHandler>();
 builder.Services.AddSingleton<RunCompareHandler>();
 builder.Services.AddSingleton<RunBatchBenchmarkHandler>();
 builder.Services.AddSingleton<FindEventsHandler>();

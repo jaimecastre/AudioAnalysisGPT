@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../../shared/api/apiEndpoints';
-import type { WaveformResponse } from '../../audioUpload/audioUploadApi';
+import type { WaveformResponse } from '../../audioUpload/services/audioUploadApi';
 
 const WAVEFORM_POINTS = 1000;
 

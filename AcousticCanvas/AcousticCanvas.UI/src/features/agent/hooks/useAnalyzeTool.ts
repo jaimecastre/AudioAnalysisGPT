@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AnalyzeInput, AgentAnalysisResult } from '../agentToolTypes';
+import type { AnalyzeInput, AgentAnalysisResult } from '../types/agentToolTypes';
 import { callAnalyzeTool } from '../services/analyzeToolService';
 
 interface UseAnalyzeToolReturn {

@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import SpectrogramPlugin from 'wavesurfer.js/dist/plugins/spectrogram.esm.js';
-import type { ChannelSpectrogramAnalysis } from '../../analysis/spectrogramTypes';
+import type { ChannelSpectrogramAnalysis } from '../../analysis/types/spectrogramTypes';
 
 const SPECTROGRAM_HEIGHT_PX = 160;
 

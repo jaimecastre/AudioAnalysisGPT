@@ -1,5 +1,5 @@
 import { useAppDispatch } from '../../../store/reduxHooks';
-import type { WorkspaceAction, WorkspaceResult } from '../agentToolTypes';
+import type { WorkspaceAction, WorkspaceResult } from '../types/agentToolTypes';
 import { applyWorkspaceAction } from '../utils/workspaceTool';
 
 interface UseWorkspaceToolReturn {

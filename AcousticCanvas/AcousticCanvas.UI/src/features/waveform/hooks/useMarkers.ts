@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
-import { markersSelector, removeMarker } from '../../project/projectSlice';
+import { markersSelector, removeMarker } from '../../project/store/projectSlice';
 import type { Marker } from '../../../store/projectState';
 
 const MARKER_COLOR = 'rgba(224, 82, 82, 0.9)';

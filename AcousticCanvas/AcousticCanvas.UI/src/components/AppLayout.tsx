@@ -1,11 +1,11 @@
 import type { JSX, ReactNode } from 'react';
 import { useState } from 'react';
 import { AppShell } from '@mantine/core';
-import { TopNav } from '../features/shell/TopNav';
+import { TopNav } from '../features/shell/components/TopNav';
 import { Sidebar } from './Sidebar';
 import { useAppSelector } from '../store/reduxHooks';
-import { activeModeSelector } from '../features/navigation/navigationSlice';
-import { projectNameSelector, projectStatusSelector } from '../features/project/projectSlice';
+import { activeModeSelector } from '../features/navigation/store/navigationSlice';
+import { projectNameSelector, projectStatusSelector } from '../features/project/store/projectSlice';
 
 interface AppLayoutProps {
   children: ReactNode;

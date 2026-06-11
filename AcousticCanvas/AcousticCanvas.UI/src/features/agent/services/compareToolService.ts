@@ -1,6 +1,6 @@
 import { apiClient, HttpMethod } from '../../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../../shared/api/apiEndpoints';
-import type { CompareInput, CompareResult } from '../agentToolTypes';
+import type { CompareInput, CompareResult } from '../types/agentToolTypes';
 
 export async function callCompareTool(input: CompareInput): Promise<CompareResult> {
   const requestBody = {

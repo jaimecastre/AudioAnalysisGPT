@@ -1,6 +1,6 @@
 import type { RootState } from '../../../store/reduxStore';
-import type { GetStateResult } from '../agentToolTypes';
-import { getStateSelector } from '../getStateSelector';
+import type { GetStateResult } from '../types/agentToolTypes';
+import { getStateSelector } from '../store/getStateSelector';
 
 export function getStateTool(state: RootState): GetStateResult {
   return getStateSelector(state);

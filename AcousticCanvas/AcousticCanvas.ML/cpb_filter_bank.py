@@ -127,6 +127,8 @@ def main():
                 "centerFrequencyHz": round(float(center_frequency_hz), 3),
                 "lowerFrequencyHz": round(lower_frequency_hz, 3),
                 "upperFrequencyHz": round(upper_frequency_hz, 3),
+                "plotLowerFrequencyHz": round(lower_frequency_hz, 3),
+                "plotUpperFrequencyHz": round(upper_frequency_hz, 3),
                 "magnitude": round(magnitude, 9),
                 "levelDb": round(level_db, 3) if math.isfinite(level_db) else None,
                 "binCount": 0,

@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import { IconUpload, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import styles from './Sidebar.module.scss';
 import { useAppSelector, useAppDispatch } from '../store/reduxHooks';
-import { setActiveView } from '../features/navigation/navigationSlice';
+import { setActiveView } from '../features/navigation/store/navigationSlice';
 
 interface SidebarProps {
   isCollapsed?: boolean;

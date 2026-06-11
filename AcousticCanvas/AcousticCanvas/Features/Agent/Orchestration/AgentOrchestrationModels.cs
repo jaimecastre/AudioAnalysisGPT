@@ -41,6 +41,8 @@ public sealed class ToolExecutionOutput
     public object? ResultData { get; init; }
     public string? ErrorCode { get; init; }
     public string? ErrorMessage { get; init; }
+    public DateTime? StartedAtUtc { get; init; }
+    public DateTime? FinishedAtUtc { get; init; }
 }
 
 // ─── Evidence package ──────────────────────────────────────────────────────

@@ -10,6 +10,8 @@ export const API_ENDPOINTS = {
     RUN_SPECTROGRAM: 'api/analysis/spectrogram',
     RUN_CPB: 'api/analysis/cpb',
     RUN_SOUND_QUALITY: 'api/analysis/sound-quality',
+    METRIC_RANKING: 'api/analysis/metric-ranking',
+    SOUND_QUALITY_SUMMARY: 'api/analysis/sound-quality-summary',
     RUN_AGENT_ANALYSIS: 'api/analysis/run',
     RUN_COMPARE: 'api/analysis/compare',
     RUN_BATCH_BENCHMARK: 'api/analysis/batch-benchmark',

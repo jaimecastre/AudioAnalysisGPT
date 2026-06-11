@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import type { WaveformResponse } from '../../audioUpload/audioUploadApi';
-import type { WaveSurferDisplayRef } from '../WaveSurferDisplay';
+import type { WaveformResponse } from '../../audioUpload/services/audioUploadApi';
+import type { WaveSurferDisplayRef } from '../components/WaveSurferDisplay';
 
 const WAVEFORM_COLOR = '#00b8a9';
 const WAVEFORM_PROGRESS_COLOR = '#007a70';

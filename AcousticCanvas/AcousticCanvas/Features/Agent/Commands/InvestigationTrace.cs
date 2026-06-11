@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace AcousticCanvas.Features.Agent.Commands;
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum InvestigationPath
 {
     LlmPlanned,

@@ -26,4 +26,23 @@ public class AudioFileRepository
         var files = Directory.GetFiles(_storagePath, $"{fileId}_*");
         return files.FirstOrDefault() ?? string.Empty;
     }
+
+    public string GetOriginalFileName(string fileId)
+    {
+        var files = Directory.GetFiles(_storagePath, $"{fileId}_*");
+        var filePath = files.FirstOrDefault();
+        if (string.IsNullOrEmpty(filePath))
+        {
+            return string.Empty;
+        }
+
+        var fileName = Path.GetFileName(filePath);
+        // Remove the fileId_ prefix
+        if (fileName.StartsWith($"{fileId}_"))
+        {
+            return fileName.Substring(fileId.Length + 1);
+        }
+
+        return fileName;
+    }
 }

@@ -31,15 +31,16 @@ public sealed class ToolExecutionService(
         CancellationToken cancellationToken)
     {
         var toolName = toolRequest.Name;
+        var startedAtUtc = DateTime.UtcNow;
 
         if (!AgentToolRegistry.IsToolAllowed(toolName))
         {
-            return BuildFailureOutput(toolName, "TOOL_NOT_ALLOWED", $"Tool '{toolName}' is not in the allowed tools registry.");
+            return BuildFailureOutput(toolName, "TOOL_NOT_ALLOWED", $"Tool '{toolName}' is not in the allowed tools registry.", startedAtUtc, DateTime.UtcNow);
         }
 
         try
         {
-            return toolName switch
+            ToolExecutionOutput result = toolName switch
             {
                 "get_metadata" => await ExecuteGetMetadataAsync(toolRequest.Arguments, cancellationToken),
                 "run_basic_metrics" => await ExecuteRunBasicMetricsAsync(toolRequest.Arguments, cancellationToken),
@@ -49,20 +50,22 @@ public sealed class ToolExecutionService(
                 "run_cpb" => await ExecuteRunCpbAsync(toolRequest.Arguments, cancellationToken),
                 "run_sound_quality_metrics" => await ExecuteRunSoundQualityMetricsAsync(toolRequest.Arguments, cancellationToken),
                 "run_findings" => await ExecuteRunFindingsAsync(toolRequest.Arguments, cancellationToken),
-                _ => BuildFailureOutput(toolName, "TOOL_NOT_IMPLEMENTED", $"Tool '{toolName}' is registered but not implemented in ToolExecutionService."),
+                _ => BuildFailureOutput(toolName, "TOOL_NOT_IMPLEMENTED", $"Tool '{toolName}' is registered but not implemented in ToolExecutionService.", startedAtUtc, DateTime.UtcNow),
             };
+
+            return BuildSuccessOutputWithTiming(result, startedAtUtc, DateTime.UtcNow);
         }
         catch (FileNotFoundException ex)
         {
-            return BuildFailureOutput(toolName, "FILE_NOT_FOUND", ex.Message);
+            return BuildFailureOutput(toolName, "FILE_NOT_FOUND", ex.Message, startedAtUtc, DateTime.UtcNow);
         }
         catch (ArgumentException ex)
         {
-            return BuildFailureOutput(toolName, "INVALID_ARGUMENTS", ex.Message);
+            return BuildFailureOutput(toolName, "INVALID_ARGUMENTS", ex.Message, startedAtUtc, DateTime.UtcNow);
         }
         catch (Exception ex)
         {
-            return BuildFailureOutput(toolName, "UNEXPECTED_ERROR", ex.Message);
+            return BuildFailureOutput(toolName, "UNEXPECTED_ERROR", ex.Message, startedAtUtc, DateTime.UtcNow);
         }
     }
 
@@ -276,8 +279,8 @@ public sealed class ToolExecutionService(
                     overlap = spectrumResult.Parameters.Overlap,
                     blockCount = spectrumResult.Parameters.BlockCount,
                 },
-                // TODO: Confirm FFT normalization convention.
-                // Current implementation returns dBFS magnitude using Hann window coherent-gain correction.
+                // FFT normalization: one-sided amplitude with Hann window coherent-gain correction.
+                // Pressure channels are converted to dB SPL (dB re 20 µPa) via AcousticPressureConverter.
                 dataRef,
             });
         }
@@ -778,10 +781,27 @@ public sealed class ToolExecutionService(
             Status = "completed",
             ResultRef = resultRef,
             ResultData = resultData,
+            StartedAtUtc = null,
+            FinishedAtUtc = null,
         };
     }
 
-    private static ToolExecutionOutput BuildFailureOutput(string toolName, string errorCode, string errorMessage)
+    private static ToolExecutionOutput BuildSuccessOutputWithTiming(ToolExecutionOutput output, DateTime startedAtUtc, DateTime finishedAtUtc)
+    {
+        return new ToolExecutionOutput
+        {
+            ToolName = output.ToolName,
+            Status = output.Status,
+            ResultRef = output.ResultRef,
+            ResultData = output.ResultData,
+            ErrorCode = output.ErrorCode,
+            ErrorMessage = output.ErrorMessage,
+            StartedAtUtc = startedAtUtc,
+            FinishedAtUtc = finishedAtUtc,
+        };
+    }
+
+    private static ToolExecutionOutput BuildFailureOutput(string toolName, string errorCode, string errorMessage, DateTime? startedAtUtc = null, DateTime? finishedAtUtc = null)
     {
         return new ToolExecutionOutput
         {
@@ -790,6 +810,8 @@ public sealed class ToolExecutionService(
             ResultRef = string.Empty,
             ErrorCode = errorCode,
             ErrorMessage = errorMessage,
+            StartedAtUtc = startedAtUtc,
+            FinishedAtUtc = finishedAtUtc,
         };
     }
 }

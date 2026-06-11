@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { BatchBenchmarkFileRow } from '../batchBenchmarkTypes';
+import type { BatchBenchmarkFileRow } from '../types/batchBenchmarkTypes';
 import {
   formatDbFs,
   formatFrequencyHz,

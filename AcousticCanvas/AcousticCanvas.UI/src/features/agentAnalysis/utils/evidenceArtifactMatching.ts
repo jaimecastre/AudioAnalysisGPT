@@ -1,4 +1,4 @@
-import type { AgentArtifact } from '../agentWorkspaceSlice';
+import type { AgentArtifact } from '../store/agentWorkspaceSlice';
 import type { AgentEvidenceItem } from './evidenceFormatting';
 
 const TOOL_RESULT_BY_EVIDENCE_TYPE: Record<string, string> = {

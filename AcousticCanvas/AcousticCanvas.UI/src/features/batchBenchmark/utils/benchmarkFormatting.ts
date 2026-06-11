@@ -1,4 +1,4 @@
-import type { BatchBenchmarkFileRow } from '../batchBenchmarkTypes';
+import type { BatchBenchmarkFileRow } from '../types/batchBenchmarkTypes';
 
 export type BenchmarkSortKey =
   | 'attention'

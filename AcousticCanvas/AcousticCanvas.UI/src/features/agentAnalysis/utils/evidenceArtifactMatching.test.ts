@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getEvidenceArtifactId } from './evidenceArtifactMatching';
-import type { AgentArtifact } from '../agentWorkspaceSlice';
+import type { AgentArtifact } from '../store/agentWorkspaceSlice';
 import type { AgentEvidenceItem } from './evidenceFormatting';
 
 const findingsArtifactA: AgentArtifact = {

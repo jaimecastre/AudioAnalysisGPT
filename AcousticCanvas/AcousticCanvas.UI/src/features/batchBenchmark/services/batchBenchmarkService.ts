@@ -1,6 +1,6 @@
 import { apiClient, HttpMethod } from '../../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../../shared/api/apiEndpoints';
-import type { BatchBenchmarkRequest, BatchBenchmarkResult } from '../batchBenchmarkTypes';
+import type { BatchBenchmarkRequest, BatchBenchmarkResult } from '../types/batchBenchmarkTypes';
 
 export async function callBatchBenchmarkTool(input: BatchBenchmarkRequest): Promise<BatchBenchmarkResult> {
   const requestBody = {

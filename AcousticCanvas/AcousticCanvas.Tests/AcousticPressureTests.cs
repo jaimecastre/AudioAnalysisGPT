@@ -85,7 +85,7 @@ public sealed class AcousticPressureTests
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 2048, 0.5);
 
         var ch = analysis.Channels[0];
-        Assert.Equal("Level [dB re 20 µPa]", ch.YAxisLabel);
+        Assert.Equal("dB re 20 µPa", ch.YAxisLabel);
         Assert.Equal("dB re 20 µPa", ch.DbUnit);
         Assert.Equal(AcousticPressureConverter.PressureReferencePa, ch.DbReferenceValue);
         Assert.Equal("Pa", ch.DbReferenceUnit);
@@ -285,7 +285,7 @@ public sealed class AcousticPressureTests
 
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 1024, 0.5);
 
-        Assert.Equal("Level [dB re 20 µPa]", analysis.Channels[0].YAxisLabel);
+        Assert.Equal("dB re 20 µPa", analysis.Channels[0].YAxisLabel);
     }
 
     [Fact]
@@ -309,7 +309,7 @@ public sealed class AcousticPressureTests
 
         var analysis = SpectrogramAnalyzer.Analyze([channel], 0.0, 1.0, 512, 0.5, "linear", 20.0, 80.0);
 
-        Assert.Equal("Level [dB re 20 µPa]", analysis.Channels[0].ColorbandLabel);
+        Assert.Equal("dB re 20 µPa", analysis.Channels[0].ColorbandLabel);
     }
 
     // -----------------------------------------------------------------
@@ -345,7 +345,7 @@ public sealed class AcousticPressureTests
         Assert.Equal("Pa", ch.DbReferenceUnit);
         Assert.Equal("dB re 20 µPa", ch.DbUnit);
         Assert.Equal("pressure_signal", ch.CalibrationState);
-        Assert.Equal("Level [dB re 20 µPa]", ch.YAxisLabel);
+        Assert.Equal("dB re 20 µPa", ch.YAxisLabel);
     }
 
     // =================================================================

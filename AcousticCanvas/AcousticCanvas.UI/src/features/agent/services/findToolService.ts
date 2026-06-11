@@ -1,6 +1,6 @@
 import { apiClient, HttpMethod } from '../../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../../shared/api/apiEndpoints';
-import type { FindInput, FindEventsResult } from '../agentToolTypes';
+import type { FindInput, FindEventsResult } from '../types/agentToolTypes';
 
 export async function callFindTool(input: FindInput): Promise<FindEventsResult> {
   const requestBody = {

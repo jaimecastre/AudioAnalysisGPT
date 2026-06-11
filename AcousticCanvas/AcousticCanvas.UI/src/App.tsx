@@ -3,7 +3,7 @@ import { MantineProvider } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
 import { AppLayout } from './components/AppLayout';
-import { ModeContentPlaceholder } from './features/shell/ModeContentPlaceholder';
+import { ModeContentPlaceholder } from './features/shell/components/ModeContentPlaceholder';
 import { theme } from './theme';
 
 const App = (): JSX.Element => {

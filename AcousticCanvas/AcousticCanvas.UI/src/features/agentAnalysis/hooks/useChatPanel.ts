@@ -1,8 +1,8 @@
 import { useRef, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
-import { chatMessagesSelector, chatIsThinkingSelector, chatSelectedModelSelector, modelSelected } from '../chatSlice';
-import { activeSelectionSelector } from '../../waveform/waveformSelectionSlice';
-import { useChatInput } from '../useChatInput';
+import { chatMessagesSelector, chatIsThinkingSelector, chatSelectedModelSelector, modelSelected } from '../store/chatSlice';
+import { activeSelectionSelector } from '../../waveform/store/waveformSelectionSlice';
+import { useChatInput } from '../hooks/useChatInput';
 
 export function useChatPanel() {
   const messages = useAppSelector(chatMessagesSelector);

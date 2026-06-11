@@ -1,15 +1,15 @@
 import type { AppDispatch } from '../../../store/reduxStore';
-import type { WorkspaceAction, WorkspaceResult } from '../agentToolTypes';
+import type { WorkspaceAction, WorkspaceResult } from '../types/agentToolTypes';
 import {
   setSelectedSignal,
   addMarker,
   openView,
   closeView,
-} from '../../project/projectSlice';
+} from '../../project/store/projectSlice';
 import {
   setActiveSelection,
   setLoopEnabled,
-} from '../../waveform/waveformSelectionSlice';
+} from '../../waveform/store/waveformSelectionSlice';
 
 function applySetActiveFile(dispatch: AppDispatch, action: Extract<WorkspaceAction, { action: 'set_active_file' }>): WorkspaceResult {
   dispatch(setSelectedSignal(action.fileId));

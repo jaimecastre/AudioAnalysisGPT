@@ -422,8 +422,8 @@ public sealed class AgentOrchestrator(
             traces.Add(new ToolExecutionTrace(
                 Name: output.ToolName,
                 Status: output.Status,
-                StartedAtUtc: null,
-                FinishedAtUtc: null,
+                StartedAtUtc: output.StartedAtUtc,
+                FinishedAtUtc: output.FinishedAtUtc,
                 ErrorMessage: output.ErrorMessage));
         }
         return traces;
