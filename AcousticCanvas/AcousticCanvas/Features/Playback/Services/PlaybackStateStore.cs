@@ -9,13 +9,16 @@ public class PlaybackStateStore
 
     public PlaybackState GetOrCreateState(string fileId)
     {
-        return _states.GetOrAdd(fileId, id => new PlaybackState
-        {
-            FileId = id,
-            IsPlaying = false,
-            CurrentTimeSeconds = 0,
-            DurationSeconds = 0
-        });
+        return _states.GetOrAdd(
+            fileId,
+            id => new PlaybackState
+            {
+                FileId = id,
+                IsPlaying = false,
+                CurrentTimeSeconds = 0,
+                DurationSeconds = 0,
+            }
+        );
     }
 
     public PlaybackState? GetState(string fileId)

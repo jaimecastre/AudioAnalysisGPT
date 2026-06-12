@@ -14,7 +14,10 @@ public sealed class RunSoundQualityEndpoint(AudioFileRepository audioFileReposit
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(RunSoundQualityRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(
+        RunSoundQualityRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var filePath = audioFileRepository.GetFilePath(request.FileId);
         if (string.IsNullOrEmpty(filePath))
@@ -28,7 +31,8 @@ public sealed class RunSoundQualityEndpoint(AudioFileRepository audioFileReposit
             FilePath: filePath,
             StartSeconds: request.StartSeconds,
             EndSeconds: request.EndSeconds,
-            Method: request.Method);
+            Method: request.Method
+        );
 
         try
         {
@@ -37,7 +41,10 @@ public sealed class RunSoundQualityEndpoint(AudioFileRepository audioFileReposit
         catch (Exception ex)
         {
             HttpContext.Response.StatusCode = 500;
-            await HttpContext.Response.WriteAsync($"Sound-quality analysis error: {ex.GetType().Name}: {ex.Message}", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                $"Sound-quality analysis error: {ex.GetType().Name}: {ex.Message}",
+                cancellationToken
+            );
         }
     }
 }

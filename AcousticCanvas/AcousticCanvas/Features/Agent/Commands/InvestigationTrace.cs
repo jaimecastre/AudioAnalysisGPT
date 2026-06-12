@@ -8,13 +8,10 @@ public enum InvestigationPath
     LlmPlanned,
     DeterministicFact,
     MetaQuestion,
-    NoFiles
+    NoFiles,
 }
 
-public record PlannedToolTrace(
-    string Name,
-    IReadOnlyDictionary<string, object?> Arguments
-);
+public record PlannedToolTrace(string Name, IReadOnlyDictionary<string, object?> Arguments);
 
 public record ToolExecutionTrace(
     string Name,

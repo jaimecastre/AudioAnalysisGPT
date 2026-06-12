@@ -1,7 +1,7 @@
-using MathNet.Numerics.IntegralTransforms;
-using AcousticCanvas.Features.Analysis.Domain;
 using System.Globalization;
 using System.Numerics;
+using AcousticCanvas.Features.Analysis.Domain;
+using MathNet.Numerics.IntegralTransforms;
 
 namespace AcousticCanvas.Features.Analysis.Analyzers;
 
@@ -24,7 +24,8 @@ public static class SpectrogramAnalyzer
         double gainDb,
         double rangeDb,
         double minDbSpl = 20.0,
-        double maxDbSpl = 100.0)
+        double maxDbSpl = 100.0
+    )
     {
         scale = NormalizeScale(scale);
         gainDb = Math.Clamp(gainDb, -10.0, 30.0);
@@ -76,7 +77,8 @@ public static class SpectrogramAnalyzer
                 gainDb,
                 rangeDb,
                 minDbSpl,
-                maxDbSpl);
+                maxDbSpl
+            );
 
             channelResults.Add(channelResult);
         }
@@ -134,7 +136,8 @@ public static class SpectrogramAnalyzer
         double gainDb,
         double rangeDb,
         double minDbSpl,
-        double maxDbSpl)
+        double maxDbSpl
+    )
     {
         var samples = channel.Samples;
         var frames = new List<double[]>();
@@ -142,7 +145,13 @@ public static class SpectrogramAnalyzer
         var blockStart = startSample;
         while (blockStart + fftSize <= endSample)
         {
-            var amplitudes = ComputeFrameAmplitudes(samples, blockStart, fftSize, window, coherentGain);
+            var amplitudes = ComputeFrameAmplitudes(
+                samples,
+                blockStart,
+                fftSize,
+                window,
+                coherentGain
+            );
             frames.Add(RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0));
             blockStart += hopSize;
         }
@@ -150,14 +159,19 @@ public static class SpectrogramAnalyzer
         // Always include at least one frame even for very short regions.
         if (frames.Count == 0)
         {
-            var amplitudes = ComputeFrameAmplitudes(samples, startSample, fftSize, window, coherentGain);
+            var amplitudes = ComputeFrameAmplitudes(
+                samples,
+                startSample,
+                fftSize,
+                window,
+                coherentGain
+            );
             frames.Add(RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0));
         }
 
-        var isPressure = channel.PhysicalMetadata is
-        {
-            UnitKind: SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure
-        };
+        var isPressure =
+            channel.PhysicalMetadata is
+            { UnitKind: SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure };
 
         var frequencyData = new List<byte[]>();
 
@@ -174,8 +188,14 @@ public static class SpectrogramAnalyzer
                 for (var k = 0; k < binCount; k++)
                 {
                     var peakAmplitudePa = frame[k] * scaleFactor;
-                    var dbSpl = AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(peakAmplitudePa);
-                    frameBytes[k] = AcousticPressureConverter.MapDbSplToByte(dbSpl, minDbSpl, maxDbSpl);
+                    var dbSpl = AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(
+                        peakAmplitudePa
+                    );
+                    frameBytes[k] = AcousticPressureConverter.MapDbSplToByte(
+                        dbSpl,
+                        minDbSpl,
+                        maxDbSpl
+                    );
                 }
                 frequencyData.Add(frameBytes);
             }
@@ -230,8 +250,12 @@ public static class SpectrogramAnalyzer
             FrameCount = frames.Count,
             NyquistHz = sampleRate / 2.0,
             FrequencyData = frequencyData,
-            ColorbandLabel = AcousticPressureConverter.ResolveColorbandLabel(channel.PhysicalMetadata),
-            CalibrationState = AcousticPressureConverter.ResolveCalibrationState(channel.PhysicalMetadata),
+            ColorbandLabel = AcousticPressureConverter.ResolveColorbandLabel(
+                channel.PhysicalMetadata
+            ),
+            CalibrationState = AcousticPressureConverter.ResolveCalibrationState(
+                channel.PhysicalMetadata
+            ),
         };
     }
 
@@ -240,7 +264,8 @@ public static class SpectrogramAnalyzer
         int blockStart,
         int fftSize,
         double[] window,
-        double coherentGain)
+        double coherentGain
+    )
     {
         var complexBlock = new Complex[fftSize];
         var available = Math.Max(0, Math.Min(fftSize, samples.Length - blockStart));
@@ -273,11 +298,22 @@ public static class SpectrogramAnalyzer
         return amplitudes;
     }
 
-    public static IReadOnlyList<SpectrogramAxisTick> BuildTimeAxisTicks(double startSeconds, double endSeconds, int tickCount)
+    public static IReadOnlyList<SpectrogramAxisTick> BuildTimeAxisTicks(
+        double startSeconds,
+        double endSeconds,
+        int tickCount
+    )
     {
         var duration = endSeconds - startSeconds;
         if (duration <= 0.0 || tickCount <= 1)
-            return [new SpectrogramAxisTick { PositionPercent = 0.0, Label = startSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s" }];
+            return
+            [
+                new SpectrogramAxisTick
+                {
+                    PositionPercent = 0.0,
+                    Label = startSeconds.ToString("F1", CultureInfo.InvariantCulture) + "s",
+                },
+            ];
 
         var ticks = new SpectrogramAxisTick[tickCount];
         for (var i = 0; i < tickCount; i++)
@@ -293,7 +329,11 @@ public static class SpectrogramAnalyzer
         return ticks;
     }
 
-    public static IReadOnlyList<SpectrogramAxisTick> BuildFrequencyAxisTicks(double nyquistHz, string scale, int tickCount)
+    public static IReadOnlyList<SpectrogramAxisTick> BuildFrequencyAxisTicks(
+        double nyquistHz,
+        string scale,
+        int tickCount
+    )
     {
         var normalizedScale = NormalizeScale(scale);
         var scaledNyquist = FrequencyToScale(Math.Max(0.0, nyquistHz), normalizedScale);
@@ -305,9 +345,10 @@ public static class SpectrogramAnalyzer
         {
             var fraction = (double)i / (tickCount - 1);
             var frequencyHz = ScaleToFrequency(fraction * scaledNyquist, normalizedScale);
-            var label = frequencyHz >= 1000.0
-                ? (frequencyHz / 1000.0).ToString("F1", CultureInfo.InvariantCulture) + " kHz"
-                : Math.Round(frequencyHz).ToString(CultureInfo.InvariantCulture) + " Hz";
+            var label =
+                frequencyHz >= 1000.0
+                    ? (frequencyHz / 1000.0).ToString("F1", CultureInfo.InvariantCulture) + " kHz"
+                    : Math.Round(frequencyHz).ToString(CultureInfo.InvariantCulture) + " Hz";
             ticks[i] = new SpectrogramAxisTick
             {
                 PositionPercent = Math.Clamp((1.0 - fraction) * 100.0, 0.0, 100.0),
@@ -341,12 +382,15 @@ public static class SpectrogramAnalyzer
         for (var index = 0; index < amplitudes.Length; index++)
         {
             var scaledFraction = maxIndex == 0 ? 0.0 : (double)index / maxIndex;
-            var sourcePosition = ScaleToFrequency(scaledFraction * maxScaledFrequency, scale) / nyquistHz * maxIndex;
+            var sourcePosition =
+                ScaleToFrequency(scaledFraction * maxScaledFrequency, scale) / nyquistHz * maxIndex;
             sourcePosition = Math.Clamp(sourcePosition, 0.0, maxIndex);
             var lowerIndex = (int)Math.Floor(sourcePosition);
             var upperIndex = Math.Min(lowerIndex + 1, maxIndex);
             var interpolation = sourcePosition - lowerIndex;
-            remapped[index] = amplitudes[lowerIndex] * (1.0 - interpolation) + amplitudes[upperIndex] * interpolation;
+            remapped[index] =
+                amplitudes[lowerIndex] * (1.0 - interpolation)
+                + amplitudes[upperIndex] * interpolation;
         }
 
         return remapped;

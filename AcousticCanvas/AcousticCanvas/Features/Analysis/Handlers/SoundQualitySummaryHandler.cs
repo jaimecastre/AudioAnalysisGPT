@@ -8,10 +8,13 @@ namespace AcousticCanvas.Features.Analysis.Handlers;
 
 public sealed class SoundQualitySummaryHandler(
     AudioFileRepository audioFileRepository,
-    SoundQualityAnalysisService soundQualityAnalysisService)
-    : CommandHandler<SoundQualitySummaryRequest, SoundQualitySummaryResult>
+    SoundQualityAnalysisService soundQualityAnalysisService
+) : CommandHandler<SoundQualitySummaryRequest, SoundQualitySummaryResult>
 {
-    public override async Task<SoundQualitySummaryResult> ExecuteAsync(SoundQualitySummaryRequest request, CancellationToken ct)
+    public override async Task<SoundQualitySummaryResult> ExecuteAsync(
+        SoundQualitySummaryRequest request,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
@@ -31,15 +34,25 @@ public sealed class SoundQualitySummaryHandler(
             FilePath: filePath,
             StartSeconds: 0.0,
             EndSeconds: fileInfo.DurationSeconds,
-            Method: "python_filter_bank");
+            Method: "python_filter_bank"
+        );
 
-        var soundQualityAnalysis = await soundQualityAnalysisService.AnalyzeAsync(soundQualityQuery, ct);
+        var soundQualityAnalysis = await soundQualityAnalysisService.AnalyzeAsync(
+            soundQualityQuery,
+            ct
+        );
 
         var assessments = new Dictionary<string, string>
         {
-            ["loudness"] = SoundQualityThresholds.AssessLoudness(soundQualityAnalysis.Loudness.Value),
-            ["sharpness"] = SoundQualityThresholds.AssessSharpness(soundQualityAnalysis.Sharpness.Value),
-            ["roughness"] = SoundQualityThresholds.AssessRoughness(soundQualityAnalysis.Roughness.Value)
+            ["loudness"] = SoundQualityThresholds.AssessLoudness(
+                soundQualityAnalysis.Loudness.Value
+            ),
+            ["sharpness"] = SoundQualityThresholds.AssessSharpness(
+                soundQualityAnalysis.Sharpness.Value
+            ),
+            ["roughness"] = SoundQualityThresholds.AssessRoughness(
+                soundQualityAnalysis.Roughness.Value
+            ),
         };
 
         var overallAssessment = DetermineOverallAssessment(assessments);
@@ -53,7 +66,8 @@ public sealed class SoundQualitySummaryHandler(
             OverallAssessment: overallAssessment,
             KeyFindings: keyFindings,
             TopMetrics: topMetrics,
-            Recommendations: recommendations);
+            Recommendations: recommendations
+        );
     }
 
     private static string DetermineOverallAssessment(Dictionary<string, string> assessments)
@@ -70,35 +84,50 @@ public sealed class SoundQualitySummaryHandler(
         return "Good";
     }
 
-    private static List<string> GenerateKeyFindings(SoundQualityAnalysis analysis, Dictionary<string, string> assessments)
+    private static List<string> GenerateKeyFindings(
+        SoundQualityAnalysis analysis,
+        Dictionary<string, string> assessments
+    )
     {
         var findings = new List<string>();
 
         if (assessments["loudness"] == "Poor")
         {
-            findings.Add($"Loudness ({analysis.Loudness.Value:F1} {analysis.Loudness.Unit}) exceeds 85 dB SPL threshold.");
+            findings.Add(
+                $"Loudness ({analysis.Loudness.Value:F1} {analysis.Loudness.Unit}) exceeds 85 dB SPL threshold."
+            );
         }
         else if (assessments["loudness"] == "Fair")
         {
-            findings.Add($"Loudness ({analysis.Loudness.Value:F1} {analysis.Loudness.Unit}) is in the fair range (70-85 dB SPL).");
+            findings.Add(
+                $"Loudness ({analysis.Loudness.Value:F1} {analysis.Loudness.Unit}) is in the fair range (70-85 dB SPL)."
+            );
         }
 
         if (assessments["sharpness"] == "Poor")
         {
-            findings.Add($"Sharpness ({analysis.Sharpness.Value:F1} {analysis.Sharpness.Unit}) exceeds 4 acum threshold.");
+            findings.Add(
+                $"Sharpness ({analysis.Sharpness.Value:F1} {analysis.Sharpness.Unit}) exceeds 4 acum threshold."
+            );
         }
         else if (assessments["sharpness"] == "Fair")
         {
-            findings.Add($"Sharpness ({analysis.Sharpness.Value:F1} {analysis.Sharpness.Unit}) is in the fair range (2-4 acum).");
+            findings.Add(
+                $"Sharpness ({analysis.Sharpness.Value:F1} {analysis.Sharpness.Unit}) is in the fair range (2-4 acum)."
+            );
         }
 
         if (assessments["roughness"] == "Poor")
         {
-            findings.Add($"Roughness ({analysis.Roughness.Value:F1} {analysis.Roughness.Unit}) exceeds 1.0 asper threshold.");
+            findings.Add(
+                $"Roughness ({analysis.Roughness.Value:F1} {analysis.Roughness.Unit}) exceeds 1.0 asper threshold."
+            );
         }
         else if (assessments["roughness"] == "Fair")
         {
-            findings.Add($"Roughness ({analysis.Roughness.Value:F1} {analysis.Roughness.Unit}) is in the fair range (0.5-1.0 asper).");
+            findings.Add(
+                $"Roughness ({analysis.Roughness.Value:F1} {analysis.Roughness.Unit}) is in the fair range (0.5-1.0 asper)."
+            );
         }
 
         if (findings.Count == 0)
@@ -109,13 +138,31 @@ public sealed class SoundQualitySummaryHandler(
         return findings;
     }
 
-    private static List<TopMetric> GetTopMetrics(SoundQualityAnalysis analysis, Dictionary<string, string> assessments)
+    private static List<TopMetric> GetTopMetrics(
+        SoundQualityAnalysis analysis,
+        Dictionary<string, string> assessments
+    )
     {
         var metrics = new List<TopMetric>
         {
-            new TopMetric("Loudness", analysis.Loudness.Value, analysis.Loudness.Unit, assessments["loudness"]),
-            new TopMetric("Sharpness", analysis.Sharpness.Value, analysis.Sharpness.Unit, assessments["sharpness"]),
-            new TopMetric("Roughness", analysis.Roughness.Value, analysis.Roughness.Unit, assessments["roughness"])
+            new TopMetric(
+                "Loudness",
+                analysis.Loudness.Value,
+                analysis.Loudness.Unit,
+                assessments["loudness"]
+            ),
+            new TopMetric(
+                "Sharpness",
+                analysis.Sharpness.Value,
+                analysis.Sharpness.Unit,
+                assessments["sharpness"]
+            ),
+            new TopMetric(
+                "Roughness",
+                analysis.Roughness.Value,
+                analysis.Roughness.Unit,
+                assessments["roughness"]
+            ),
         };
 
         return metrics.OrderByDescending(m => m.Value).Take(3).ToList();
@@ -141,7 +188,9 @@ public sealed class SoundQualitySummaryHandler(
 
         if (assessments["roughness"] == "Poor")
         {
-            recommendations.Add("Consider addressing modulation or distortion issues to reduce roughness.");
+            recommendations.Add(
+                "Consider addressing modulation or distortion issues to reduce roughness."
+            );
         }
 
         if (recommendations.Count == 0)

@@ -1,6 +1,6 @@
-using FastEndpoints;
 using AcousticCanvas.Features.AudioUpload.Services;
 using AcousticCanvas.Features.Waveform.Commands;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Waveform.Endpoints;
 
@@ -13,7 +13,10 @@ public class GetWaveformEndpoint(AudioFileRepository audioFileRepository)
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(GetWaveformRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(
+        GetWaveformRequest request,
+        CancellationToken cancellationToken
+    )
     {
         if (string.IsNullOrWhiteSpace(request.FileId))
         {

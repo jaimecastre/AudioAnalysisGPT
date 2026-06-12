@@ -8,5 +8,6 @@ public interface ICpbFilterBankClient
     Task<CpbAnalysis> AnalyzeAsync(
         RunCpbQuery query,
         IReadOnlyList<SignalChannel> channels,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken
+    );
 }

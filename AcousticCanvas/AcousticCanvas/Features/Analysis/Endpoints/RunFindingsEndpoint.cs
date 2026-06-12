@@ -1,7 +1,7 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.AudioUpload.Services;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
@@ -14,7 +14,10 @@ public class RunFindingsEndpoint(AudioFileRepository audioFileRepository)
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(RunFindingsRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(
+        RunFindingsRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var filePath = audioFileRepository.GetFilePath(request.FileId);
         if (string.IsNullOrEmpty(filePath))
@@ -33,7 +36,10 @@ public class RunFindingsEndpoint(AudioFileRepository audioFileRepository)
         catch (Exception ex)
         {
             HttpContext.Response.StatusCode = 500;
-            await HttpContext.Response.WriteAsync($"Findings error: {ex.GetType().Name}: {ex.Message}", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                $"Findings error: {ex.GetType().Name}: {ex.Message}",
+                cancellationToken
+            );
         }
     }
 }

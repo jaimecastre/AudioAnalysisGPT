@@ -25,6 +25,13 @@ interface TooltipState {
   channelName: string;
 }
 
+interface ViewRange {
+  xMin: number;
+  xMax: number;
+  yMin: number;
+  yMax: number;
+}
+
 interface SpectrumCanvasProps {
   channels: SpectrumChannel[];
   xUnit?: string;
@@ -43,6 +50,14 @@ const AXIS_LINE_WIDTH = 1;
 // Colors for different channels
 const CHANNEL_COLORS = ['#00b8a9', '#e05252', '#4dabf7', '#fab005'];
 const LINKED_CURSOR_COLOR = 'rgba(0, 184, 169, 0.85)';
+
+// Returns a stable color for a channel by its id (e.g. 'ch1', 'ch2').
+// Falls back to the loop index so callers can always pass a fallback.
+function channelColor(channelId: string, fallbackIndex: number): string {
+  const match = /\d+$/.exec(channelId);
+  const slot = match ? (parseInt(match[0], 10) - 1) : fallbackIndex;
+  return CHANNEL_COLORS[slot % CHANNEL_COLORS.length];
+}
 
 function formatHz(hz: number): string {
   if (hz >= 1000) {
@@ -66,10 +81,36 @@ function floorTo(value: number, step: number): number {
   return Math.floor(value / step) * step;
 }
 
+const HOVER_CURSOR_COLOR = 'rgba(80, 80, 80, 0.6)';
+const HOVER_DOT_RADIUS = 3.5;
+
+/** Compute the full data extent (used as zoom-out cap). */
+function computeFullExtent(channels: SpectrumChannel[]): ViewRange {
+  const firstChannel = channels[0];
+  const frequenciesHz = firstChannel.frequenciesHz;
+  const xMax = frequenciesHz[frequenciesHz.length - 1];
+  const Y_STEP = 10;
+  let yMin: number;
+  let yMax: number;
+  if (firstChannel.yMode === 'db') {
+    const allDbValues = channels.flatMap(ch => ch.magnitudesDb.filter((v): v is number => v !== null));
+    if (allDbValues.length === 0) return { xMin: 0, xMax, yMin: 0, yMax: 100 };
+    yMax = ceilTo(Math.max(...allDbValues) + 5, Y_STEP);
+    yMin = floorTo(Math.min(...allDbValues) - 5, Y_STEP);
+  } else {
+    const allMagnitudes = channels.flatMap(ch => ch.magnitudes);
+    yMax = Math.max(...allMagnitudes) * 1.1;
+    yMin = 0;
+  }
+  return { xMin: 0, xMax, yMin, yMax };
+}
+
 function drawSpectrum(
   canvas: HTMLCanvasElement,
   channels: SpectrumChannel[],
   linkedFrequencyHz: number | null,
+  hoverFrequencyHz: number | null = null,
+  viewRange: ViewRange | null = null,
 ): void {
   const dpr = window.devicePixelRatio || 1;
   const width = canvas.clientWidth;
@@ -93,38 +134,39 @@ function drawSpectrum(
   const yMode = firstChannel.yMode;
   const yUnit = firstChannel.yUnit;
 
-  // X axis: linear from 0 to Nyquist.
-  const frequenciesHz = firstChannel.frequenciesHz;
-  const xMax = frequenciesHz[frequenciesHz.length - 1];
-
-  const toX = (freq: number): number => toLinearX(freq, xMax, plotWidth);
-
-  // Y axis: snap to 10 dB grid around the data range.
+  // Use viewRange if provided (zoomed), otherwise fit to full data.
+  let xMin: number;
+  let xMax: number;
   let yMin: number;
   let yMax: number;
   const Y_STEP = 10;
 
-  if (yMode === 'db') {
-    const allDbValues = channels.flatMap(ch => ch.magnitudesDb.filter((v): v is number => v !== null));
-    if (allDbValues.length === 0) return;
-    const dataMax = Math.max(...allDbValues);
-    const dataMin = Math.min(...allDbValues);
-    yMax = ceilTo(dataMax + 5, Y_STEP);
-    yMin = floorTo(dataMin - 5, Y_STEP);
+  if (viewRange) {
+    xMin = viewRange.xMin;
+    xMax = viewRange.xMax;
+    yMin = viewRange.yMin;
+    yMax = viewRange.yMax;
   } else {
-    const allMagnitudes = channels.flatMap(ch => ch.magnitudes);
-    yMax = Math.max(...allMagnitudes) * 1.1;
-    yMin = 0;
+    const extent = computeFullExtent(channels);
+    xMin = extent.xMin;
+    xMax = extent.xMax;
+    yMin = extent.yMin;
+    yMax = extent.yMax;
   }
+
+  const toX = (freq: number): number =>
+    MARGIN.left + ((freq - xMin) / (xMax - xMin)) * plotWidth;
 
   const toY = (value: number): number =>
     MARGIN.top + ((yMax - value) / (yMax - yMin)) * plotHeight;
 
-  // Y grid lines — every Y_STEP dB.
+  // Y grid lines — pick step dynamically based on visible range.
+  const yRange = yMax - yMin;
+  const yGridStep = yRange <= 30 ? 5 : Y_STEP;
   ctx.font = FONT;
   ctx.textAlign = 'right';
 
-  for (let yValue = yMin; yValue <= yMax; yValue += Y_STEP) {
+  for (let yValue = floorTo(yMin, yGridStep); yValue <= yMax; yValue += yGridStep) {
     const yPixel = toY(yValue);
     ctx.strokeStyle = yValue === 0 ? 'rgba(0,0,0,0.25)' : GRID_COLOR;
     ctx.lineWidth = yValue === 0 ? 1 : 1;
@@ -136,15 +178,15 @@ function drawSpectrum(
     ctx.fillText(yValue.toFixed(0), MARGIN.left - 6, yPixel + 4);
   }
 
-  // X grid lines — evenly spaced, ~6–10 labels across Nyquist.
-  // Pick a step size that gives ~8 divisions: round to nearest 1k, 2k, 5k etc.
-  const rawStep = xMax / 8;
+  // X grid lines — evenly spaced, ~6–10 labels across visible range.
+  const xRange = xMax - xMin;
+  const rawStep = xRange / 8;
   const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
   const normalised = rawStep / magnitude;
   const xStep = magnitude * (normalised < 1.5 ? 1 : normalised < 3.5 ? 2 : normalised < 7.5 ? 5 : 10);
 
   ctx.textAlign = 'center';
-  for (let xValue = 0; xValue <= xMax; xValue += xStep) {
+  for (let xValue = ceilTo(xMin, xStep); xValue <= xMax; xValue += xStep) {
     const xPixel = toX(xValue);
     ctx.strokeStyle = GRID_COLOR;
     ctx.lineWidth = 1;
@@ -184,7 +226,7 @@ function drawSpectrum(
   // Draw each channel's spectrum line.
   channels.forEach((channel, index) => {
     ctx.beginPath();
-    ctx.strokeStyle = CHANNEL_COLORS[index % CHANNEL_COLORS.length];
+    ctx.strokeStyle = channelColor(channel.channelId, index);
     ctx.lineWidth = 1.5;
 
     let started = false;
@@ -204,7 +246,7 @@ function drawSpectrum(
   ctx.restore();
 
   // Linked frequency cursor.
-  if (linkedFrequencyHz !== null && linkedFrequencyHz >= 0 && linkedFrequencyHz <= xMax) {
+  if (linkedFrequencyHz !== null && linkedFrequencyHz >= xMin && linkedFrequencyHz <= xMax) {
     const xPixel = toX(linkedFrequencyHz);
     ctx.save();
     ctx.strokeStyle = LINKED_CURSOR_COLOR;
@@ -222,7 +264,7 @@ function drawSpectrum(
     const legendY = MARGIN.top + 10;
     channels.forEach((channel, index) => {
       const y = legendY + index * 14;
-      ctx.strokeStyle = CHANNEL_COLORS[index % CHANNEL_COLORS.length];
+      ctx.strokeStyle = channelColor(channel.channelId, index);
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(legendX - 50, y);
@@ -234,6 +276,41 @@ function drawSpectrum(
       ctx.textBaseline = 'middle';
       ctx.fillText(channel.channelName.slice(0, 10), legendX - 8, y);
     });
+  }
+
+  // Hover cursor — vertical line + dots at intersection with each channel.
+  if (hoverFrequencyHz !== null && hoverFrequencyHz >= xMin && hoverFrequencyHz <= xMax) {
+    const xPixel = toX(hoverFrequencyHz);
+    ctx.save();
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = HOVER_CURSOR_COLOR;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(xPixel, MARGIN.top);
+    ctx.lineTo(xPixel, MARGIN.top + plotHeight);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw a dot at each channel's magnitude at this frequency.
+    channels.forEach((channel, index) => {
+      // Find nearest frequency bin.
+      let nearest = 0;
+      let minDist = Infinity;
+      for (let i = 0; i < channel.frequenciesHz.length; i++) {
+        const dist = Math.abs(channel.frequenciesHz[i] - hoverFrequencyHz);
+        if (dist < minDist) { minDist = dist; nearest = i; }
+      }
+      const yValue = yMode === 'db'
+        ? (channel.magnitudesDb[nearest] ?? null)
+        : channel.magnitudes[nearest];
+      if (yValue === null) return;
+      const yPixel = toY(yValue);
+      ctx.fillStyle = channelColor(channel.channelId, index);
+      ctx.beginPath();
+      ctx.arc(xPixel, yPixel, HOVER_DOT_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.restore();
   }
 
   // Axis border.
@@ -250,12 +327,30 @@ export const SpectrumCanvas = ({
 }: SpectrumCanvasProps): JSX.Element => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const hoverFreqRef = useRef<number | null>(null);
+  const [viewRange, setViewRange] = useState<ViewRange | null>(null);
+  const viewRangeRef = useRef<ViewRange | null>(null);
+
+  // Keep ref in sync with state (ref is source of truth for event handlers).
+  const updateViewRange = (range: ViewRange | null): void => {
+    viewRangeRef.current = range;
+    setViewRange(range);
+  };
+
+  // Reset zoom only when the underlying data actually changes (not on every render).
+  const dataFingerprint = channels.length > 0
+    ? `${channels.length}_${channels[0].frequenciesHz.length}_${channels[0].frequenciesHz[channels[0].frequenciesHz.length - 1]}`
+    : '';
+  useEffect(() => {
+    updateViewRange(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataFingerprint]);
 
   const draw = useCallback(() => {
     if (canvasRef.current) {
-      drawSpectrum(canvasRef.current, channels, linkedFrequencyHz);
+      drawSpectrum(canvasRef.current, channels, linkedFrequencyHz, hoverFreqRef.current, viewRange);
     }
-  }, [channels, linkedFrequencyHz]);
+  }, [channels, linkedFrequencyHz, viewRange]);
 
   useEffect(() => {
     draw();
@@ -277,19 +372,18 @@ export const SpectrumCanvas = ({
       return;
     }
 
-    const firstChannel = channels[0];
     const rect = canvas.getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
 
     const plotWidth = rect.width - MARGIN.left - MARGIN.right;
-    const frequenciesHz = firstChannel.frequenciesHz;
-    const xMax = frequenciesHz[frequenciesHz.length - 1];
+    const extent = computeFullExtent(channels);
+    const currentRange = viewRangeRef.current ?? extent;
 
-    // Convert mouse position to frequency using linear scale.
+    // Convert mouse position to frequency using current view range.
     const normalizedX = (mouseX - MARGIN.left) / plotWidth;
-    const freqAtMouse = normalizedX * xMax;
+    const freqAtMouse = currentRange.xMin + normalizedX * (currentRange.xMax - currentRange.xMin);
 
-    if (freqAtMouse < 0 || freqAtMouse > xMax * 1.02) {
+    if (freqAtMouse < currentRange.xMin || freqAtMouse > currentRange.xMax * 1.02) {
       setTooltip(null);
       onHoverFrequency?.(null);
       return;
@@ -312,11 +406,17 @@ export const SpectrumCanvas = ({
     });
 
     const nearestChannel = channels[nearestChannelIndex];
-    onHoverFrequency?.(nearestChannel.frequenciesHz[nearestIndex]);
+    const hoverFreq = nearestChannel.frequenciesHz[nearestIndex];
+    hoverFreqRef.current = hoverFreq;
+    onHoverFrequency?.(hoverFreq);
+    // Redraw to show the cursor line.
+    if (canvasRef.current) {
+      drawSpectrum(canvasRef.current, channels, linkedFrequencyHz, hoverFreq, viewRangeRef.current);
+    }
     setTooltip({
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
-      frequencyHz: nearestChannel.frequenciesHz[nearestIndex],
+      frequencyHz: hoverFreq,
       magnitude: nearestChannel.magnitudes[nearestIndex],
       magnitudeDb: nearestChannel.magnitudesDb[nearestIndex],
       yUnit: nearestChannel.yUnit,
@@ -325,9 +425,82 @@ export const SpectrumCanvas = ({
   };
 
   const handleMouseLeave = (): void => {
+    hoverFreqRef.current = null;
     setTooltip(null);
     onHoverFrequency?.(null);
+    // Redraw to clear the cursor line.
+    if (canvasRef.current) {
+      drawSpectrum(canvasRef.current, channels, linkedFrequencyHz, null, viewRangeRef.current);
+    }
   };
+
+  const handleWheel = useCallback((event: WheelEvent): void => {
+    event.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas || channels.length === 0 || channels[0].frequenciesHz.length === 0) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+    const plotWidth = rect.width - MARGIN.left - MARGIN.right;
+    const plotHeight = rect.height - MARGIN.top - MARGIN.bottom;
+
+    const extent = computeFullExtent(channels);
+    const current = viewRangeRef.current ?? extent;
+
+    // Zoom factor: scroll up = zoom in, scroll down = zoom out.
+    const zoomFactor = event.deltaY > 0 ? 1.2 : 1 / 1.2;
+
+    // Position of cursor as fraction within plot area.
+    const xFrac = Math.max(0, Math.min(1, (mouseX - MARGIN.left) / plotWidth));
+    const yFrac = Math.max(0, Math.min(1, (mouseY - MARGIN.top) / plotHeight));
+
+    // Frequency and magnitude at cursor.
+    const freqAtCursor = current.xMin + xFrac * (current.xMax - current.xMin);
+    const valAtCursor = current.yMax - yFrac * (current.yMax - current.yMin);
+
+    // New range widths.
+    let newXRange = (current.xMax - current.xMin) * zoomFactor;
+    let newYRange = (current.yMax - current.yMin) * zoomFactor;
+
+    // Cap zoom out to full data extent.
+    const extentXRange = extent.xMax - extent.xMin;
+    const extentYRange = extent.yMax - extent.yMin;
+    if (newXRange >= extentXRange) newXRange = extentXRange;
+    if (newYRange >= extentYRange) newYRange = extentYRange;
+
+    // Center the zoom on the cursor position.
+    let newXMin = freqAtCursor - xFrac * newXRange;
+    let newXMax = freqAtCursor + (1 - xFrac) * newXRange;
+    let newYMin = valAtCursor - (1 - yFrac) * newYRange;
+    let newYMax = valAtCursor + yFrac * newYRange;
+
+    // Clamp to data extent boundaries.
+    if (newXMin < extent.xMin) { newXMax += (extent.xMin - newXMin); newXMin = extent.xMin; }
+    if (newXMax > extent.xMax) { newXMin -= (newXMax - extent.xMax); newXMax = extent.xMax; }
+    newXMin = Math.max(newXMin, extent.xMin);
+    newXMax = Math.min(newXMax, extent.xMax);
+
+    if (newYMin < extent.yMin) { newYMax += (extent.yMin - newYMin); newYMin = extent.yMin; }
+    if (newYMax > extent.yMax) { newYMin -= (newYMax - extent.yMax); newYMax = extent.yMax; }
+    newYMin = Math.max(newYMin, extent.yMin);
+    newYMax = Math.min(newYMax, extent.yMax);
+
+    // If at full extent, clear viewRange (null = auto-fit).
+    if (newXRange >= extentXRange && newYRange >= extentYRange) {
+      updateViewRange(null);
+    } else {
+      updateViewRange({ xMin: newXMin, xMax: newXMax, yMin: newYMin, yMax: newYMax });
+    }
+  }, [channels, linkedFrequencyHz]);
+
+  // Attach wheel handler imperatively with passive: false so preventDefault works.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
 
   return (
     <div className={styles.wrapper}>

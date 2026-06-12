@@ -161,7 +161,7 @@ function drawComparisonSpectrum(
   ctx.translate(16, MARGIN.top + plotHeight / 2);
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = 'center';
-  ctx.fillText('Magnitude [dBFS]', 0, 0);
+  ctx.fillText('Level [dB re 20 µPa]', 0, 0);
   ctx.restore();
 
   // Clip to plot area.
@@ -345,10 +345,10 @@ export function ComparisonSpectrumCanvas({
         >
           <span className={styles.tooltipFreq}>{formatHz(tooltip.frequencyHz)} Hz</span>
           <span className={styles.tooltipA} style={{ color: COLOR_A }}>
-            {labelA}: {tooltip.magnitudeDbA !== null ? `${tooltip.magnitudeDbA.toFixed(1)} dBFS` : '—'}
+            {labelA}: {tooltip.magnitudeDbA !== null ? `${tooltip.magnitudeDbA.toFixed(1)} dB re 20 µPa` : '—'}
           </span>
           <span className={styles.tooltipB} style={{ color: COLOR_B }}>
-            {labelB}: {tooltip.magnitudeDbB !== null ? `${tooltip.magnitudeDbB.toFixed(1)} dBFS` : '—'}
+            {labelB}: {tooltip.magnitudeDbB !== null ? `${tooltip.magnitudeDbB.toFixed(1)} dB re 20 µPa` : '—'}
           </span>
           {showDelta && (
             <span className={styles.tooltipDelta} style={{ color: COLOR_DELTA }}>

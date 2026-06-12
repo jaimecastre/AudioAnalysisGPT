@@ -1,13 +1,18 @@
-using NAudio.Wave;
 using AcousticCanvas.Features.Analysis.Analyzers;
 using AcousticCanvas.Features.Analysis.Domain;
+using NAudio.Wave;
 
 namespace AcousticCanvas.Features.Analysis.Importers;
 
 public sealed class WavSignalFileImporter : ISignalFileImporter
 {
-    private static readonly HashSet<string> SupportedExtensions =
-        new(StringComparer.OrdinalIgnoreCase) { ".wav", ".wave" };
+    private static readonly HashSet<string> SupportedExtensions = new(
+        StringComparer.OrdinalIgnoreCase
+    )
+    {
+        ".wav",
+        ".wave",
+    };
 
     public bool CanImport(string filePath)
     {
@@ -49,11 +54,7 @@ public sealed class WavSignalFileImporter : ISignalFileImporter
             TotalSamples = totalSamples,
         };
 
-        return new SignalFile
-        {
-            FileInfo = fileInfo,
-            Channels = channels,
-        };
+        return new SignalFile { FileInfo = fileInfo, Channels = channels };
     }
 
     private static float[] ReadAllSamples(AudioFileReader reader, long expectedSampleCount)
@@ -82,13 +83,19 @@ public sealed class WavSignalFileImporter : ISignalFileImporter
         float[] interleavedSamples,
         int channelCount,
         int sampleRate,
-        long totalFrames)
+        long totalFrames
+    )
     {
         var channels = new SignalChannel[channelCount];
 
         for (var channelIndex = 0; channelIndex < channelCount; channelIndex++)
         {
-            var channelSamples = ExtractChannelSamples(interleavedSamples, channelIndex, channelCount, totalFrames);
+            var channelSamples = ExtractChannelSamples(
+                interleavedSamples,
+                channelIndex,
+                channelCount,
+                totalFrames
+            );
 
             channels[channelIndex] = new SignalChannel
             {
@@ -134,7 +141,8 @@ public sealed class WavSignalFileImporter : ISignalFileImporter
         float[] interleavedSamples,
         int channelIndex,
         int channelCount,
-        long totalFrames)
+        long totalFrames
+    )
     {
         var channelSamples = new float[totalFrames];
 
@@ -152,8 +160,10 @@ public sealed class WavSignalFileImporter : ISignalFileImporter
 
     private static string ResolveChannelName(int channelIndex, int totalChannels)
     {
-        if (totalChannels == 1) return "Mono";
-        if (totalChannels == 2) return channelIndex == 0 ? "Left" : "Right";
+        if (totalChannels == 1)
+            return "Mono";
+        if (totalChannels == 2)
+            return channelIndex == 0 ? "Left" : "Right";
         return $"Channel {channelIndex + 1}";
     }
 

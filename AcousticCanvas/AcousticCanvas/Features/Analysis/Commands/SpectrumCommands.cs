@@ -1,5 +1,5 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Domain;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Commands;
 
@@ -8,5 +8,6 @@ public record RunSpectrumQuery(
     double StartSeconds,
     double EndSeconds,
     int FftSize,
-    double Overlap
+    double Overlap,
+    string WindowType = "hann"
 ) : ICommand<SpectrumAnalysis>;

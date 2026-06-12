@@ -16,7 +16,8 @@ public sealed class PythonCpbFilterBankClient(IConfiguration configuration) : IC
     public async Task<CpbAnalysis> AnalyzeAsync(
         RunCpbQuery query,
         IReadOnlyList<SignalChannel> channels,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var pythonExecutable = ResolvePythonExecutable();
         var scriptPath = ResolveScriptPath();
@@ -32,14 +33,16 @@ public sealed class PythonCpbFilterBankClient(IConfiguration configuration) : IC
             endSeconds = query.EndSeconds,
             bandMode = query.BandMode,
             weighting = query.Weighting,
-            channels = channels.Select(channel => new
-            {
-                channelId = channel.Id,
-                channelName = channel.Name,
-                quantity = channel.Quantity,
-                unit = channel.Unit,
-                dbUnit = channel.DbReference?.DbUnit,
-            }).ToArray(),
+            channels = channels
+                .Select(channel => new
+                {
+                    channelId = channel.Id,
+                    channelName = channel.Name,
+                    quantity = channel.Quantity,
+                    unit = channel.Unit,
+                    dbUnit = channel.DbReference?.DbUnit,
+                })
+                .ToArray(),
         };
 
         var startInfo = new ProcessStartInfo
@@ -50,7 +53,10 @@ public sealed class PythonCpbFilterBankClient(IConfiguration configuration) : IC
             RedirectStandardError = true,
             UseShellExecute = false,
         };
-        startInfo.Environment["MPLCONFIGDIR"] = Path.Combine(Path.GetTempPath(), "acousticcanvas-matplotlib");
+        startInfo.Environment["MPLCONFIGDIR"] = Path.Combine(
+            Path.GetTempPath(),
+            "acousticcanvas-matplotlib"
+        );
         startInfo.ArgumentList.Add(scriptPath);
 
         try
@@ -58,7 +64,9 @@ public sealed class PythonCpbFilterBankClient(IConfiguration configuration) : IC
             using var process = Process.Start(startInfo);
             if (process is null)
             {
-                throw BuildUnavailableException($"Could not start Python executable: {pythonExecutable}");
+                throw BuildUnavailableException(
+                    $"Could not start Python executable: {pythonExecutable}"
+                );
             }
 
             await process.StandardInput.WriteAsync(JsonSerializer.Serialize(request, JsonOptions));
@@ -73,7 +81,11 @@ public sealed class PythonCpbFilterBankClient(IConfiguration configuration) : IC
             var stderr = await stderrTask;
             if (process.ExitCode != 0)
             {
-                throw BuildUnavailableException(string.IsNullOrWhiteSpace(stderr) ? $"Python exited with code {process.ExitCode}." : stderr.Trim());
+                throw BuildUnavailableException(
+                    string.IsNullOrWhiteSpace(stderr)
+                        ? $"Python exited with code {process.ExitCode}."
+                        : stderr.Trim()
+                );
             }
 
             var analysis = JsonSerializer.Deserialize<CpbAnalysis>(stdout, JsonOptions);
@@ -102,7 +114,14 @@ public sealed class PythonCpbFilterBankClient(IConfiguration configuration) : IC
             return Path.GetFullPath(configuredPath);
         }
 
-        return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "AcousticCanvas.ML", "cpb_filter_bank.py"));
+        return Path.GetFullPath(
+            Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "..",
+                "AcousticCanvas.ML",
+                "cpb_filter_bank.py"
+            )
+        );
     }
 
     private string ResolvePythonExecutable()
@@ -116,7 +135,13 @@ public sealed class PythonCpbFilterBankClient(IConfiguration configuration) : IC
         var candidatePaths = new[]
         {
             Path.Combine(Directory.GetCurrentDirectory(), "..", ".venv", "bin", "python"),
-            Path.Combine(Directory.GetCurrentDirectory(), "AcousticCanvas", ".venv", "bin", "python"),
+            Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "AcousticCanvas",
+                ".venv",
+                "bin",
+                "python"
+            ),
         };
 
         foreach (var candidatePath in candidatePaths)
@@ -134,7 +159,8 @@ public sealed class PythonCpbFilterBankClient(IConfiguration configuration) : IC
     private static InvalidOperationException BuildUnavailableException(string detail)
     {
         return new InvalidOperationException(
-            "Python CPB filter-bank sidecar unavailable. Install PyOctaveBand and configure the sidecar before selecting python_filter_bank. " +
-            $"Detail: {detail}");
+            "Python CPB filter-bank sidecar unavailable. Install PyOctaveBand and configure the sidecar before selecting python_filter_bank. "
+                + $"Detail: {detail}"
+        );
     }
 }

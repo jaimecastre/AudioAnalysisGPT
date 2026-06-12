@@ -35,6 +35,7 @@ export const useRunSpectrum = (): { runSpectrum: (args: RunSpectrumArgs) => Prom
             endSeconds: args.endSeconds,
             fftSize: args.parameters.fftSize,
             overlap: args.parameters.overlap,
+            windowType: args.parameters.windowType,
           },
           signal: abortController.signal,
         },

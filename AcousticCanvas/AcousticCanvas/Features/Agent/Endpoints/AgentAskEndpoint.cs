@@ -1,5 +1,5 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Agent.Commands;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Agent.Endpoints;
 
@@ -20,7 +20,10 @@ public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(AgentAskRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(
+        AgentAskRequest request,
+        CancellationToken cancellationToken
+    )
     {
         if (string.IsNullOrWhiteSpace(request.Question))
         {
@@ -32,7 +35,10 @@ public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
         if (request.SelectedFileIds.Count == 0)
         {
             HttpContext.Response.StatusCode = 400;
-            await HttpContext.Response.WriteAsync("At least one file must be selected.", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                "At least one file must be selected.",
+                cancellationToken
+            );
             return;
         }
 
@@ -41,7 +47,8 @@ public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
             SelectedFileIds: request.SelectedFileIds,
             ProjectId: request.ProjectId,
             Mode: request.Mode,
-            ModelOverride: request.ModelOverride);
+            ModelOverride: request.ModelOverride
+        );
 
         try
         {
@@ -55,7 +62,10 @@ public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
         catch (Exception ex)
         {
             HttpContext.Response.StatusCode = 500;
-            await HttpContext.Response.WriteAsync($"Agent orchestration error: {ex.Message}", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                $"Agent orchestration error: {ex.Message}",
+                cancellationToken
+            );
         }
     }
 }

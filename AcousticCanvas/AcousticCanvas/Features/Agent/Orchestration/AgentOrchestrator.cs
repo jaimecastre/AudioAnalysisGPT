@@ -8,11 +8,13 @@ public sealed class AgentOrchestrator(
     AgentPlanner agentPlanner,
     ToolExecutionService toolExecutionService,
     AudioFileRepository audioFileRepository,
-    IInvestigationTraceStore investigationTraceStore)
+    IInvestigationTraceStore investigationTraceStore
+)
 {
     public async Task<AgentAskResult> HandleUserQuestionAsync(
         AgentAskCommand command,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var conversationId = "conv_" + Guid.NewGuid().ToString("N")[..8];
 
@@ -26,17 +28,26 @@ public sealed class AgentOrchestrator(
                 [],
                 [],
                 metaAnswer,
-                "high");
+                "high"
+            );
 
             investigationTraceStore.Store(metaInvestigationTrace);
 
-            return BuildNoToolConversationResult(conversationId, metaAnswer, metaInvestigationTrace);
+            return BuildNoToolConversationResult(
+                conversationId,
+                metaAnswer,
+                metaInvestigationTrace
+            );
         }
 
         // Check if no files are loaded and the question appears to be about audio analysis
-        if (command.SelectedFileIds.Count == 0 && AppearsToBeAudioAnalysisQuestion(command.Question))
+        if (
+            command.SelectedFileIds.Count == 0
+            && AppearsToBeAudioAnalysisQuestion(command.Question)
+        )
         {
-            var answer = "No audio files are currently loaded. Please upload and select an audio file first, then ask your question about that file.";
+            var answer =
+                "No audio files are currently loaded. Please upload and select an audio file first, then ask your question about that file.";
             var noFilesInvestigationTrace = BuildInvestigationTrace(
                 conversationId,
                 command.Question,
@@ -44,7 +55,8 @@ public sealed class AgentOrchestrator(
                 [],
                 [],
                 answer,
-                "low");
+                "low"
+            );
 
             investigationTraceStore.Store(noFilesInvestigationTrace);
 
@@ -57,7 +69,12 @@ public sealed class AgentOrchestrator(
         var deterministicPlan = DeterministicFactRouter.TryRoute(command.Question);
         if (deterministicPlan is not null && command.SelectedFileIds.Count > 0)
         {
-            return await AnswerDeterministicFactAsync(conversationId, command, deterministicPlan, cancellationToken);
+            return await AnswerDeterministicFactAsync(
+                conversationId,
+                command,
+                deterministicPlan,
+                cancellationToken
+            );
         }
 
         // Step 1: Resolve file names for the selected file IDs.
@@ -69,14 +86,16 @@ public sealed class AgentOrchestrator(
             command.SelectedFileIds,
             selectedFileNames,
             cancellationToken,
-            command.ModelOverride);
+            command.ModelOverride
+        );
 
         // Step 3: Handle non-tool actions.
         if (plannerResponse.Action == "ask_clarification")
         {
             return BuildClarificationResult(
                 conversationId,
-                plannerResponse.ClarificationQuestion ?? "Could you provide more context?");
+                plannerResponse.ClarificationQuestion ?? "Could you provide more context?"
+            );
         }
 
         if (plannerResponse.Action == "no_analysis_needed")
@@ -84,7 +103,8 @@ public sealed class AgentOrchestrator(
             return BuildNoAnalysisResult(
                 conversationId,
                 command.Question,
-                plannerResponse.Reason ?? "No analysis was required for this question.");
+                plannerResponse.Reason ?? "No analysis was required for this question."
+            );
         }
 
         // Step 4: Validate requested tools against the registry whitelist.
@@ -97,7 +117,10 @@ public sealed class AgentOrchestrator(
         var toolExecutionOutputs = new List<ToolExecutionOutput>();
         foreach (var toolRequest in validatedToolRequests)
         {
-            var toolOutput = await toolExecutionService.ExecuteToolAsync(toolRequest, cancellationToken);
+            var toolOutput = await toolExecutionService.ExecuteToolAsync(
+                toolRequest,
+                cancellationToken
+            );
             toolExecutionOutputs.Add(toolOutput);
         }
 
@@ -106,14 +129,16 @@ public sealed class AgentOrchestrator(
             command.Question,
             command.SelectedFileIds,
             selectedFileNames,
-            toolExecutionOutputs);
+            toolExecutionOutputs
+        );
 
         // Step 7: Generate the final grounded answer from the evidence package.
         var finalAnswer = await agentPlanner.GenerateFinalAnswerAsync(
             command.Question,
             evidencePackage,
             cancellationToken,
-            command.ModelOverride);
+            command.ModelOverride
+        );
 
         // Step 8: Validate the final answer.
         var validationResult = AgentResponseValidator.Validate(finalAnswer, evidencePackage);
@@ -121,7 +146,11 @@ public sealed class AgentOrchestrator(
         // Step 9: Build and return the result.
         var toolExecutionRecords = BuildToolExecutionRecords(toolExecutionOutputs);
         var toolResultsData = BuildToolResultsData(toolExecutionOutputs);
-        var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(finalAnswer.Answer, finalAnswer.EvidenceReferences, evidencePackage);
+        var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(
+            finalAnswer.Answer,
+            finalAnswer.EvidenceReferences,
+            evidencePackage
+        );
 
         var plannedToolTraces = BuildPlannedToolTraces(validatedToolRequests);
         var toolExecutionTraces = BuildToolExecutionTraces(toolExecutionOutputs);
@@ -133,7 +162,8 @@ public sealed class AgentOrchestrator(
             plannedToolTraces,
             toolExecutionTraces,
             answerWithEmbeddedTokens,
-            finalAnswer.Confidence);
+            finalAnswer.Confidence
+        );
 
         investigationTraceStore.Store(investigationTrace);
 
@@ -151,14 +181,16 @@ public sealed class AgentOrchestrator(
             ToolResultsData: toolResultsData,
             PlannedTools: plannedToolNames,
             PlannerReason: plannerReason,
-            InvestigationTrace: investigationTrace);
+            InvestigationTrace: investigationTrace
+        );
     }
 
     private async Task<AgentAskResult> AnswerDeterministicFactAsync(
         string conversationId,
         AgentAskCommand command,
         DeterministicFactPlan deterministicPlan,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var toolRequest = new PlannerToolRequest
         {
@@ -166,19 +198,27 @@ public sealed class AgentOrchestrator(
             Arguments = new Dictionary<string, object?> { ["fileIds"] = command.SelectedFileIds },
         };
 
-        var toolOutput = await toolExecutionService.ExecuteToolAsync(toolRequest, cancellationToken);
+        var toolOutput = await toolExecutionService.ExecuteToolAsync(
+            toolRequest,
+            cancellationToken
+        );
 
         var selectedFileNames = ResolveFileNames(command.SelectedFileIds);
         var evidencePackage = EvidencePackageBuilder.Build(
             command.Question,
             command.SelectedFileIds,
             selectedFileNames,
-            [toolOutput]);
+            [toolOutput]
+        );
 
         var finalAnswer = DeterministicAnswerWriter.Write(deterministicPlan, evidencePackage);
         var toolExecutionRecords = BuildToolExecutionRecords([toolOutput]);
         var toolResultsData = BuildToolResultsData([toolOutput]);
-        var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(finalAnswer.Answer, finalAnswer.EvidenceReferences, evidencePackage);
+        var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(
+            finalAnswer.Answer,
+            finalAnswer.EvidenceReferences,
+            evidencePackage
+        );
 
         var toolExecutionTraces = BuildToolExecutionTraces([toolOutput]);
 
@@ -189,7 +229,8 @@ public sealed class AgentOrchestrator(
             [],
             toolExecutionTraces,
             answerWithEmbeddedTokens,
-            finalAnswer.Confidence);
+            finalAnswer.Confidence
+        );
 
         investigationTraceStore.Store(investigationTrace);
 
@@ -207,7 +248,8 @@ public sealed class AgentOrchestrator(
             ToolResultsData: toolResultsData,
             PlannedTools: [deterministicPlan.ToolName],
             PlannerReason: null,
-            InvestigationTrace: investigationTrace);
+            InvestigationTrace: investigationTrace
+        );
     }
 
     private IReadOnlyList<string> ResolveFileNames(IReadOnlyList<string> fileIds)
@@ -236,7 +278,9 @@ public sealed class AgentOrchestrator(
         return fileNames;
     }
 
-    private static List<PlannerToolRequest> FilterToAllowedTools(List<PlannerToolRequest> requestedTools)
+    private static List<PlannerToolRequest> FilterToAllowedTools(
+        List<PlannerToolRequest> requestedTools
+    )
     {
         var allowedTools = new List<PlannerToolRequest>();
 
@@ -252,45 +296,55 @@ public sealed class AgentOrchestrator(
     }
 
     private static IReadOnlyDictionary<string, object>? BuildToolResultsData(
-        IEnumerable<ToolExecutionOutput> toolOutputs)
+        IEnumerable<ToolExecutionOutput> toolOutputs
+    )
     {
         var dict = new Dictionary<string, object>();
         foreach (var output in toolOutputs)
         {
-            if (output.Status == "completed" && output.ResultData is not null && !string.IsNullOrEmpty(output.ResultRef))
+            if (
+                output.Status == "completed"
+                && output.ResultData is not null
+                && !string.IsNullOrEmpty(output.ResultRef)
+            )
                 dict[output.ResultRef] = output.ResultData;
         }
         return dict.Count > 0 ? dict : null;
     }
 
-    private static IReadOnlyList<AgentEvidenceItem> BuildEvidenceItems(EvidencePackage evidencePackage)
+    private static IReadOnlyList<AgentEvidenceItem> BuildEvidenceItems(
+        EvidencePackage evidencePackage
+    )
     {
         var evidenceItems = new List<AgentEvidenceItem>();
 
         foreach (var item in evidencePackage.KeyEvidence)
         {
-            evidenceItems.Add(new AgentEvidenceItem(
-                EvidenceId: item.EvidenceId,
-                Type: item.Type,
-                Data: item.Data));
+            evidenceItems.Add(
+                new AgentEvidenceItem(EvidenceId: item.EvidenceId, Type: item.Type, Data: item.Data)
+            );
         }
 
         return evidenceItems;
     }
 
     private static IReadOnlyList<AgentToolExecutionRecord> BuildToolExecutionRecords(
-        List<ToolExecutionOutput> toolOutputs)
+        List<ToolExecutionOutput> toolOutputs
+    )
     {
         var records = new List<AgentToolExecutionRecord>();
 
         foreach (var output in toolOutputs)
         {
-            records.Add(new AgentToolExecutionRecord(
-                ToolName: output.ToolName,
-                Status: output.Status,
-                ResultRef: output.Status == "completed" ? output.ResultRef : null,
-                ErrorCode: output.ErrorCode,
-                ErrorMessage: output.ErrorMessage));
+            records.Add(
+                new AgentToolExecutionRecord(
+                    ToolName: output.ToolName,
+                    Status: output.Status,
+                    ResultRef: output.Status == "completed" ? output.ResultRef : null,
+                    ErrorCode: output.ErrorCode,
+                    ErrorMessage: output.ErrorMessage
+                )
+            );
         }
 
         return records;
@@ -298,7 +352,8 @@ public sealed class AgentOrchestrator(
 
     private static IReadOnlyList<string> MergeAndDeduplicate(
         IReadOnlyList<string> fromAgent,
-        IReadOnlyList<string> fromEvidence)
+        IReadOnlyList<string> fromEvidence
+    )
     {
         var merged = new List<string>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -338,13 +393,15 @@ public sealed class AgentOrchestrator(
             ToolResultsData: null,
             PlannedTools: [],
             PlannerReason: null,
-            InvestigationTrace: null);
+            InvestigationTrace: null
+        );
     }
 
     private static AgentAskResult BuildNoAnalysisResult(
         string conversationId,
         string userQuestion,
-        string reason)
+        string reason
+    )
     {
         return new AgentAskResult(
             ConversationId: conversationId,
@@ -360,10 +417,15 @@ public sealed class AgentOrchestrator(
             ToolResultsData: null,
             PlannedTools: [],
             PlannerReason: null,
-            InvestigationTrace: null);
+            InvestigationTrace: null
+        );
     }
 
-    private static AgentAskResult BuildNoToolConversationResult(string conversationId, string answer, InvestigationTrace investigationTrace)
+    private static AgentAskResult BuildNoToolConversationResult(
+        string conversationId,
+        string answer,
+        InvestigationTrace investigationTrace
+    )
     {
         return new AgentAskResult(
             ConversationId: conversationId,
@@ -379,7 +441,8 @@ public sealed class AgentOrchestrator(
             ToolResultsData: null,
             PlannedTools: [],
             PlannerReason: "Answered as an Agent behavior question; no audio analysis was needed.",
-            InvestigationTrace: investigationTrace);
+            InvestigationTrace: investigationTrace
+        );
     }
 
     private static InvestigationTrace BuildInvestigationTrace(
@@ -389,7 +452,8 @@ public sealed class AgentOrchestrator(
         IReadOnlyList<PlannedToolTrace> plannedTools,
         IReadOnlyList<ToolExecutionTrace> toolExecutions,
         string finalAnswer,
-        string confidence)
+        string confidence
+    )
     {
         return new InvestigationTrace(
             Question: question,
@@ -399,32 +463,38 @@ public sealed class AgentOrchestrator(
             ToolExecutions: toolExecutions,
             FinalAnswer: finalAnswer,
             Confidence: confidence,
-            TimestampUtc: DateTime.UtcNow);
+            TimestampUtc: DateTime.UtcNow
+        );
     }
 
-    private static IReadOnlyList<PlannedToolTrace> BuildPlannedToolTraces(List<PlannerToolRequest> toolRequests)
+    private static IReadOnlyList<PlannedToolTrace> BuildPlannedToolTraces(
+        List<PlannerToolRequest> toolRequests
+    )
     {
         var traces = new List<PlannedToolTrace>();
         foreach (var request in toolRequests)
         {
-            traces.Add(new PlannedToolTrace(
-                Name: request.Name,
-                Arguments: request.Arguments));
+            traces.Add(new PlannedToolTrace(Name: request.Name, Arguments: request.Arguments));
         }
         return traces;
     }
 
-    private static IReadOnlyList<ToolExecutionTrace> BuildToolExecutionTraces(List<ToolExecutionOutput> toolOutputs)
+    private static IReadOnlyList<ToolExecutionTrace> BuildToolExecutionTraces(
+        List<ToolExecutionOutput> toolOutputs
+    )
     {
         var traces = new List<ToolExecutionTrace>();
         foreach (var output in toolOutputs)
         {
-            traces.Add(new ToolExecutionTrace(
-                Name: output.ToolName,
-                Status: output.Status,
-                StartedAtUtc: output.StartedAtUtc,
-                FinishedAtUtc: output.FinishedAtUtc,
-                ErrorMessage: output.ErrorMessage));
+            traces.Add(
+                new ToolExecutionTrace(
+                    Name: output.ToolName,
+                    Status: output.Status,
+                    StartedAtUtc: output.StartedAtUtc,
+                    FinishedAtUtc: output.FinishedAtUtc,
+                    ErrorMessage: output.ErrorMessage
+                )
+            );
         }
         return traces;
     }
@@ -432,7 +502,8 @@ public sealed class AgentOrchestrator(
     private static string EmbedEvidenceTokensInAnswer(
         string answer,
         IReadOnlyList<string> evidenceReferences,
-        EvidencePackage evidencePackage)
+        EvidencePackage evidencePackage
+    )
     {
         if (evidenceReferences.Count == 0)
         {
@@ -443,8 +514,9 @@ public sealed class AgentOrchestrator(
 
         foreach (var referenceId in evidenceReferences)
         {
-            var matchingEvidenceItem = evidencePackage.KeyEvidence
-                .FirstOrDefault(item => item.EvidenceId == referenceId);
+            var matchingEvidenceItem = evidencePackage.KeyEvidence.FirstOrDefault(item =>
+                item.EvidenceId == referenceId
+            );
 
             if (matchingEvidenceItem is null)
             {
@@ -475,7 +547,7 @@ public sealed class AgentOrchestrator(
             "cpb" => "analysis_result",
             "sound_quality" => "analysis_result",
             "metadata" => "analysis_result",
-            _ => "analysis_result"
+            _ => "analysis_result",
         };
     }
 
@@ -516,12 +588,39 @@ public sealed class AgentOrchestrator(
         // Audio-related keywords that suggest the user wants to analyze audio
         var audioKeywords = new[]
         {
-            "sound", "audio", "file", "waveform", "spectrogram", "spectrum",
-            "frequency", "hz", "khz", "peak", "rms", "db", "decibel",
-            "loud", "quiet", "noise", "clip", "silence", "click",
-            "analyze", "analysis", "measure", "show", "display",
-            "what is the", "what's the", "how does", "does it",
-            "energy", "band", "tone", "harmonic", "distortion"
+            "sound",
+            "audio",
+            "file",
+            "waveform",
+            "spectrogram",
+            "spectrum",
+            "frequency",
+            "hz",
+            "khz",
+            "peak",
+            "rms",
+            "db",
+            "decibel",
+            "loud",
+            "quiet",
+            "noise",
+            "clip",
+            "silence",
+            "click",
+            "analyze",
+            "analysis",
+            "measure",
+            "show",
+            "display",
+            "what is the",
+            "what's the",
+            "how does",
+            "does it",
+            "energy",
+            "band",
+            "tone",
+            "harmonic",
+            "distortion",
         };
 
         foreach (var keyword in audioKeywords)

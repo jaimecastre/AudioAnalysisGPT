@@ -4,11 +4,13 @@ public static class AgentResponseValidator
 {
     public static ValidationResult Validate(
         FinalAnswerResponse finalAnswer,
-        EvidencePackage evidencePackage)
+        EvidencePackage evidencePackage
+    )
     {
         var availableEvidenceIds = new HashSet<string>(
             evidencePackage.KeyEvidence.Select(e => e.EvidenceId),
-            StringComparer.OrdinalIgnoreCase);
+            StringComparer.OrdinalIgnoreCase
+        );
 
         var answerIsEmpty = string.IsNullOrWhiteSpace(finalAnswer.Answer);
         if (answerIsEmpty)
@@ -28,12 +30,13 @@ public static class AgentResponseValidator
             {
                 IsAcceptable = true,
                 HasWarning = true,
-                WarningReason = "Agent answer does not reference any evidence IDs despite evidence being available.",
+                WarningReason =
+                    "Agent answer does not reference any evidence IDs despite evidence being available.",
             };
         }
 
-        var referencedIdsNotInPackage = finalAnswer.EvidenceReferences
-            .Where(refId => !availableEvidenceIds.Contains(refId))
+        var referencedIdsNotInPackage = finalAnswer
+            .EvidenceReferences.Where(refId => !availableEvidenceIds.Contains(refId))
             .ToList();
 
         if (referencedIdsNotInPackage.Count > 0)
@@ -42,12 +45,13 @@ public static class AgentResponseValidator
             {
                 IsAcceptable = true,
                 HasWarning = true,
-                WarningReason = $"Agent referenced evidence IDs not found in the package: {string.Join(", ", referencedIdsNotInPackage)}.",
+                WarningReason =
+                    $"Agent referenced evidence IDs not found in the package: {string.Join(", ", referencedIdsNotInPackage)}.",
             };
         }
 
-        var hasNoLimitationsWhenEvidenceIsPartial = finalAnswer.Limitations.Count == 0
-            && evidencePackage.Limitations.Count > 0;
+        var hasNoLimitationsWhenEvidenceIsPartial =
+            finalAnswer.Limitations.Count == 0 && evidencePackage.Limitations.Count > 0;
 
         if (hasNoLimitationsWhenEvidenceIsPartial)
         {
@@ -55,14 +59,11 @@ public static class AgentResponseValidator
             {
                 IsAcceptable = true,
                 HasWarning = true,
-                WarningReason = "Agent did not include limitations despite the evidence package containing known limitations.",
+                WarningReason =
+                    "Agent did not include limitations despite the evidence package containing known limitations.",
             };
         }
 
-        return new ValidationResult
-        {
-            IsAcceptable = true,
-            HasWarning = false,
-        };
+        return new ValidationResult { IsAcceptable = true, HasWarning = false };
     }
 }

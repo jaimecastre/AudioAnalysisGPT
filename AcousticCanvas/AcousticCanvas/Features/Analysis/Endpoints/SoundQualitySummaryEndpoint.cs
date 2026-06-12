@@ -1,6 +1,6 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Handlers;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
@@ -13,7 +13,10 @@ public class SoundQualitySummaryEndpoint(SoundQualitySummaryHandler handler)
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(SoundQualitySummaryRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(
+        SoundQualitySummaryRequest request,
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -22,12 +25,18 @@ public class SoundQualitySummaryEndpoint(SoundQualitySummaryHandler handler)
         catch (FileNotFoundException ex)
         {
             HttpContext.Response.StatusCode = 404;
-            await HttpContext.Response.WriteAsync($"File not found: {ex.Message}", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                $"File not found: {ex.Message}",
+                cancellationToken
+            );
         }
         catch (Exception ex)
         {
             HttpContext.Response.StatusCode = 500;
-            await HttpContext.Response.WriteAsync($"Sound quality summary error: {ex.GetType().Name}: {ex.Message}", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                $"Sound quality summary error: {ex.GetType().Name}: {ex.Message}",
+                cancellationToken
+            );
         }
     }
 }

@@ -1,13 +1,16 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Playback.Commands;
 using AcousticCanvas.Features.Playback.Services;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Playback.Handlers;
 
 public class PlaybackControlHandler(PlaybackStateStore stateStore)
     : CommandHandler<ControlPlaybackCommand, PlaybackStateResult>
 {
-    public override Task<PlaybackStateResult> ExecuteAsync(ControlPlaybackCommand command, CancellationToken ct)
+    public override Task<PlaybackStateResult> ExecuteAsync(
+        ControlPlaybackCommand command,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
@@ -24,8 +27,10 @@ public class PlaybackControlHandler(PlaybackStateStore stateStore)
         else if (command.Action == "seek")
         {
             double clampedTime = command.TimeSeconds;
-            if (clampedTime < 0) clampedTime = 0;
-            if (clampedTime > state.DurationSeconds) clampedTime = state.DurationSeconds;
+            if (clampedTime < 0)
+                clampedTime = 0;
+            if (clampedTime > state.DurationSeconds)
+                clampedTime = state.DurationSeconds;
             state.CurrentTimeSeconds = clampedTime;
         }
         else if (command.Action == "stop")

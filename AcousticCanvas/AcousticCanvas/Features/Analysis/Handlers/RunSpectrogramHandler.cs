@@ -1,18 +1,21 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Analyzers;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.Analysis.Importers;
 using AcousticCanvas.Features.Analysis.Services;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Handlers;
 
 public class RunSpectrogramHandler(
     IReadOnlyList<ISignalFileImporter> importers,
-    SpectrogramCacheStore cacheStore)
-    : CommandHandler<RunSpectrogramQuery, SpectrogramAnalysis>
+    SpectrogramCacheStore cacheStore
+) : CommandHandler<RunSpectrogramQuery, SpectrogramAnalysis>
 {
-    public override Task<SpectrogramAnalysis> ExecuteAsync(RunSpectrogramQuery query, CancellationToken ct)
+    public override Task<SpectrogramAnalysis> ExecuteAsync(
+        RunSpectrogramQuery query,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
@@ -24,10 +27,26 @@ public class RunSpectrogramHandler(
         if (query.EndSeconds <= query.StartSeconds)
         {
             throw new ArgumentException(
-                $"Region end ({query.EndSeconds:F3}s) must be greater than start ({query.StartSeconds:F3}s).");
+                $"Region end ({query.EndSeconds:F3}s) must be greater than start ({query.StartSeconds:F3}s)."
+            );
         }
 
-        if (cacheStore.TryGet(query.FilePath, query.StartSeconds, query.EndSeconds, query.FftSize, query.Overlap, query.Scale, query.GainDb, query.RangeDb, query.MinDbSpl, query.MaxDbSpl, out var cached) && cached != null)
+        if (
+            cacheStore.TryGet(
+                query.FilePath,
+                query.StartSeconds,
+                query.EndSeconds,
+                query.FftSize,
+                query.Overlap,
+                query.Scale,
+                query.GainDb,
+                query.RangeDb,
+                query.MinDbSpl,
+                query.MaxDbSpl,
+                out var cached
+            )
+            && cached != null
+        )
         {
             return Task.FromResult(cached);
         }
@@ -45,9 +64,22 @@ public class RunSpectrogramHandler(
             query.GainDb,
             query.RangeDb,
             query.MinDbSpl,
-            query.MaxDbSpl);
+            query.MaxDbSpl
+        );
 
-        cacheStore.Set(query.FilePath, query.StartSeconds, query.EndSeconds, query.FftSize, query.Overlap, query.Scale, query.GainDb, query.RangeDb, query.MinDbSpl, query.MaxDbSpl, result);
+        cacheStore.Set(
+            query.FilePath,
+            query.StartSeconds,
+            query.EndSeconds,
+            query.FftSize,
+            query.Overlap,
+            query.Scale,
+            query.GainDb,
+            query.RangeDb,
+            query.MinDbSpl,
+            query.MaxDbSpl,
+            result
+        );
 
         return Task.FromResult(result);
     }
@@ -61,6 +93,8 @@ public class RunSpectrogramHandler(
                 return importer;
             }
         }
-        throw new NotSupportedException($"No importer found for file: {Path.GetFileName(filePath)}");
+        throw new NotSupportedException(
+            $"No importer found for file: {Path.GetFileName(filePath)}"
+        );
     }
 }

@@ -9,7 +9,10 @@ public sealed class SignalAnalysisService
     private readonly IReadOnlyList<ISignalFileImporter> _importers;
     private readonly SignalFileCacheStore _cacheStore;
 
-    public SignalAnalysisService(IReadOnlyList<ISignalFileImporter> importers, SignalFileCacheStore cacheStore)
+    public SignalAnalysisService(
+        IReadOnlyList<ISignalFileImporter> importers,
+        SignalFileCacheStore cacheStore
+    )
     {
         _importers = importers;
         _cacheStore = cacheStore;
@@ -50,6 +53,8 @@ public sealed class SignalAnalysisService
                 return importer;
             }
         }
-        throw new NotSupportedException($"No importer found for file: {Path.GetFileName(filePath)}");
+        throw new NotSupportedException(
+            $"No importer found for file: {Path.GetFileName(filePath)}"
+        );
     }
 }

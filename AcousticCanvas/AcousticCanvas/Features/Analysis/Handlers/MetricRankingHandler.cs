@@ -8,10 +8,13 @@ namespace AcousticCanvas.Features.Analysis.Handlers;
 
 public sealed class MetricRankingHandler(
     AudioFileRepository audioFileRepository,
-    SoundQualityAnalysisService soundQualityAnalysisService)
-    : CommandHandler<MetricRankingRequest, MetricRankingResult>
+    SoundQualityAnalysisService soundQualityAnalysisService
+) : CommandHandler<MetricRankingRequest, MetricRankingResult>
 {
-    public override async Task<MetricRankingResult> ExecuteAsync(MetricRankingRequest request, CancellationToken ct)
+    public override async Task<MetricRankingResult> ExecuteAsync(
+        MetricRankingRequest request,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
@@ -51,12 +54,21 @@ public sealed class MetricRankingHandler(
                 FilePath: filePath,
                 StartSeconds: 0.0,
                 EndSeconds: fileInfo.DurationSeconds,
-                Method: "python_filter_bank");
+                Method: "python_filter_bank"
+            );
 
             try
             {
-                var soundQualityAnalysis = await soundQualityAnalysisService.AnalyzeAsync(soundQualityQuery, ct);
-                return new { FileId = fileId, FileName = fileName, Analysis = soundQualityAnalysis };
+                var soundQualityAnalysis = await soundQualityAnalysisService.AnalyzeAsync(
+                    soundQualityQuery,
+                    ct
+                );
+                return new
+                {
+                    FileId = fileId,
+                    FileName = fileName,
+                    Analysis = soundQualityAnalysis,
+                };
             }
             catch
             {
@@ -78,13 +90,16 @@ public sealed class MetricRankingHandler(
                 var metric = GetMetric(result.Analysis, metricName);
                 if (metric != null)
                 {
-                    rankings.Add(new MetricRankingRow(
-                        FileId: result.FileId,
-                        FileName: result.FileName,
-                        MetricName: metricName,
-                        Value: metric.Value,
-                        Unit: metric.Unit,
-                        Rank: 0));
+                    rankings.Add(
+                        new MetricRankingRow(
+                            FileId: result.FileId,
+                            FileName: result.FileName,
+                            MetricName: metricName,
+                            Value: metric.Value,
+                            Unit: metric.Unit,
+                            Rank: 0
+                        )
+                    );
                 }
             }
         }
@@ -105,7 +120,7 @@ public sealed class MetricRankingHandler(
             "loudness" => analysis.Loudness,
             "sharpness" => analysis.Sharpness,
             "roughness" => analysis.Roughness,
-            _ => null
+            _ => null,
         };
     }
 

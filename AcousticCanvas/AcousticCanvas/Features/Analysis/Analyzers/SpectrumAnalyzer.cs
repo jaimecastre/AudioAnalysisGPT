@@ -1,12 +1,12 @@
-using MathNet.Numerics.IntegralTransforms;
-using AcousticCanvas.Features.Analysis.Domain;
 using System.Numerics;
+using AcousticCanvas.Features.Analysis.Domain;
+using MathNet.Numerics.IntegralTransforms;
 
 namespace AcousticCanvas.Features.Analysis.Analyzers;
 
 public static class SpectrumAnalyzer
 {
-    private const string DefaultWindowType = "hann";
+    private const string DefaultWindowType = "blackman-harris";
     private const string AveragingMethod = "power";
     private const string ScalingDescription = "one-sided amplitude, coherent-gain corrected";
     private const string TonalPeakMethod = "local_median_prominence_db";
@@ -20,25 +20,35 @@ public static class SpectrumAnalyzer
         double startSeconds,
         double endSeconds,
         int fftSize,
-        double overlap)
+        double overlap,
+        string windowType = DefaultWindowType
+    )
     {
         var channelResults = new List<ChannelSpectrumAnalysis>();
 
         foreach (var channel in channels)
         {
-            var channelResult = AnalyzeChannel(channel, startSeconds, endSeconds, fftSize, overlap);
+            var channelResult = AnalyzeChannel(
+                channel,
+                startSeconds,
+                endSeconds,
+                fftSize,
+                overlap,
+                windowType
+            );
             channelResults.Add(channelResult);
         }
 
         // Use block count from first channel (all channels share the same time region and sample rate).
-        var blockCount = channelResults.Count > 0
-            ? GetBlockCount(channels[0].SampleRate, startSeconds, endSeconds, fftSize, overlap)
-            : 0;
+        var blockCount =
+            channelResults.Count > 0
+                ? GetBlockCount(channels[0].SampleRate, startSeconds, endSeconds, fftSize, overlap)
+                : 0;
 
         var parameters = new SpectrumParameters
         {
             FftSize = fftSize,
-            WindowType = DefaultWindowType,
+            WindowType = windowType,
             Overlap = overlap,
             Averaging = AveragingMethod,
             Scaling = ScalingDescription,
@@ -67,7 +77,9 @@ public static class SpectrumAnalyzer
         double startSeconds,
         double endSeconds,
         int fftSize,
-        double overlap)
+        double overlap,
+        string windowType
+    )
     {
         var sampleRate = channel.SampleRate;
         var samples = channel.Samples;
@@ -78,21 +90,36 @@ public static class SpectrumAnalyzer
         startSample = Math.Clamp(startSample, 0, samples.Length);
         endSample = Math.Clamp(endSample, 0, samples.Length);
 
-        var spectrumData = ComputeAveragedSpectrum(samples, startSample, endSample, sampleRate, fftSize, overlap);
+        var spectrumData = ComputeAveragedSpectrum(
+            samples,
+            startSample,
+            endSample,
+            sampleRate,
+            fftSize,
+            overlap,
+            windowType
+        );
 
-        var isPressure = channel.PhysicalMetadata is
-        {
-            UnitKind: SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure
-        };
+        var isPressure =
+            channel.PhysicalMetadata is
+            { UnitKind: SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure };
 
         if (isPressure)
         {
             var scaleFactor = AcousticPressureConverter.GetScaleFactor(channel.PhysicalMetadata!);
-            ApplyAcousticPressureDbInPlace(spectrumData.Magnitudes, spectrumData.MagnitudesDb, scaleFactor);
+            ApplyAcousticPressureDbInPlace(
+                spectrumData.Magnitudes,
+                spectrumData.MagnitudesDb,
+                scaleFactor
+            );
         }
         else if (channel.DbReference != null)
         {
-            ApplyDbReferenceInPlace(spectrumData.Magnitudes, spectrumData.MagnitudesDb, channel.DbReference);
+            ApplyDbReferenceInPlace(
+                spectrumData.Magnitudes,
+                spectrumData.MagnitudesDb,
+                channel.DbReference
+            );
         }
 
         // Find peak bin, then apply quadratic interpolation for sub-bin frequency accuracy.
@@ -117,14 +144,19 @@ public static class SpectrumAnalyzer
             var interpolatedHz = QuadraticInterpolateFrequencyHz(
                 spectrumData.Magnitudes,
                 spectrumData.FrequenciesHz,
-                peakBinIndex);
+                peakBinIndex
+            );
             if (interpolatedHz.HasValue)
             {
                 peakFrequencyHz = interpolatedHz.Value;
             }
         }
 
-        var tonalPeaks = DetectTonalPeaks(spectrumData.FrequenciesHz, spectrumData.Magnitudes, spectrumData.MagnitudesDb);
+        var tonalPeaks = DetectTonalPeaks(
+            spectrumData.FrequenciesHz,
+            spectrumData.Magnitudes,
+            spectrumData.MagnitudesDb
+        );
 
         return new ChannelSpectrumAnalysis
         {
@@ -137,23 +169,36 @@ public static class SpectrumAnalyzer
             MagnitudesDb = spectrumData.MagnitudesDb,
             MaxMagnitude = maxMagnitude.HasValue ? Math.Round(maxMagnitude.Value, 6) : null,
             MaxMagnitudeDb = maxMagnitudeDb.HasValue ? Math.Round(maxMagnitudeDb.Value, 3) : null,
-            PeakFrequencyHz = peakFrequencyHz.HasValue ? Math.Round(peakFrequencyHz.Value, 3) : null,
+            PeakFrequencyHz = peakFrequencyHz.HasValue
+                ? Math.Round(peakFrequencyHz.Value, 3)
+                : null,
             TonalPeaks = tonalPeaks,
             DbUnit = isPressure ? "dB re 20 µPa" : channel.DbReference?.DbUnit,
-            DbReferenceValue = isPressure ? AcousticPressureConverter.PressureReferencePa : channel.DbReference?.Value,
+            DbReferenceValue = isPressure
+                ? AcousticPressureConverter.PressureReferencePa
+                : channel.DbReference?.Value,
             DbReferenceUnit = isPressure ? "Pa" : channel.DbReference?.Unit,
             YAxisLabel = AcousticPressureConverter.ResolveYAxisLabel(channel.PhysicalMetadata),
-            CalibrationState = AcousticPressureConverter.ResolveCalibrationState(channel.PhysicalMetadata),
-            PhysicalQuantity = AcousticPressureConverter.ResolvePhysicalQuantity(channel.PhysicalMetadata),
+            CalibrationState = AcousticPressureConverter.ResolveCalibrationState(
+                channel.PhysicalMetadata
+            ),
+            PhysicalQuantity = AcousticPressureConverter.ResolvePhysicalQuantity(
+                channel.PhysicalMetadata
+            ),
         };
     }
 
     private static IReadOnlyList<TonalPeak> DetectTonalPeaks(
         IReadOnlyList<double> frequenciesHz,
         IReadOnlyList<double> magnitudes,
-        IReadOnlyList<double?> magnitudesDb)
+        IReadOnlyList<double?> magnitudesDb
+    )
     {
-        if (frequenciesHz.Count < 5 || magnitudes.Count != frequenciesHz.Count || magnitudesDb.Count != frequenciesHz.Count)
+        if (
+            frequenciesHz.Count < 5
+            || magnitudes.Count != frequenciesHz.Count
+            || magnitudesDb.Count != frequenciesHz.Count
+        )
         {
             return [];
         }
@@ -173,7 +218,11 @@ public static class SpectrumAnalyzer
                 continue;
             }
 
-            if (!IsFinite(dbValues[i]) || dbValues[i] <= dbValues[i - 1] || dbValues[i] < dbValues[i + 1])
+            if (
+                !IsFinite(dbValues[i])
+                || dbValues[i] <= dbValues[i - 1]
+                || dbValues[i] < dbValues[i + 1]
+            )
             {
                 continue;
             }
@@ -190,24 +239,33 @@ public static class SpectrumAnalyzer
                 continue;
             }
 
-            var bandwidthHz = EstimatePeakBandwidthHz(dbValues, frequenciesHz, i, dbValues[i] - 3.0);
-            var confidence = prominenceDb >= HighConfidenceProminenceDb && IsNarrowPeak(frequenciesHz[i], bandwidthHz)
-                ? "high"
-                : "medium";
+            var bandwidthHz = EstimatePeakBandwidthHz(
+                dbValues,
+                frequenciesHz,
+                i,
+                dbValues[i] - 3.0
+            );
+            var confidence =
+                prominenceDb >= HighConfidenceProminenceDb
+                && IsNarrowPeak(frequenciesHz[i], bandwidthHz)
+                    ? "high"
+                    : "medium";
 
-            var interpolatedPeakHz = QuadraticInterpolateFrequencyHz(magnitudes, frequenciesHz, i)
-                ?? frequenciesHz[i];
+            var interpolatedPeakHz =
+                QuadraticInterpolateFrequencyHz(magnitudes, frequenciesHz, i) ?? frequenciesHz[i];
 
-            candidates.Add(new TonalPeak
-            {
-                FrequencyHz = Math.Round(interpolatedPeakHz, 3),
-                MagnitudeDb = Math.Round(dbValues[i], 3),
-                LocalFloorDb = Math.Round(localFloor.Value, 3),
-                ProminenceDb = Math.Round(prominenceDb, 3),
-                BandwidthHz = Math.Round(bandwidthHz, 3),
-                Confidence = confidence,
-                Method = TonalPeakMethod,
-            });
+            candidates.Add(
+                new TonalPeak
+                {
+                    FrequencyHz = Math.Round(interpolatedPeakHz, 3),
+                    MagnitudeDb = Math.Round(dbValues[i], 3),
+                    LocalFloorDb = Math.Round(localFloor.Value, 3),
+                    ProminenceDb = Math.Round(prominenceDb, 3),
+                    BandwidthHz = Math.Round(bandwidthHz, 3),
+                    Confidence = confidence,
+                    Method = TonalPeakMethod,
+                }
+            );
         }
 
         return candidates
@@ -217,7 +275,10 @@ public static class SpectrumAnalyzer
             .ToArray();
     }
 
-    private static double[] BuildDbValues(IReadOnlyList<double> magnitudes, IReadOnlyList<double?> magnitudesDb)
+    private static double[] BuildDbValues(
+        IReadOnlyList<double> magnitudes,
+        IReadOnlyList<double?> magnitudesDb
+    )
     {
         var dbValues = new double[magnitudes.Count];
         for (var i = 0; i < magnitudes.Count; i++)
@@ -238,7 +299,11 @@ public static class SpectrumAnalyzer
         return dbValues;
     }
 
-    private static double? EstimateLocalFloorDb(double[] dbValues, int peakIndex, double binSpacingHz)
+    private static double? EstimateLocalFloorDb(
+        double[] dbValues,
+        int peakIndex,
+        double binSpacingHz
+    )
     {
         var halfWindowBins = Math.Clamp((int)Math.Round(300.0 / binSpacingHz), 12, 120);
         var guardBins = Math.Clamp((int)Math.Round(35.0 / binSpacingHz), 2, 12);
@@ -274,7 +339,8 @@ public static class SpectrumAnalyzer
         double[] dbValues,
         IReadOnlyList<double> frequenciesHz,
         int peakIndex,
-        double thresholdDb)
+        double thresholdDb
+    )
     {
         var leftIndex = peakIndex;
         while (leftIndex > 0 && dbValues[leftIndex] > thresholdDb)
@@ -312,16 +378,17 @@ public static class SpectrumAnalyzer
     private static double? QuadraticInterpolateFrequencyHz(
         IReadOnlyList<double> magnitudes,
         IReadOnlyList<double> frequenciesHz,
-        int peakIndex)
+        int peakIndex
+    )
     {
         if (peakIndex <= 0 || peakIndex >= magnitudes.Count - 1)
         {
             return null;
         }
 
-        var magLeft   = magnitudes[peakIndex - 1];
+        var magLeft = magnitudes[peakIndex - 1];
         var magCenter = magnitudes[peakIndex];
-        var magRight  = magnitudes[peakIndex + 1];
+        var magRight = magnitudes[peakIndex + 1];
 
         double alpha;
         double beta;
@@ -330,13 +397,13 @@ public static class SpectrumAnalyzer
         if (magLeft > 0.0 && magCenter > 0.0 && magRight > 0.0)
         {
             alpha = 20.0 * Math.Log10(magLeft);
-            beta  = 20.0 * Math.Log10(magCenter);
+            beta = 20.0 * Math.Log10(magCenter);
             gamma = 20.0 * Math.Log10(magRight);
         }
         else
         {
             alpha = magLeft;
-            beta  = magCenter;
+            beta = magCenter;
             gamma = magRight;
         }
 
@@ -357,13 +424,23 @@ public static class SpectrumAnalyzer
         int endSample,
         int sampleRate,
         int fftSize,
-        double overlap)
+        double overlap,
+        string windowType
+    )
     {
         var regionLength = endSample - startSample;
-        var halfFftSize = fftSize / 2 + 1;
 
-        // Hann window coefficients.
-        var window = BuildHannWindow(fftSize);
+        // Zero-pad to 4× the window size for sub-bin frequency interpolation.
+        // With Blackman-Harris (-92 dB sidelobes) or Flat-top (-93 dB), the
+        // inter-bin sidelobes are invisible. With Hann (-31.5 dB) they remain
+        // at the same level as without padding (they always exist, padding just
+        // reveals them).
+        const int zeroPadFactor = 4;
+        var paddedFftSize = fftSize * zeroPadFactor;
+        var halfPaddedSize = paddedFftSize / 2 + 1;
+
+        // Window coefficients (applied to original fftSize samples only).
+        var window = BuildWindow(fftSize, windowType);
 
         // Coherent gain correction: sum(window) / N.
         var coherentGain = 0.0;
@@ -376,7 +453,7 @@ public static class SpectrumAnalyzer
         var hopSize = (int)Math.Max(1, fftSize * (1.0 - overlap));
 
         // Accumulate power per bin across all blocks.
-        var powerAccumulator = new double[halfFftSize];
+        var powerAccumulator = new double[halfPaddedSize];
         var blockCount = 0;
 
         var blockStart = startSample;
@@ -384,25 +461,26 @@ public static class SpectrumAnalyzer
         {
             var block = ExtractBlock(samples, blockStart, fftSize, regionLength == 0);
 
-            // Apply window.
-            var complexBlock = new Complex[fftSize];
+            // Apply window and zero-pad to paddedFftSize.
+            var complexBlock = new Complex[paddedFftSize];
             for (var i = 0; i < fftSize; i++)
             {
                 complexBlock[i] = new Complex(block[i] * window[i], 0.0);
             }
+            // Remaining entries are Complex(0,0) by default.
 
             // Forward FFT in-place.
             Fourier.Forward(complexBlock, FourierOptions.NoScaling);
 
             // Compute one-sided amplitude spectrum with coherent gain correction.
-            // DC bin (0) and Nyquist bin (fftSize/2): no doubling.
-            // All other bins: double for one-sided.
-            for (var k = 0; k < halfFftSize; k++)
+            // Scaling uses the original fftSize (window length), not the padded size,
+            // so amplitudes are correct regardless of zero-padding amount.
+            for (var k = 0; k < halfPaddedSize; k++)
             {
                 var rawMagnitude = complexBlock[k].Magnitude;
                 var amplitude = rawMagnitude / (fftSize * coherentGain);
 
-                if (k > 0 && k < halfFftSize - 1)
+                if (k > 0 && k < halfPaddedSize - 1)
                 {
                     amplitude *= 2.0;
                 }
@@ -412,22 +490,21 @@ public static class SpectrumAnalyzer
 
             blockCount++;
             blockStart += hopSize;
-        }
-        while (blockStart + fftSize <= endSample);
+        } while (blockStart + fftSize <= endSample);
 
         // If no full block fit, blockCount is already 1 from the initial do-while.
         var actualBlockCount = Math.Max(blockCount, 1);
 
-        var frequenciesHz = new double[halfFftSize];
-        var magnitudes = new double[halfFftSize];
-        var magnitudesDb = new double?[halfFftSize];
+        var frequenciesHz = new double[halfPaddedSize];
+        var magnitudes = new double[halfPaddedSize];
+        var magnitudesDb = new double?[halfPaddedSize];
 
-        for (var k = 0; k < halfFftSize; k++)
+        for (var k = 0; k < halfPaddedSize; k++)
         {
             var meanPower = powerAccumulator[k] / actualBlockCount;
             var meanMagnitude = Math.Sqrt(meanPower);
 
-            frequenciesHz[k] = Math.Round((double)k * sampleRate / fftSize, 6);
+            frequenciesHz[k] = Math.Round((double)k * sampleRate / paddedFftSize, 6);
             magnitudes[k] = Math.Round(meanMagnitude, 9);
             magnitudesDb[k] = null; // filled per-channel with dB reference
         }
@@ -438,13 +515,15 @@ public static class SpectrumAnalyzer
     private readonly record struct SpectrumData(
         double[] FrequenciesHz,
         double[] Magnitudes,
-        double?[] MagnitudesDb);
+        double?[] MagnitudesDb
+    );
 
     // Applies dB reference in-place to avoid allocating new arrays.
     private static void ApplyDbReferenceInPlace(
         double[] magnitudes,
         double?[] magnitudesDb,
-        DbReference dbReference)
+        DbReference dbReference
+    )
     {
         if (dbReference.Value <= 0)
         {
@@ -455,7 +534,10 @@ public static class SpectrumAnalyzer
         {
             if (magnitudes[i] > 0)
             {
-                magnitudesDb[i] = Math.Round(20.0 * Math.Log10(magnitudes[i] / dbReference.Value), 3);
+                magnitudesDb[i] = Math.Round(
+                    20.0 * Math.Log10(magnitudes[i] / dbReference.Value),
+                    3
+                );
             }
         }
     }
@@ -467,27 +549,117 @@ public static class SpectrumAnalyzer
     private static void ApplyAcousticPressureDbInPlace(
         double[] magnitudes,
         double?[] magnitudesDb,
-        double scaleFactor)
+        double scaleFactor
+    )
     {
         for (var i = 0; i < magnitudes.Length; i++)
         {
             var peakAmplitudePa = magnitudes[i] * scaleFactor;
             magnitudesDb[i] = Math.Round(
-                AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(peakAmplitudePa), 3);
+                AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(peakAmplitudePa),
+                3
+            );
         }
+    }
+
+    /// <summary>
+    /// Selects the window function by name.
+    /// Supported: "hann", "blackman-harris", "flat-top".
+    /// </summary>
+    private static double[] BuildWindow(int size, string windowType)
+    {
+        return windowType.ToLowerInvariant() switch
+        {
+            "blackman-harris" => BuildBlackmanHarrisWindow(size),
+            "flat-top" => BuildFlatTopWindow(size),
+            _ => BuildHannWindow(size),
+        };
     }
 
     private static double[] BuildHannWindow(int size)
     {
         var window = new double[size];
+        if (size <= 1)
+        {
+            if (size == 1)
+            {
+                window[0] = 1.0;
+            }
+            return window;
+        }
         for (var n = 0; n < size; n++)
         {
-            window[n] = 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * n / (size - 1)));
+            window[n] = 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * n / size));
         }
         return window;
     }
 
-    private static double[] ExtractBlock(float[] samples, int startIndex, int fftSize, bool forceZeroPad)
+    /// <summary>
+    /// Blackman-Harris 4-term window. Sidelobes at -92 dB.
+    /// Coefficients from Harris (1978) — the standard 4-term minimum sidelobe window.
+    /// </summary>
+    private static double[] BuildBlackmanHarrisWindow(int size)
+    {
+        const double a0 = 0.35875;
+        const double a1 = 0.48829;
+        const double a2 = 0.14128;
+        const double a3 = 0.01168;
+
+        var window = new double[size];
+        if (size <= 1)
+        {
+            if (size == 1)
+                window[0] = 1.0;
+            return window;
+        }
+        for (var n = 0; n < size; n++)
+        {
+            var angle = 2.0 * Math.PI * n / size;
+            window[n] =
+                a0 - a1 * Math.Cos(angle) + a2 * Math.Cos(2.0 * angle) - a3 * Math.Cos(3.0 * angle);
+        }
+        return window;
+    }
+
+    /// <summary>
+    /// Flat-top window (ISO 18431-2). Very low amplitude error (±0.01 dB).
+    /// Sidelobes at -93.6 dB. Main lobe is wide, so frequency resolution is reduced.
+    /// Best for accurate amplitude measurement of tones.
+    /// </summary>
+    private static double[] BuildFlatTopWindow(int size)
+    {
+        const double a0 = 0.21557895;
+        const double a1 = 0.41663158;
+        const double a2 = 0.277263158;
+        const double a3 = 0.083578947;
+        const double a4 = 0.006947368;
+
+        var window = new double[size];
+        if (size <= 1)
+        {
+            if (size == 1)
+                window[0] = 1.0;
+            return window;
+        }
+        for (var n = 0; n < size; n++)
+        {
+            var angle = 2.0 * Math.PI * n / size;
+            window[n] =
+                a0
+                - a1 * Math.Cos(angle)
+                + a2 * Math.Cos(2.0 * angle)
+                - a3 * Math.Cos(3.0 * angle)
+                + a4 * Math.Cos(4.0 * angle);
+        }
+        return window;
+    }
+
+    private static double[] ExtractBlock(
+        float[] samples,
+        int startIndex,
+        int fftSize,
+        bool forceZeroPad
+    )
     {
         var block = new double[fftSize];
         if (forceZeroPad)
@@ -511,7 +683,8 @@ public static class SpectrumAnalyzer
         double startSeconds,
         double endSeconds,
         int fftSize,
-        double overlap)
+        double overlap
+    )
     {
         var startSample = (int)Math.Floor(startSeconds * sampleRate);
         var endSample = (int)Math.Ceiling(endSeconds * sampleRate);
@@ -529,8 +702,7 @@ public static class SpectrumAnalyzer
         {
             count++;
             pos += hopSize;
-        }
-        while (pos + fftSize <= endSample);
+        } while (pos + fftSize <= endSample);
 
         return Math.Max(count, 1);
     }

@@ -1,15 +1,15 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Analyzers;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.Analysis.Services;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Handlers;
 
 public class RunCompareHandler(
     SignalAnalysisService analysisService,
-    SoundQualityAnalysisService soundQualityAnalysisService)
-    : CommandHandler<RunCompareCommand, CompareResult>
+    SoundQualityAnalysisService soundQualityAnalysisService
+) : CommandHandler<RunCompareCommand, CompareResult>
 {
     private const int DefaultFftSize = 8192;
     private const double DefaultOverlap = 0.5;
@@ -17,16 +17,19 @@ public class RunCompareHandler(
 
     private static readonly (string Name, double LowHz, double HighHz)[] NamedBands =
     [
-        ("sub",       20.0,    80.0),
-        ("low",       80.0,   250.0),
-        ("low_mid",  250.0,   800.0),
-        ("mid",      800.0,  2500.0),
+        ("sub", 20.0, 80.0),
+        ("low", 80.0, 250.0),
+        ("low_mid", 250.0, 800.0),
+        ("mid", 800.0, 2500.0),
         ("presence", 2500.0, 5000.0),
-        ("high",     5000.0, 10000.0),
-        ("air",     10000.0, 20000.0),
+        ("high", 5000.0, 10000.0),
+        ("air", 10000.0, 20000.0),
     ];
 
-    public override async Task<CompareResult> ExecuteAsync(RunCompareCommand command, CancellationToken ct)
+    public override async Task<CompareResult> ExecuteAsync(
+        RunCompareCommand command,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
@@ -39,12 +42,16 @@ public class RunCompareHandler(
         {
             if (!File.Exists(command.FilePaths[index]))
             {
-                throw new FileNotFoundException($"Audio file {index + 1} not found: {command.FilePaths[index]}");
+                throw new FileNotFoundException(
+                    $"Audio file {index + 1} not found: {command.FilePaths[index]}"
+                );
             }
         }
 
-        var summaryTasks = command.FilePaths
-            .Select(filePath => BuildFileSummaryAsync(filePath, command.StartSeconds, command.EndSeconds, ct))
+        var summaryTasks = command
+            .FilePaths.Select(filePath =>
+                BuildFileSummaryAsync(filePath, command.StartSeconds, command.EndSeconds, ct)
+            )
             .ToArray();
         var summaries = await Task.WhenAll(summaryTasks);
 
@@ -61,24 +68,28 @@ public class RunCompareHandler(
                 var (soundQualityDelta, soundQualityUnavailableReason) =
                     CompareSoundQualityBuilder.BuildDeltaAndUnavailableReason(a, b);
 
-                pairwiseDiffs.Add(new PairwiseDiff
-                {
-                    FileIdA = a.FileId,
-                    FileIdB = b.FileId,
-                    PeakDeltaDb = b.PeakDb - a.PeakDb,
-                    HigherPeakFileId = a.PeakDb >= b.PeakDb ? a.FileId : b.FileId,
-                    RmsDeltaDb = b.RmsDb - a.RmsDb,
-                    HigherRmsFileId = a.RmsDb >= b.RmsDb ? a.FileId : b.FileId,
-                    CrestFactorDeltaDb = b.CrestFactorDb - a.CrestFactorDb,
-                    HigherCrestFactorFileId = a.CrestFactorDb >= b.CrestFactorDb ? a.FileId : b.FileId,
-                    PeakFrequencyDeltaHz = b.PeakFrequencyHz - a.PeakFrequencyHz,
-                    HigherPeakFrequencyFileId = a.PeakFrequencyHz >= b.PeakFrequencyHz ? a.FileId : b.FileId,
-                    SpectrumDelta = spectrumDelta,
-                    BandEnergyDeltas = bandEnergyDeltas,
-                    CpbBandDeltas = cpbBandDeltas,
-                    SoundQualityDelta = soundQualityDelta,
-                    SoundQualityUnavailableReason = soundQualityUnavailableReason,
-                });
+                pairwiseDiffs.Add(
+                    new PairwiseDiff
+                    {
+                        FileIdA = a.FileId,
+                        FileIdB = b.FileId,
+                        PeakDeltaDb = b.PeakDb - a.PeakDb,
+                        HigherPeakFileId = a.PeakDb >= b.PeakDb ? a.FileId : b.FileId,
+                        RmsDeltaDb = b.RmsDb - a.RmsDb,
+                        HigherRmsFileId = a.RmsDb >= b.RmsDb ? a.FileId : b.FileId,
+                        CrestFactorDeltaDb = b.CrestFactorDb - a.CrestFactorDb,
+                        HigherCrestFactorFileId =
+                            a.CrestFactorDb >= b.CrestFactorDb ? a.FileId : b.FileId,
+                        PeakFrequencyDeltaHz = b.PeakFrequencyHz - a.PeakFrequencyHz,
+                        HigherPeakFrequencyFileId =
+                            a.PeakFrequencyHz >= b.PeakFrequencyHz ? a.FileId : b.FileId,
+                        SpectrumDelta = spectrumDelta,
+                        BandEnergyDeltas = bandEnergyDeltas,
+                        CpbBandDeltas = cpbBandDeltas,
+                        SoundQualityDelta = soundQualityDelta,
+                        SoundQualityUnavailableReason = soundQualityUnavailableReason,
+                    }
+                );
             }
         }
 
@@ -94,7 +105,8 @@ public class RunCompareHandler(
         string filePath,
         double? startSeconds,
         double? endSeconds,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var signalFile = analysisService.ImportFile(filePath);
         var duration = signalFile.FileInfo.DurationSeconds;
@@ -106,7 +118,8 @@ public class RunCompareHandler(
             FilePath: filePath,
             StartSeconds: resolvedStart,
             EndSeconds: resolvedEnd,
-            Method: "mosqito_stationary_zwicker");
+            Method: "mosqito_stationary_zwicker"
+        );
         var sqTask = soundQualityAnalysisService.AnalyzeAsync(sqQuery, ct);
 
         var levelAnalysis = LevelAnalyzer.Analyze(signalFile.Channels, resolvedStart, resolvedEnd);
@@ -120,9 +133,11 @@ public class RunCompareHandler(
             resolvedStart,
             resolvedEnd,
             DefaultFftSize,
-            DefaultOverlap);
+            DefaultOverlap
+        );
 
-        var firstSpectrumChannel = spectrumAnalysis.Channels.Count > 0 ? spectrumAnalysis.Channels[0] : null;
+        var firstSpectrumChannel =
+            spectrumAnalysis.Channels.Count > 0 ? spectrumAnalysis.Channels[0] : null;
         var peakFrequencyHz = firstSpectrumChannel?.PeakFrequencyHz ?? 0.0;
         var peakFrequencyMagnitudeDb = firstSpectrumChannel?.MaxMagnitudeDb ?? 0.0;
 
@@ -156,9 +171,10 @@ public class RunCompareHandler(
         }
 
         var storedFileName = Path.GetFileName(filePath);
-        var displayFileName = storedFileName.Length > 13 && storedFileName[12] == '_'
-            ? storedFileName[13..]
-            : storedFileName;
+        var displayFileName =
+            storedFileName.Length > 13 && storedFileName[12] == '_'
+                ? storedFileName[13..]
+                : storedFileName;
 
         return new CompareFileSummary
         {
@@ -183,7 +199,8 @@ public class RunCompareHandler(
         SpectrumAnalysis spectrumAnalysis,
         double startSeconds,
         double endSeconds,
-        int sampleRate)
+        int sampleRate
+    )
     {
         var cpbAnalysis = CpbAnalyzer.AnalyzeFromSpectrum(
             spectrumAnalysis,
@@ -192,7 +209,8 @@ public class RunCompareHandler(
             DefaultCpbBandMode,
             DefaultFftSize,
             DefaultOverlap,
-            sampleRate);
+            sampleRate
+        );
 
         var firstChannel = cpbAnalysis.Channels.Count > 0 ? cpbAnalysis.Channels[0] : null;
         if (firstChannel is null)
@@ -200,16 +218,18 @@ public class RunCompareHandler(
             return [];
         }
 
-        return firstChannel.Bands.Select(band => new CompareCpbBand
-        {
-            Label = band.Label,
-            CenterFrequencyHz = band.CenterFrequencyHz,
-            LowerFrequencyHz = band.LowerFrequencyHz,
-            UpperFrequencyHz = band.UpperFrequencyHz,
-            LevelDb = band.LevelDb,
-            Weighting = cpbAnalysis.Parameters.Weighting,
-            WeightingMethod = cpbAnalysis.Parameters.WeightingMethod,
-        }).ToArray();
+        return firstChannel
+            .Bands.Select(band => new CompareCpbBand
+            {
+                Label = band.Label,
+                CenterFrequencyHz = band.CenterFrequencyHz,
+                LowerFrequencyHz = band.LowerFrequencyHz,
+                UpperFrequencyHz = band.UpperFrequencyHz,
+                LevelDb = band.LevelDb,
+                Weighting = cpbAnalysis.Parameters.Weighting,
+                WeightingMethod = cpbAnalysis.Parameters.WeightingMethod,
+            })
+            .ToArray();
     }
 
     private static CompareSpectrumCurve BuildSpectrumCurve(ChannelSpectrumAnalysis? channel)
@@ -234,7 +254,9 @@ public class RunCompareHandler(
         };
     }
 
-    private static IReadOnlyList<CompareBandEnergy> ComputeBandEnergies(ChannelSpectrumAnalysis? channel)
+    private static IReadOnlyList<CompareBandEnergy> ComputeBandEnergies(
+        ChannelSpectrumAnalysis? channel
+    )
     {
         var results = new List<CompareBandEnergy>();
 
@@ -272,13 +294,15 @@ public class RunCompareHandler(
                 energyDb = double.NegativeInfinity;
             }
 
-            results.Add(new CompareBandEnergy
-            {
-                BandName = bandName,
-                LowHz = lowHz,
-                HighHz = highHz,
-                EnergyDb = energyDb,
-            });
+            results.Add(
+                new CompareBandEnergy
+                {
+                    BandName = bandName,
+                    LowHz = lowHz,
+                    HighHz = highHz,
+                    EnergyDb = energyDb,
+                }
+            );
         }
 
         return results;
@@ -286,7 +310,8 @@ public class RunCompareHandler(
 
     private static CompareSpectrumDelta BuildSpectrumDelta(
         CompareSpectrumCurve curveA,
-        CompareSpectrumCurve curveB)
+        CompareSpectrumCurve curveB
+    )
     {
         // Use the shorter length to stay within both arrays.
         var length = Math.Min(curveA.FrequenciesHz.Count, curveB.FrequenciesHz.Count);
@@ -310,16 +335,13 @@ public class RunCompareHandler(
             }
         }
 
-        return new CompareSpectrumDelta
-        {
-            FrequenciesHz = frequencies,
-            DeltaDb = deltaDb,
-        };
+        return new CompareSpectrumDelta { FrequenciesHz = frequencies, DeltaDb = deltaDb };
     }
 
     private static IReadOnlyList<CompareBandEnergy> BuildBandEnergyDeltas(
         IReadOnlyList<CompareBandEnergy> bandEnergiesA,
-        IReadOnlyList<CompareBandEnergy> bandEnergiesB)
+        IReadOnlyList<CompareBandEnergy> bandEnergiesB
+    )
     {
         var deltas = new List<CompareBandEnergy>();
 
@@ -328,17 +350,20 @@ public class RunCompareHandler(
             var a = bandEnergiesA[i];
             var b = bandEnergiesB[i];
 
-            var deltaDb = double.IsNegativeInfinity(a.EnergyDb) || double.IsNegativeInfinity(b.EnergyDb)
-                ? double.NegativeInfinity
-                : Math.Round(b.EnergyDb - a.EnergyDb, 2);
+            var deltaDb =
+                double.IsNegativeInfinity(a.EnergyDb) || double.IsNegativeInfinity(b.EnergyDb)
+                    ? double.NegativeInfinity
+                    : Math.Round(b.EnergyDb - a.EnergyDb, 2);
 
-            deltas.Add(new CompareBandEnergy
-            {
-                BandName = a.BandName,
-                LowHz = a.LowHz,
-                HighHz = a.HighHz,
-                EnergyDb = deltaDb,
-            });
+            deltas.Add(
+                new CompareBandEnergy
+                {
+                    BandName = a.BandName,
+                    LowHz = a.LowHz,
+                    HighHz = a.HighHz,
+                    EnergyDb = deltaDb,
+                }
+            );
         }
 
         return deltas;
@@ -346,7 +371,8 @@ public class RunCompareHandler(
 
     private static IReadOnlyList<CompareCpbBand> BuildCpbBandDeltas(
         IReadOnlyList<CompareCpbBand> cpbBandsA,
-        IReadOnlyList<CompareCpbBand> cpbBandsB)
+        IReadOnlyList<CompareCpbBand> cpbBandsB
+    )
     {
         var deltas = new List<CompareCpbBand>();
 
@@ -354,20 +380,23 @@ public class RunCompareHandler(
         {
             var a = cpbBandsA[i];
             var b = cpbBandsB[i];
-            var deltaDb = a.LevelDb.HasValue && b.LevelDb.HasValue
-                ? Math.Round(b.LevelDb.Value - a.LevelDb.Value, 2)
-                : (double?)null;
+            var deltaDb =
+                a.LevelDb.HasValue && b.LevelDb.HasValue
+                    ? Math.Round(b.LevelDb.Value - a.LevelDb.Value, 2)
+                    : (double?)null;
 
-            deltas.Add(new CompareCpbBand
-            {
-                Label = a.Label,
-                CenterFrequencyHz = a.CenterFrequencyHz,
-                LowerFrequencyHz = a.LowerFrequencyHz,
-                UpperFrequencyHz = a.UpperFrequencyHz,
-                LevelDb = deltaDb,
-                Weighting = a.Weighting,
-                WeightingMethod = a.WeightingMethod,
-            });
+            deltas.Add(
+                new CompareCpbBand
+                {
+                    Label = a.Label,
+                    CenterFrequencyHz = a.CenterFrequencyHz,
+                    LowerFrequencyHz = a.LowerFrequencyHz,
+                    UpperFrequencyHz = a.UpperFrequencyHz,
+                    LevelDb = deltaDb,
+                    Weighting = a.Weighting,
+                    WeightingMethod = a.WeightingMethod,
+                }
+            );
         }
 
         return deltas;

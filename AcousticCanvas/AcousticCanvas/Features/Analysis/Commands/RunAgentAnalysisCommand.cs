@@ -1,5 +1,5 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Domain;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Commands;
 

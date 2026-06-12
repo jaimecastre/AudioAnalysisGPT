@@ -25,7 +25,7 @@ export function formatDbFs(value: number | null | undefined): string {
     return '—';
   }
 
-  return `${value.toFixed(1)} dBFS`;
+  return `${value.toFixed(1)} dB re 20 µPa`;
 }
 
 export function formatDb(value: number | null | undefined): string {

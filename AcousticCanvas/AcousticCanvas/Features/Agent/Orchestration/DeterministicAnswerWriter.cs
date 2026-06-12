@@ -8,7 +8,10 @@ namespace AcousticCanvas.Features.Agent.Orchestration;
 // when no OpenAI key is configured.
 public static class DeterministicAnswerWriter
 {
-    public static FinalAnswerResponse Write(DeterministicFactPlan plan, EvidencePackage evidencePackage)
+    public static FinalAnswerResponse Write(
+        DeterministicFactPlan plan,
+        EvidencePackage evidencePackage
+    )
     {
         var evidenceType = plan.ToolName == "run_basic_metrics" ? "basic_metrics" : "metadata";
 
@@ -28,7 +31,10 @@ public static class DeterministicAnswerWriter
                 Answer = "I couldn't read that measurement for the selected file.",
                 EvidenceReferences = [],
                 Confidence = "low",
-                Limitations = ["The requested measurement could not be computed for the selected file."],
+                Limitations =
+                [
+                    "The requested measurement could not be computed for the selected file.",
+                ],
                 SuggestedNextSteps = [],
             };
         }
@@ -39,7 +45,11 @@ public static class DeterministicAnswerWriter
 
         foreach (var evidenceItem in matchingItems)
         {
-            var sentence = BuildSentenceForItem(plan.RequestedFields, evidenceItem, includeFileLabel);
+            var sentence = BuildSentenceForItem(
+                plan.RequestedFields,
+                evidenceItem,
+                includeFileLabel
+            );
             if (!string.IsNullOrWhiteSpace(sentence))
             {
                 answerLines.Add(sentence);
@@ -54,7 +64,10 @@ public static class DeterministicAnswerWriter
                 Answer = "I couldn't read that measurement for the selected file.",
                 EvidenceReferences = [],
                 Confidence = "low",
-                Limitations = ["The requested measurement could not be computed for the selected file."],
+                Limitations =
+                [
+                    "The requested measurement could not be computed for the selected file.",
+                ],
                 SuggestedNextSteps = [],
             };
         }
@@ -72,7 +85,8 @@ public static class DeterministicAnswerWriter
     private static string BuildSentenceForItem(
         IReadOnlyList<string> requestedFields,
         EvidenceItem evidenceItem,
-        bool includeFileLabel)
+        bool includeFileLabel
+    )
     {
         var phrases = new List<string>();
 
@@ -97,7 +111,8 @@ public static class DeterministicAnswerWriter
             return body;
         }
 
-        var fileLabel = ReadString(evidenceItem.Data, "fileName")
+        var fileLabel =
+            ReadString(evidenceItem.Data, "fileName")
             ?? ReadString(evidenceItem.Data, "fileId")
             ?? "File";
 

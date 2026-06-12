@@ -99,15 +99,15 @@ function LevelMetricsTable({ fileA, fileB, diff, labelA, labelB }: LevelMetricsT
   const rows = [
     {
       label: 'Peak',
-      valueA: `${fileA.peakDb.toFixed(2)} dBFS`,
-      valueB: `${fileB.peakDb.toFixed(2)} dBFS`,
+      valueA: `${fileA.peakDb.toFixed(2)} dB re 20 µPa`,
+      valueB: `${fileB.peakDb.toFixed(2)} dB re 20 µPa`,
       delta: diff.peakDeltaDb,
       higherLabel: diff.higherPeakFileId === fileA.fileId ? labelA : labelB,
     },
     {
       label: 'RMS',
-      valueA: `${fileA.rmsDb.toFixed(2)} dBFS`,
-      valueB: `${fileB.rmsDb.toFixed(2)} dBFS`,
+      valueA: `${fileA.rmsDb.toFixed(2)} dB re 20 µPa`,
+      valueB: `${fileB.rmsDb.toFixed(2)} dB re 20 µPa`,
       delta: diff.rmsDeltaDb,
       higherLabel: diff.higherRmsFileId === fileA.fileId ? labelA : labelB,
     },
@@ -503,7 +503,7 @@ export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
               labelB={labelB}
             />
             <div className={styles.tableEmptyState}>
-              Relative comparison only: values are computed on uncalibrated digital-amplitude samples until physical SPL calibration is configured.
+              Levels use the 1 FS = 1 Pa convention (0 dBFS ≈ 91 dB re 20 µPa).
             </div>
           </>
         )}

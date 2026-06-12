@@ -1,7 +1,7 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.Analysis.Services;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Handlers;
 
@@ -11,7 +11,10 @@ public class RunAgentAnalysisHandler(SignalAnalysisService analysisService)
     private const int DefaultFftSize = 8192;
     private const double DefaultOverlap = 0.5;
 
-    public override async Task<AgentAnalysisResult> ExecuteAsync(RunAgentAnalysisCommand command, CancellationToken ct)
+    public override async Task<AgentAnalysisResult> ExecuteAsync(
+        RunAgentAnalysisCommand command,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
@@ -35,10 +38,15 @@ public class RunAgentAnalysisHandler(SignalAnalysisService analysisService)
             return await RunSpectrumAnalysis(command, ct);
         }
 
-        throw new ArgumentException($"Unknown analysis kind: '{command.Kind}'. Supported values: file_info, level, spectrum.");
+        throw new ArgumentException(
+            $"Unknown analysis kind: '{command.Kind}'. Supported values: file_info, level, spectrum."
+        );
     }
 
-    private Task<AgentAnalysisResult> RunFileInfoAnalysis(RunAgentAnalysisCommand command, CancellationToken ct)
+    private Task<AgentAnalysisResult> RunFileInfoAnalysis(
+        RunAgentAnalysisCommand command,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
@@ -71,12 +79,16 @@ public class RunAgentAnalysisHandler(SignalAnalysisService analysisService)
         return Task.FromResult(result);
     }
 
-    private Task<AgentAnalysisResult> RunLevelAnalysis(RunAgentAnalysisCommand command, CancellationToken ct)
+    private Task<AgentAnalysisResult> RunLevelAnalysis(
+        RunAgentAnalysisCommand command,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
         var fullResult = analysisService.Analyze(command.FilePath);
-        var firstChannel = fullResult.Level.Channels.Count > 0 ? fullResult.Level.Channels[0] : null;
+        var firstChannel =
+            fullResult.Level.Channels.Count > 0 ? fullResult.Level.Channels[0] : null;
 
         var summary = new Dictionary<string, object?>
         {
@@ -105,7 +117,10 @@ public class RunAgentAnalysisHandler(SignalAnalysisService analysisService)
         return Task.FromResult(result);
     }
 
-    private async Task<AgentAnalysisResult> RunSpectrumAnalysis(RunAgentAnalysisCommand command, CancellationToken ct)
+    private async Task<AgentAnalysisResult> RunSpectrumAnalysis(
+        RunAgentAnalysisCommand command,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
@@ -126,8 +141,8 @@ public class RunAgentAnalysisHandler(SignalAnalysisService analysisService)
         var spectrumResult = await spectrumQuery.ExecuteAsync(ct);
 
         var firstChannel = spectrumResult.Channels.Count > 0 ? spectrumResult.Channels[0] : null;
-        var strongestTonalPeak = spectrumResult.Channels
-            .SelectMany(channel => channel.TonalPeaks)
+        var strongestTonalPeak = spectrumResult
+            .Channels.SelectMany(channel => channel.TonalPeaks)
             .OrderByDescending(peak => peak.ProminenceDb)
             .ThenByDescending(peak => peak.MagnitudeDb)
             .FirstOrDefault();

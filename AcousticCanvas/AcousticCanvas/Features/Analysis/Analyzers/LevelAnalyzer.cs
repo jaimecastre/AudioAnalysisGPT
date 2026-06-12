@@ -13,21 +13,16 @@ public static class LevelAnalyzer
             channelResults[index] = AnalyzeChannel(channels[index]);
         }
 
-        var combined = channels.Count > 1
-            ? AnalyzeCombined(channels)
-            : null;
+        var combined = channels.Count > 1 ? AnalyzeCombined(channels) : null;
 
-        return new LevelAnalysis
-        {
-            Channels = channelResults,
-            Combined = combined,
-        };
+        return new LevelAnalysis { Channels = channelResults, Combined = combined };
     }
 
     public static LevelAnalysis Analyze(
         IReadOnlyList<SignalChannel> channels,
         double startSeconds,
-        double endSeconds)
+        double endSeconds
+    )
     {
         if (channels.Count == 0)
         {
@@ -52,18 +47,14 @@ public static class LevelAnalyzer
                 dbReference: channel.DbReference,
                 isCalibrated: channel.Calibration?.IsCalibrated ?? false,
                 startIndex: startSample,
-                endIndex: endSample);
+                endIndex: endSample
+            );
         }
 
-        var combined = channels.Count > 1
-            ? AnalyzeCombinedRegion(channels, startSample, endSample)
-            : null;
+        var combined =
+            channels.Count > 1 ? AnalyzeCombinedRegion(channels, startSample, endSample) : null;
 
-        return new LevelAnalysis
-        {
-            Channels = channelResults,
-            Combined = combined,
-        };
+        return new LevelAnalysis { Channels = channelResults, Combined = combined };
     }
 
     public static ChannelLevelAnalysis AnalyzeChannel(SignalChannel channel)
@@ -82,7 +73,8 @@ public static class LevelAnalyzer
     private static ChannelLevelAnalysis AnalyzeCombinedRegion(
         IReadOnlyList<SignalChannel> channels,
         int startSample,
-        int endSample)
+        int endSample
+    )
     {
         var regionLength = endSample - startSample;
         var channelCount = channels.Count;
@@ -111,7 +103,8 @@ public static class LevelAnalyzer
             unit: referenceChannel.Unit,
             samples: combinedSamples,
             dbReference: referenceChannel.DbReference,
-            isCalibrated: referenceChannel.Calibration?.IsCalibrated ?? false);
+            isCalibrated: referenceChannel.Calibration?.IsCalibrated ?? false
+        );
     }
 
     private static ChannelLevelAnalysis AnalyzeCombined(IReadOnlyList<SignalChannel> channels)
@@ -165,14 +158,22 @@ public static class LevelAnalyzer
         DbReference? dbReference,
         bool isCalibrated,
         int startIndex = 0,
-        int endIndex = -1)
+        int endIndex = -1
+    )
     {
         var end = endIndex < 0 ? samples.Length : endIndex;
         var sampleCount = end - startIndex;
 
         if (sampleCount <= 0)
         {
-            return BuildSilentResult(channelId, channelName, quantity, unit, dbReference, isCalibrated);
+            return BuildSilentResult(
+                channelId,
+                channelName,
+                quantity,
+                unit,
+                dbReference,
+                isCalibrated
+            );
         }
 
         var min = double.MaxValue;
@@ -183,8 +184,10 @@ public static class LevelAnalyzer
         for (var i = startIndex; i < end; i++)
         {
             var sample = (double)samples[i];
-            if (sample < min) min = sample;
-            if (sample > max) max = sample;
+            if (sample < min)
+                min = sample;
+            if (sample > max)
+                max = sample;
             sum += sample;
             sumSquares += sample * sample;
         }
@@ -197,7 +200,9 @@ public static class LevelAnalyzer
         var rmsDb = ComputeDb(rms, dbReference);
 
         var crestFactor = rms > 0.0 ? peak / rms : (double?)null;
-        var crestFactorDb = crestFactor.HasValue ? 20.0 * Math.Log10(crestFactor.Value) : (double?)null;
+        var crestFactorDb = crestFactor.HasValue
+            ? 20.0 * Math.Log10(crestFactor.Value)
+            : (double?)null;
 
         return new ChannelLevelAnalysis
         {
@@ -236,7 +241,8 @@ public static class LevelAnalyzer
         string quantity,
         string unit,
         DbReference? dbReference,
-        bool isCalibrated)
+        bool isCalibrated
+    )
     {
         return new ChannelLevelAnalysis
         {

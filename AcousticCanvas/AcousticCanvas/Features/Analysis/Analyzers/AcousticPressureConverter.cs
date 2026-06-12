@@ -41,16 +41,18 @@ public static class AcousticPressureConverter
             SignalUnitKind.PressurePascal => 1.0,
 
             SignalUnitKind.CalibratedPressure
-                when metadata.Calibration is { PascalsPerFullScale: > 0 } =>
-                metadata.Calibration.PascalsPerFullScale,
+                when metadata.Calibration is { PascalsPerFullScale: > 0 } => metadata
+                .Calibration
+                .PascalsPerFullScale,
 
-            SignalUnitKind.CalibratedPressure =>
-                throw new InvalidOperationException(
-                    "dB SPL analysis requires a valid acoustic calibration with PascalsPerFullScale > 0."),
+            SignalUnitKind.CalibratedPressure => throw new InvalidOperationException(
+                "dB SPL analysis requires a valid acoustic calibration with PascalsPerFullScale > 0."
+            ),
 
             _ => throw new InvalidOperationException(
-                "dB SPL analysis requires pressure data in Pa or valid acoustic calibration. " +
-                "This channel is DigitalFullScale — provide a calibration factor or mark it as pressure.")
+                "dB SPL analysis requires pressure data in Pa or valid acoustic calibration. "
+                    + "This channel is DigitalFullScale — provide a calibration factor or mark it as pressure."
+            ),
         };
 
     // -------------------------------------------------------------------------
@@ -106,7 +108,8 @@ public static class AcousticPressureConverter
     public static string ResolveCalibrationState(SignalPhysicalMetadata? metadata) =>
         metadata?.UnitKind switch
         {
-            SignalUnitKind.PressurePascal when metadata.Calibration?.IsUserAssumed == true => "assumed_pressure",
+            SignalUnitKind.PressurePascal when metadata.Calibration?.IsUserAssumed == true =>
+                "assumed_pressure",
             SignalUnitKind.PressurePascal => "pressure_signal",
             SignalUnitKind.CalibratedPressure => "calibrated",
             _ => "digital_full_scale",

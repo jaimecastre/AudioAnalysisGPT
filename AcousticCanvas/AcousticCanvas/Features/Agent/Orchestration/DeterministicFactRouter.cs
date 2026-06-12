@@ -45,13 +45,7 @@ public static class DeterministicFactRouter
         "different between",
     ];
 
-    private static readonly string[] SpectralPhrases =
-    [
-        "frequency",
-        "spectrum",
-        "spectral",
-        "fft",
-    ];
+    private static readonly string[] SpectralPhrases = ["frequency", "spectrum", "spectral", "fft"];
 
     private static readonly string[] FullMetadataPhrases =
     [
@@ -160,22 +154,39 @@ public static class DeterministicFactRouter
             fields.Add("fileName");
         }
 
-        if (ContainsWord(normalized, "duration") || ContainsWord(normalized, "length") || normalized.Contains("how long"))
+        if (
+            ContainsWord(normalized, "duration")
+            || ContainsWord(normalized, "length")
+            || normalized.Contains("how long")
+        )
         {
             fields.Add("duration");
         }
 
-        if (normalized.Contains("sample rate") || normalized.Contains("sampling rate") || normalized.Contains("samplerate"))
+        if (
+            normalized.Contains("sample rate")
+            || normalized.Contains("sampling rate")
+            || normalized.Contains("samplerate")
+        )
         {
             fields.Add("sampleRate");
         }
 
-        if (ContainsWord(normalized, "channel") || ContainsWord(normalized, "channels") || ContainsWord(normalized, "mono") || ContainsWord(normalized, "stereo"))
+        if (
+            ContainsWord(normalized, "channel")
+            || ContainsWord(normalized, "channels")
+            || ContainsWord(normalized, "mono")
+            || ContainsWord(normalized, "stereo")
+        )
         {
             fields.Add("channels");
         }
 
-        if (normalized.Contains("bit depth") || normalized.Contains("bit-depth") || normalized.Contains("bitdepth"))
+        if (
+            normalized.Contains("bit depth")
+            || normalized.Contains("bit-depth")
+            || normalized.Contains("bitdepth")
+        )
         {
             fields.Add("bitDepth");
         }

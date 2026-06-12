@@ -23,7 +23,8 @@ public static class AgentToolRegistry
             ["run_basic_metrics"] = new AgentToolDefinition
             {
                 Name = "run_basic_metrics",
-                Description = "Compute peak level, RMS level, crest factor, DC offset, and digital clipping detection.",
+                Description =
+                    "Compute peak level, RMS level, crest factor, DC offset, and digital clipping detection.",
                 MaxFileCount = 10,
                 MaxFileDurationSeconds = 300.0,
             },
@@ -44,28 +45,32 @@ public static class AgentToolRegistry
             ["run_cpb"] = new AgentToolDefinition
             {
                 Name = "run_cpb",
-                Description = "Compute octave or 1/3-octave constant-percentage-bandwidth band levels.",
+                Description =
+                    "Compute octave or 1/3-octave constant-percentage-bandwidth band levels.",
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
             ["run_sound_quality_metrics"] = new AgentToolDefinition
             {
                 Name = "run_sound_quality_metrics",
-                Description = "Compute MoSQITo psychoacoustic loudness, sharpness, and roughness metrics.",
+                Description =
+                    "Compute MoSQITo psychoacoustic loudness, sharpness, and roughness metrics.",
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
             ["run_event_detection"] = new AgentToolDefinition
             {
                 Name = "run_event_detection",
-                Description = "Detect audio events: clipping, silence gaps, loudest region, or transient onsets.",
+                Description =
+                    "Detect audio events: clipping, silence gaps, loudest region, or transient onsets.",
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
             ["run_findings"] = new AgentToolDefinition
             {
                 Name = "run_findings",
-                Description = "Run the full findings pipeline for a single file: detects clipping, silence gaps, high crest factor, DC offset, and tonal peaks. Returns a structured list of findings with severity, confidence, evidence, and suggested next steps.",
+                Description =
+                    "Run the full findings pipeline for a single file: detects clipping, silence gaps, high crest factor, DC offset, and tonal peaks. Returns a structured list of findings with severity, confidence, evidence, and suggested next steps.",
                 MaxFileCount = 1,
                 MaxFileDurationSeconds = 300.0,
             },

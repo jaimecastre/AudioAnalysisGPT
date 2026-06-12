@@ -2,8 +2,7 @@ using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Commands;
 
-public record SoundQualitySummaryRequest(
-    string FileId) : ICommand<SoundQualitySummaryResult>;
+public record SoundQualitySummaryRequest(string FileId) : ICommand<SoundQualitySummaryResult>;
 
 public record SoundQualitySummaryResult(
     string FileId,
@@ -11,10 +10,7 @@ public record SoundQualitySummaryResult(
     string OverallAssessment,
     IReadOnlyList<string> KeyFindings,
     IReadOnlyList<TopMetric> TopMetrics,
-    IReadOnlyList<string> Recommendations);
+    IReadOnlyList<string> Recommendations
+);
 
-public record TopMetric(
-    string Name,
-    double Value,
-    string Unit,
-    string Assessment);
+public record TopMetric(string Name, double Value, string Unit, string Assessment);

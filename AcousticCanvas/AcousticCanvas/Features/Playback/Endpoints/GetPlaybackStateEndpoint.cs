@@ -1,6 +1,6 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Playback.Commands;
 using AcousticCanvas.Features.Playback.Handlers;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Playback.Endpoints;
 
@@ -13,7 +13,10 @@ public class GetPlaybackStateEndpoint(GetPlaybackStateHandler handler)
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(GetPlaybackStateRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(
+        GetPlaybackStateRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var query = new GetPlaybackStateQuery(request.FileId);
 

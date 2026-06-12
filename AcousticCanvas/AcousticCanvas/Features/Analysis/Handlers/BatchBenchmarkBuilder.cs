@@ -24,7 +24,8 @@ public static class BatchBenchmarkBuilder
 
     public static BatchBenchmarkResult Build(
         IReadOnlyList<BatchBenchmarkSource> sources,
-        DateTimeOffset ranAt)
+        DateTimeOffset ranAt
+    )
     {
         var rows = new List<BatchBenchmarkFileRow>();
         foreach (var source in sources)
@@ -42,7 +43,8 @@ public static class BatchBenchmarkBuilder
             Rankings: rankings,
             Outliers: outliers,
             Limitations: limitations,
-            RanAt: ranAt);
+            RanAt: ranAt
+        );
     }
 
     private static BatchBenchmarkFileRow BuildRow(BatchBenchmarkSource source)
@@ -72,34 +74,45 @@ public static class BatchBenchmarkBuilder
             RoughnessAsper: summary.SoundQuality?.RoughnessAsper,
             SoundQualityUnavailableReason: summary.SoundQualityUnavailableReason,
             FlagLabels: BuildInitialFlags(findings, summary.SoundQualityUnavailableReason),
-            TopFindings: topFindings);
+            TopFindings: topFindings
+        );
     }
 
-    private static IReadOnlyList<BatchBenchmarkRanking> BuildRankings(IReadOnlyList<BatchBenchmarkFileRow> rows)
+    private static IReadOnlyList<BatchBenchmarkRanking> BuildRankings(
+        IReadOnlyList<BatchBenchmarkFileRow> rows
+    )
     {
         var rankings = new List<BatchBenchmarkRanking>();
 
         foreach (var metricKey in MetricKeys)
         {
-            var rankedRows = rows
-                .Select(row => new { Row = row, Value = GetMetricValue(row, metricKey) })
+            var rankedRows = rows.Select(row => new
+                {
+                    Row = row,
+                    Value = GetMetricValue(row, metricKey),
+                })
                 .Where(item => item.Value.HasValue)
                 .OrderByDescending(item => item.Value!.Value)
                 .ThenBy(item => item.Row.FileName, StringComparer.OrdinalIgnoreCase)
                 .Select(item => item.Row.FileId)
                 .ToArray();
 
-            rankings.Add(new BatchBenchmarkRanking(
-                Metric: metricKey,
-                Label: GetMetricLabel(metricKey),
-                Direction: "descending",
-                FileIds: rankedRows));
+            rankings.Add(
+                new BatchBenchmarkRanking(
+                    Metric: metricKey,
+                    Label: GetMetricLabel(metricKey),
+                    Direction: "descending",
+                    FileIds: rankedRows
+                )
+            );
         }
 
         return rankings;
     }
 
-    private static IReadOnlyList<BatchBenchmarkOutlier> BuildOutliers(IReadOnlyList<BatchBenchmarkFileRow> rows)
+    private static IReadOnlyList<BatchBenchmarkOutlier> BuildOutliers(
+        IReadOnlyList<BatchBenchmarkFileRow> rows
+    )
     {
         if (rows.Count < MinimumOutlierSampleCount)
         {
@@ -110,8 +123,11 @@ public static class BatchBenchmarkBuilder
 
         foreach (var metricKey in MetricKeys)
         {
-            var values = rows
-                .Select(row => new { Row = row, Value = GetMetricValue(row, metricKey) })
+            var values = rows.Select(row => new
+                {
+                    Row = row,
+                    Value = GetMetricValue(row, metricKey),
+                })
                 .Where(item => item.Value.HasValue)
                 .OrderBy(item => item.Value!.Value)
                 .ToArray();
@@ -139,11 +155,29 @@ public static class BatchBenchmarkBuilder
                 var value = item.Value!.Value;
                 if (value < lowerFence)
                 {
-                    outliers.Add(BuildOutlier(item.Row.FileId, metricKey, "low", value, lowerFence, upperFence));
+                    outliers.Add(
+                        BuildOutlier(
+                            item.Row.FileId,
+                            metricKey,
+                            "low",
+                            value,
+                            lowerFence,
+                            upperFence
+                        )
+                    );
                 }
                 else if (value > upperFence)
                 {
-                    outliers.Add(BuildOutlier(item.Row.FileId, metricKey, "high", value, lowerFence, upperFence));
+                    outliers.Add(
+                        BuildOutlier(
+                            item.Row.FileId,
+                            metricKey,
+                            "high",
+                            value,
+                            lowerFence,
+                            upperFence
+                        )
+                    );
                 }
             }
         }
@@ -157,7 +191,8 @@ public static class BatchBenchmarkBuilder
         string direction,
         double value,
         double lowerFence,
-        double upperFence)
+        double upperFence
+    )
     {
         return new BatchBenchmarkOutlier(
             FileId: fileId,
@@ -166,12 +201,14 @@ public static class BatchBenchmarkBuilder
             Direction: direction,
             Value: Math.Round(value, 4),
             LowerFence: Math.Round(lowerFence, 4),
-            UpperFence: Math.Round(upperFence, 4));
+            UpperFence: Math.Round(upperFence, 4)
+        );
     }
 
     private static IReadOnlyList<BatchBenchmarkFileRow> ApplyOutlierFlags(
         IReadOnlyList<BatchBenchmarkFileRow> rows,
-        IReadOnlyList<BatchBenchmarkOutlier> outliers)
+        IReadOnlyList<BatchBenchmarkOutlier> outliers
+    )
     {
         var updatedRows = new List<BatchBenchmarkFileRow>();
 
@@ -182,12 +219,19 @@ public static class BatchBenchmarkBuilder
 
             foreach (var outlier in rowOutliers)
             {
-                labels.Add(outlier.Direction == "high"
-                    ? $"High {outlier.Label.ToLowerInvariant()}"
-                    : $"Low {outlier.Label.ToLowerInvariant()}");
+                labels.Add(
+                    outlier.Direction == "high"
+                        ? $"High {outlier.Label.ToLowerInvariant()}"
+                        : $"Low {outlier.Label.ToLowerInvariant()}"
+                );
             }
 
-            updatedRows.Add(row with { FlagLabels = labels.Distinct(StringComparer.OrdinalIgnoreCase).ToArray() });
+            updatedRows.Add(
+                row with
+                {
+                    FlagLabels = labels.Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
+                }
+            );
         }
 
         return updatedRows;
@@ -195,7 +239,8 @@ public static class BatchBenchmarkBuilder
 
     private static IReadOnlyList<string> BuildLimitations(
         IReadOnlyList<BatchBenchmarkFileRow> rows,
-        int fileCount)
+        int fileCount
+    )
     {
         var limitations = new List<string>
         {
@@ -204,7 +249,9 @@ public static class BatchBenchmarkBuilder
 
         if (fileCount < MinimumOutlierSampleCount)
         {
-            limitations.Add("Statistical outlier flags require at least 4 files; rankings are still shown.");
+            limitations.Add(
+                "Statistical outlier flags require at least 4 files; rankings are still shown."
+            );
         }
 
         foreach (var row in rows)
@@ -220,7 +267,8 @@ public static class BatchBenchmarkBuilder
 
     private static IReadOnlyList<string> BuildInitialFlags(
         IReadOnlyList<Finding> findings,
-        string? soundQualityUnavailableReason)
+        string? soundQualityUnavailableReason
+    )
     {
         var labels = new List<string>();
 
@@ -242,7 +290,9 @@ public static class BatchBenchmarkBuilder
         return labels;
     }
 
-    private static IReadOnlyList<BatchBenchmarkFindingSummary> BuildTopFindings(IReadOnlyList<Finding> findings)
+    private static IReadOnlyList<BatchBenchmarkFindingSummary> BuildTopFindings(
+        IReadOnlyList<Finding> findings
+    )
     {
         return findings
             .OrderBy(finding => SeverityRank(finding.Severity))
@@ -255,11 +305,14 @@ public static class BatchBenchmarkBuilder
                 Title: finding.Title,
                 StartSeconds: finding.StartSeconds,
                 EndSeconds: finding.EndSeconds,
-                FrequencyHz: finding.FrequencyHz))
+                FrequencyHz: finding.FrequencyHz
+            ))
             .ToArray();
     }
 
-    private static (double? FrequencyHz, double? ProminenceDb) FindStrongestTonalPeak(IReadOnlyList<Finding> findings)
+    private static (double? FrequencyHz, double? ProminenceDb) FindStrongestTonalPeak(
+        IReadOnlyList<Finding> findings
+    )
     {
         Finding? strongestFinding = null;
         var strongestProminence = double.NegativeInfinity;
@@ -336,7 +389,8 @@ public static class BatchBenchmarkBuilder
         }
 
         var weight = position - lowerIndex;
-        return sortedValues[lowerIndex] + ((sortedValues[upperIndex] - sortedValues[lowerIndex]) * weight);
+        return sortedValues[lowerIndex]
+            + ((sortedValues[upperIndex] - sortedValues[lowerIndex]) * weight);
     }
 
     private static double? ConvertToNullableDouble(object? value)

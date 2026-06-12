@@ -5,18 +5,20 @@ public static class AgentPromptBuilder
     public static string BuildPlannerSystemPrompt(
         string availableToolsSummary,
         IReadOnlyList<string> fileIds,
-        IReadOnlyList<string> selectedFileNames)
+        IReadOnlyList<string> selectedFileNames
+    )
     {
         var fileListLines = new System.Text.StringBuilder();
         var fileCount = Math.Min(fileIds.Count, selectedFileNames.Count);
         for (var index = 0; index < fileCount; index++)
         {
-            fileListLines.AppendLine($"  File {index + 1}: id=\"{fileIds[index]}\" name=\"{selectedFileNames[index]}\"");
+            fileListLines.AppendLine(
+                $"  File {index + 1}: id=\"{fileIds[index]}\" name=\"{selectedFileNames[index]}\""
+            );
         }
 
-        var fileListText = fileCount > 0
-            ? fileListLines.ToString().TrimEnd()
-            : "  No files provided.";
+        var fileListText =
+            fileCount > 0 ? fileListLines.ToString().TrimEnd() : "  No files provided.";
 
         return $$"""
             You are the AcousticGPT planning agent.

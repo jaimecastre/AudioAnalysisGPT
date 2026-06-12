@@ -1,6 +1,6 @@
+using AcousticCanvas.Features.Waveform.Commands;
 using FastEndpoints;
 using NAudio.Wave;
-using AcousticCanvas.Features.Waveform.Commands;
 
 namespace AcousticCanvas.Features.Waveform.Handlers;
 
@@ -54,9 +54,14 @@ public class GetWaveformHandler : CommandHandler<GetWaveformQuery, WaveformResul
         return new AudioMetadata(sampleRate, channels, durationSeconds, totalSamples);
     }
 
-    private static float[] ExtractBucketPeaks(string filePath, AudioMetadata metadata, int targetPoints)
+    private static float[] ExtractBucketPeaks(
+        string filePath,
+        AudioMetadata metadata,
+        int targetPoints
+    )
     {
-        var samplesPerBucket = (int)Math.Max(1, metadata.TotalSamples / targetPoints / metadata.Channels);
+        var samplesPerBucket = (int)
+            Math.Max(1, metadata.TotalSamples / targetPoints / metadata.Channels);
         var readBuffer = new float[samplesPerBucket * metadata.Channels];
         var peaksInterleaved = new List<float>(targetPoints * 2);
 
@@ -85,7 +90,8 @@ public class GetWaveformHandler : CommandHandler<GetWaveformQuery, WaveformResul
         var min = float.MaxValue;
         for (var index = 0; index < count; index++)
         {
-            if (buffer[index] < min) min = buffer[index];
+            if (buffer[index] < min)
+                min = buffer[index];
         }
         return min == float.MaxValue ? 0f : min;
     }
@@ -95,7 +101,8 @@ public class GetWaveformHandler : CommandHandler<GetWaveformQuery, WaveformResul
         var max = float.MinValue;
         for (var index = 0; index < count; index++)
         {
-            if (buffer[index] > max) max = buffer[index];
+            if (buffer[index] > max)
+                max = buffer[index];
         }
         return max == float.MinValue ? 0f : max;
     }
@@ -105,7 +112,8 @@ public class GetWaveformHandler : CommandHandler<GetWaveformQuery, WaveformResul
         var min = float.MaxValue;
         for (var index = 0; index < peaks.Length; index += 2)
         {
-            if (peaks[index] < min) min = peaks[index];
+            if (peaks[index] < min)
+                min = peaks[index];
         }
         return min == float.MaxValue ? 0f : min;
     }
@@ -115,10 +123,16 @@ public class GetWaveformHandler : CommandHandler<GetWaveformQuery, WaveformResul
         var max = float.MinValue;
         for (var index = 1; index < peaks.Length; index += 2)
         {
-            if (peaks[index] > max) max = peaks[index];
+            if (peaks[index] > max)
+                max = peaks[index];
         }
         return max == float.MinValue ? 0f : max;
     }
 }
 
-internal record AudioMetadata(int SampleRate, int Channels, double DurationSeconds, long TotalSamples);
+internal record AudioMetadata(
+    int SampleRate,
+    int Channels,
+    double DurationSeconds,
+    long TotalSamples
+);

@@ -1,7 +1,7 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.Analysis.Services;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Handlers;
 

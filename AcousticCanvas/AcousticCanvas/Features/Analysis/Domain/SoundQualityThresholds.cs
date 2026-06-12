@@ -22,12 +22,19 @@ public static class SoundQualityThresholds
 
     public static string Assess(double value, double good, double fair)
     {
-        if (value <= good) return "Good";
-        if (value <= fair) return "Fair";
+        if (value <= good)
+            return "Good";
+        if (value <= fair)
+            return "Fair";
         return "Poor";
     }
 
-    public static string AssessLoudness(double value) => Assess(value, Loudness.Good, Loudness.Fair);
-    public static string AssessSharpness(double value) => Assess(value, Sharpness.Good, Sharpness.Fair);
-    public static string AssessRoughness(double value) => Assess(value, Roughness.Good, Roughness.Fair);
+    public static string AssessLoudness(double value) =>
+        Assess(value, Loudness.Good, Loudness.Fair);
+
+    public static string AssessSharpness(double value) =>
+        Assess(value, Sharpness.Good, Sharpness.Fair);
+
+    public static string AssessRoughness(double value) =>
+        Assess(value, Roughness.Good, Roughness.Fair);
 }

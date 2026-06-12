@@ -1,7 +1,8 @@
-using FastEndpoints;
+using AcousticCanvas.Features.Analysis.Analyzers;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.Analysis.Services;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Handlers;
 
@@ -21,7 +22,10 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
 
     private const int LoudestRegionWindowMs = 500;
 
-    public override Task<FindEventsResult> ExecuteAsync(FindEventsCommand command, CancellationToken ct)
+    public override Task<FindEventsResult> ExecuteAsync(
+        FindEventsCommand command,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
@@ -34,7 +38,9 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
         var kindIsValid = Array.Exists(validKinds, k => k == command.Kind);
         if (!kindIsValid)
         {
-            throw new ArgumentException($"Unknown event kind: '{command.Kind}'. Supported: {string.Join(", ", validKinds)}.");
+            throw new ArgumentException(
+                $"Unknown event kind: '{command.Kind}'. Supported: {string.Join(", ", validKinds)}."
+            );
         }
 
         var signalFile = analysisService.ImportFile(command.FilePath);
@@ -42,16 +48,18 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
 
         if (channel is null)
         {
-            return Task.FromResult(new FindEventsResult
-            {
-                FileId = command.FilePath,
-                Kind = command.Kind,
-                Events = [],
-                EventCount = 0,
-                RegionStartSeconds = 0.0,
-                RegionEndSeconds = 0.0,
-                RanAt = DateTimeOffset.UtcNow,
-            });
+            return Task.FromResult(
+                new FindEventsResult
+                {
+                    FileId = command.FilePath,
+                    Kind = command.Kind,
+                    Events = [],
+                    EventCount = 0,
+                    RegionStartSeconds = 0.0,
+                    RegionEndSeconds = 0.0,
+                    RanAt = DateTimeOffset.UtcNow,
+                }
+            );
         }
 
         var durationSeconds = channel.SampleCount / (double)channel.SampleRate;
@@ -69,27 +77,58 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
 
         IReadOnlyList<AudioEvent> events = command.Kind switch
         {
-            "clipping" => FindClippingEvents(channel.Samples, startSample, endSample, channel.SampleRate, startSeconds),
-            "silence" => FindSilenceEvents(channel.Samples, startSample, endSample, channel.SampleRate, startSeconds),
-            "loudest" => FindLoudestRegion(channel.Samples, startSample, endSample, channel.SampleRate, startSeconds),
-            "transient" => FindTransientEvents(channel.Samples, startSample, endSample, channel.SampleRate, startSeconds),
+            "clipping" => FindClippingEvents(
+                channel.Samples,
+                startSample,
+                endSample,
+                channel.SampleRate,
+                startSeconds
+            ),
+            "silence" => FindSilenceEvents(
+                channel.Samples,
+                startSample,
+                endSample,
+                channel.SampleRate,
+                startSeconds
+            ),
+            "loudest" => FindLoudestRegion(
+                channel.Samples,
+                startSample,
+                endSample,
+                channel.SampleRate,
+                startSeconds
+            ),
+            "transient" => FindTransientEvents(
+                channel.Samples,
+                startSample,
+                endSample,
+                channel.SampleRate,
+                startSeconds
+            ),
             _ => [],
         };
 
-        return Task.FromResult(new FindEventsResult
-        {
-            FileId = command.FilePath,
-            Kind = command.Kind,
-            Events = events,
-            EventCount = events.Count,
-            RegionStartSeconds = startSeconds,
-            RegionEndSeconds = endSeconds,
-            RanAt = DateTimeOffset.UtcNow,
-        });
+        return Task.FromResult(
+            new FindEventsResult
+            {
+                FileId = command.FilePath,
+                Kind = command.Kind,
+                Events = events,
+                EventCount = events.Count,
+                RegionStartSeconds = startSeconds,
+                RegionEndSeconds = endSeconds,
+                RanAt = DateTimeOffset.UtcNow,
+            }
+        );
     }
 
     private static IReadOnlyList<AudioEvent> FindClippingEvents(
-        float[] samples, int startSample, int endSample, int sampleRate, double regionOffsetSeconds)
+        float[] samples,
+        int startSample,
+        int endSample,
+        int sampleRate,
+        double regionOffsetSeconds
+    )
     {
         var events = new List<AudioEvent>();
         var inClip = false;
@@ -110,13 +149,24 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
                 var clippedSampleCount = i - clipStart;
                 if (clippedSampleCount >= MinClippingSampleCount)
                 {
-                    var startSec = regionOffsetSeconds + (clipStart - startSample) / (double)sampleRate;
+                    var startSec =
+                        regionOffsetSeconds + (clipStart - startSample) / (double)sampleRate;
                     var endSec = regionOffsetSeconds + (i - startSample) / (double)sampleRate;
                     var peakAmplitude = FindPeakAbsolute(samples, clipStart, i);
-                    events.Add(MakeEvent("clipping",
-                        startSec, endSec,
-                        $"Clipping: {clippedSampleCount} consecutive saturated samples (≥ {ClippingThreshold:F2} FS)",
-                        new() { ["sampleCount"] = clippedSampleCount, ["peakAmplitude"] = Math.Round(peakAmplitude, 6), ["thresholdFs"] = ClippingThreshold }));
+                    events.Add(
+                        MakeEvent(
+                            "clipping",
+                            startSec,
+                            endSec,
+                            $"Clipping: {clippedSampleCount} consecutive saturated samples (≥ {ClippingThreshold:F2} FS)",
+                            new()
+                            {
+                                ["sampleCount"] = clippedSampleCount,
+                                ["peakAmplitude"] = Math.Round(peakAmplitude, 6),
+                                ["thresholdFs"] = ClippingThreshold,
+                            }
+                        )
+                    );
                 }
             }
         }
@@ -125,7 +175,12 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
     }
 
     private static IReadOnlyList<AudioEvent> FindSilenceEvents(
-        float[] samples, int startSample, int endSample, int sampleRate, double regionOffsetSeconds)
+        float[] samples,
+        int startSample,
+        int endSample,
+        int sampleRate,
+        double regionOffsetSeconds
+    )
     {
         var events = new List<AudioEvent>();
         var silenceThresholdLinear = Math.Pow(10.0, SilenceThresholdDb / 20.0);
@@ -148,12 +203,22 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
                 var silenceSamples = i - silenceStart;
                 if (silenceSamples >= minSilenceSamples)
                 {
-                    var startSec = regionOffsetSeconds + (silenceStart - startSample) / (double)sampleRate;
+                    var startSec =
+                        regionOffsetSeconds + (silenceStart - startSample) / (double)sampleRate;
                     var endSec = regionOffsetSeconds + (i - startSample) / (double)sampleRate;
-                    events.Add(MakeEvent("silence",
-                        startSec, endSec,
-                        $"Silence: {Math.Round(endSec - startSec, 3)}s below {SilenceThresholdDb} dBFS (EBU QC 0078B)",
-                        new() { ["thresholdDb"] = SilenceThresholdDb, ["sampleCount"] = silenceSamples }));
+                    events.Add(
+                        MakeEvent(
+                            "silence",
+                            startSec,
+                            endSec,
+                            $"Silence: {Math.Round(endSec - startSec, 3)}s below {SilenceThresholdDb} dBFS (EBU QC 0078B)",
+                            new()
+                            {
+                                ["thresholdDb"] = SilenceThresholdDb,
+                                ["sampleCount"] = silenceSamples,
+                            }
+                        )
+                    );
                 }
             }
         }
@@ -162,7 +227,12 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
     }
 
     private static IReadOnlyList<AudioEvent> FindLoudestRegion(
-        float[] samples, int startSample, int endSample, int sampleRate, double regionOffsetSeconds)
+        float[] samples,
+        int startSample,
+        int endSample,
+        int sampleRate,
+        double regionOffsetSeconds
+    )
     {
         var windowSamples = (int)((LoudestRegionWindowMs / 1000.0) * sampleRate);
         if (windowSamples <= 0 || endSample - startSample < windowSamples)
@@ -189,16 +259,29 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
         }
 
         var startSec = regionOffsetSeconds + (bestStart - startSample) / (double)sampleRate;
-        var endSec = regionOffsetSeconds + (bestStart + windowSamples - startSample) / (double)sampleRate;
-        var rmsDb = bestRms > 0.0 ? 20.0 * Math.Log10(bestRms) : double.NegativeInfinity;
+        var endSec =
+            regionOffsetSeconds + (bestStart + windowSamples - startSample) / (double)sampleRate;
+        var rmsDb = AcousticPressureConverter.ComputeDbSpl(bestRms);
 
-        return [ MakeEvent("loudest", startSec, endSec,
-            $"Loudest {LoudestRegionWindowMs}ms window: {Math.Round(rmsDb, 2)} dBFS RMS",
-            new() { ["rmsDb"] = Math.Round(rmsDb, 4), ["windowMs"] = LoudestRegionWindowMs }) ];
+        return
+        [
+            MakeEvent(
+                "loudest",
+                startSec,
+                endSec,
+                $"Loudest {LoudestRegionWindowMs}ms window: {Math.Round(rmsDb, 2)} dB re 20 µPa RMS",
+                new() { ["rmsDb"] = Math.Round(rmsDb, 4), ["windowMs"] = LoudestRegionWindowMs }
+            ),
+        ];
     }
 
     private static IReadOnlyList<AudioEvent> FindTransientEvents(
-        float[] samples, int startSample, int endSample, int sampleRate, double regionOffsetSeconds)
+        float[] samples,
+        int startSample,
+        int endSample,
+        int sampleRate,
+        double regionOffsetSeconds
+    )
     {
         var events = new List<AudioEvent>();
         // Energy-based onset detection following Müller FMP §6.1.1 (energy novelty function).
@@ -216,24 +299,42 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
         for (int i = startSample + releaseWindowSamples; i < endSample - attackWindowSamples; i++)
         {
             var attackRms = ComputeRms(samples, i, Math.Min(i + attackWindowSamples, endSample));
-            var releaseRms = ComputeRms(samples, Math.Max(startSample, i - releaseWindowSamples), i);
+            var releaseRms = ComputeRms(
+                samples,
+                Math.Max(startSample, i - releaseWindowSamples),
+                i
+            );
 
-            if (releaseRms <= 0.0) continue;
+            if (releaseRms <= 0.0)
+                continue;
 
             var ratioDb = 20.0 * Math.Log10(attackRms / releaseRms);
             if (ratioDb >= transientThreshold)
             {
                 var transientSec = regionOffsetSeconds + (i - startSample) / (double)sampleRate;
 
-                var tooClose = events.Count > 0 &&
-                    transientSec - events[events.Count - 1].StartSeconds < debounceSamples / (double)sampleRate;
+                var tooClose =
+                    events.Count > 0
+                    && transientSec - events[events.Count - 1].StartSeconds
+                        < debounceSamples / (double)sampleRate;
 
                 if (!tooClose)
                 {
                     var attackEndSec = transientSec + attackWindowSamples / (double)sampleRate;
-                    events.Add(MakeEvent("transient", transientSec, attackEndSec,
-                        $"Transient onset: {Math.Round(ratioDb, 1)} dB attack ratio",
-                        new() { ["attackRatioDb"] = Math.Round(ratioDb, 2), ["attackRms"] = Math.Round(attackRms, 6), ["preRms"] = Math.Round(releaseRms, 6) }));
+                    events.Add(
+                        MakeEvent(
+                            "transient",
+                            transientSec,
+                            attackEndSec,
+                            $"Transient onset: {Math.Round(ratioDb, 1)} dB attack ratio",
+                            new()
+                            {
+                                ["attackRatioDb"] = Math.Round(ratioDb, 2),
+                                ["attackRms"] = Math.Round(attackRms, 6),
+                                ["preRms"] = Math.Round(releaseRms, 6),
+                            }
+                        )
+                    );
                 }
             }
         }
@@ -242,8 +343,12 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
     }
 
     private static AudioEvent MakeEvent(
-        string kind, double startSec, double endSec,
-        string description, Dictionary<string, object?> metadata)
+        string kind,
+        double startSec,
+        double endSec,
+        string description,
+        Dictionary<string, object?> metadata
+    )
     {
         return new AudioEvent
         {
@@ -258,7 +363,8 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
 
     private static double ComputeRms(float[] samples, int from, int to)
     {
-        if (from >= to) return 0.0;
+        if (from >= to)
+            return 0.0;
         var sumSquares = 0.0;
         for (int i = from; i < to; i++)
         {
@@ -273,9 +379,9 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
         for (int i = from; i < to; i++)
         {
             var abs = Math.Abs(samples[i]);
-            if (abs > peak) peak = abs;
+            if (abs > peak)
+                peak = abs;
         }
         return peak;
     }
-
 }

@@ -1,5 +1,5 @@
-using AcousticCanvas.Features.Analysis.Domain;
 using System.Collections.Concurrent;
+using AcousticCanvas.Features.Analysis.Domain;
 
 namespace AcousticCanvas.Features.Analysis.Services;
 

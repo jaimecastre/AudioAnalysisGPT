@@ -1,5 +1,5 @@
-using AcousticCanvas.Features.Analysis.Domain;
 using System.Collections.Concurrent;
+using AcousticCanvas.Features.Analysis.Domain;
 
 namespace AcousticCanvas.Features.Analysis.Services;
 
@@ -15,7 +15,8 @@ public sealed class SpectrogramCacheStore
         double GainDb,
         double RangeDb,
         double MinDbSpl,
-        double MaxDbSpl);
+        double MaxDbSpl
+    );
 
     private readonly ConcurrentDictionary<SpectrogramCacheKey, SpectrogramAnalysis> _cache = new();
 
@@ -30,9 +31,21 @@ public sealed class SpectrogramCacheStore
         double rangeDb,
         double minDbSpl,
         double maxDbSpl,
-        out SpectrogramAnalysis? result)
+        out SpectrogramAnalysis? result
+    )
     {
-        var key = new SpectrogramCacheKey(filePath, startSeconds, endSeconds, fftSize, overlap, scale, gainDb, rangeDb, minDbSpl, maxDbSpl);
+        var key = new SpectrogramCacheKey(
+            filePath,
+            startSeconds,
+            endSeconds,
+            fftSize,
+            overlap,
+            scale,
+            gainDb,
+            rangeDb,
+            minDbSpl,
+            maxDbSpl
+        );
         return _cache.TryGetValue(key, out result);
     }
 
@@ -47,9 +60,21 @@ public sealed class SpectrogramCacheStore
         double rangeDb,
         double minDbSpl,
         double maxDbSpl,
-        SpectrogramAnalysis result)
+        SpectrogramAnalysis result
+    )
     {
-        var key = new SpectrogramCacheKey(filePath, startSeconds, endSeconds, fftSize, overlap, scale, gainDb, rangeDb, minDbSpl, maxDbSpl);
+        var key = new SpectrogramCacheKey(
+            filePath,
+            startSeconds,
+            endSeconds,
+            fftSize,
+            overlap,
+            scale,
+            gainDb,
+            rangeDb,
+            minDbSpl,
+            maxDbSpl
+        );
         _cache[key] = result;
     }
 }

@@ -6,8 +6,10 @@ using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Handlers;
 
-public class RunCpbHandler(IReadOnlyList<ISignalFileImporter> importers, CpbAnalysisService cpbAnalysisService)
-    : CommandHandler<RunCpbQuery, CpbAnalysis>
+public class RunCpbHandler(
+    IReadOnlyList<ISignalFileImporter> importers,
+    CpbAnalysisService cpbAnalysisService
+) : CommandHandler<RunCpbQuery, CpbAnalysis>
 {
     public override async Task<CpbAnalysis> ExecuteAsync(RunCpbQuery query, CancellationToken ct)
     {
@@ -21,16 +23,14 @@ public class RunCpbHandler(IReadOnlyList<ISignalFileImporter> importers, CpbAnal
         if (query.EndSeconds <= query.StartSeconds)
         {
             throw new ArgumentException(
-                $"Region end ({query.EndSeconds:F3}s) must be greater than start ({query.StartSeconds:F3}s).");
+                $"Region end ({query.EndSeconds:F3}s) must be greater than start ({query.StartSeconds:F3}s)."
+            );
         }
 
         var importer = ResolveImporter(query.FilePath);
         var signalFile = importer.Import(query.FilePath);
 
-        var result = await cpbAnalysisService.AnalyzeAsync(
-            query,
-            signalFile.Channels,
-            ct);
+        var result = await cpbAnalysisService.AnalyzeAsync(query, signalFile.Channels, ct);
 
         return result;
     }
@@ -44,6 +44,8 @@ public class RunCpbHandler(IReadOnlyList<ISignalFileImporter> importers, CpbAnal
                 return importer;
             }
         }
-        throw new NotSupportedException($"No importer found for file: {Path.GetFileName(filePath)}");
+        throw new NotSupportedException(
+            $"No importer found for file: {Path.GetFileName(filePath)}"
+        );
     }
 }

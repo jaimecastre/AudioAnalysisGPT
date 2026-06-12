@@ -9,10 +9,12 @@ import {
   spectrumStatusSelector,
   spectrumErrorSelector,
   spectrumUserParametersSelector,
+  spectrumSetParameters,
 } from '../store/spectrumSlice';
 import { activeSelectionSelector } from '../../waveform/store/waveformSelectionSlice';
 import { cursorFrequencyHovered, cursorFrequencyCleared, cursorFrequencyHzSelector } from '../store/analysisCursorSlice';
 import { SpectrumCanvas } from './SpectrumCanvas';
+import { FFT_SIZE_OPTIONS, OVERLAP_OPTIONS, WINDOW_TYPE_OPTIONS } from '../types/spectrumTypes';
 import { agentPromptPrefillSet, setActiveMode } from '../../navigation/store/navigationSlice';
 import styles from './SpectrogramPanel.module.scss';
 
@@ -162,6 +164,33 @@ export const SpectrumPanel = ({
               ? `${activeSelection!.startSeconds.toFixed(3)}s - ${activeSelection!.endSeconds.toFixed(3)}s`
               : 'Select region'}
           </Badge>
+          <Select
+            size="xs"
+            data={FFT_SIZE_OPTIONS}
+            value={String(spectrumUserParameters.fftSize)}
+            onChange={(value) => value && dispatch(spectrumSetParameters({ fftSize: Number(value) }))}
+            aria-label="FFT size"
+            style={{ width: 90 }}
+            styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+          />
+          <Select
+            size="xs"
+            data={OVERLAP_OPTIONS}
+            value={String(spectrumUserParameters.overlap)}
+            onChange={(value) => value && dispatch(spectrumSetParameters({ overlap: Number(value) }))}
+            aria-label="Overlap"
+            style={{ width: 80 }}
+            styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+          />
+          <Select
+            size="xs"
+            data={WINDOW_TYPE_OPTIONS}
+            value={spectrumUserParameters.windowType}
+            onChange={(value) => value && dispatch(spectrumSetParameters({ windowType: value as 'hann' | 'blackman-harris' | 'flat-top' }))}
+            aria-label="Window"
+            style={{ width: 130 }}
+            styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+          />
           {isRunning && <Loader size="xs" color="teal" />}
           {hasMultipleChannels && spectrumResult && (
             <Group gap="sm">

@@ -16,10 +16,15 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         IReadOnlyList<string> selectedFileIds,
         IReadOnlyList<string> selectedFileNames,
         CancellationToken cancellationToken,
-        string? modelOverride = null)
+        string? modelOverride = null
+    )
     {
         var availableToolsSummary = AgentToolRegistry.BuildToolListSummaryForPrompt();
-        var systemPrompt = AgentPromptBuilder.BuildPlannerSystemPrompt(availableToolsSummary, selectedFileIds, selectedFileNames);
+        var systemPrompt = AgentPromptBuilder.BuildPlannerSystemPrompt(
+            availableToolsSummary,
+            selectedFileIds,
+            selectedFileNames
+        );
 
         var userMessageContent = BuildPlannerUserMessage(userQuestion, selectedFileIds);
 
@@ -34,7 +39,11 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
             MaxTokens = 512,
         };
 
-        var openAiResponse = await openAiChatService.CompleteAsync(plannerRequest, cancellationToken, modelOverride);
+        var openAiResponse = await openAiChatService.CompleteAsync(
+            plannerRequest,
+            cancellationToken,
+            modelOverride
+        );
 
         var rawContent = openAiResponse.Choices[0].Message.Content ?? string.Empty;
         var cleanedContent = StripMarkdownCodeFences(rawContent);
@@ -42,7 +51,10 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         PlannerResponse? plannerResponse;
         try
         {
-            plannerResponse = JsonSerializer.Deserialize<PlannerResponse>(cleanedContent, JsonOptions);
+            plannerResponse = JsonSerializer.Deserialize<PlannerResponse>(
+                cleanedContent,
+                JsonOptions
+            );
         }
         catch (JsonException)
         {
@@ -65,15 +77,19 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         string userQuestion,
         EvidencePackage evidencePackage,
         CancellationToken cancellationToken,
-        string? modelOverride = null)
+        string? modelOverride = null
+    )
     {
         var systemPrompt = AgentPromptBuilder.BuildFinalAnswerSystemPrompt();
 
-        var evidenceJson = JsonSerializer.Serialize(evidencePackage, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = false,
-        });
+        var evidenceJson = JsonSerializer.Serialize(
+            evidencePackage,
+            new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = false,
+            }
+        );
 
         var userMessageContent = $"""
             User question: {userQuestion}
@@ -95,7 +111,11 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
             MaxTokens = 1024,
         };
 
-        var openAiResponse = await openAiChatService.CompleteAsync(answerRequest, cancellationToken, modelOverride);
+        var openAiResponse = await openAiChatService.CompleteAsync(
+            answerRequest,
+            cancellationToken,
+            modelOverride
+        );
 
         var rawContent = openAiResponse.Choices[0].Message.Content ?? string.Empty;
         var cleanedContent = StripMarkdownCodeFences(rawContent);
@@ -103,7 +123,10 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         FinalAnswerResponse? finalAnswer;
         try
         {
-            finalAnswer = JsonSerializer.Deserialize<FinalAnswerResponse>(cleanedContent, JsonOptions);
+            finalAnswer = JsonSerializer.Deserialize<FinalAnswerResponse>(
+                cleanedContent,
+                JsonOptions
+            );
         }
         catch (JsonException)
         {
@@ -114,9 +137,10 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         {
             return new FinalAnswerResponse
             {
-                Answer = rawContent.Length > 0
-                    ? rawContent
-                    : "Analysis complete. Please review the evidence package for details.",
+                Answer =
+                    rawContent.Length > 0
+                        ? rawContent
+                        : "Analysis complete. Please review the evidence package for details.",
                 EvidenceReferences = [],
                 Confidence = "low",
                 Limitations = ["Agent response could not be parsed into structured format."],
@@ -127,11 +151,12 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         return finalAnswer;
     }
 
-    private static string BuildPlannerUserMessage(string userQuestion, IReadOnlyList<string> selectedFileIds)
+    private static string BuildPlannerUserMessage(
+        string userQuestion,
+        IReadOnlyList<string> selectedFileIds
+    )
     {
-        var fileIdsText = selectedFileIds.Count > 0
-            ? string.Join(", ", selectedFileIds)
-            : "none";
+        var fileIdsText = selectedFileIds.Count > 0 ? string.Join(", ", selectedFileIds) : "none";
 
         return $"User question: {userQuestion}\n\nSelected file IDs: {fileIdsText}";
     }

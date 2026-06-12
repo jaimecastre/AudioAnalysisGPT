@@ -14,7 +14,10 @@ public class RunCpbEndpoint(AudioFileRepository audioFileRepository)
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(RunCpbRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(
+        RunCpbRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var filePath = audioFileRepository.GetFilePath(request.FileId);
         if (string.IsNullOrEmpty(filePath))
@@ -32,7 +35,8 @@ public class RunCpbEndpoint(AudioFileRepository audioFileRepository)
             FftSize: request.FftSize,
             Overlap: request.Overlap,
             Weighting: request.Weighting,
-            Method: request.Method);
+            Method: request.Method
+        );
 
         try
         {
@@ -41,7 +45,10 @@ public class RunCpbEndpoint(AudioFileRepository audioFileRepository)
         catch (Exception ex)
         {
             HttpContext.Response.StatusCode = 500;
-            await HttpContext.Response.WriteAsync($"CPB analysis error: {ex.GetType().Name}: {ex.Message}", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                $"CPB analysis error: {ex.GetType().Name}: {ex.Message}",
+                cancellationToken
+            );
         }
     }
 }

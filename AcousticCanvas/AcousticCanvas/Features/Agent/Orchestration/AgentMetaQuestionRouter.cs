@@ -92,44 +92,56 @@ public static class AgentMetaQuestionRouter
     private static bool IsSpectrogramSplQuestion(string text)
     {
         return text.Contains("spectrogram", StringComparison.Ordinal)
-            && (text.Contains("spl", StringComparison.Ordinal)
+            && (
+                text.Contains("spl", StringComparison.Ordinal)
                 || text.Contains("sound pressure", StringComparison.Ordinal)
-                || text.Contains("calibrated level", StringComparison.Ordinal));
+                || text.Contains("calibrated level", StringComparison.Ordinal)
+            );
     }
 
     private static bool IsSpectrumSplQuestion(string text)
     {
-        return (text.Contains("spectrum", StringComparison.Ordinal)
+        return (
+                text.Contains("spectrum", StringComparison.Ordinal)
                 || text.Contains("spectral", StringComparison.Ordinal)
-                || text.Contains("peak", StringComparison.Ordinal))
-            && (text.Contains("spl", StringComparison.Ordinal)
+                || text.Contains("peak", StringComparison.Ordinal)
+            )
+            && (
+                text.Contains("spl", StringComparison.Ordinal)
                 || text.Contains("sound pressure", StringComparison.Ordinal)
-                || text.Contains("calibrated level", StringComparison.Ordinal));
+                || text.Contains("calibrated level", StringComparison.Ordinal)
+            );
     }
 
     private static bool IsCpbSplQuestion(string text)
     {
-        return (text.Contains("cpb", StringComparison.Ordinal)
+        return (
+                text.Contains("cpb", StringComparison.Ordinal)
                 || text.Contains("octave", StringComparison.Ordinal)
                 || text.Contains("1/3", StringComparison.Ordinal)
-                || text.Contains("third octave", StringComparison.Ordinal))
-            && (text.Contains("spl", StringComparison.Ordinal)
+                || text.Contains("third octave", StringComparison.Ordinal)
+            )
+            && (
+                text.Contains("spl", StringComparison.Ordinal)
                 || text.Contains("sound pressure", StringComparison.Ordinal)
                 || text.Contains("calibrated level", StringComparison.Ordinal)
                 || text.Contains("standard", StringComparison.Ordinal)
-                || text.Contains("compliance", StringComparison.Ordinal));
+                || text.Contains("compliance", StringComparison.Ordinal)
+            );
     }
 
     private static bool IsSoundQualityConversionQuestion(string text)
     {
-        var mentionsSoundQualityMetric = text.Contains("sone", StringComparison.Ordinal)
+        var mentionsSoundQualityMetric =
+            text.Contains("sone", StringComparison.Ordinal)
             || text.Contains("loudness", StringComparison.Ordinal)
             || text.Contains("sharpness", StringComparison.Ordinal)
             || text.Contains("roughness", StringComparison.Ordinal)
             || text.Contains("acum", StringComparison.Ordinal)
             || text.Contains("asper", StringComparison.Ordinal);
 
-        var asksUnsupportedScale = text.Contains("lufs", StringComparison.Ordinal)
+        var asksUnsupportedScale =
+            text.Contains("lufs", StringComparison.Ordinal)
             || text.Contains("spl", StringComparison.Ordinal)
             || text.Contains("db gain", StringComparison.Ordinal)
             || text.Contains("gain change", StringComparison.Ordinal)
@@ -140,7 +152,8 @@ public static class AgentMetaQuestionRouter
 
     private static bool IsSpectrogramDefinitionQuestion(string text)
     {
-        var asksDefinition = text.StartsWith("what is ", StringComparison.Ordinal)
+        var asksDefinition =
+            text.StartsWith("what is ", StringComparison.Ordinal)
             || text.StartsWith("what's ", StringComparison.Ordinal)
             || text.StartsWith("explain ", StringComparison.Ordinal)
             || text.StartsWith("define ", StringComparison.Ordinal)
@@ -163,17 +176,20 @@ public static class AgentMetaQuestionRouter
 
     private static bool IsSpectrumDefinitionQuestion(string text)
     {
-        var asksDefinition = text.StartsWith("what is ", StringComparison.Ordinal)
+        var asksDefinition =
+            text.StartsWith("what is ", StringComparison.Ordinal)
             || text.StartsWith("what's ", StringComparison.Ordinal)
             || text.StartsWith("explain ", StringComparison.Ordinal)
             || text.StartsWith("define ", StringComparison.Ordinal)
             || text.StartsWith("what does ", StringComparison.Ordinal);
 
         return asksDefinition
-            && (text.Contains("fft spectrum", StringComparison.Ordinal)
+            && (
+                text.Contains("fft spectrum", StringComparison.Ordinal)
                 || text.Contains("frequency spectrum", StringComparison.Ordinal)
                 || text == "explain fft"
-                || text == "define fft")
+                || text == "define fft"
+            )
             && !text.Contains("show", StringComparison.Ordinal)
             && !text.Contains("spl", StringComparison.Ordinal)
             && !text.Contains("db", StringComparison.Ordinal)
@@ -186,17 +202,20 @@ public static class AgentMetaQuestionRouter
 
     private static bool IsCpbDefinitionQuestion(string text)
     {
-        var asksDefinition = text.StartsWith("what is ", StringComparison.Ordinal)
+        var asksDefinition =
+            text.StartsWith("what is ", StringComparison.Ordinal)
             || text.StartsWith("what's ", StringComparison.Ordinal)
             || text.StartsWith("explain ", StringComparison.Ordinal)
             || text.StartsWith("define ", StringComparison.Ordinal)
             || text.StartsWith("what does ", StringComparison.Ordinal);
 
         return asksDefinition
-            && (text.Contains("cpb", StringComparison.Ordinal)
+            && (
+                text.Contains("cpb", StringComparison.Ordinal)
                 || text.Contains("octave band", StringComparison.Ordinal)
                 || text.Contains("third octave", StringComparison.Ordinal)
-                || text.Contains("1/3 octave", StringComparison.Ordinal))
+                || text.Contains("1/3 octave", StringComparison.Ordinal)
+            )
             && !text.Contains("show", StringComparison.Ordinal)
             && !text.Contains("run", StringComparison.Ordinal)
             && !text.Contains("spl", StringComparison.Ordinal)
@@ -208,14 +227,16 @@ public static class AgentMetaQuestionRouter
 
     private static bool IsSoundQualityDefinitionQuestion(string text)
     {
-        var asksDefinition = text.StartsWith("what is ", StringComparison.Ordinal)
+        var asksDefinition =
+            text.StartsWith("what is ", StringComparison.Ordinal)
             || text.StartsWith("what's ", StringComparison.Ordinal)
             || text.StartsWith("explain ", StringComparison.Ordinal)
             || text.StartsWith("define ", StringComparison.Ordinal)
             || text.StartsWith("what does ", StringComparison.Ordinal)
             || text.StartsWith("how is ", StringComparison.Ordinal);
 
-        var asksForMeasuredMetric = text.StartsWith("what is the ", StringComparison.Ordinal)
+        var asksForMeasuredMetric =
+            text.StartsWith("what is the ", StringComparison.Ordinal)
             || text.StartsWith("what's the ", StringComparison.Ordinal)
             || text.Contains("loudness and", StringComparison.Ordinal)
             || text.Contains("sharpness and", StringComparison.Ordinal)
@@ -225,14 +246,16 @@ public static class AgentMetaQuestionRouter
             || text.Contains("and roughness", StringComparison.Ordinal);
 
         return asksDefinition
-            && (text.Contains("sound quality", StringComparison.Ordinal)
+            && (
+                text.Contains("sound quality", StringComparison.Ordinal)
                 || text.Contains("psychoacoustic", StringComparison.Ordinal)
                 || text.Contains("loudness", StringComparison.Ordinal)
                 || text.Contains("sharpness", StringComparison.Ordinal)
                 || text.Contains("roughness", StringComparison.Ordinal)
                 || text.Contains("sone", StringComparison.Ordinal)
                 || text.Contains("acum", StringComparison.Ordinal)
-                || text.Contains("asper", StringComparison.Ordinal))
+                || text.Contains("asper", StringComparison.Ordinal)
+            )
             && !text.Contains("file", StringComparison.Ordinal)
             && !text.Contains("@", StringComparison.Ordinal)
             && !text.Contains("value", StringComparison.Ordinal)

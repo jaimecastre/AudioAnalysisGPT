@@ -1,6 +1,6 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.AudioUpload.Services;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
@@ -13,12 +13,18 @@ public class RunBatchBenchmarkEndpoint(AudioFileRepository audioFileRepository)
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(RunBatchBenchmarkRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(
+        RunBatchBenchmarkRequest request,
+        CancellationToken cancellationToken
+    )
     {
         if (request.FileIds == null || request.FileIds.Count < 2)
         {
             HttpContext.Response.StatusCode = 400;
-            await HttpContext.Response.WriteAsync("At least two fileIds are required.", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                "At least two fileIds are required.",
+                cancellationToken
+            );
             return;
         }
 
@@ -29,7 +35,10 @@ public class RunBatchBenchmarkEndpoint(AudioFileRepository audioFileRepository)
             if (string.IsNullOrEmpty(filePath))
             {
                 HttpContext.Response.StatusCode = 404;
-                await HttpContext.Response.WriteAsync($"Audio file {index + 1} not found: {request.FileIds[index]}", cancellationToken);
+                await HttpContext.Response.WriteAsync(
+                    $"Audio file {index + 1} not found: {request.FileIds[index]}",
+                    cancellationToken
+                );
                 return;
             }
 
@@ -40,7 +49,8 @@ public class RunBatchBenchmarkEndpoint(AudioFileRepository audioFileRepository)
             FileIds: request.FileIds,
             FilePaths: filePaths,
             StartSeconds: request.StartSeconds,
-            EndSeconds: request.EndSeconds);
+            EndSeconds: request.EndSeconds
+        );
 
         try
         {
@@ -49,7 +59,10 @@ public class RunBatchBenchmarkEndpoint(AudioFileRepository audioFileRepository)
         catch (Exception ex)
         {
             HttpContext.Response.StatusCode = 500;
-            await HttpContext.Response.WriteAsync($"Batch benchmark error: {ex.GetType().Name}: {ex.Message}", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                $"Batch benchmark error: {ex.GetType().Name}: {ex.Message}",
+                cancellationToken
+            );
         }
     }
 }

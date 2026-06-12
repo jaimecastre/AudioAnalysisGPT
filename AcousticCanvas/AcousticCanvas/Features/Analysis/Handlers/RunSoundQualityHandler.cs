@@ -8,7 +8,10 @@ namespace AcousticCanvas.Features.Analysis.Handlers;
 public sealed class RunSoundQualityHandler(SoundQualityAnalysisService soundQualityAnalysisService)
     : CommandHandler<RunSoundQualityQuery, SoundQualityAnalysis>
 {
-    public override Task<SoundQualityAnalysis> ExecuteAsync(RunSoundQualityQuery query, CancellationToken ct)
+    public override Task<SoundQualityAnalysis> ExecuteAsync(
+        RunSoundQualityQuery query,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
@@ -20,7 +23,8 @@ public sealed class RunSoundQualityHandler(SoundQualityAnalysisService soundQual
         if (query.EndSeconds <= query.StartSeconds)
         {
             throw new ArgumentException(
-                $"Region end ({query.EndSeconds:F3}s) must be greater than start ({query.StartSeconds:F3}s).");
+                $"Region end ({query.EndSeconds:F3}s) must be greater than start ({query.StartSeconds:F3}s)."
+            );
         }
 
         return soundQualityAnalysisService.AnalyzeAsync(query, ct);

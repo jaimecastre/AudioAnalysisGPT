@@ -1,7 +1,7 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.AudioUpload.Services;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
@@ -14,7 +14,10 @@ public class RunSpectrumEndpoint(AudioFileRepository audioFileRepository)
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(RunSpectrumRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(
+        RunSpectrumRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var filePath = audioFileRepository.GetFilePath(request.FileId);
         if (string.IsNullOrEmpty(filePath))
@@ -29,7 +32,9 @@ public class RunSpectrumEndpoint(AudioFileRepository audioFileRepository)
             StartSeconds: request.StartSeconds,
             EndSeconds: request.EndSeconds,
             FftSize: request.FftSize,
-            Overlap: request.Overlap);
+            Overlap: request.Overlap,
+            WindowType: request.WindowType
+        );
 
         try
         {
@@ -38,7 +43,10 @@ public class RunSpectrumEndpoint(AudioFileRepository audioFileRepository)
         catch (Exception ex)
         {
             HttpContext.Response.StatusCode = 500;
-            await HttpContext.Response.WriteAsync($"Spectrum analysis error: {ex.GetType().Name}: {ex.Message}", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                $"Spectrum analysis error: {ex.GetType().Name}: {ex.Message}",
+                cancellationToken
+            );
         }
     }
 }
@@ -50,4 +58,5 @@ public class RunSpectrumRequest
     public double EndSeconds { get; set; }
     public int FftSize { get; set; } = 8192;
     public double Overlap { get; set; } = 0.5;
+    public string WindowType { get; set; } = "hann";
 }

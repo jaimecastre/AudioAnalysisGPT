@@ -34,8 +34,8 @@ type HeaderDefinition = {
 
 const HEADERS: HeaderDefinition[] = [
   { key: 'fileName', label: 'File', tooltip: 'Loaded audio file', numeric: false },
-  { key: 'rmsDb', label: 'RMS', tooltip: 'Root mean square level in dBFS', numeric: true },
-  { key: 'peakDb', label: 'Peak', tooltip: 'Peak sample level in dBFS', numeric: true },
+  { key: 'rmsDb', label: 'RMS', tooltip: 'Root mean square level [dB re 20 µPa]', numeric: true },
+  { key: 'peakDb', label: 'Peak', tooltip: 'Peak sample level [dB re 20 µPa]', numeric: true },
   { key: 'crestFactorDb', label: 'Crest', tooltip: 'Peak-to-RMS crest factor in dB', numeric: true },
   { key: 'peakFrequencyHz', label: 'Peak freq', tooltip: 'Strongest spectrum bin frequency', numeric: true },
   { key: 'findingCount', label: 'Findings', tooltip: 'Detected acoustic findings', numeric: true },

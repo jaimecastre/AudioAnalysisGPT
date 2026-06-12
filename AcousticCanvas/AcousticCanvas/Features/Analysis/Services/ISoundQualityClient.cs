@@ -5,5 +5,8 @@ namespace AcousticCanvas.Features.Analysis.Services;
 
 public interface ISoundQualityClient
 {
-    Task<SoundQualityAnalysis> AnalyzeAsync(RunSoundQualityQuery query, CancellationToken cancellationToken);
+    Task<SoundQualityAnalysis> AnalyzeAsync(
+        RunSoundQualityQuery query,
+        CancellationToken cancellationToken
+    );
 }

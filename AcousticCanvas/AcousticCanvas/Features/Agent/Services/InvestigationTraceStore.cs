@@ -1,5 +1,5 @@
-using AcousticCanvas.Features.Agent.Commands;
 using System.Collections.Concurrent;
+using AcousticCanvas.Features.Agent.Commands;
 
 namespace AcousticCanvas.Features.Agent.Services;
 
@@ -12,11 +12,15 @@ public interface IInvestigationTraceStore
 
 public sealed class InvestigationTraceStore : IInvestigationTraceStore
 {
-    private readonly ConcurrentDictionary<string, ConcurrentQueue<InvestigationTrace>> _traces = new();
+    private readonly ConcurrentDictionary<string, ConcurrentQueue<InvestigationTrace>> _traces =
+        new();
 
     public void Store(InvestigationTrace trace)
     {
-        var queue = _traces.GetOrAdd(trace.ConversationId, _ => new ConcurrentQueue<InvestigationTrace>());
+        var queue = _traces.GetOrAdd(
+            trace.ConversationId,
+            _ => new ConcurrentQueue<InvestigationTrace>()
+        );
         queue.Enqueue(trace);
     }
 

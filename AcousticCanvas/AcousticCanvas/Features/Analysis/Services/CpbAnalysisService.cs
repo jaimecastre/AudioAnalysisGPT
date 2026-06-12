@@ -9,7 +9,8 @@ public sealed class CpbAnalysisService(ICpbFilterBankClient filterBankClient)
     public Task<CpbAnalysis> AnalyzeAsync(
         RunCpbQuery query,
         IReadOnlyList<SignalChannel> channels,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -26,7 +27,8 @@ public sealed class CpbAnalysisService(ICpbFilterBankClient filterBankClient)
             query.BandMode,
             query.FftSize,
             query.Overlap,
-            query.Weighting);
+            query.Weighting
+        );
 
         return Task.FromResult(result);
     }

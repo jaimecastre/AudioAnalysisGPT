@@ -15,7 +15,10 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    public async Task<SoundQualityAnalysis> AnalyzeAsync(RunSoundQualityQuery query, CancellationToken cancellationToken)
+    public async Task<SoundQualityAnalysis> AnalyzeAsync(
+        RunSoundQualityQuery query,
+        CancellationToken cancellationToken
+    )
     {
         var scriptPath = ResolveScriptPath();
         if (!File.Exists(scriptPath))
@@ -66,7 +69,9 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
             await process.StandardInput.WriteAsync(JsonSerializer.Serialize(request, JsonOptions));
             process.StandardInput.Close();
 
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken
+            );
             timeoutCts.CancelAfter(DefaultTimeout);
 
             var stdoutTask = process.StandardOutput.ReadToEndAsync(timeoutCts.Token);
@@ -83,12 +88,17 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
             {
                 TryKillProcess(process);
                 throw BuildUnavailableException(
-                    $"MoSQITo sound-quality sidecar timed out after {DefaultTimeout.TotalSeconds:0} seconds. " +
-                    "Restart the backend to clear stale Python analysis processes if this persists.");
+                    $"MoSQITo sound-quality sidecar timed out after {DefaultTimeout.TotalSeconds:0} seconds. "
+                        + "Restart the backend to clear stale Python analysis processes if this persists."
+                );
             }
             if (process.ExitCode != 0)
             {
-                throw BuildUnavailableException(string.IsNullOrWhiteSpace(stderr) ? $"Python exited with code {process.ExitCode}." : stderr.Trim());
+                throw BuildUnavailableException(
+                    string.IsNullOrWhiteSpace(stderr)
+                        ? $"Python exited with code {process.ExitCode}."
+                        : stderr.Trim()
+                );
             }
 
             var analysis = JsonSerializer.Deserialize<SoundQualityAnalysis>(stdout, JsonOptions);
@@ -117,7 +127,14 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
             return Path.GetFullPath(configuredPath);
         }
 
-        return Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "AcousticCanvas.ML", "sound_quality.py"));
+        return Path.GetFullPath(
+            Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "..",
+                "AcousticCanvas.ML",
+                "sound_quality.py"
+            )
+        );
     }
 
     private string ResolvePythonExecutable()
@@ -131,7 +148,13 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
         var candidatePaths = new[]
         {
             Path.Combine(Directory.GetCurrentDirectory(), "..", ".venv", "bin", "python"),
-            Path.Combine(Directory.GetCurrentDirectory(), "AcousticCanvas", ".venv", "bin", "python"),
+            Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "AcousticCanvas",
+                ".venv",
+                "bin",
+                "python"
+            ),
         };
 
         foreach (var candidatePath in candidatePaths)
@@ -149,11 +172,15 @@ public sealed class PythonSoundQualityClient(IConfiguration configuration) : ISo
     private static InvalidOperationException BuildUnavailableException(string detail)
     {
         return new InvalidOperationException(
-            "Python sound-quality sidecar unavailable. Install MoSQITo and configure the sidecar before running sound-quality metrics. " +
-            $"Detail: {detail}");
+            "Python sound-quality sidecar unavailable. Install MoSQITo and configure the sidecar before running sound-quality metrics. "
+                + $"Detail: {detail}"
+        );
     }
 
-    private static void WriteFontconfigFileIfMissing(string fontconfigFilePath, string fontconfigCacheDirectory)
+    private static void WriteFontconfigFileIfMissing(
+        string fontconfigFilePath,
+        string fontconfigCacheDirectory
+    )
     {
         if (File.Exists(fontconfigFilePath))
         {

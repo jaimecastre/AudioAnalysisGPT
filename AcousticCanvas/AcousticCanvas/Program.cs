@@ -1,4 +1,3 @@
-using FastEndpoints;
 using System.Text.Json.Serialization;
 using AcousticCanvas.Features.Agent.Handlers;
 using AcousticCanvas.Features.Agent.Orchestration;
@@ -11,6 +10,7 @@ using AcousticCanvas.Features.AudioUpload.Services;
 using AcousticCanvas.Features.Playback.Handlers;
 using AcousticCanvas.Features.Playback.Services;
 using AcousticCanvas.Features.Waveform.Handlers;
+using FastEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddFastEndpoints();
@@ -55,12 +55,16 @@ builder.Services.AddSingleton<AgentAskHandler>();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
+    options.AddPolicy(
+        "AllowFrontend",
+        policy =>
+        {
+            policy
+                .WithOrigins("http://localhost:5173", "http://localhost:5174")
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    );
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -83,4 +87,3 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowFrontend");
 app.UseFastEndpoints();
 app.Run();
-

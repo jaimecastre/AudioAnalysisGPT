@@ -12,7 +12,10 @@ public class ServeAudioFileEndpoint(AudioFileRepository audioFileRepository)
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(ServeAudioFileRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(
+        ServeAudioFileRequest request,
+        CancellationToken cancellationToken
+    )
     {
         var filePath = audioFileRepository.GetFilePath(request.FileId);
 
@@ -22,9 +25,13 @@ public class ServeAudioFileEndpoint(AudioFileRepository audioFileRepository)
             var files = Directory.Exists(storagePath)
                 ? string.Join(", ", Directory.GetFiles(storagePath).Select(Path.GetFileName))
                 : "N/A";
-            var debugInfo = $"FileId: {request.FileId}, ResolvedPath: '{filePath}', StoragePath: '{storagePath}', Files: [{files}]";
+            var debugInfo =
+                $"FileId: {request.FileId}, ResolvedPath: '{filePath}', StoragePath: '{storagePath}', Files: [{files}]";
             HttpContext.Response.StatusCode = 404;
-            await HttpContext.Response.WriteAsync($"Audio file not found. {debugInfo}", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                $"Audio file not found. {debugInfo}",
+                cancellationToken
+            );
             return;
         }
 
@@ -32,7 +39,10 @@ public class ServeAudioFileEndpoint(AudioFileRepository audioFileRepository)
         var fileInfo = new FileInfo(filePath);
 
         HttpContext.Response.ContentType = "audio/wav";
-        HttpContext.Response.Headers.Append("Content-Disposition", $"inline; filename=\"{fileName}\"");
+        HttpContext.Response.Headers.Append(
+            "Content-Disposition",
+            $"inline; filename=\"{fileName}\""
+        );
         HttpContext.Response.ContentLength = fileInfo.Length;
         HttpContext.Response.Headers.Append("Accept-Ranges", "bytes");
 

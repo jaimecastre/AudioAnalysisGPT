@@ -1,6 +1,8 @@
+export type WindowType = 'hann' | 'blackman-harris' | 'flat-top';
+
 export type SpectrumParameters = {
   fftSize: number;
-  windowType: 'hann';
+  windowType: WindowType;
   overlap: number;
   averaging: string;
   scaling: string;
@@ -56,14 +58,14 @@ export type SpectrumAnalysis = {
 
 export type SpectrumUserParameters = {
   fftSize: number;
-  windowType: 'hann';
+  windowType: WindowType;
   overlap: number;
 };
 
 export const DEFAULT_SPECTRUM_PARAMS: SpectrumUserParameters = {
-  fftSize: 8192,
-  windowType: 'hann',
-  overlap: 0.5,
+  fftSize: 16384,
+  windowType: 'blackman-harris',
+  overlap: 0.667,
 };
 
 export const FFT_SIZE_OPTIONS = [
@@ -72,4 +74,16 @@ export const FFT_SIZE_OPTIONS = [
   { value: '4096', label: '4096' },
   { value: '8192', label: '8192' },
   { value: '16384', label: '16384' },
+] as const;
+
+export const OVERLAP_OPTIONS = [
+  { value: '0.5', label: '50%' },
+  { value: '0.667', label: '66.7%' },
+  { value: '0.75', label: '75%' },
+] as const;
+
+export const WINDOW_TYPE_OPTIONS = [
+  { value: 'hann', label: 'Hann' },
+  { value: 'blackman-harris', label: 'Blackman-Harris' },
+  { value: 'flat-top', label: 'Flat-top' },
 ] as const;

@@ -1,19 +1,28 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Analyzers;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.Analysis.Services;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Handlers;
 
 public class RunFindingsHandler(SignalAnalysisService analysisService)
     : CommandHandler<RunFindingsCommand, FindingsResult>
 {
-    private static readonly string[] AllEventKinds = ["clipping", "silence", "transient", "loudest"];
+    private static readonly string[] AllEventKinds =
+    [
+        "clipping",
+        "silence",
+        "transient",
+        "loudest",
+    ];
     private const int FindingsSpectrumFftSize = 8192;
     private const double FindingsSpectrumOverlap = 0.5;
 
-    public override async Task<FindingsResult> ExecuteAsync(RunFindingsCommand command, CancellationToken ct)
+    public override async Task<FindingsResult> ExecuteAsync(
+        RunFindingsCommand command,
+        CancellationToken ct
+    )
     {
         ct.ThrowIfCancellationRequested();
 
@@ -27,11 +36,14 @@ public class RunFindingsHandler(SignalAnalysisService analysisService)
         var durationSeconds = levelAnalysisResult.FileInfo.DurationSeconds;
 
         var eventTasks = AllEventKinds
-            .Select(kind => new FindEventsCommand(
-                Kind: kind,
-                FilePath: command.FilePath,
-                StartSeconds: null,
-                EndSeconds: null).ExecuteAsync(ct))
+            .Select(kind =>
+                new FindEventsCommand(
+                    Kind: kind,
+                    FilePath: command.FilePath,
+                    StartSeconds: null,
+                    EndSeconds: null
+                ).ExecuteAsync(ct)
+            )
             .ToArray();
         var allEventResults = await Task.WhenAll(eventTasks);
 
@@ -44,7 +56,12 @@ public class RunFindingsHandler(SignalAnalysisService analysisService)
         );
         var spectrumAnalysis = await spectrumCommand.ExecuteAsync(ct);
 
-        var findings = FindingsEngine.GenerateFindings(command.FilePath, levelAnalysis, allEventResults, spectrumAnalysis);
+        var findings = FindingsEngine.GenerateFindings(
+            command.FilePath,
+            levelAnalysis,
+            allEventResults,
+            spectrumAnalysis
+        );
 
         return new FindingsResult
         {

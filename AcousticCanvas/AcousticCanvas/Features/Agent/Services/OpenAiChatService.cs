@@ -22,16 +22,14 @@ public sealed class OpenAiChatService
         // The key is resolved here but not required at construction time. Deterministic
         // fact answers never call the LLM, so the orchestrator must be able to start
         // even when no OpenAI key is configured. The key is enforced in CompleteAsync.
-        _apiKey = configuration["OpenAI:ApiKey"]
+        _apiKey =
+            configuration["OpenAI:ApiKey"]
             ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY")
             ?? string.Empty;
         _model = configuration["OpenAI:Model"] ?? "gpt-4o-mini";
         _systemPrompt = configuration["OpenAI:SystemPrompt"] ?? DefaultSystemPrompt;
 
-        _httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://api.openai.com/"),
-        };
+        _httpClient = new HttpClient { BaseAddress = new Uri("https://api.openai.com/") };
 
         if (!string.IsNullOrWhiteSpace(_apiKey))
         {
@@ -42,19 +40,25 @@ public sealed class OpenAiChatService
     // Reasoning models use max_completion_tokens and do not support temperature.
     private static readonly HashSet<string> ReasoningModels =
     [
-        "o1", "o1-mini", "o1-preview",
-        "o3", "o3-mini",
+        "o1",
+        "o1-mini",
+        "o1-preview",
+        "o3",
+        "o3-mini",
         "o4-mini",
     ];
 
     public async Task<ChatCompletionResponse> CompleteAsync(
         ChatCompletionRequest request,
         CancellationToken ct,
-        string? modelOverride = null)
+        string? modelOverride = null
+    )
     {
         if (string.IsNullOrWhiteSpace(_apiKey))
         {
-            throw new InvalidOperationException("OpenAI:ApiKey is not configured. Set it in appsettings.json, user secrets, or the OPENAI_API_KEY backend environment variable.");
+            throw new InvalidOperationException(
+                "OpenAI:ApiKey is not configured. Set it in appsettings.json, user secrets, or the OPENAI_API_KEY backend environment variable."
+            );
         }
 
         var effectiveModel = !string.IsNullOrWhiteSpace(modelOverride) ? modelOverride : _model;
@@ -96,11 +100,14 @@ public sealed class OpenAiChatService
         if (!response.IsSuccessStatusCode)
         {
             var errorBody = await response.Content.ReadAsStringAsync(ct);
-            throw new HttpRequestException($"OpenAI API returned {(int)response.StatusCode}: {errorBody}");
+            throw new HttpRequestException(
+                $"OpenAI API returned {(int)response.StatusCode}: {errorBody}"
+            );
         }
 
         var responseJson = await response.Content.ReadAsStringAsync(ct);
-        var result = JsonSerializer.Deserialize<ChatCompletionResponse>(responseJson, JsonOptions)
+        var result =
+            JsonSerializer.Deserialize<ChatCompletionResponse>(responseJson, JsonOptions)
             ?? throw new InvalidOperationException("Failed to deserialize OpenAI response.");
 
         return result;

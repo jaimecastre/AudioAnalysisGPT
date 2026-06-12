@@ -1,7 +1,7 @@
-using FastEndpoints;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.AudioUpload.Services;
+using FastEndpoints;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
@@ -14,12 +14,18 @@ public class RunCompareEndpoint(AudioFileRepository audioFileRepository)
         AllowAnonymous();
     }
 
-    public override async Task HandleAsync(RunCompareRequest request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(
+        RunCompareRequest request,
+        CancellationToken cancellationToken
+    )
     {
         if (request.FileIds == null || request.FileIds.Count < 2)
         {
             HttpContext.Response.StatusCode = 400;
-            await HttpContext.Response.WriteAsync("At least two fileIds are required.", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                "At least two fileIds are required.",
+                cancellationToken
+            );
             return;
         }
 
@@ -30,7 +36,10 @@ public class RunCompareEndpoint(AudioFileRepository audioFileRepository)
             if (string.IsNullOrEmpty(filePath))
             {
                 HttpContext.Response.StatusCode = 404;
-                await HttpContext.Response.WriteAsync($"Audio file {index + 1} not found: {request.FileIds[index]}", cancellationToken);
+                await HttpContext.Response.WriteAsync(
+                    $"Audio file {index + 1} not found: {request.FileIds[index]}",
+                    cancellationToken
+                );
                 return;
             }
             filePaths.Add(filePath);
@@ -39,7 +48,8 @@ public class RunCompareEndpoint(AudioFileRepository audioFileRepository)
         var command = new RunCompareCommand(
             FilePaths: filePaths,
             StartSeconds: request.StartSeconds,
-            EndSeconds: request.EndSeconds);
+            EndSeconds: request.EndSeconds
+        );
 
         try
         {
@@ -48,7 +58,10 @@ public class RunCompareEndpoint(AudioFileRepository audioFileRepository)
         catch (Exception ex)
         {
             HttpContext.Response.StatusCode = 500;
-            await HttpContext.Response.WriteAsync($"Compare error: {ex.GetType().Name}: {ex.Message}", cancellationToken);
+            await HttpContext.Response.WriteAsync(
+                $"Compare error: {ex.GetType().Name}: {ex.Message}",
+                cancellationToken
+            );
         }
     }
 }

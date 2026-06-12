@@ -10,12 +10,52 @@ public static class CpbAnalyzer
     private const string Averaging = "power";
     private const string Scaling = "one-sided amplitude, coherent-gain corrected";
     private const string Method = "fft_bin_power_sum_nominal_fractional_octave";
-    private static readonly double[] OctaveCentersHz = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+    private static readonly double[] OctaveCentersHz =
+    [
+        31.5,
+        63,
+        125,
+        250,
+        500,
+        1000,
+        2000,
+        4000,
+        8000,
+        16000,
+    ];
     private static readonly double[] ThirdOctaveCentersHz =
     [
-        20, 25, 31.5, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500,
-        630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000,
-        10000, 12500, 16000, 20000
+        20,
+        25,
+        31.5,
+        40,
+        50,
+        63,
+        80,
+        100,
+        125,
+        160,
+        200,
+        250,
+        315,
+        400,
+        500,
+        630,
+        800,
+        1000,
+        1250,
+        1600,
+        2000,
+        2500,
+        3150,
+        4000,
+        5000,
+        6300,
+        8000,
+        10000,
+        12500,
+        16000,
+        20000,
     ];
 
     public static CpbAnalysis Analyze(
@@ -25,7 +65,8 @@ public static class CpbAnalyzer
         string bandMode,
         int fftSize,
         double overlap,
-        string weighting = "z")
+        string weighting = "z"
+    )
     {
         var normalizedBandMode = NormalizeBandMode(bandMode);
         var normalizedWeighting = NormalizeWeighting(weighting);
@@ -34,12 +75,24 @@ public static class CpbAnalyzer
 
         foreach (var channel in channels)
         {
-            channelResults.Add(AnalyzeChannel(channel, startSeconds, endSeconds, normalizedBandMode, bandsPerOctave, fftSize, overlap, normalizedWeighting));
+            channelResults.Add(
+                AnalyzeChannel(
+                    channel,
+                    startSeconds,
+                    endSeconds,
+                    normalizedBandMode,
+                    bandsPerOctave,
+                    fftSize,
+                    overlap,
+                    normalizedWeighting
+                )
+            );
         }
 
-        var blockCount = channels.Count > 0
-            ? GetBlockCount(channels[0].SampleRate, startSeconds, endSeconds, fftSize, overlap)
-            : 0;
+        var blockCount =
+            channels.Count > 0
+                ? GetBlockCount(channels[0].SampleRate, startSeconds, endSeconds, fftSize, overlap)
+                : 0;
 
         var sampleRate = channels.Count > 0 ? channels[0].SampleRate : 0;
         return new CpbAnalysis
@@ -56,7 +109,10 @@ public static class CpbAnalyzer
                 Method = Method,
                 Weighting = normalizedWeighting,
                 WeightingMethod = GetWeightingMethod(normalizedWeighting),
-                Limitations = BuildLimitations(normalizedWeighting, channels.Select(channel => channel.Quantity)),
+                Limitations = BuildLimitations(
+                    normalizedWeighting,
+                    channels.Select(channel => channel.Quantity)
+                ),
                 StartTimeSeconds = startSeconds,
                 EndTimeSeconds = endSeconds,
                 BlockCount = blockCount,
@@ -84,7 +140,8 @@ public static class CpbAnalyzer
         int fftSize,
         double overlap,
         int sampleRate,
-        string weighting = "z")
+        string weighting = "z"
+    )
     {
         var normalizedBandMode = NormalizeBandMode(bandMode);
         var normalizedWeighting = NormalizeWeighting(weighting);
@@ -94,7 +151,15 @@ public static class CpbAnalyzer
 
         foreach (var channelSpectrum in spectrumAnalysis.Channels)
         {
-            channelResults.Add(AnalyzeChannelFromSpectrum(channelSpectrum, normalizedBandMode, bandsPerOctave, nyquistHz, normalizedWeighting));
+            channelResults.Add(
+                AnalyzeChannelFromSpectrum(
+                    channelSpectrum,
+                    normalizedBandMode,
+                    bandsPerOctave,
+                    nyquistHz,
+                    normalizedWeighting
+                )
+            );
         }
 
         return new CpbAnalysis
@@ -111,7 +176,10 @@ public static class CpbAnalyzer
                 Method = Method,
                 Weighting = normalizedWeighting,
                 WeightingMethod = GetWeightingMethod(normalizedWeighting),
-                Limitations = BuildLimitations(normalizedWeighting, spectrumAnalysis.Channels.Select(channel => channel.Quantity)),
+                Limitations = BuildLimitations(
+                    normalizedWeighting,
+                    spectrumAnalysis.Channels.Select(channel => channel.Quantity)
+                ),
                 StartTimeSeconds = startSeconds,
                 EndTimeSeconds = endSeconds,
                 BlockCount = spectrumAnalysis.Parameters.BlockCount,
@@ -132,18 +200,20 @@ public static class CpbAnalyzer
         string bandMode,
         int bandsPerOctave,
         double nyquistHz,
-        string weighting)
+        string weighting
+    )
     {
-        var dbReference = channelSpectrum.DbReferenceValue.HasValue
-                          && channelSpectrum.DbReferenceUnit is not null
-                          && channelSpectrum.DbUnit is not null
-            ? new DbReference
-            {
-                Value = channelSpectrum.DbReferenceValue.Value,
-                Unit = channelSpectrum.DbReferenceUnit,
-                DbUnit = channelSpectrum.DbUnit,
-            }
-            : null;
+        var dbReference =
+            channelSpectrum.DbReferenceValue.HasValue
+            && channelSpectrum.DbReferenceUnit is not null
+            && channelSpectrum.DbUnit is not null
+                ? new DbReference
+                {
+                    Value = channelSpectrum.DbReferenceValue.Value,
+                    Unit = channelSpectrum.DbReferenceUnit,
+                    DbUnit = channelSpectrum.DbUnit,
+                }
+                : null;
 
         var bands = BuildBands(bandMode, bandsPerOctave, nyquistHz);
         var cpbBands = new List<CpbBand>(bands.Count);
@@ -169,22 +239,28 @@ public static class CpbAnalyzer
             }
 
             var unweightedMagnitude = Math.Sqrt(powerSum);
-            var weightingCorrectionDb = ComputeWeightingCorrectionDb(band.CenterFrequencyHz, effectiveWeighting);
-            var weightedMagnitude = unweightedMagnitude * Math.Pow(10.0, weightingCorrectionDb / 20.0);
+            var weightingCorrectionDb = ComputeWeightingCorrectionDb(
+                band.CenterFrequencyHz,
+                effectiveWeighting
+            );
+            var weightedMagnitude =
+                unweightedMagnitude * Math.Pow(10.0, weightingCorrectionDb / 20.0);
             var levelDb = ComputeDb(weightedMagnitude, dbReference);
 
-            cpbBands.Add(new CpbBand
-            {
-                Label = FormatBandLabel(band.CenterFrequencyHz),
-                CenterFrequencyHz = Math.Round(band.CenterFrequencyHz, 3),
-                LowerFrequencyHz = Math.Round(band.LowerFrequencyHz, 3),
-                UpperFrequencyHz = Math.Round(band.UpperFrequencyHz, 3),
-                PlotLowerFrequencyHz = Math.Round(band.PlotLowerFrequencyHz, 3),
-                PlotUpperFrequencyHz = Math.Round(band.PlotUpperFrequencyHz, 3),
-                Magnitude = Math.Round(weightedMagnitude, 9),
-                LevelDb = levelDb.HasValue ? Math.Round(levelDb.Value, 3) : null,
-                BinCount = binCount,
-            });
+            cpbBands.Add(
+                new CpbBand
+                {
+                    Label = FormatBandLabel(band.CenterFrequencyHz),
+                    CenterFrequencyHz = Math.Round(band.CenterFrequencyHz, 3),
+                    LowerFrequencyHz = Math.Round(band.LowerFrequencyHz, 3),
+                    UpperFrequencyHz = Math.Round(band.UpperFrequencyHz, 3),
+                    PlotLowerFrequencyHz = Math.Round(band.PlotLowerFrequencyHz, 3),
+                    PlotUpperFrequencyHz = Math.Round(band.PlotUpperFrequencyHz, 3),
+                    Magnitude = Math.Round(weightedMagnitude, 9),
+                    LevelDb = levelDb.HasValue ? Math.Round(levelDb.Value, 3) : null,
+                    BinCount = binCount,
+                }
+            );
         }
 
         return new ChannelCpbAnalysis
@@ -206,11 +282,27 @@ public static class CpbAnalyzer
         int bandsPerOctave,
         int fftSize,
         double overlap,
-        string weighting)
+        string weighting
+    )
     {
-        var startSample = Math.Clamp((int)Math.Floor(startSeconds * channel.SampleRate), 0, channel.Samples.Length);
-        var endSample = Math.Clamp((int)Math.Ceiling(endSeconds * channel.SampleRate), 0, channel.Samples.Length);
-        var spectrum = ComputeAveragedPowerSpectrum(channel.Samples, startSample, endSample, channel.SampleRate, fftSize, overlap);
+        var startSample = Math.Clamp(
+            (int)Math.Floor(startSeconds * channel.SampleRate),
+            0,
+            channel.Samples.Length
+        );
+        var endSample = Math.Clamp(
+            (int)Math.Ceiling(endSeconds * channel.SampleRate),
+            0,
+            channel.Samples.Length
+        );
+        var spectrum = ComputeAveragedPowerSpectrum(
+            channel.Samples,
+            startSample,
+            endSample,
+            channel.SampleRate,
+            fftSize,
+            overlap
+        );
         var bands = BuildBands(bandMode, bandsPerOctave, channel.SampleRate / 2.0);
         var cpbBands = new List<CpbBand>(bands.Count);
 
@@ -234,21 +326,27 @@ public static class CpbAnalyzer
             }
 
             var unweightedMagnitude = Math.Sqrt(powerSum);
-            var weightingCorrectionDb = ComputeWeightingCorrectionDb(band.CenterFrequencyHz, effectiveWeighting);
-            var weightedMagnitude = unweightedMagnitude * Math.Pow(10.0, weightingCorrectionDb / 20.0);
+            var weightingCorrectionDb = ComputeWeightingCorrectionDb(
+                band.CenterFrequencyHz,
+                effectiveWeighting
+            );
+            var weightedMagnitude =
+                unweightedMagnitude * Math.Pow(10.0, weightingCorrectionDb / 20.0);
             var levelDb = ComputeDb(weightedMagnitude, channel.DbReference);
-            cpbBands.Add(new CpbBand
-            {
-                Label = FormatBandLabel(band.CenterFrequencyHz),
-                CenterFrequencyHz = Math.Round(band.CenterFrequencyHz, 3),
-                LowerFrequencyHz = Math.Round(band.LowerFrequencyHz, 3),
-                UpperFrequencyHz = Math.Round(band.UpperFrequencyHz, 3),
-                PlotLowerFrequencyHz = Math.Round(band.PlotLowerFrequencyHz, 3),
-                PlotUpperFrequencyHz = Math.Round(band.PlotUpperFrequencyHz, 3),
-                Magnitude = Math.Round(weightedMagnitude, 9),
-                LevelDb = levelDb.HasValue ? Math.Round(levelDb.Value, 3) : null,
-                BinCount = binCount,
-            });
+            cpbBands.Add(
+                new CpbBand
+                {
+                    Label = FormatBandLabel(band.CenterFrequencyHz),
+                    CenterFrequencyHz = Math.Round(band.CenterFrequencyHz, 3),
+                    LowerFrequencyHz = Math.Round(band.LowerFrequencyHz, 3),
+                    UpperFrequencyHz = Math.Round(band.UpperFrequencyHz, 3),
+                    PlotLowerFrequencyHz = Math.Round(band.PlotLowerFrequencyHz, 3),
+                    PlotUpperFrequencyHz = Math.Round(band.PlotUpperFrequencyHz, 3),
+                    Magnitude = Math.Round(weightedMagnitude, 9),
+                    LevelDb = levelDb.HasValue ? Math.Round(levelDb.Value, 3) : null,
+                    BinCount = binCount,
+                }
+            );
         }
 
         return new ChannelCpbAnalysis
@@ -268,7 +366,8 @@ public static class CpbAnalyzer
         int endSample,
         int sampleRate,
         int fftSize,
-        double overlap)
+        double overlap
+    )
     {
         var regionLength = endSample - startSample;
         var halfFftSize = fftSize / 2 + 1;
@@ -285,7 +384,10 @@ public static class CpbAnalyzer
             for (var i = 0; i < fftSize; i++)
             {
                 var sampleIndex = blockStart + i;
-                var sample = regionLength > 0 && sampleIndex < endSample && sampleIndex < samples.Length ? samples[sampleIndex] : 0.0;
+                var sample =
+                    regionLength > 0 && sampleIndex < endSample && sampleIndex < samples.Length
+                        ? samples[sampleIndex]
+                        : 0.0;
                 complexBlock[i] = new Complex(sample * window[i], 0.0);
             }
 
@@ -303,8 +405,7 @@ public static class CpbAnalyzer
 
             blockCount++;
             blockStart += hopSize;
-        }
-        while (blockStart + fftSize <= endSample);
+        } while (blockStart + fftSize <= endSample);
 
         var actualBlockCount = Math.Max(blockCount, 1);
         var frequenciesHz = new double[halfFftSize];
@@ -318,7 +419,11 @@ public static class CpbAnalyzer
         return new SpectrumPowerData(frequenciesHz, powers);
     }
 
-    private static IReadOnlyList<CpbBandDefinition> BuildBands(string bandMode, int bandsPerOctave, double nyquistHz)
+    private static IReadOnlyList<CpbBandDefinition> BuildBands(
+        string bandMode,
+        int bandsPerOctave,
+        double nyquistHz
+    )
     {
         var centers = bandMode == "octave" ? OctaveCentersHz : ThirdOctaveCentersHz;
         var edgeRatio = Math.Pow(2.0, 1.0 / (2.0 * bandsPerOctave));
@@ -334,13 +439,19 @@ public static class CpbAnalyzer
         // draw the supplied points.
         for (var i = 0; i < bands.Length; i++)
         {
-            var plotLower = i == 0
-                ? bands[i].LowerFrequencyHz
-                : Math.Sqrt(bands[i - 1].UpperFrequencyHz * bands[i].LowerFrequencyHz);
-            var plotUpper = i == bands.Length - 1
-                ? bands[i].UpperFrequencyHz
-                : Math.Sqrt(bands[i].UpperFrequencyHz * bands[i + 1].LowerFrequencyHz);
-            bands[i] = bands[i] with { PlotLowerFrequencyHz = plotLower, PlotUpperFrequencyHz = plotUpper };
+            var plotLower =
+                i == 0
+                    ? bands[i].LowerFrequencyHz
+                    : Math.Sqrt(bands[i - 1].UpperFrequencyHz * bands[i].LowerFrequencyHz);
+            var plotUpper =
+                i == bands.Length - 1
+                    ? bands[i].UpperFrequencyHz
+                    : Math.Sqrt(bands[i].UpperFrequencyHz * bands[i + 1].LowerFrequencyHz);
+            bands[i] = bands[i] with
+            {
+                PlotLowerFrequencyHz = plotLower,
+                PlotUpperFrequencyHz = plotUpper,
+            };
         }
 
         return bands;
@@ -348,7 +459,9 @@ public static class CpbAnalyzer
 
     private static string NormalizeBandMode(string bandMode)
     {
-        return bandMode.Equals("octave", StringComparison.OrdinalIgnoreCase) ? "octave" : "third_octave";
+        return bandMode.Equals("octave", StringComparison.OrdinalIgnoreCase)
+            ? "octave"
+            : "third_octave";
     }
 
     private static string NormalizeWeighting(string weighting)
@@ -391,18 +504,26 @@ public static class CpbAnalyzer
             : "z";
     }
 
-    private static IReadOnlyList<string> BuildLimitations(string requestedWeighting, IEnumerable<string> quantities)
+    private static IReadOnlyList<string> BuildLimitations(
+        string requestedWeighting,
+        IEnumerable<string> quantities
+    )
     {
         var limitations = new List<string>
         {
             "Nominal fractional-octave bands computed by summing FFT-bin power; not an IEC 61260 filter-bank analysis.",
         };
 
-        if (requestedWeighting != "z"
-            && quantities.Any(quantity => !string.Equals(quantity, "sound_pressure", StringComparison.OrdinalIgnoreCase)))
+        if (
+            requestedWeighting != "z"
+            && quantities.Any(quantity =>
+                !string.Equals(quantity, "sound_pressure", StringComparison.OrdinalIgnoreCase)
+            )
+        )
         {
             limitations.Add(
-                $"{requestedWeighting.ToUpperInvariant()}-weighting was not applied to non-sound-pressure channels (BS/ISO 7196): frequency weighting is defined for sound pressure signals only.");
+                $"{requestedWeighting.ToUpperInvariant()}-weighting was not applied to non-sound-pressure channels (BS/ISO 7196): frequency weighting is defined for sound pressure signals only."
+            );
         }
 
         return limitations;
@@ -427,8 +548,12 @@ public static class CpbAnalyzer
 
         var frequencySquared = frequencyHz * frequencyHz;
         var numerator = Math.Pow(12200.0, 2.0) * frequencySquared * frequencySquared;
-        var denominator = (frequencySquared + Math.Pow(20.6, 2.0))
-            * Math.Sqrt((frequencySquared + Math.Pow(107.7, 2.0)) * (frequencySquared + Math.Pow(737.9, 2.0)))
+        var denominator =
+            (frequencySquared + Math.Pow(20.6, 2.0))
+            * Math.Sqrt(
+                (frequencySquared + Math.Pow(107.7, 2.0))
+                    * (frequencySquared + Math.Pow(737.9, 2.0))
+            )
             * (frequencySquared + Math.Pow(12200.0, 2.0));
 
         return 20.0 * Math.Log10(numerator / denominator) + 2.0;
@@ -443,7 +568,8 @@ public static class CpbAnalyzer
 
         var frequencySquared = frequencyHz * frequencyHz;
         var numerator = Math.Pow(12200.0, 2.0) * frequencySquared;
-        var denominator = (frequencySquared + Math.Pow(20.6, 2.0)) * (frequencySquared + Math.Pow(12200.0, 2.0));
+        var denominator =
+            (frequencySquared + Math.Pow(20.6, 2.0)) * (frequencySquared + Math.Pow(12200.0, 2.0));
 
         return 20.0 * Math.Log10(numerator / denominator) + 0.06;
     }
@@ -460,9 +586,7 @@ public static class CpbAnalyzer
 
     private static string FormatBandLabel(double frequencyHz)
     {
-        return frequencyHz >= 1000.0
-            ? $"{frequencyHz / 1000.0:0.##}k"
-            : $"{frequencyHz:0.##}";
+        return frequencyHz >= 1000.0 ? $"{frequencyHz / 1000.0:0.##}k" : $"{frequencyHz:0.##}";
     }
 
     private static double[] BuildHannWindow(int size)
@@ -475,9 +599,16 @@ public static class CpbAnalyzer
         return window;
     }
 
-    private static int GetBlockCount(int sampleRate, double startSeconds, double endSeconds, int fftSize, double overlap)
+    private static int GetBlockCount(
+        int sampleRate,
+        double startSeconds,
+        double endSeconds,
+        int fftSize,
+        double overlap
+    )
     {
-        var regionLength = (int)Math.Ceiling(endSeconds * sampleRate) - (int)Math.Floor(startSeconds * sampleRate);
+        var regionLength =
+            (int)Math.Ceiling(endSeconds * sampleRate) - (int)Math.Floor(startSeconds * sampleRate);
         var hopSize = (int)Math.Max(1, fftSize * (1.0 - overlap));
         if (regionLength <= 0)
         {
@@ -491,17 +622,18 @@ public static class CpbAnalyzer
         {
             count++;
             pos += hopSize;
-        }
-        while (pos + fftSize <= endSample);
+        } while (pos + fftSize <= endSample);
 
         return Math.Max(count, 1);
     }
 
     private readonly record struct SpectrumPowerData(double[] FrequenciesHz, double[] Powers);
+
     private readonly record struct CpbBandDefinition(
         double CenterFrequencyHz,
         double LowerFrequencyHz,
         double UpperFrequencyHz,
         double PlotLowerFrequencyHz = 0.0,
-        double PlotUpperFrequencyHz = 0.0);
+        double PlotUpperFrequencyHz = 0.0
+    );
 }
