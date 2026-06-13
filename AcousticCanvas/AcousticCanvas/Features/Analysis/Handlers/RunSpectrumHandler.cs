@@ -36,7 +36,8 @@ public class RunSpectrumHandler(IReadOnlyList<ISignalFileImporter> importers)
             query.StartSeconds,
             query.EndSeconds,
             query.FftSize,
-            query.Overlap
+            query.Overlap,
+            query.WindowType
         );
 
         return Task.FromResult(result);

@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { Select, ActionIcon, Text, Group, Loader, Box, Checkbox, Badge } from '@mantine/core';
+import { Select, ActionIcon, Text, Group, Loader, Box, Checkbox, Badge, TextInput } from '@mantine/core';
 import { IconArrowsMaximize, IconArrowsMinimize, IconChevronDown, IconChevronRight, IconX, IconChartLine } from '@tabler/icons-react';
 import { useAppSelector, useAppDispatch } from '../../../store/reduxHooks';
 import { useRunSpectrum } from '../hooks/useRunSpectrum';
@@ -9,6 +9,7 @@ import {
   spectrumStatusSelector,
   spectrumErrorSelector,
   spectrumUserParametersSelector,
+  spectrumSetZoomRange,
 } from '../store/spectrumSlice';
 import { activeSelectionSelector } from '../../waveform/store/waveformSelectionSlice';
 import { cursorFrequencyHovered, cursorFrequencyCleared, cursorFrequencyHzSelector } from '../store/analysisCursorSlice';
@@ -71,6 +72,10 @@ export const SpectrumPanel = ({
     });
   };
 
+  const handleSetZoomRange = (minFrequencyHz: number | null, maxFrequencyHz: number | null): void => {
+    dispatch(spectrumSetZoomRange({ minFrequencyHz, maxFrequencyHz }));
+  };
+
   // Auto-run when file or selection changes.
   useEffect(() => {
     if (!effectiveFileId || !hasRegion) return;
@@ -110,11 +115,9 @@ export const SpectrumPanel = ({
         .map((ch) => ({
           channelId: ch.channelId,
           channelName: ch.channelName,
-          frequenciesHz: ch.frequenciesHz,
-          magnitudes: ch.magnitudes,
-          magnitudesDb: ch.magnitudesDb,
-          yMode: ch.dbUnit ? ('db' as const) : ('linear' as const),
-          yUnit: ch.dbUnit ?? ch.unit ?? '',
+          points: ch.points,
+          yUnit: ch.yUnit,
+          yAxisLabel: ch.yAxisLabel,
         }))
     : [];
 
@@ -163,6 +166,34 @@ export const SpectrumPanel = ({
               : 'Select region'}
           </Badge>
           {isRunning && <Loader size="xs" color="teal" />}
+          <TextInput
+            size="xs"
+            placeholder="Min Hz"
+            value={spectrumUserParameters.minFrequencyHz ?? ''}
+            onChange={(event) => {
+              const value = event.currentTarget.value;
+              const parsed = value === '' ? null : Number(value);
+              if (value === '' || (!isNaN(parsed) && parsed !== null && parsed >= 0)) {
+                handleSetZoomRange(parsed, spectrumUserParameters.maxFrequencyHz);
+              }
+            }}
+            style={{ width: 70 }}
+            styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+          />
+          <TextInput
+            size="xs"
+            placeholder="Max Hz"
+            value={spectrumUserParameters.maxFrequencyHz ?? ''}
+            onChange={(event) => {
+              const value = event.currentTarget.value;
+              const parsed = value === '' ? null : Number(value);
+              if (value === '' || (!isNaN(parsed) && parsed !== null && parsed >= 0)) {
+                handleSetZoomRange(spectrumUserParameters.minFrequencyHz, parsed);
+              }
+            }}
+            style={{ width: 70 }}
+            styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+          />
           {hasMultipleChannels && spectrumResult && (
             <Group gap="sm">
               {spectrumResult.channels.map((ch) => (
@@ -231,6 +262,8 @@ export const SpectrumPanel = ({
               channels={visibleChannels}
               linkedFrequencyHz={linkedFrequencyHz}
               onHoverFrequency={(hz) => dispatch(hz === null ? cursorFrequencyCleared() : cursorFrequencyHovered(hz))}
+              minFrequencyHz={spectrumUserParameters.minFrequencyHz}
+              maxFrequencyHz={spectrumUserParameters.maxFrequencyHz}
             />
           </Box>
         )}

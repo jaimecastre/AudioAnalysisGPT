@@ -32,7 +32,7 @@ const emptyState: RootState = {
     error: null,
     activeRequestId: null,
     selectedChannelId: null,
-    userParameters: { fftSize: 2048, windowType: 'hann', overlap: 0.5 },
+    userParameters: { fftSize: 2048, windowType: 'hann' as const, overlap: 0.677, format: 'msgpack' as const },
   },
   spectrogram: {
     result: null,

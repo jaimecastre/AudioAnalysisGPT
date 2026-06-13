@@ -46,8 +46,8 @@ const ANALYSIS_KINDS: AnalysisKindEntry[] = [
     requiresRegion: true,
     defaultOptions: {
       fftSize: 8192,
-      windowType: 'hann',
-      overlap: 0.5,
+      windowType: 'hann' as const,
+      overlap: 0.677,
     },
   },
   {

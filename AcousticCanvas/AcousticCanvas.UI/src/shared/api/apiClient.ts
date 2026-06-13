@@ -82,8 +82,36 @@ async function requestJson<T>(endpoint: string, options?: RequestOptions): Promi
   return response.json();
 }
 
+function convertKeysToCamelCase(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map(convertKeysToCamelCase);
+  }
+  const obj = value as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(obj)) {
+    const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+    result[camelKey] = convertKeysToCamelCase(val);
+  }
+  return result;
+}
+
+async function requestMsgPack<T>(endpoint: string, options?: RequestOptions): Promise<T> {
+  const response = await request(endpoint, {
+    ...options,
+    headers: { ...(options?.headers ?? {}), Accept: 'application/x-msgpack' },
+  });
+  const buffer = await response.arrayBuffer();
+  const { decode } = await import('@msgpack/msgpack');
+  const decoded = decode(buffer);
+  return convertKeysToCamelCase(decoded) as T;
+}
+
 export const apiClient = {
   request,
   requestJson,
+  requestMsgPack,
   buildUrl,
 };

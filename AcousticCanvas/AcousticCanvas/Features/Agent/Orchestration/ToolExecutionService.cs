@@ -19,7 +19,7 @@ public sealed class ToolExecutionService(
     private const double DefaultSpectrumStartSeconds = 0.0;
     private const double DefaultSpectrumEndFallback = 600.0;
     private const int DefaultFftSize = 32768;
-    private const double DefaultOverlap = 0.5;
+    private const double DefaultOverlap = 0.677;
     private const int DefaultSpectrogramFftSize = 2048;
     private const double DefaultSpectrogramOverlap = 0.75;
     private const string DefaultSpectrogramScale = "mel";

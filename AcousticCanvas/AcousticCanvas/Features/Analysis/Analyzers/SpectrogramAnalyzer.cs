@@ -361,10 +361,12 @@ public static class SpectrogramAnalyzer
     private static double[] BuildHannWindow(int size)
     {
         var window = new double[size];
+
         for (var n = 0; n < size; n++)
         {
-            window[n] = 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * n / (size - 1)));
+            window[n] = 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * n / size));
         }
+
         return window;
     }
 

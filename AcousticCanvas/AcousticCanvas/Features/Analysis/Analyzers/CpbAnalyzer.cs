@@ -592,10 +592,15 @@ public static class CpbAnalyzer
     private static double[] BuildHannWindow(int size)
     {
         var window = new double[size];
+
         for (var n = 0; n < size; n++)
         {
-            window[n] = 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * n / (size - 1)));
+            // Periodic Hann window for FFT/spectral analysis.
+            // Equivalent to creating a symmetric Hann of size + 1
+            // and dropping the final sample.
+            window[n] = 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * n / size));
         }
+
         return window;
     }
 

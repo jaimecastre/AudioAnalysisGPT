@@ -5,10 +5,8 @@ import styles from './SpectrumCanvas.module.scss';
 interface ISpectrumChannel {
   channelId: string;
   channelName: string;
-  frequenciesHz: number[];
-  magnitudes: number[];
-  magnitudesDb: (number | null)[];
-  yMode: 'db' | 'linear';
+  // [x, y] pairs where x = frequencyHz and y = magnitudeDb (or linear magnitude)
+  points: number[][];
   yUnit: string;
   // Full label from backend e.g. 'Level [dB re 20 µPa]' or '[dBFS]'.
   // When present, used verbatim as the Y-axis title instead of the generic 'Magnitude [...]'.
@@ -20,7 +18,6 @@ interface ITooltipState {
   y: number;
   frequencyHz: number;
   magnitude: number;
-  magnitudeDb: number | null;
   yUnit: string;
   channelName: string;
 }
@@ -31,6 +28,8 @@ interface ISpectrumCanvasProps {
   // Cross-panel linked frequency cursor (Hz) driven by hovering another panel.
   linkedFrequencyHz?: number | null;
   onHoverFrequency?: (frequencyHz: number | null) => void;
+  minFrequencyHz?: number | null;
+  maxFrequencyHz?: number | null;
 }
 
 const MARGIN = { top: 12, right: 16, bottom: 44, left: 52 };
@@ -51,11 +50,6 @@ function formatHz(hz: number): string {
   return `${Math.round(hz)}`;
 }
 
-// Linear frequency scale mapping: 0 Hz at left, xMax at right.
-function toLinearX(freq: number, xMax: number, plotWidth: number): number {
-  return MARGIN.left + (freq / xMax) * plotWidth;
-}
-
 // Round up to nearest multiple of step.
 function ceilTo(value: number, step: number): number {
   return Math.ceil(value / step) * step;
@@ -70,6 +64,8 @@ function drawSpectrum(
   canvas: HTMLCanvasElement,
   channels: ISpectrumChannel[],
   linkedFrequencyHz: number | null,
+  minFrequencyHz: number | null,
+  maxFrequencyHz: number | null,
 ): void {
   const dpr = window.devicePixelRatio || 1;
   const width = canvas.clientWidth;
@@ -79,7 +75,7 @@ function drawSpectrum(
   canvas.height = height * dpr;
 
   const ctx = canvas.getContext('2d');
-  if (!ctx || channels.length === 0 || channels[0].frequenciesHz.length === 0) {
+  if (!ctx || channels.length === 0 || !channels[0].points || channels[0].points.length === 0) {
     return;
   }
 
@@ -90,37 +86,47 @@ function drawSpectrum(
   const plotHeight = height - MARGIN.top - MARGIN.bottom;
 
   const firstChannel = channels[0];
-  const yMode = firstChannel.yMode;
   const yUnit = firstChannel.yUnit;
 
-  // X axis: linear from 0 to Nyquist.
-  const frequenciesHz = firstChannel.frequenciesHz;
-  const xMax = frequenciesHz[frequenciesHz.length - 1];
+  // X axis: linear from 0 to Nyquist (max frequency in points).
+  const xMax = firstChannel.points[firstChannel.points.length - 1][0];
 
-  const toX = (freq: number): number => toLinearX(freq, xMax, plotWidth);
+  // Apply zoom range if specified
+  const xMin = minFrequencyHz ?? 0;
+  const xMaxDisplay = maxFrequencyHz ?? xMax;
+
+  const toX = (freq: number): number => {
+    // Map frequency to pixel position based on zoomed range
+    const normalizedFreq = (freq - xMin) / (xMaxDisplay - xMin);
+    return MARGIN.left + normalizedFreq * plotWidth;
+  };
 
   // Y axis: snap to 10 dB grid around the data range.
+  // Points are already in dB if calibrated, or linear if not.
+  // We detect by checking if values are mostly negative (dB) or positive (linear).
+  const allYValues = channels.flatMap((ch) => ch.points.map((p) => p[1]));
+  if (allYValues.length === 0) return;
+
+  const dataMax = Math.max(...allYValues);
+  const dataMin = Math.min(...allYValues);
+  const isDb = dataMax < 200; // Heuristic: dB values are typically < 200, linear can be much larger
+
   let yMin: number;
   let yMax: number;
   const Y_STEP = 10;
 
-  if (yMode === 'db') {
-    const allDbValues = channels.flatMap(ch => ch.magnitudesDb.filter((v): v is number => v !== null));
-    if (allDbValues.length === 0) return;
-    const dataMax = Math.max(...allDbValues);
-    const dataMin = Math.min(...allDbValues);
+  if (isDb) {
     yMax = ceilTo(dataMax + 5, Y_STEP);
     yMin = floorTo(dataMin - 5, Y_STEP);
   } else {
-    const allMagnitudes = channels.flatMap(ch => ch.magnitudes);
-    yMax = Math.max(...allMagnitudes) * 1.1;
+    yMax = Math.max(...allYValues) * 1.1;
     yMin = 0;
   }
 
   const toY = (value: number): number =>
     MARGIN.top + ((yMax - value) / (yMax - yMin)) * plotHeight;
 
-  // Y grid lines — every Y_STEP dB.
+  // Y grid lines — every Y_STEP.
   ctx.font = FONT;
   ctx.textAlign = 'right';
 
@@ -136,15 +142,16 @@ function drawSpectrum(
     ctx.fillText(yValue.toFixed(0), MARGIN.left - 6, yPixel + 4);
   }
 
-  // X grid lines — evenly spaced, ~6–10 labels across Nyquist.
-  // Pick a step size that gives ~8 divisions: round to nearest 1k, 2k, 5k etc.
-  const rawStep = xMax / 8;
+  // X grid lines — evenly spaced, ~6–10 labels across zoomed range.
+  const zoomRange = xMaxDisplay - xMin;
+  const rawStep = zoomRange / 8;
   const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
   const normalised = rawStep / magnitude;
   const xStep = magnitude * (normalised < 1.5 ? 1 : normalised < 3.5 ? 2 : normalised < 7.5 ? 5 : 10);
 
   ctx.textAlign = 'center';
-  for (let xValue = 0; xValue <= xMax; xValue += xStep) {
+  const xStart = Math.ceil(xMin / xStep) * xStep;
+  for (let xValue = xStart; xValue <= xMaxDisplay; xValue += xStep) {
     const xPixel = toX(xValue);
     ctx.strokeStyle = GRID_COLOR;
     ctx.lineWidth = 1;
@@ -181,20 +188,16 @@ function drawSpectrum(
   ctx.rect(MARGIN.left, MARGIN.top, plotWidth, plotHeight);
   ctx.clip();
 
-  // Draw each channel's spectrum line.
+  // Draw each channel's spectrum line from [x, y] points.
   channels.forEach((channel, index) => {
     ctx.beginPath();
     ctx.strokeStyle = CHANNEL_COLORS[index % CHANNEL_COLORS.length];
     ctx.lineWidth = 1.5;
 
     let started = false;
-    for (let i = 0; i < channel.frequenciesHz.length; i++) {
-      const yValue = channel.yMode === 'db'
-        ? (channel.magnitudesDb[i] ?? null)
-        : channel.magnitudes[i];
-      if (yValue === null) continue;
-      const xPixel = toX(channel.frequenciesHz[i]);
-      const yPixel = toY(yValue);
+    for (const point of channel.points) {
+      const xPixel = toX(point[0]);
+      const yPixel = toY(point[1]);
       if (!started) { ctx.moveTo(xPixel, yPixel); started = true; }
       else { ctx.lineTo(xPixel, yPixel); }
     }
@@ -204,7 +207,7 @@ function drawSpectrum(
   ctx.restore();
 
   // Linked frequency cursor.
-  if (linkedFrequencyHz !== null && linkedFrequencyHz >= 0 && linkedFrequencyHz <= xMax) {
+  if (linkedFrequencyHz !== null && linkedFrequencyHz >= xMin && linkedFrequencyHz <= xMaxDisplay) {
     const xPixel = toX(linkedFrequencyHz);
     ctx.save();
     ctx.strokeStyle = LINKED_CURSOR_COLOR;
@@ -247,15 +250,17 @@ export const SpectrumCanvas = ({
   xUnit = 'Hz',
   linkedFrequencyHz = null,
   onHoverFrequency,
+  minFrequencyHz = null,
+  maxFrequencyHz = null,
 }: ISpectrumCanvasProps): JSX.Element => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [tooltip, setTooltip] = useState<ITooltipState | null>(null);
 
   const draw = useCallback(() => {
     if (canvasRef.current) {
-      drawSpectrum(canvasRef.current, channels, linkedFrequencyHz);
+      drawSpectrum(canvasRef.current, channels, linkedFrequencyHz, minFrequencyHz, maxFrequencyHz);
     }
-  }, [channels, linkedFrequencyHz]);
+  }, [channels, linkedFrequencyHz, minFrequencyHz, maxFrequencyHz]);
 
   useEffect(() => {
     draw();
@@ -273,7 +278,7 @@ export const SpectrumCanvas = ({
 
   const handleMouseMove = (event: React.MouseEvent<HTMLCanvasElement>): void => {
     const canvas = canvasRef.current;
-    if (!canvas || channels.length === 0 || channels[0].frequenciesHz.length === 0) {
+    if (!canvas || channels.length === 0 || !channels[0].points || channels[0].points.length === 0) {
       return;
     }
 
@@ -282,43 +287,46 @@ export const SpectrumCanvas = ({
     const mouseX = event.clientX - rect.left;
 
     const plotWidth = rect.width - MARGIN.left - MARGIN.right;
-    const frequenciesHz = firstChannel.frequenciesHz;
-    const xMax = frequenciesHz[frequenciesHz.length - 1];
+    const xMax = firstChannel.points[firstChannel.points.length - 1][0];
 
-    // Convert mouse position to frequency using linear scale.
+    // Apply zoom range
+    const xMin = minFrequencyHz ?? 0;
+    const xMaxDisplay = maxFrequencyHz ?? xMax;
+
+    // Convert mouse position to frequency using zoomed linear scale.
     const normalizedX = (mouseX - MARGIN.left) / plotWidth;
-    const freqAtMouse = normalizedX * xMax;
+    const freqAtMouse = xMin + normalizedX * (xMaxDisplay - xMin);
 
-    if (freqAtMouse < 0 || freqAtMouse > xMax * 1.02) {
+    if (freqAtMouse < xMin || freqAtMouse > xMaxDisplay) {
       setTooltip(null);
       onHoverFrequency?.(null);
       return;
     }
 
-    // Find nearest frequency index (linear distance).
+    // Find nearest point by frequency (x value).
     let nearestChannelIndex = 0;
-    let nearestIndex = 0;
+    let nearestPointIndex = 0;
     let minDist = Infinity;
 
     channels.forEach((channel, chIndex) => {
-      for (let i = 0; i < channel.frequenciesHz.length; i++) {
-        const dist = Math.abs(channel.frequenciesHz[i] - freqAtMouse);
+      for (let i = 0; i < channel.points.length; i++) {
+        const dist = Math.abs(channel.points[i][0] - freqAtMouse);
         if (dist < minDist) {
           minDist = dist;
           nearestChannelIndex = chIndex;
-          nearestIndex = i;
+          nearestPointIndex = i;
         }
       }
     });
 
     const nearestChannel = channels[nearestChannelIndex];
-    onHoverFrequency?.(nearestChannel.frequenciesHz[nearestIndex]);
+    const nearestPoint = nearestChannel.points[nearestPointIndex];
+    onHoverFrequency?.(nearestPoint[0]);
     setTooltip({
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
-      frequencyHz: nearestChannel.frequenciesHz[nearestIndex],
-      magnitude: nearestChannel.magnitudes[nearestIndex],
-      magnitudeDb: nearestChannel.magnitudesDb[nearestIndex],
+      frequencyHz: nearestPoint[0],
+      magnitude: nearestPoint[1],
       yUnit: nearestChannel.yUnit,
       channelName: nearestChannel.channelName,
     });
@@ -352,17 +360,10 @@ export const SpectrumCanvas = ({
             <span className={styles.tooltipLabel}>{xUnit}</span>
             <span className={styles.tooltipValue}>{tooltip.frequencyHz.toFixed(1)}</span>
           </span>
-          {tooltip.magnitudeDb !== null ? (
-            <span className={styles.tooltipRow}>
-              <span className={styles.tooltipLabel}>{tooltip.yUnit}</span>
-              <span className={styles.tooltipValue}>{tooltip.magnitudeDb.toFixed(2)}</span>
-            </span>
-          ) : (
-            <span className={styles.tooltipRow}>
-              <span className={styles.tooltipLabel}>{tooltip.yUnit}</span>
-              <span className={styles.tooltipValue}>{tooltip.magnitude.toExponential(3)}</span>
-            </span>
-          )}
+          <span className={styles.tooltipRow}>
+            <span className={styles.tooltipLabel}>{tooltip.yUnit}</span>
+            <span className={styles.tooltipValue}>{tooltip.magnitude.toFixed(2)}</span>
+          </span>
         </div>
       )}
     </div>

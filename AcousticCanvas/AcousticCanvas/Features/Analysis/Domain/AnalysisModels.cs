@@ -1,5 +1,11 @@
 namespace AcousticCanvas.Features.Analysis.Domain;
 
+public enum SpectrumWindowType
+{
+    Rectangular,
+    Hann
+}
+
 public sealed class FileInfoAnalysis
 {
     public required string FileName { get; init; }

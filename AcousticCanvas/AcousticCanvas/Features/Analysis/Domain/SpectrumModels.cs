@@ -1,3 +1,5 @@
+using MessagePack;
+
 namespace AcousticCanvas.Features.Analysis.Domain;
 
 public sealed class SpectrumAnalysis
@@ -39,6 +41,7 @@ public sealed class ChannelSpectrumAnalysis
     public string? PhysicalQuantity { get; init; }
 }
 
+[MessagePackObject(keyAsPropertyName: true)]
 public sealed class TonalPeak
 {
     public required double FrequencyHz { get; init; }

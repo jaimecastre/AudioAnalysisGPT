@@ -9,7 +9,7 @@ public class RunAgentAnalysisHandler(SignalAnalysisService analysisService)
     : CommandHandler<RunAgentAnalysisCommand, AgentAnalysisResult>
 {
     private const int DefaultFftSize = 8192;
-    private const double DefaultOverlap = 0.5;
+    private const double DefaultOverlap = 0.677;
 
     public override async Task<AgentAnalysisResult> ExecuteAsync(
         RunAgentAnalysisCommand command,
@@ -135,7 +135,8 @@ public class RunAgentAnalysisHandler(SignalAnalysisService analysisService)
             StartSeconds: startSeconds,
             EndSeconds: endSeconds,
             FftSize: DefaultFftSize,
-            Overlap: DefaultOverlap
+            Overlap: DefaultOverlap,
+            WindowType: SpectrumWindowType.Hann
         );
 
         var spectrumResult = await spectrumQuery.ExecuteAsync(ct);

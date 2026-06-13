@@ -1,12 +1,12 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
-import type { SpectrumAnalysis, SpectrumUserParameters } from '../types/spectrumTypes';
+import type { SpectrumPointsResponse, SpectrumUserParameters } from '../types/spectrumTypes';
 import { DEFAULT_SPECTRUM_PARAMS } from '../types/spectrumTypes';
 
 export type SpectrumStatus = 'idle' | 'running' | 'complete' | 'error';
 
 interface ISpectrumState {
-  result: SpectrumAnalysis | null;
+  result: SpectrumPointsResponse | null;
   status: SpectrumStatus;
   error: string | null;
   activeRequestId: string | null;
@@ -32,7 +32,7 @@ const spectrumSlice = createSlice({
       state.error = null;
       state.activeRequestId = action.payload;
     },
-    spectrumCompleted: (state, action: PayloadAction<{ requestId: string; result: SpectrumAnalysis }>) => {
+    spectrumCompleted: (state, action: PayloadAction<{ requestId: string; result: SpectrumPointsResponse }>) => {
       if (state.activeRequestId !== action.payload.requestId) return;
       state.status = 'complete';
       state.result = action.payload.result;
@@ -55,6 +55,10 @@ const spectrumSlice = createSlice({
     spectrumSetParameters: (state, action: PayloadAction<Partial<SpectrumUserParameters>>) => {
       state.userParameters = { ...state.userParameters, ...action.payload };
     },
+    spectrumSetZoomRange: (state, action: PayloadAction<{ minFrequencyHz: number | null; maxFrequencyHz: number | null }>) => {
+      state.userParameters.minFrequencyHz = action.payload.minFrequencyHz;
+      state.userParameters.maxFrequencyHz = action.payload.maxFrequencyHz;
+    },
   },
 });
 
@@ -65,11 +69,12 @@ export const {
   spectrumClear,
   spectrumSetChannel,
   spectrumSetParameters,
+  spectrumSetZoomRange,
 } = spectrumSlice.actions;
 
 export default spectrumSlice.reducer;
 
-export const spectrumResultSelector = (state: { spectrum: ISpectrumState }): SpectrumAnalysis | null =>
+export const spectrumResultSelector = (state: { spectrum: ISpectrumState }): SpectrumPointsResponse | null =>
   state.spectrum.result;
 
 export const spectrumStatusSelector = (state: { spectrum: ISpectrumState }): SpectrumStatus =>

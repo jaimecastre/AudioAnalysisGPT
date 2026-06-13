@@ -8,5 +8,6 @@ public record RunSpectrumQuery(
     double StartSeconds,
     double EndSeconds,
     int FftSize,
-    double Overlap
+    double Overlap,
+    SpectrumWindowType WindowType = SpectrumWindowType.Hann
 ) : ICommand<SpectrumAnalysis>;

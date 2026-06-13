@@ -51,8 +51,8 @@ export async function callAnalyzeTool(input: AnalyzeInput): Promise<AgentAnalysi
       ...(input.kind === 'spectrum'
         ? {
             fftSize: 8192,
-            overlap: 0.5,
-            windowType: 'hann',
+            overlap: 0.677,
+            windowType: 'hann' as const,
             spectralFocus: input.focus ?? null,
           }
         : {}),

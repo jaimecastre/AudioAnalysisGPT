@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
-import { Text, Select, Alert, Loader, Stack, Tooltip, Group } from '@mantine/core';
+import { Text, Select, Alert, Loader, Stack, Tooltip, Group, TextInput } from '@mantine/core';
 import { IconAlertCircle, IconAlertTriangle, IconChartLine, IconCursorText, IconInfoCircle, IconRefresh } from '@tabler/icons-react';
-import type { SpectrumAnalysis, SpectrumUserParameters } from '../types/spectrumTypes';
+import type { SpectrumPointsResponse, SpectrumUserParameters } from '../types/spectrumTypes';
 import { FFT_SIZE_OPTIONS } from '../types/spectrumTypes';
 import type { SpectrumStatus } from '../store/spectrumSlice';
 import type { WaveformSelection } from '../../waveform/store/waveformSelectionSlice';
@@ -9,13 +9,14 @@ import { SpectrumCanvas } from './SpectrumCanvas';
 import styles from './SpectrumCard.module.scss';
 
 interface ISpectrumCardProps {
-  result: SpectrumAnalysis | null;
+  result: SpectrumPointsResponse | null;
   status: SpectrumStatus;
   error: string | null;
   activeSelection: WaveformSelection | null;
   userParameters: SpectrumUserParameters;
   showCanvas?: boolean;
   onSetFftSize: (fftSize: number) => void;
+  onSetZoomRange: (minFrequencyHz: number | null, maxFrequencyHz: number | null) => void;
 }
 
 export const SpectrumCard = ({
@@ -26,14 +27,16 @@ export const SpectrumCard = ({
   userParameters,
   showCanvas = true,
   onSetFftSize,
+  onSetZoomRange,
 }: ISpectrumCardProps): JSX.Element => {
   const hasSelection = activeSelection !== null && activeSelection.endSeconds > activeSelection.startSeconds;
 
   // Check if current FFT params differ from result
   const fftParamsDiffer = result && result.parameters.fftSize !== userParameters.fftSize;
 
-  const binSpacingHz = result && result.channels[0]?.frequenciesHz.length > 1
-    ? (result.channels[0].frequenciesHz[1] - result.channels[0].frequenciesHz[0]).toFixed(2)
+  const firstChannel = result?.channels[0];
+  const binSpacingHz = firstChannel && firstChannel.points.length > 1
+    ? (firstChannel.points[1][0] - firstChannel.points[0][0]).toFixed(2)
     : null;
 
   const tonalPeaks = result
@@ -54,6 +57,34 @@ export const SpectrumCard = ({
           data={FFT_SIZE_OPTIONS}
           onChange={(val) => val && onSetFftSize(Number(val))}
           classNames={{ root: styles.selectRoot }}
+        />
+        <TextInput
+          size="xs"
+          label="Min Hz"
+          placeholder="0"
+          value={userParameters.minFrequencyHz ?? ''}
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            const parsed = value === '' ? null : Number(value);
+            if (value === '' || (!isNaN(parsed) && parsed !== null && parsed >= 0)) {
+              onSetZoomRange(parsed, userParameters.maxFrequencyHz);
+            }
+          }}
+          style={{ width: 80 }}
+        />
+        <TextInput
+          size="xs"
+          label="Max Hz"
+          placeholder="auto"
+          value={userParameters.maxFrequencyHz ?? ''}
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            const parsed = value === '' ? null : Number(value);
+            if (value === '' || (!isNaN(parsed) && parsed !== null && parsed >= 0)) {
+              onSetZoomRange(userParameters.minFrequencyHz, parsed);
+            }
+          }}
+          style={{ width: 80 }}
         />
         {fftParamsDiffer && (
           <Tooltip label="FFT size changed - will recalculate on next analysis" withArrow>
@@ -229,16 +260,15 @@ export const SpectrumCard = ({
           {showCanvas && result.channels.length > 0 && (
             <div className={styles.canvasWrapper}>
               <SpectrumCanvas
-                channels={result.channels.map(ch => ({
+                channels={result.channels.map((ch) => ({
                   channelId: ch.channelId,
                   channelName: ch.channelName,
-                  frequenciesHz: ch.frequenciesHz,
-                  magnitudes: ch.magnitudes,
-                  magnitudesDb: ch.magnitudesDb,
-                  yMode: ch.dbUnit ? 'db' : 'linear',
-                  yUnit: ch.dbUnit ?? ch.unit ?? '',
-                  yAxisLabel: ch.yAxisLabel ?? null,
+                  points: ch.points,
+                  yUnit: ch.yUnit,
+                  yAxisLabel: ch.yAxisLabel,
                 }))}
+                minFrequencyHz={userParameters.minFrequencyHz}
+                maxFrequencyHz={userParameters.maxFrequencyHz}
               />
             </div>
           )}

@@ -1,6 +1,8 @@
+// ─── Legacy columnar format (kept for agent tools and findings) ─────────
+
 export type SpectrumParameters = {
   fftSize: number;
-  windowType: 'hann';
+  windowType: 'hann' | 'rectangular';
   overlap: number;
   averaging: string;
   scaling: string;
@@ -54,16 +56,65 @@ export type SpectrumAnalysis = {
   channels: ChannelSpectrumAnalysis[];
 };
 
+// ─── MessagePack [x, y] point format (frontend spectrum display) ───────
+
+export type SpectrumPointsParameters = {
+  fftSize: number;
+  windowType: string;
+  overlap: number;
+  averaging: string;
+  scaling: string;
+  startTimeSeconds: number;
+  endTimeSeconds: number;
+  blockCount: number;
+};
+
+export type SpectrumPointsRegion = {
+  startSeconds: number;
+  endSeconds: number;
+  durationSeconds: number;
+};
+
+export type SpectrumChannelPoints = {
+  channelId: string;
+  channelName: string;
+  // [x, y] pairs where x = frequencyHz and y = magnitudeDb (or linear magnitude)
+  points: number[][];
+  yUnit: string;
+  yAxisLabel: string;
+  calibrationState: string;
+  maxMagnitudeDb: number | null;
+  peakFrequencyHz: number | null;
+  dbReferenceValue: number | null;
+  dbReferenceUnit: string | null;
+  physicalQuantity: string | null;
+  tonalPeaks: TonalPeak[];
+};
+
+export type SpectrumPointsResponse = {
+  parameters: SpectrumPointsParameters;
+  region: SpectrumPointsRegion;
+  channels: SpectrumChannelPoints[];
+};
+
+// ─── User-facing parameters ──────────────────────────────────────────────
+
 export type SpectrumUserParameters = {
   fftSize: number;
-  windowType: 'hann';
+  windowType: 'hann' | 'rectangular';
   overlap: number;
+  format: 'json' | 'msgpack';
+  minFrequencyHz: number | null;
+  maxFrequencyHz: number | null;
 };
 
 export const DEFAULT_SPECTRUM_PARAMS: SpectrumUserParameters = {
   fftSize: 8192,
   windowType: 'hann',
-  overlap: 0.5,
+  overlap: 0.677,
+  format: 'msgpack',
+  minFrequencyHz: null,
+  maxFrequencyHz: null,
 };
 
 export const FFT_SIZE_OPTIONS = [

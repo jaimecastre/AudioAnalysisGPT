@@ -2,6 +2,7 @@ using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.AudioUpload.Services;
 using FastEndpoints;
+using MessagePack;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
@@ -27,17 +28,33 @@ public class RunSpectrumEndpoint(AudioFileRepository audioFileRepository)
             return;
         }
 
+        var windowType = ParseWindowType(request.WindowType);
+
         var query = new RunSpectrumQuery(
             FilePath: filePath,
             StartSeconds: request.StartSeconds,
             EndSeconds: request.EndSeconds,
             FftSize: request.FftSize,
-            Overlap: request.Overlap
+            Overlap: request.Overlap,
+            WindowType: windowType
         );
 
         try
         {
-            Response = await query.ExecuteAsync(cancellationToken);
+            var result = await query.ExecuteAsync(cancellationToken);
+
+            if (string.Equals(request.Format, "msgpack", StringComparison.OrdinalIgnoreCase))
+            {
+                var pointsResponse = SpectrumPointsMapper.ToPointsResponse(result);
+                var bytes = MessagePackSerializer.Serialize(pointsResponse);
+                HttpContext.Response.ContentType = "application/x-msgpack";
+                HttpContext.Response.StatusCode = 200;
+                await HttpContext.Response.Body.WriteAsync(bytes, cancellationToken);
+                await HttpContext.Response.CompleteAsync();
+                return;
+            }
+
+            Response = result;
         }
         catch (Exception ex)
         {
@@ -48,6 +65,13 @@ public class RunSpectrumEndpoint(AudioFileRepository audioFileRepository)
             );
         }
     }
+
+    private static SpectrumWindowType ParseWindowType(string windowType)
+    {
+        return windowType.Equals("rectangular", StringComparison.OrdinalIgnoreCase)
+            ? SpectrumWindowType.Rectangular
+            : SpectrumWindowType.Hann;
+    }
 }
 
 public class RunSpectrumRequest
@@ -56,5 +80,7 @@ public class RunSpectrumRequest
     public double StartSeconds { get; set; }
     public double EndSeconds { get; set; }
     public int FftSize { get; set; } = 8192;
-    public double Overlap { get; set; } = 0.5;
+    public double Overlap { get; set; } = 0.677;
+    public string WindowType { get; set; } = "hann";
+    public string Format { get; set; } = "json";
 }

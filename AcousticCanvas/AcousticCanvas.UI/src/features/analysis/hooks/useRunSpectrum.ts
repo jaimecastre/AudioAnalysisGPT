@@ -3,7 +3,7 @@ import { useAppDispatch } from '../../../store/reduxHooks';
 import { apiClient, HttpMethod } from '../../../shared/api/apiClient';
 import { API_ENDPOINTS } from '../../../shared/api/apiEndpoints';
 import { spectrumStarted, spectrumCompleted, spectrumFailed } from '../store/spectrumSlice';
-import type { SpectrumAnalysis, SpectrumUserParameters } from '../types/spectrumTypes';
+import type { SpectrumPointsResponse, SpectrumUserParameters } from '../types/spectrumTypes';
 
 interface IRunSpectrumArgs {
   fileId: string;
@@ -25,7 +25,12 @@ export const useRunSpectrum = (): { runSpectrum: (args: IRunSpectrumArgs) => Pro
     abortControllerRef.current = abortController;
     dispatch(spectrumStarted(requestId));
     try {
-      const result = await apiClient.requestJson<SpectrumAnalysis>(
+      const isMsgPack = args.parameters.format === 'msgpack';
+      const requestFn = isMsgPack
+        ? apiClient.requestMsgPack<SpectrumPointsResponse>
+        : apiClient.requestJson<SpectrumPointsResponse>;
+
+      const result = await requestFn(
         API_ENDPOINTS.AUDIO.RUN_SPECTRUM,
         {
           method: HttpMethod.POST,
@@ -35,11 +40,34 @@ export const useRunSpectrum = (): { runSpectrum: (args: IRunSpectrumArgs) => Pro
             endSeconds: args.endSeconds,
             fftSize: args.parameters.fftSize,
             overlap: args.parameters.overlap,
+            windowType: args.parameters.windowType,
+            format: args.parameters.format,
           },
           signal: abortController.signal,
         },
       );
       if (abortController.signal.aborted) return;
+      
+      console.log('=== Spectrum Points Response (Decompressed) ===');
+      console.log('Parameters:', result.parameters);
+      console.log('Region:', result.region);
+      console.log('Channel count:', result.channels.length);
+      
+      result.channels.forEach((channel, index) => {
+        console.log(`Channel ${index + 1}:`, {
+          channelId: channel.channelId,
+          channelName: channel.channelName,
+          dataPoints: channel.points.length,
+          yUnit: channel.yUnit,
+          peakFrequencyHz: channel.peakFrequencyHz,
+          maxMagnitudeDb: channel.maxMagnitudeDb,
+          first5Points: channel.points.slice(0, 5),
+          last5Points: channel.points.slice(-5),
+        });
+      });
+      
+      console.log('===============================================');
+      
       dispatch(spectrumCompleted({ requestId, result }));
     } catch (error) {
       if (abortController.signal.aborted) return;

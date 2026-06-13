@@ -6,7 +6,7 @@ namespace AcousticCanvas.Features.Analysis.Analyzers;
 
 public static class SpectrumAnalyzer
 {
-    private const string DefaultWindowType = "hann";
+    private const SpectrumWindowType DefaultWindowType = SpectrumWindowType.Hann;
     private const string AveragingMethod = "power";
     private const string ScalingDescription = "one-sided amplitude, coherent-gain corrected";
     private const string TonalPeakMethod = "local_median_prominence_db";
@@ -20,14 +20,17 @@ public static class SpectrumAnalyzer
         double startSeconds,
         double endSeconds,
         int fftSize,
-        double overlap
+        double overlap,
+        SpectrumWindowType windowType = SpectrumWindowType.Hann
     )
     {
         var channelResults = new List<ChannelSpectrumAnalysis>();
 
         foreach (var channel in channels)
         {
-            var channelResult = AnalyzeChannel(channel, startSeconds, endSeconds, fftSize, overlap);
+            var channelResult = AnalyzeChannel(
+                channel, startSeconds, endSeconds, fftSize, overlap, windowType
+            );
             channelResults.Add(channelResult);
         }
 
@@ -40,7 +43,7 @@ public static class SpectrumAnalyzer
         var parameters = new SpectrumParameters
         {
             FftSize = fftSize,
-            WindowType = DefaultWindowType,
+            WindowType = windowType.ToString().ToLowerInvariant(),
             Overlap = overlap,
             Averaging = AveragingMethod,
             Scaling = ScalingDescription,
@@ -69,7 +72,8 @@ public static class SpectrumAnalyzer
         double startSeconds,
         double endSeconds,
         int fftSize,
-        double overlap
+        double overlap,
+        SpectrumWindowType windowType
     )
     {
         var sampleRate = channel.SampleRate;
@@ -87,7 +91,8 @@ public static class SpectrumAnalyzer
             endSample,
             sampleRate,
             fftSize,
-            overlap
+            overlap,
+            windowType
         );
 
         var isPressure =
@@ -414,14 +419,14 @@ public static class SpectrumAnalyzer
         int endSample,
         int sampleRate,
         int fftSize,
-        double overlap
+        double overlap,
+        SpectrumWindowType windowType
     )
     {
         var regionLength = endSample - startSample;
         var halfFftSize = fftSize / 2 + 1;
 
-        // Hann window coefficients.
-        var window = BuildHannWindow(fftSize);
+        var window = BuildWindow(fftSize, windowType);
 
         // Coherent gain correction: sum(window) / N.
         var coherentGain = 0.0;
@@ -440,7 +445,8 @@ public static class SpectrumAnalyzer
         var blockStart = startSample;
         do
         {
-            var block = ExtractBlock(samples, blockStart, fftSize, regionLength == 0);
+            var remainingInRegion = Math.Max(0, endSample - blockStart);
+            var block = ExtractBlock(samples, blockStart, fftSize, remainingInRegion);
 
             // Apply window.
             var complexBlock = new Complex[fftSize];
@@ -542,13 +548,39 @@ public static class SpectrumAnalyzer
         }
     }
 
-    private static double[] BuildHannWindow(int size)
+    private static double[] BuildWindow(int size, SpectrumWindowType windowType)
+    {
+        return windowType switch
+        {
+            SpectrumWindowType.Rectangular => BuildRectangularWindow(size),
+            SpectrumWindowType.Hann => BuildPeriodicHannWindow(size),
+            _ => BuildPeriodicHannWindow(size)
+        };
+    }
+
+    private static double[] BuildRectangularWindow(int size)
     {
         var window = new double[size];
         for (var n = 0; n < size; n++)
         {
-            window[n] = 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * n / (size - 1)));
+            window[n] = 1.0;
         }
+
+        return window;
+    }
+
+    private static double[] BuildPeriodicHannWindow(int size)
+    {
+        var window = new double[size];
+
+        for (var n = 0; n < size; n++)
+        {
+            // Periodic Hann window for FFT/spectral analysis.
+            // Equivalent to creating a symmetric Hann of size + 1
+            // and dropping the final sample.
+            window[n] = 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * n / size));
+        }
+
         return window;
     }
 
@@ -556,23 +588,21 @@ public static class SpectrumAnalyzer
         float[] samples,
         int startIndex,
         int fftSize,
-        bool forceZeroPad
+        int remainingInRegion
     )
     {
         var block = new double[fftSize];
-        if (forceZeroPad)
-        {
-            return block; // all zeros
-        }
 
-        var available = Math.Min(fftSize, samples.Length - startIndex);
+        var availableInFile = samples.Length - startIndex;
+        var available = Math.Min(fftSize, availableInFile);
+        available = Math.Min(available, remainingInRegion);
         available = Math.Max(available, 0);
 
         for (var i = 0; i < available; i++)
         {
             block[i] = samples[startIndex + i];
         }
-        // Remaining entries are already zero (zero-padded).
+
         return block;
     }
 
