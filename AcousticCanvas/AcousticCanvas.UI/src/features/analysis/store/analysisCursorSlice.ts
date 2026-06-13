@@ -6,12 +6,12 @@ import { createSlice } from '@reduxjs/toolkit';
 //   hovering a frequency in one highlights the same frequency in the others.
 // - hoverTimeSeconds links the time-domain views (waveform, spectrogram):
 //   hovering a time in one highlights the same instant in the other.
-interface AnalysisCursorState {
+interface IAnalysisCursorState {
   hoverFrequencyHz: number | null;
   hoverTimeSeconds: number | null;
 }
 
-const initialState: AnalysisCursorState = {
+const initialState: IAnalysisCursorState = {
   hoverFrequencyHz: null,
   hoverTimeSeconds: null,
 };
@@ -44,8 +44,8 @@ export const {
 
 export default analysisCursorSlice.reducer;
 
-export const cursorFrequencyHzSelector = (state: { analysisCursor: AnalysisCursorState }): number | null =>
+export const cursorFrequencyHzSelector = (state: { analysisCursor: IAnalysisCursorState }): number | null =>
   state.analysisCursor.hoverFrequencyHz;
 
-export const cursorTimeSecondsSelector = (state: { analysisCursor: AnalysisCursorState }): number | null =>
+export const cursorTimeSecondsSelector = (state: { analysisCursor: IAnalysisCursorState }): number | null =>
   state.analysisCursor.hoverTimeSeconds;

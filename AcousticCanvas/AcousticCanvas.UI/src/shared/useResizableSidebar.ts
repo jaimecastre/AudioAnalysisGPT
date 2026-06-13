@@ -1,13 +1,13 @@
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-interface UseResizableSidebarOptions {
+interface IUseResizableSidebarOptions {
   initialWidth: number;
   minWidth?: number;
   maxWidth?: number;
 }
 
-interface UseResizableSidebarReturn {
+interface IUseResizableSidebarReturn {
   panelWidth: number;
   handleResizePointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
   containerRef: RefObject<HTMLDivElement | null>;
@@ -17,7 +17,7 @@ export const useResizableSidebar = ({
   initialWidth,
   minWidth = 280,
   maxWidth = 520,
-}: UseResizableSidebarOptions): UseResizableSidebarReturn => {
+}: IUseResizableSidebarOptions): IUseResizableSidebarReturn => {
   const [panelWidth, setPanelWidth] = useState(initialWidth);
   const containerRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);

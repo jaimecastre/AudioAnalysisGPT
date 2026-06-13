@@ -3,7 +3,7 @@ import { API_ENDPOINTS } from '../../../shared/api/apiEndpoints';
 import { ApiError, apiClient, HttpMethod } from '../../../shared/api/apiClient';
 import type { SoundQualityAnalysis } from '../types/soundQualityTypes';
 
-interface RunSoundQualityArgs {
+interface IRunSoundQualityArgs {
   fileId: string;
   startSeconds: number;
   endSeconds: number;
@@ -13,7 +13,7 @@ export const useRunSoundQuality = (): {
   result: SoundQualityAnalysis | null;
   isRunning: boolean;
   error: string | null;
-  runSoundQuality: (args: RunSoundQualityArgs) => Promise<void>;
+  runSoundQuality: (args: IRunSoundQualityArgs) => Promise<void>;
   resetSoundQuality: () => void;
 } => {
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -23,7 +23,7 @@ export const useRunSoundQuality = (): {
 
   useEffect(() => () => abortControllerRef.current?.abort(), []);
 
-  const runSoundQuality = useCallback(async (args: RunSoundQualityArgs): Promise<void> => {
+  const runSoundQuality = useCallback(async (args: IRunSoundQualityArgs): Promise<void> => {
     abortControllerRef.current?.abort();
     const abortController = new AbortController();
     abortControllerRef.current = abortController;

@@ -4,13 +4,13 @@ import type { AgentAskResponse, AgentToolExecutionRecord } from './services/agen
 
 export type AgentAskStatus = 'idle' | 'analyzing' | 'done' | 'error';
 
-interface AgentAskState {
+interface IAgentAskState {
   status: AgentAskStatus;
   lastResponse: AgentAskResponse | null;
   error: string | null;
 }
 
-const initialAgentAskState: AgentAskState = {
+const initialAgentAskState: IAgentAskState = {
   status: 'idle',
   lastResponse: null,
   error: null,
@@ -46,13 +46,13 @@ export const {
 
 export default agentAskSlice.reducer;
 
-export const agentAskStatusSelector = (state: { agentAsk: AgentAskState }): AgentAskStatus =>
+export const agentAskStatusSelector = (state: { agentAsk: IAgentAskState }): AgentAskStatus =>
   state.agentAsk.status;
 
-export const agentAskResponseSelector = (state: { agentAsk: AgentAskState }): AgentAskResponse | null =>
+export const agentAskResponseSelector = (state: { agentAsk: IAgentAskState }): AgentAskResponse | null =>
   state.agentAsk.lastResponse;
 
-export const agentAskErrorSelector = (state: { agentAsk: AgentAskState }): string | null =>
+export const agentAskErrorSelector = (state: { agentAsk: IAgentAskState }): string | null =>
   state.agentAsk.error;
 
 export type { AgentToolExecutionRecord };

@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 
-interface KeyboardShortcutsOptions {
+interface IKeyboardShortcutsOptions {
   isEnabled: boolean;
   onPlayPause: () => void;
   onSeekBackward: () => void;
@@ -18,7 +18,7 @@ export const useKeyboardShortcuts = ({
   onSeekForward,
   onAddMarker,
   onClearSelection,
-}: KeyboardShortcutsOptions): void => {
+}: IKeyboardShortcutsOptions): void => {
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (!isEnabled) {

@@ -8,7 +8,7 @@ import type { AnalysisStatus } from '../../analysis/store/analysisSlice';
 import styles from './RightSidebar.module.scss';
 import { useResizableSidebar } from '../../../shared/useResizableSidebar';
 
-interface RightSidebarProps {
+interface IRightSidebarProps {
   analysisResult: AnalysisResult | null;
   analysisStatus: AnalysisStatus;
   analysisError: string | null;
@@ -20,7 +20,7 @@ export const RightSidebar = ({
   analysisStatus,
   analysisError,
   selectedFileName,
-}: RightSidebarProps): JSX.Element => {
+}: IRightSidebarProps): JSX.Element => {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const panelIsLoading = analysisStatus === 'running';
   const { handleResizePointerDown, containerRef } = useResizableSidebar({ initialWidth: 300, minWidth: 240, maxWidth: 560 });

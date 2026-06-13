@@ -118,14 +118,14 @@ function buildMarkerContent(
   return wrapper;
 }
 
-interface UseMarkersOptions {
+interface IUseMarkersOptions {
   wavesurferRef: React.MutableRefObject<WaveSurfer | null>;
   isReady: boolean;
   fileId: string;
   onMarkerClick?: (timeSeconds: number) => void;
 }
 
-interface UseMarkersReturn {
+interface IUseMarkersReturn {
   markerRegionsRef: React.MutableRefObject<ReturnType<typeof RegionsPlugin.create> | null>;
 }
 
@@ -134,7 +134,7 @@ export const useMarkers = ({
   isReady,
   fileId,
   onMarkerClick,
-}: UseMarkersOptions): UseMarkersReturn => {
+}: IUseMarkersOptions): IUseMarkersReturn => {
   const dispatch = useAppDispatch();
   const allMarkers = useAppSelector(markersSelector);
 

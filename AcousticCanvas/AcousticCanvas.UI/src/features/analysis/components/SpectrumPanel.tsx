@@ -16,7 +16,7 @@ import { SpectrumCanvas } from './SpectrumCanvas';
 import { agentPromptPrefillSet, setActiveMode } from '../../navigation/store/navigationSlice';
 import styles from './SpectrogramPanel.module.scss';
 
-interface SpectrumPanelProps {
+interface ISpectrumPanelProps {
   panelId: string;
   availableFiles: Array<{ id: string; name: string }>;
   selectedFileId: string | null;
@@ -34,7 +34,7 @@ export const SpectrumPanel = ({
   onClose,
   isWide,
   onToggleSpan,
-}: SpectrumPanelProps): JSX.Element => {
+}: ISpectrumPanelProps): JSX.Element => {
   const spectrumResult = useAppSelector(spectrumResultSelector);
   const spectrumStatus = useAppSelector(spectrumStatusSelector);
   const spectrumError = useAppSelector(spectrumErrorSelector);

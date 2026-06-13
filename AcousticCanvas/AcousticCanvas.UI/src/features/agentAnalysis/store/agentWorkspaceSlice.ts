@@ -105,13 +105,13 @@ export type AgentArtifact =
   | AgentArtifactToolResult
   | AgentArtifactReport;
 
-interface AgentWorkspaceState {
+interface IAgentWorkspaceState {
   artifacts: AgentArtifact[];
   focusedArtifactId: string | null;
   expandedArtifactIds: string[];
 }
 
-const initialState: AgentWorkspaceState = {
+const initialState: IAgentWorkspaceState = {
   artifacts: [],
   focusedArtifactId: null,
   expandedArtifactIds: [],
@@ -178,11 +178,11 @@ export const {
 
 export default agentWorkspaceSlice.reducer;
 
-export const agentArtifactsSelector = (state: { agentWorkspace: AgentWorkspaceState }): AgentArtifact[] =>
+export const agentArtifactsSelector = (state: { agentWorkspace: IAgentWorkspaceState }): AgentArtifact[] =>
   state.agentWorkspace.artifacts;
 
-export const focusedArtifactIdSelector = (state: { agentWorkspace: AgentWorkspaceState }): string | null =>
+export const focusedArtifactIdSelector = (state: { agentWorkspace: IAgentWorkspaceState }): string | null =>
   state.agentWorkspace.focusedArtifactId;
 
-export const expandedArtifactIdsSelector = (state: { agentWorkspace: AgentWorkspaceState }): string[] =>
+export const expandedArtifactIdsSelector = (state: { agentWorkspace: IAgentWorkspaceState }): string[] =>
   state.agentWorkspace.expandedArtifactIds;

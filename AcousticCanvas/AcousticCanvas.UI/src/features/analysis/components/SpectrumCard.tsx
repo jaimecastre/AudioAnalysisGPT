@@ -8,7 +8,7 @@ import type { WaveformSelection } from '../../waveform/store/waveformSelectionSl
 import { SpectrumCanvas } from './SpectrumCanvas';
 import styles from './SpectrumCard.module.scss';
 
-interface SpectrumCardProps {
+interface ISpectrumCardProps {
   result: SpectrumAnalysis | null;
   status: SpectrumStatus;
   error: string | null;
@@ -26,7 +26,7 @@ export const SpectrumCard = ({
   userParameters,
   showCanvas = true,
   onSetFftSize,
-}: SpectrumCardProps): JSX.Element => {
+}: ISpectrumCardProps): JSX.Element => {
   const hasSelection = activeSelection !== null && activeSelection.endSeconds > activeSelection.startSeconds;
 
   // Check if current FFT params differ from result

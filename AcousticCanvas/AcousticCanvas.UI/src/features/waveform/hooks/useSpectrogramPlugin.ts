@@ -5,14 +5,14 @@ import type { ChannelSpectrogramAnalysis } from '../../analysis/types/spectrogra
 
 const SPECTROGRAM_HEIGHT_PX = 160;
 
-interface UseSpectrogramPluginOptions {
+interface IUseSpectrogramPluginOptions {
   wavesurferRef: React.MutableRefObject<WaveSurfer | null>;
   isWaveSurferReady: boolean;
   channelData: ChannelSpectrogramAnalysis | null;
   sampleRate: number;
 }
 
-interface UseSpectrogramPluginReturn {
+interface IUseSpectrogramPluginReturn {
   spectrogramContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
@@ -37,7 +37,7 @@ export const useSpectrogramPlugin = ({
   isWaveSurferReady,
   channelData,
   sampleRate,
-}: UseSpectrogramPluginOptions): UseSpectrogramPluginReturn => {
+}: IUseSpectrogramPluginOptions): IUseSpectrogramPluginReturn => {
   const spectrogramContainerRef = useRef<HTMLDivElement | null>(null);
   const pluginRef = useRef<ReturnType<typeof SpectrogramPlugin.create> | null>(null);
   // Track whether the plugin has fired its 'ready' event (DOM fully initialised).

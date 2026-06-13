@@ -62,19 +62,19 @@ function buildRegionLabelElement(startSeconds: number, endSeconds: number): HTML
   return container;
 }
 
-interface UseRegionsOptions {
+interface IUseRegionsOptions {
   wavesurferRef: React.MutableRefObject<WaveSurfer | null>;
   isReady: boolean;
   onUserSelectionChange?: (startSeconds: number, endSeconds: number) => void;
 }
 
-interface UseRegionsReturn {
+interface IUseRegionsReturn {
   regionsRef: React.MutableRefObject<ReturnType<typeof RegionsPlugin.create> | null>;
   clearSelection: () => void;
   setSelectionInWaveSurfer: (startSeconds: number, endSeconds: number) => void;
 }
 
-export const useRegions = ({ wavesurferRef, isReady, onUserSelectionChange }: UseRegionsOptions): UseRegionsReturn => {
+export const useRegions = ({ wavesurferRef, isReady, onUserSelectionChange }: IUseRegionsOptions): IUseRegionsReturn => {
   const dispatch = useAppDispatch();
   const activeSelection = useAppSelector(activeSelectionSelector);
   const loopEnabled = useAppSelector(loopEnabledSelector);

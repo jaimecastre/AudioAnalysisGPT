@@ -16,20 +16,20 @@ import type { AudioFile } from '../../../store/projectState';
 import type { WaveformSelection } from '../../waveform/store/waveformSelectionSlice';
 import styles from './ActiveSignalCard.module.scss';
 
-interface ToolPanel {
+interface IToolPanel {
   id: string;
   type: 'spectrogram' | 'spectrum' | 'cpb' | 'soundQuality';
   fileId: string | null;
   span: 'normal' | 'wide';
 }
 
-interface ActiveSignalCardProps {
+interface IActiveSignalCardProps {
   file: AudioFile;
   audioUrl: string;
   waveSurferRef: RefObject<WaveSurferDisplayRef | null>;
   currentTime: number | null;
   activeSelection: WaveformSelection | null;
-  toolPanels: ToolPanel[];
+  toolPanels: IToolPanel[];
   allFiles: AudioFile[];
   manualCompareResult: CompareResult | null;
   manualCompareStatus: 'idle' | 'loading' | 'error';
@@ -83,7 +83,7 @@ export function ActiveSignalCard({
   onToolPanelToggleSpan,
   onToolPanelClose,
   onSeek,
-}: ActiveSignalCardProps): JSX.Element {
+}: IActiveSignalCardProps): JSX.Element {
   return (
     <div className={`${styles.signalCard} ${styles.signalCardSelected}`}>
       <div className={styles.signalCardHeader}>

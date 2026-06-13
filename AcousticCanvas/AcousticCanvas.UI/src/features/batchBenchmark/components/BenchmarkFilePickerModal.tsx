@@ -6,7 +6,7 @@ import type { AudioFile } from '../../../store/projectState';
 import { canRunBenchmarkWithSelection } from '../utils/benchmarkSelection';
 import styles from './BenchmarkFilePickerModal.module.scss';
 
-interface BenchmarkFilePickerModalProps {
+interface IBenchmarkFilePickerModalProps {
   opened: boolean;
   onClose: () => void;
   files: AudioFile[];
@@ -15,7 +15,7 @@ interface BenchmarkFilePickerModalProps {
   onConfirm: (fileIds: string[]) => void;
 }
 
-interface PickerBodyProps {
+interface IPickerBodyProps {
   files: AudioFile[];
   initialSelectedIds: Set<string>;
   isLoading: boolean;
@@ -27,7 +27,7 @@ const PickerBody = ({
   initialSelectedIds,
   isLoading,
   onConfirm,
-}: PickerBodyProps): JSX.Element => {
+}: IPickerBodyProps): JSX.Element => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(initialSelectedIds));
 
   const handleToggle = (fileId: string): void => {
@@ -94,7 +94,7 @@ export const BenchmarkFilePickerModal = ({
   initialSelectedIds,
   isLoading,
   onConfirm,
-}: BenchmarkFilePickerModalProps): JSX.Element => {
+}: IBenchmarkFilePickerModalProps): JSX.Element => {
   return (
     <Modal
       opened={opened}

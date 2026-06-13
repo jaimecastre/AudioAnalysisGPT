@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import styles from './SpectrumCanvas.module.scss';
 
-interface SpectrumChannel {
+interface ISpectrumChannel {
   channelId: string;
   channelName: string;
   frequenciesHz: number[];
@@ -15,7 +15,7 @@ interface SpectrumChannel {
   yAxisLabel?: string | null;
 }
 
-interface TooltipState {
+interface ITooltipState {
   x: number;
   y: number;
   frequencyHz: number;
@@ -25,8 +25,8 @@ interface TooltipState {
   channelName: string;
 }
 
-interface SpectrumCanvasProps {
-  channels: SpectrumChannel[];
+interface ISpectrumCanvasProps {
+  channels: ISpectrumChannel[];
   xUnit?: string;
   // Cross-panel linked frequency cursor (Hz) driven by hovering another panel.
   linkedFrequencyHz?: number | null;
@@ -68,7 +68,7 @@ function floorTo(value: number, step: number): number {
 
 function drawSpectrum(
   canvas: HTMLCanvasElement,
-  channels: SpectrumChannel[],
+  channels: ISpectrumChannel[],
   linkedFrequencyHz: number | null,
 ): void {
   const dpr = window.devicePixelRatio || 1;
@@ -247,9 +247,9 @@ export const SpectrumCanvas = ({
   xUnit = 'Hz',
   linkedFrequencyHz = null,
   onHoverFrequency,
-}: SpectrumCanvasProps): JSX.Element => {
+}: ISpectrumCanvasProps): JSX.Element => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [tooltip, setTooltip] = useState<ITooltipState | null>(null);
 
   const draw = useCallback(() => {
     if (canvasRef.current) {

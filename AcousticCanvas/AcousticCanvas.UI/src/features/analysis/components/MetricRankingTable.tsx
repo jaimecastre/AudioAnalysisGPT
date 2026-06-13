@@ -2,13 +2,13 @@ import type { JSX } from 'react';
 import { Badge, Box, Group, Loader, Stack, Table, Text, Title } from '@mantine/core';
 import type { MetricRankingResult } from '../hooks/useMetricRanking';
 
-interface MetricRankingTableProps {
+interface IMetricRankingTableProps {
   rankings: MetricRankingResult | null;
   isLoading: boolean;
   error: string | null;
 }
 
-export const MetricRankingTable = ({ rankings, isLoading, error }: MetricRankingTableProps): JSX.Element => {
+export const MetricRankingTable = ({ rankings, isLoading, error }: IMetricRankingTableProps): JSX.Element => {
   if (isLoading) {
     return (
       <Box p="md">

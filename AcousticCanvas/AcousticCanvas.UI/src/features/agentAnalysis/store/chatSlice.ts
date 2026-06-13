@@ -30,13 +30,13 @@ export type ChatMessage = {
   planStatus?: 'planning' | 'done';
 };
 
-interface ChatState {
+interface IChatState {
   messages: ChatMessage[];
   isThinking: boolean;
   selectedModel: string;
 }
 
-const initialState: ChatState = {
+const initialState: IChatState = {
   messages: [],
   isThinking: false,
   selectedModel: DEFAULT_MODEL_ID,
@@ -210,11 +210,11 @@ export const {
 
 export default chatSlice.reducer;
 
-export const chatMessagesSelector = (state: { chat: ChatState }): ChatMessage[] =>
+export const chatMessagesSelector = (state: { chat: IChatState }): ChatMessage[] =>
   state.chat.messages;
 
-export const chatIsThinkingSelector = (state: { chat: ChatState }): boolean =>
+export const chatIsThinkingSelector = (state: { chat: IChatState }): boolean =>
   state.chat.isThinking;
 
-export const chatSelectedModelSelector = (state: { chat: ChatState }): string =>
+export const chatSelectedModelSelector = (state: { chat: IChatState }): string =>
   state.chat.selectedModel;

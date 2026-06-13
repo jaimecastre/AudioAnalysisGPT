@@ -3,13 +3,13 @@ import { Badge, Box, Group, Loader, Stack, Text } from '@mantine/core';
 import { IconCheck, IconAlertTriangle, IconX } from '@tabler/icons-react';
 import type { SoundQualitySummaryResult } from '../hooks/useSoundQualitySummary';
 
-interface SoundQualitySummaryProps {
+interface ISoundQualitySummaryProps {
   summary: SoundQualitySummaryResult | null;
   isLoading: boolean;
   error: string | null;
 }
 
-export const SoundQualitySummary = ({ summary, isLoading, error }: SoundQualitySummaryProps): JSX.Element => {
+export const SoundQualitySummary = ({ summary, isLoading, error }: ISoundQualitySummaryProps): JSX.Element => {
   if (isLoading) {
     return (
       <Box p="md">

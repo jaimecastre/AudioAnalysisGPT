@@ -4,14 +4,14 @@ import type { AnalysisResult } from '../types/analysisTypes';
 
 export type AnalysisStatus = 'idle' | 'running' | 'complete' | 'error';
 
-interface AnalysisState {
+interface IAnalysisState {
   result: AnalysisResult | null;
   status: AnalysisStatus;
   error: string | null;
   showInspector: boolean;
 }
 
-const initialState: AnalysisState = {
+const initialState: IAnalysisState = {
   result: null,
   status: 'idle',
   error: null,
@@ -56,14 +56,14 @@ export const {
 
 export default analysisSlice.reducer;
 
-export const analysisResultSelector = (state: { analysis: AnalysisState }): AnalysisResult | null =>
+export const analysisResultSelector = (state: { analysis: IAnalysisState }): AnalysisResult | null =>
   state.analysis.result;
 
-export const analysisStatusSelector = (state: { analysis: AnalysisState }): AnalysisStatus =>
+export const analysisStatusSelector = (state: { analysis: IAnalysisState }): AnalysisStatus =>
   state.analysis.status;
 
-export const analysisErrorSelector = (state: { analysis: AnalysisState }): string | null =>
+export const analysisErrorSelector = (state: { analysis: IAnalysisState }): string | null =>
   state.analysis.error;
 
-export const analysisShowInspectorSelector = (state: { analysis: AnalysisState }): boolean =>
+export const analysisShowInspectorSelector = (state: { analysis: IAnalysisState }): boolean =>
   state.analysis.showInspector;

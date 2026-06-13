@@ -5,7 +5,7 @@ import { DEFAULT_CPB_PARAMS } from '../types/cpbTypes';
 
 export type CpbStatus = 'idle' | 'running' | 'complete' | 'error';
 
-interface CpbState {
+interface ICpbState {
   result: CpbAnalysis | null;
   status: CpbStatus;
   error: string | null;
@@ -14,7 +14,7 @@ interface CpbState {
   userParameters: CpbUserParameters;
 }
 
-const initialState: CpbState = {
+const initialState: ICpbState = {
   result: null,
   status: 'idle',
   error: null,
@@ -68,17 +68,17 @@ export const {
 
 export default cpbSlice.reducer;
 
-export const cpbResultSelector = (state: { cpb: CpbState }): CpbAnalysis | null =>
+export const cpbResultSelector = (state: { cpb: ICpbState }): CpbAnalysis | null =>
   state.cpb.result;
 
-export const cpbStatusSelector = (state: { cpb: CpbState }): CpbStatus =>
+export const cpbStatusSelector = (state: { cpb: ICpbState }): CpbStatus =>
   state.cpb.status;
 
-export const cpbErrorSelector = (state: { cpb: CpbState }): string | null =>
+export const cpbErrorSelector = (state: { cpb: ICpbState }): string | null =>
   state.cpb.error;
 
-export const cpbSelectedChannelIdSelector = (state: { cpb: CpbState }): string | null =>
+export const cpbSelectedChannelIdSelector = (state: { cpb: ICpbState }): string | null =>
   state.cpb.selectedChannelId;
 
-export const cpbUserParametersSelector = (state: { cpb: CpbState }): CpbUserParameters =>
+export const cpbUserParametersSelector = (state: { cpb: ICpbState }): CpbUserParameters =>
   state.cpb.userParameters;

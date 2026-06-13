@@ -6,7 +6,7 @@ import type { AudioFile } from '../../../store/projectState';
 import { canRunCompare, clampCompareSelection, MAX_COMPARE_SELECTION, toggleCompareSelection } from '../utils/compareSelection';
 import styles from './CompareFilePickerModal.module.scss';
 
-interface CompareFilePickerModalProps {
+interface ICompareFilePickerModalProps {
   opened: boolean;
   onClose: () => void;
   files: AudioFile[];
@@ -15,14 +15,14 @@ interface CompareFilePickerModalProps {
   isLoading: boolean;
 }
 
-interface PickerBodyProps {
+interface IPickerBodyProps {
   files: AudioFile[];
   initialSelectedIds: Set<string>;
   onConfirm: (fileIds: string[]) => void;
   isLoading: boolean;
 }
 
-function PickerBody({ files, initialSelectedIds, onConfirm, isLoading }: PickerBodyProps): JSX.Element {
+function PickerBody({ files, initialSelectedIds, onConfirm, isLoading }: IPickerBodyProps): JSX.Element {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => clampCompareSelection(initialSelectedIds));
 
   const handleToggle = (fileId: string): void => {
@@ -81,7 +81,7 @@ export function CompareFilePickerModal({
   initialSelectedIds,
   onConfirm,
   isLoading,
-}: CompareFilePickerModalProps): JSX.Element {
+}: ICompareFilePickerModalProps): JSX.Element {
   return (
     <Modal
       opened={opened}

@@ -5,7 +5,7 @@ import { analysisClear } from '../../analysis/store/analysisSlice';
 import { useRunAnalysis } from '../../analysis/hooks/useRunAnalysis';
 import type { WaveSurferDisplayRef } from '../../waveform/components/WaveSurferDisplay';
 
-interface UseManualPlaybackReturn {
+interface IUseManualPlaybackReturn {
   waveSurferRef: React.RefObject<WaveSurferDisplayRef | null>;
   isPlaying: boolean;
   currentTime: number;
@@ -20,7 +20,7 @@ interface UseManualPlaybackReturn {
   handleRemoveFile: (fileId: string) => void;
 }
 
-export const useManualPlayback = (selectedSignalId: string | null): UseManualPlaybackReturn => {
+export const useManualPlayback = (selectedSignalId: string | null): IUseManualPlaybackReturn => {
   const dispatch = useAppDispatch();
   const { runAnalysis } = useRunAnalysis();
 

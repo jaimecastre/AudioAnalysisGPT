@@ -5,20 +5,20 @@ import { useAppDispatch } from '../../../store/reduxHooks';
 import { cpbCompleted, cpbFailed, cpbStarted } from '../store/cpbSlice';
 import type { CpbAnalysis, CpbUserParameters } from '../types/cpbTypes';
 
-interface RunCpbArgs {
+interface IRunCpbArgs {
   fileId: string;
   startSeconds: number;
   endSeconds: number;
   parameters: CpbUserParameters;
 }
 
-export const useRunCpb = (): { runCpb: (args: RunCpbArgs) => Promise<void> } => {
+export const useRunCpb = (): { runCpb: (args: IRunCpbArgs) => Promise<void> } => {
   const dispatch = useAppDispatch();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => abortControllerRef.current?.abort(), []);
 
-  const runCpb = useCallback(async (args: RunCpbArgs): Promise<void> => {
+  const runCpb = useCallback(async (args: IRunCpbArgs): Promise<void> => {
     abortControllerRef.current?.abort();
     const abortController = new AbortController();
     const requestId = crypto.randomUUID();

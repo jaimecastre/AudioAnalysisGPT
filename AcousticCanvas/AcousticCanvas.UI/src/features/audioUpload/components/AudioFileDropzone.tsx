@@ -6,7 +6,7 @@ import styles from './AudioFileDropzone.module.scss';
 
 export type OnAudioFilesUploaded = (files: File[]) => void;
 
-interface AudioFileDropzoneProps {
+interface IAudioFileDropzoneProps {
   onFileSelected: OnAudioFilesUploaded;
   isUploading?: boolean;
 }
@@ -22,7 +22,7 @@ const ACCEPTED_AUDIO_TYPES: Record<string, string[]> = {
 export const AudioFileDropzone = ({
   onFileSelected,
   isUploading = false,
-}: AudioFileDropzoneProps): JSX.Element => {
+}: IAudioFileDropzoneProps): JSX.Element => {
   const handleDrop = (dropped: File[]): void => {
     if (dropped.length > 0) {
       onFileSelected(dropped);

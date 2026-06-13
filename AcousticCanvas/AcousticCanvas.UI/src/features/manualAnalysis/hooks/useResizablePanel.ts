@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 
-interface UseResizablePanelReturn {
+interface IUseResizablePanelReturn {
   panelWidth: number;
   handleDragHandleMouseDown: () => void;
 }
 
-export const useResizablePanel = (initialWidth: number): UseResizablePanelReturn => {
+export const useResizablePanel = (initialWidth: number): IUseResizablePanelReturn => {
   const [panelWidth, setPanelWidth] = useState(initialWidth);
   const isDraggingRef = useRef(false);
 

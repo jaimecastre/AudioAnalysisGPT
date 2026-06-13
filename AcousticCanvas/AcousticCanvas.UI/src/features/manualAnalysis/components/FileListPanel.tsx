@@ -19,7 +19,7 @@ import {
 import type { AudioFile } from '../../../store/projectState';
 import styles from './FileListPanel.module.scss';
 
-interface FileListPanelProps {
+interface IFileListPanelProps {
   files: AudioFile[];
   selectedSignalId: string | null;
   onSelectFile: (fileId: string) => void;
@@ -65,7 +65,7 @@ export function FileListPanel({
   isBenchmarkLoading,
   isFindingsPanelOpen,
   width,
-}: FileListPanelProps): JSX.Element {
+}: IFileListPanelProps): JSX.Element {
   const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(new Set());
 
   function handleToggleExpanded(fileId: string): void {

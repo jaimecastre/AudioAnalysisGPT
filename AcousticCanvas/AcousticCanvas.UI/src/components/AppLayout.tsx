@@ -7,11 +7,11 @@ import { useAppSelector } from '../store/reduxHooks';
 import { activeModeSelector } from '../features/navigation/store/navigationSlice';
 import { projectNameSelector, projectStatusSelector } from '../features/project/store/projectSlice';
 
-interface AppLayoutProps {
+interface IAppLayoutProps {
   children: ReactNode;
 }
 
-export const AppLayout = ({ children }: AppLayoutProps): JSX.Element => {
+export const AppLayout = ({ children }: IAppLayoutProps): JSX.Element => {
   const activeMode = useAppSelector(activeModeSelector);
   const projectName = useAppSelector(projectNameSelector);
   const projectStatus = useAppSelector(projectStatusSelector);

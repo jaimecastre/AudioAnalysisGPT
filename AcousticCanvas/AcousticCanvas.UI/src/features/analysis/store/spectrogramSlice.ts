@@ -5,7 +5,7 @@ import { DEFAULT_SPECTROGRAM_PARAMS } from '../types/spectrogramTypes';
 
 export type SpectrogramStatus = 'idle' | 'running' | 'complete' | 'error';
 
-interface SpectrogramState {
+interface ISpectrogramState {
   result: SpectrogramAnalysis | null;
   status: SpectrogramStatus;
   error: string | null;
@@ -14,7 +14,7 @@ interface SpectrogramState {
   userParameters: SpectrogramUserParameters;
 }
 
-const initialState: SpectrogramState = {
+const initialState: ISpectrogramState = {
   result: null,
   status: 'idle',
   error: null,
@@ -68,17 +68,17 @@ export const {
 
 export default spectrogramSlice.reducer;
 
-export const spectrogramResultSelector = (state: { spectrogram: SpectrogramState }): SpectrogramAnalysis | null =>
+export const spectrogramResultSelector = (state: { spectrogram: ISpectrogramState }): SpectrogramAnalysis | null =>
   state.spectrogram.result;
 
-export const spectrogramStatusSelector = (state: { spectrogram: SpectrogramState }): SpectrogramStatus =>
+export const spectrogramStatusSelector = (state: { spectrogram: ISpectrogramState }): SpectrogramStatus =>
   state.spectrogram.status;
 
-export const spectrogramErrorSelector = (state: { spectrogram: SpectrogramState }): string | null =>
+export const spectrogramErrorSelector = (state: { spectrogram: ISpectrogramState }): string | null =>
   state.spectrogram.error;
 
-export const spectrogramSelectedChannelIdSelector = (state: { spectrogram: SpectrogramState }): string | null =>
+export const spectrogramSelectedChannelIdSelector = (state: { spectrogram: ISpectrogramState }): string | null =>
   state.spectrogram.selectedChannelId;
 
-export const spectrogramUserParametersSelector = (state: { spectrogram: SpectrogramState }): SpectrogramUserParameters =>
+export const spectrogramUserParametersSelector = (state: { spectrogram: ISpectrogramState }): SpectrogramUserParameters =>
   state.spectrogram.userParameters;

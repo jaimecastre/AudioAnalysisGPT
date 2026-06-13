@@ -3,7 +3,7 @@ import { useRef, useEffect, useState } from 'react';
 import type { CompareSpectrumCurve, CompareSpectrumDelta } from '../../agent/types/agentToolTypes';
 import styles from './ComparisonSpectrumCanvas.module.scss';
 
-interface ComparisonSpectrumCanvasProps {
+interface IComparisonSpectrumCanvasProps {
   curveA: CompareSpectrumCurve;
   curveB: CompareSpectrumCurve;
   delta: CompareSpectrumDelta;
@@ -12,7 +12,7 @@ interface ComparisonSpectrumCanvasProps {
   showDelta: boolean;
 }
 
-interface TooltipState {
+interface ITooltipState {
   x: number;
   y: number;
   frequencyHz: number;
@@ -267,9 +267,9 @@ export function ComparisonSpectrumCanvas({
   labelA,
   labelB,
   showDelta,
-}: ComparisonSpectrumCanvasProps): JSX.Element {
+}: IComparisonSpectrumCanvasProps): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [tooltip, setTooltip] = useState<ITooltipState | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;

@@ -220,7 +220,7 @@ function scaleToFrequency(scaledFrequency: number, scale: SpectrogramScale): num
   return scaledFrequency;
 }
 
-interface SpectrogramPanelProps {
+interface ISpectrogramPanelProps {
   panelId: string;
   availableFiles: Array<{ id: string; name: string; durationSeconds: number }>;
   selectedFileId: string | null;
@@ -232,7 +232,7 @@ interface SpectrogramPanelProps {
   onToggleSpan: (panelId: string) => void;
 }
 
-interface SpectrogramHover {
+interface ISpectrogramHover {
   xPercent: number;
   yPercent: number;
   timeSeconds: number;
@@ -249,7 +249,7 @@ export const SpectrogramPanel = ({
   onClose,
   isWide,
   onToggleSpan,
-}: SpectrogramPanelProps): JSX.Element => {
+}: ISpectrogramPanelProps): JSX.Element => {
   const dispatch = useAppDispatch();
   const spectrogramResult = useAppSelector(spectrogramResultSelector);
   const spectrogramStatus = useAppSelector(spectrogramStatusSelector);
@@ -263,7 +263,7 @@ export const SpectrogramPanel = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const axisCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const colorbarCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [hover, setHover] = useState<SpectrogramHover | null>(null);
+  const [hover, setHover] = useState<ISpectrogramHover | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [canvasHeight, setCanvasHeight] = useState(DEFAULT_CANVAS_HEIGHT);
   const effectiveFileId = selectedFileId ?? availableFiles[0]?.id ?? null;
@@ -360,7 +360,7 @@ export const SpectrogramPanel = ({
   const showLinkedTime = !hover && linkedTimePercent >= 0 && linkedTimePercent <= 100;
   const timeAxisTicks = spectrogramResult?.timeAxisTicks ?? [];
 
-  const getSpectrogramPosition = (event: React.MouseEvent<HTMLDivElement>): SpectrogramHover | null => {
+  const getSpectrogramPosition = (event: React.MouseEvent<HTMLDivElement>): ISpectrogramHover | null => {
     if (!renderedRegion || !renderedScale || renderedRegion.durationSeconds <= 0 || renderedNyquistHz <= 0) {
       return null;
     }

@@ -14,7 +14,7 @@ import type { Finding, FindingSeverity } from '../types/findingsTypes';
 import { agentPromptPrefillSet, setActiveMode } from '../../navigation/store/navigationSlice';
 import styles from './FindingsPanel.module.scss';
 
-interface FindingsPanelProps {
+interface IFindingsPanelProps {
   fileId: string | null;
   onClose: () => void;
 }
@@ -206,7 +206,7 @@ function FindingDetailDialog({
   );
 }
 
-export const FindingsPanel = ({ fileId, onClose }: FindingsPanelProps): JSX.Element => {
+export const FindingsPanel = ({ fileId, onClose }: IFindingsPanelProps): JSX.Element => {
   const dispatch = useAppDispatch();
   const findingsResult = useAppSelector(findingsResultSelector);
   const findingsStatus = useAppSelector(findingsStatusSelector);

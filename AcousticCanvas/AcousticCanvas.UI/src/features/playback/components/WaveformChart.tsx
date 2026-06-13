@@ -2,14 +2,14 @@ import type { JSX } from 'react';
 import { AreaChart } from '@mantine/charts';
 import { Box } from '@mantine/core';
 
-interface WaveformBin {
+interface IWaveformBin {
   x: number;
   yMin: number;
   yMax: number;
 }
 
-interface WaveformChartProps {
-  waveformBins: WaveformBin[];
+interface IWaveformChartProps {
+  waveformBins: IWaveformBin[];
   currentTime: number;
   duration: number;
 }
@@ -18,7 +18,7 @@ export const WaveformChart = ({
   waveformBins,
   currentTime,
   duration,
-}: WaveformChartProps): JSX.Element => {
+}: IWaveformChartProps): JSX.Element => {
   if (waveformBins.length === 0) {
     return (
       <Box

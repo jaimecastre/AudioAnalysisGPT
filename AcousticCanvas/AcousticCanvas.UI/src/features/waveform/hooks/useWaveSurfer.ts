@@ -7,7 +7,7 @@ const WAVEFORM_COLOR = '#00b8a9';
 const WAVEFORM_PROGRESS_COLOR = '#007a70';
 const CURSOR_COLOR = '#e05252';
 
-interface UseWaveSurferOptions {
+interface IUseWaveSurferOptions {
   containerRef: React.RefObject<HTMLDivElement | null>;
   audioUrl: string;
   height: number;
@@ -40,7 +40,7 @@ const buildWaveSurferConfig = (
 });
 
 
-interface UseWaveSurferReturn {
+interface IUseWaveSurferReturn {
   wavesurferRef: React.MutableRefObject<WaveSurfer | null>;
   isReady: boolean;
 }
@@ -54,7 +54,7 @@ export const useWaveSurfer = ({
   onReady,
   onTimeUpdate,
   onFinish,
-}: UseWaveSurferOptions): UseWaveSurferReturn => {
+}: IUseWaveSurferOptions): IUseWaveSurferReturn => {
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const appliedHeightRef = useRef<number | null>(null);
   const [isReady, setIsReady] = useState(false);

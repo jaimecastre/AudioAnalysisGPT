@@ -26,7 +26,7 @@ const loudnessBarColor = '#00b8a9';
 const sharpnessBarColor = '#f59f00';
 const roughnessBarColor = '#845ef7';
 
-interface SoundQualityPanelProps {
+interface ISoundQualityPanelProps {
   panelId: string;
   availableFiles: Array<{ id: string; name: string; durationSeconds: number }>;
   selectedFileId: string | null;
@@ -44,7 +44,7 @@ export const SoundQualityPanel = ({
   onClose,
   isWide,
   onToggleSpan,
-}: SoundQualityPanelProps): JSX.Element => {
+}: ISoundQualityPanelProps): JSX.Element => {
   const activeSelection = useAppSelector(activeSelectionSelector);
   const { result, isRunning, error, runSoundQuality } = useRunSoundQuality();
   const { runSoundQualitySummary } = useSoundQualitySummary();

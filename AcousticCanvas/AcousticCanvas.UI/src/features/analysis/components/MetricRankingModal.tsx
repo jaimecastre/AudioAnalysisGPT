@@ -6,13 +6,13 @@ import { MetricRankingTable } from './MetricRankingTable';
 import { useMetricRanking } from '../hooks/useMetricRanking';
 import type { MetricRankingResult } from '../hooks/useMetricRanking';
 
-interface MetricRankingModalProps {
+interface IMetricRankingModalProps {
   opened: boolean;
   onClose: () => void;
   availableFiles: Array<{ id: string; name: string }>;
 }
 
-export const MetricRankingModal = ({ opened, onClose, availableFiles }: MetricRankingModalProps): JSX.Element => {
+export const MetricRankingModal = ({ opened, onClose, availableFiles }: IMetricRankingModalProps): JSX.Element => {
   const { runMetricRanking } = useMetricRanking();
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['loudness', 'sharpness', 'roughness']);
   const [rankings, setRankings] = useState<MetricRankingResult | null>(null);

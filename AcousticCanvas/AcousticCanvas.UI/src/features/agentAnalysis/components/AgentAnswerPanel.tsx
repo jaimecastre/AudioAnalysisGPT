@@ -4,7 +4,7 @@ import type { AgentAskResponse } from '../services/agentAskService';
 import type { AgentAskStatus } from '../store/agentAskSlice';
 import styles from './AgentAnswerPanel.module.scss';
 
-interface AgentAnswerPanelProps {
+interface IAgentAnswerPanelProps {
   status: AgentAskStatus;
   response: AgentAskResponse | null;
   error: string | null;
@@ -68,7 +68,7 @@ function ClarificationReply({
   );
 }
 
-export function AgentAnswerPanel({ status, response, error, onReply }: AgentAnswerPanelProps): JSX.Element | null {
+export function AgentAnswerPanel({ status, response, error, onReply }: IAgentAnswerPanelProps): JSX.Element | null {
   if (status !== 'done' || response === null || error !== null) {
     return null;
   }

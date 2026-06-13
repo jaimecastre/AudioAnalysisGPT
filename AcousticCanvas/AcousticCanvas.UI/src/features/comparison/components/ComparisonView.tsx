@@ -7,7 +7,7 @@ import { ComparisonSpectrumCanvas } from './ComparisonSpectrumCanvas';
 import { buildSoundQualityRows, getSoundQualityUnavailableMessage } from '../utils/soundQualityComparisonRows';
 import styles from './ComparisonView.module.scss';
 
-interface ComparisonViewProps {
+interface IComparisonViewProps {
   result: CompareResult;
 }
 
@@ -29,7 +29,7 @@ function formatNullableDb(value: number | null): string {
   return `${value.toFixed(1)} dB`;
 }
 
-interface SoundQualityTableProps {
+interface ISoundQualityTableProps {
   sqA: CompareSoundQuality;
   sqB: CompareSoundQuality;
   delta: CompareSoundQualityDelta;
@@ -39,7 +39,7 @@ interface SoundQualityTableProps {
   labelB: string;
 }
 
-function SoundQualityTable({ sqA, sqB, delta, fileIdA, fileIdB, labelA, labelB }: SoundQualityTableProps): JSX.Element {
+function SoundQualityTable({ sqA, sqB, delta, fileIdA, fileIdB, labelA, labelB }: ISoundQualityTableProps): JSX.Element {
   const rows = buildSoundQualityRows({
     soundQualityA: sqA,
     soundQualityB: sqB,
@@ -87,7 +87,7 @@ function SoundQualityTable({ sqA, sqB, delta, fileIdA, fileIdB, labelA, labelB }
   );
 }
 
-interface LevelMetricsTableProps {
+interface ILevelMetricsTableProps {
   fileA: CompareFileSummary;
   fileB: CompareFileSummary;
   diff: PairwiseDiff;
@@ -95,7 +95,7 @@ interface LevelMetricsTableProps {
   labelB: string;
 }
 
-function LevelMetricsTable({ fileA, fileB, diff, labelA, labelB }: LevelMetricsTableProps): JSX.Element {
+function LevelMetricsTable({ fileA, fileB, diff, labelA, labelB }: ILevelMetricsTableProps): JSX.Element {
   const rows = [
     {
       label: 'Peak',
@@ -164,7 +164,7 @@ function LevelMetricsTable({ fileA, fileB, diff, labelA, labelB }: LevelMetricsT
   );
 }
 
-interface BandEnergyTableProps {
+interface IBandEnergyTableProps {
   bandEnergiesA: CompareBandEnergy[];
   bandEnergiesB: CompareBandEnergy[];
   bandEnergyDeltas: CompareBandEnergy[];
@@ -172,7 +172,7 @@ interface BandEnergyTableProps {
   labelB: string;
 }
 
-function BandEnergyTable({ bandEnergiesA, bandEnergiesB, bandEnergyDeltas, labelA, labelB }: BandEnergyTableProps): JSX.Element {
+function BandEnergyTable({ bandEnergiesA, bandEnergiesB, bandEnergyDeltas, labelA, labelB }: IBandEnergyTableProps): JSX.Element {
   return (
     <table className={styles.metricsTable}>
       <colgroup>
@@ -221,7 +221,7 @@ function BandEnergyTable({ bandEnergiesA, bandEnergiesB, bandEnergyDeltas, label
   );
 }
 
-interface CpbDeltaTableProps {
+interface ICpbDeltaTableProps {
   cpbBandsA?: CompareCpbBand[];
   cpbBandsB?: CompareCpbBand[];
   cpbBandDeltas?: CompareCpbBand[];
@@ -229,7 +229,7 @@ interface CpbDeltaTableProps {
   labelB: string;
 }
 
-function CpbDeltaTable({ cpbBandsA, cpbBandsB, cpbBandDeltas, labelA, labelB }: CpbDeltaTableProps): JSX.Element {
+function CpbDeltaTable({ cpbBandsA, cpbBandsB, cpbBandDeltas, labelA, labelB }: ICpbDeltaTableProps): JSX.Element {
   const bandsA = cpbBandsA ?? [];
   const bandsB = cpbBandsB ?? [];
   const deltas = cpbBandDeltas ?? [];
@@ -348,7 +348,7 @@ function CpbDeltaChart({
   );
 }
 
-export function ComparisonView({ result }: ComparisonViewProps): JSX.Element {
+export function ComparisonView({ result }: IComparisonViewProps): JSX.Element {
   const [showDelta, setShowDelta] = useState(true);
   const hasCpbComparison = Boolean(result.files[0]?.cpbBands?.length && result.files[1]?.cpbBands?.length && result.pairwiseDiffs[0]?.cpbBandDeltas?.length);
   const [activeTab, setActiveTab] = useState<'cpb' | 'bands' | 'level' | 'psych'>(hasCpbComparison ? 'cpb' : 'bands');

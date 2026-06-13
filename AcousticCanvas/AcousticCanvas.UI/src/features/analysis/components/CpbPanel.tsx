@@ -28,7 +28,7 @@ import {
 } from '../types/cpbTypes';
 import styles from './CpbPanel.module.scss';
 
-interface CpbPanelProps {
+interface ICpbPanelProps {
   panelId: string;
   availableFiles: Array<{ id: string; name: string; durationSeconds: number }>;
   selectedFileId: string | null;
@@ -46,7 +46,7 @@ export const CpbPanel = ({
   onClose,
   isWide,
   onToggleSpan,
-}: CpbPanelProps): JSX.Element => {
+}: ICpbPanelProps): JSX.Element => {
   const dispatch = useAppDispatch();
   const activeSelection = useAppSelector(activeSelectionSelector);
   const cpbResult = useAppSelector(cpbResultSelector);

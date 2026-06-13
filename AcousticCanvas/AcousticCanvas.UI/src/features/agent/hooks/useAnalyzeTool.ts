@@ -2,14 +2,14 @@ import { useState } from 'react';
 import type { AnalyzeInput, AgentAnalysisResult } from '../types/agentToolTypes';
 import { callAnalyzeTool } from '../services/analyzeToolService';
 
-interface UseAnalyzeToolReturn {
+interface IUseAnalyzeToolReturn {
   isRunning: boolean;
   lastResult: AgentAnalysisResult | null;
   lastError: string | null;
   runAnalyze: (input: AnalyzeInput) => Promise<AgentAnalysisResult | null>;
 }
 
-export const useAnalyzeTool = (): UseAnalyzeToolReturn => {
+export const useAnalyzeTool = (): IUseAnalyzeToolReturn => {
   const [isRunning, setIsRunning] = useState(false);
   const [lastResult, setLastResult] = useState<AgentAnalysisResult | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);

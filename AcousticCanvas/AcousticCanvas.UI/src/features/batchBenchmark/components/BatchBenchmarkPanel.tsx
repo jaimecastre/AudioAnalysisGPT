@@ -17,7 +17,7 @@ import {
 } from '../utils/benchmarkFormatting';
 import styles from './BatchBenchmarkPanel.module.scss';
 
-interface BatchBenchmarkPanelProps {
+interface IBatchBenchmarkPanelProps {
   result: BatchBenchmarkResult | null;
   status: 'idle' | 'loading' | 'error';
   error: string | null;
@@ -52,7 +52,7 @@ export const BatchBenchmarkPanel = ({
   error,
   onClose,
   onRerun,
-}: BatchBenchmarkPanelProps): JSX.Element => {
+}: IBatchBenchmarkPanelProps): JSX.Element => {
   const dispatch = useAppDispatch();
   const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(new Set());
   const [sortState, setSortState] = useState<BenchmarkSortState>({
@@ -190,13 +190,13 @@ export const BatchBenchmarkPanel = ({
   );
 };
 
-interface BenchmarkRowProps {
+interface IBenchmarkRowProps {
   row: BatchBenchmarkFileRow;
   isExpanded: boolean;
   onToggleExpanded: (fileId: string) => void;
 }
 
-const BenchmarkRow = ({ row, isExpanded, onToggleExpanded }: BenchmarkRowProps): JSX.Element => {
+const BenchmarkRow = ({ row, isExpanded, onToggleExpanded }: IBenchmarkRowProps): JSX.Element => {
   return (
     <>
       <tr className={styles.dataRow}>

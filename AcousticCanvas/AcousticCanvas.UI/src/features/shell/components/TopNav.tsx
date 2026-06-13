@@ -8,14 +8,14 @@ import { useAppDispatch } from '../../../store/reduxHooks';
 import { setActiveMode } from '../../navigation/store/navigationSlice';
 import { setProjectName } from '../../project/store/projectSlice';
 
-interface TopNavProps {
+interface ITopNavProps {
   activeMode: ActiveMode;
   projectName: string;
   projectStatus: ProjectStatus;
   sidebarWidth?: number;
 }
 
-export const TopNav = ({ activeMode, projectName, projectStatus, sidebarWidth = 200 }: TopNavProps): JSX.Element => {
+export const TopNav = ({ activeMode, projectName, projectStatus, sidebarWidth = 200 }: ITopNavProps): JSX.Element => {
   const dispatch = useAppDispatch();
 
   const handleModeChange = (selectedMode: ActiveMode): void => {
@@ -35,12 +35,12 @@ export const TopNav = ({ activeMode, projectName, projectStatus, sidebarWidth = 
   );
 }
 
-interface TopNavModeSwitcherProps {
+interface ITopNavModeSwitcherProps {
   activeMode: ActiveMode;
   onModeChange: (selectedMode: ActiveMode) => void;
 }
 
-const TopNavModeSwitcher = ({ activeMode, onModeChange }: TopNavModeSwitcherProps): JSX.Element => {
+const TopNavModeSwitcher = ({ activeMode, onModeChange }: ITopNavModeSwitcherProps): JSX.Element => {
   const modeOptions = [
     { label: 'Manual Analysis', value: 'manual' },
     { label: 'Agent', value: 'agent' },
@@ -66,11 +66,11 @@ const TopNavSpacer = (): JSX.Element => {
   return <div className={styles.spacer} aria-hidden="true" />;
 }
 
-interface TopNavProjectNameProps {
+interface ITopNavProjectNameProps {
   projectName: string;
 }
 
-const TopNavProjectName = ({ projectName }: TopNavProjectNameProps): JSX.Element => {
+const TopNavProjectName = ({ projectName }: ITopNavProjectNameProps): JSX.Element => {
   const dispatch = useAppDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [draftName, setDraftName] = useState(projectName);
@@ -143,11 +143,11 @@ const statusStyleMap: Record<ProjectStatus, string> = {
   'error': 'statusError',
 };
 
-interface TopNavStatusProps {
+interface ITopNavStatusProps {
   projectStatus: ProjectStatus;
 }
 
-const TopNavStatus = ({ projectStatus }: TopNavStatusProps): JSX.Element => {
+const TopNavStatus = ({ projectStatus }: ITopNavStatusProps): JSX.Element => {
   const statusLabel = statusLabelMap[projectStatus];
   const statusStyleKey = statusStyleMap[projectStatus] as keyof typeof styles;
 

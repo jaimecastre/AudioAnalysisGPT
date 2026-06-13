@@ -5,7 +5,7 @@ import type { AnalysisResult, ChannelLevelAnalysis, FileInfoAnalysis } from '../
 import type { AnalysisStatus } from '../store/analysisSlice';
 import styles from './AnalysisInspector.module.scss';
 
-interface AnalysisInspectorProps {
+interface IAnalysisInspectorProps {
   result: AnalysisResult | null;
   status: AnalysisStatus;
   error: string | null;
@@ -110,7 +110,7 @@ export const AnalysisInspector = ({
   result,
   status,
   error,
-}: AnalysisInspectorProps): JSX.Element => {
+}: IAnalysisInspectorProps): JSX.Element => {
   return (
     <div className={styles.inspector}>
       <div className={styles.body}>

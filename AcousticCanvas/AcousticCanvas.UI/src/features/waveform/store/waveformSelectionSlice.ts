@@ -7,13 +7,13 @@ export interface WaveformSelection {
   endSeconds: number;
 }
 
-interface WaveformSelectionState {
+interface IWaveformSelectionState {
   activeSelection: WaveformSelection | null;
   loopEnabled: boolean;
   showDisplay: boolean;
 }
 
-const initialState: WaveformSelectionState = {
+const initialState: IWaveformSelectionState = {
   activeSelection: null,
   loopEnabled: false,
   showDisplay: true,
@@ -54,11 +54,11 @@ export const {
 
 export default waveformSelectionSlice.reducer;
 
-export const activeSelectionSelector = (state: { waveformSelection: WaveformSelectionState }): WaveformSelection | null =>
+export const activeSelectionSelector = (state: { waveformSelection: IWaveformSelectionState }): WaveformSelection | null =>
   state.waveformSelection.activeSelection;
 
-export const loopEnabledSelector = (state: { waveformSelection: WaveformSelectionState }): boolean =>
+export const loopEnabledSelector = (state: { waveformSelection: IWaveformSelectionState }): boolean =>
   state.waveformSelection.loopEnabled;
 
-export const showWaveformDisplaySelector = (state: { waveformSelection: WaveformSelectionState }): boolean =>
+export const showWaveformDisplaySelector = (state: { waveformSelection: IWaveformSelectionState }): boolean =>
   state.waveformSelection.showDisplay;

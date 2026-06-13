@@ -1,14 +1,14 @@
 import type { JSX, ReactNode } from 'react';
 import styles from './WorkspacePanel.module.scss';
 
-interface WorkspacePanelProps {
+interface IWorkspacePanelProps {
   title: string;
   children: ReactNode;
   as?: 'div' | 'aside' | 'section';
   ariaLabel?: string;
 }
 
-export const WorkspacePanel = ({ title, children, as: Tag = 'div', ariaLabel }: WorkspacePanelProps): JSX.Element => {
+export const WorkspacePanel = ({ title, children, as: Tag = 'div', ariaLabel }: IWorkspacePanelProps): JSX.Element => {
   return (
     <Tag className={styles.panel} aria-label={ariaLabel ?? title}>
       <WorkspacePanelHeader title={title} />
@@ -19,11 +19,11 @@ export const WorkspacePanel = ({ title, children, as: Tag = 'div', ariaLabel }: 
   );
 };
 
-interface WorkspacePanelHeaderProps {
+interface IWorkspacePanelHeaderProps {
   title: string;
 }
 
-const WorkspacePanelHeader = ({ title }: WorkspacePanelHeaderProps): JSX.Element => {
+const WorkspacePanelHeader = ({ title }: IWorkspacePanelHeaderProps): JSX.Element => {
   return (
     <div className={styles.panelHeader}>
       <span className={styles.panelTitle}>{title}</span>

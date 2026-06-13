@@ -3,15 +3,15 @@ import { useEffect, useState } from 'react';
 type ToolPanelType = 'spectrogram' | 'spectrum' | 'cpb' | 'soundQuality';
 type ToolPanelSpan = 'normal' | 'wide';
 
-interface ToolPanel {
+interface IToolPanel {
   id: string;
   type: ToolPanelType;
   fileId: string | null;
   span: ToolPanelSpan;
 }
 
-interface UseToolPanelsReturn {
-  toolPanels: ToolPanel[];
+interface IUseToolPanelsReturn {
+  toolPanels: IToolPanel[];
   hasSpectrogramPanel: boolean;
   hasSpectrumPanel: boolean;
   hasCpbPanel: boolean;
@@ -31,17 +31,17 @@ const PANEL_TYPES: ToolPanelType[] = ['spectrogram', 'spectrum', 'cpb', 'soundQu
 // localStorage is a system boundary: the stored value may be absent, malformed,
 // or written by an older version that lacked `span`. Normalize defensively and
 // drop anything that doesn't fit the current shape.
-function normalizePanel(value: unknown): ToolPanel[] {
+function normalizePanel(value: unknown): IToolPanel[] {
   if (typeof value !== 'object' || value === null) return [];
   const candidate = value as Record<string, unknown>;
   if (typeof candidate.id !== 'string') return [];
   if (!PANEL_TYPES.includes(candidate.type as ToolPanelType)) return [];
   const fileId = typeof candidate.fileId === 'string' ? candidate.fileId : null;
   const span: ToolPanelSpan = candidate.span === 'wide' ? 'wide' : 'normal';
-  return [{ id: candidate.id, type: candidate.type as ToolPanelType, fileId, span }];
+  return [{ id: candidate.id, type: candidate.type as ToolPanelType, fileId, span } as IToolPanel];
 }
 
-function loadPersistedPanels(): ToolPanel[] {
+function loadPersistedPanels(): IToolPanel[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -53,8 +53,8 @@ function loadPersistedPanels(): ToolPanel[] {
   }
 }
 
-export const useToolPanels = (): UseToolPanelsReturn => {
-  const [toolPanels, setToolPanels] = useState<ToolPanel[]>(loadPersistedPanels);
+export const useToolPanels = (): IUseToolPanelsReturn => {
+  const [toolPanels, setToolPanels] = useState<IToolPanel[]>(loadPersistedPanels);
 
   useEffect(() => {
     try {

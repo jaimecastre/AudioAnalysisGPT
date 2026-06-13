@@ -2,7 +2,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import type { BatchBenchmarkResult } from '../types/batchBenchmarkTypes';
 
-interface BatchBenchmarkState {
+interface IBatchBenchmarkState {
   result: BatchBenchmarkResult | null;
   status: 'idle' | 'loading' | 'error';
   error: string | null;
@@ -10,7 +10,7 @@ interface BatchBenchmarkState {
   showModal: boolean;
 }
 
-const initialState: BatchBenchmarkState = {
+const initialState: IBatchBenchmarkState = {
   result: null,
   status: 'idle',
   error: null,
@@ -62,17 +62,17 @@ export const {
 
 export default batchBenchmarkSlice.reducer;
 
-export const benchmarkResultSelector = (state: { batchBenchmark: BatchBenchmarkState }): BatchBenchmarkResult | null =>
+export const benchmarkResultSelector = (state: { batchBenchmark: IBatchBenchmarkState }): BatchBenchmarkResult | null =>
   state.batchBenchmark.result;
 
-export const benchmarkStatusSelector = (state: { batchBenchmark: BatchBenchmarkState }): 'idle' | 'loading' | 'error' =>
+export const benchmarkStatusSelector = (state: { batchBenchmark: IBatchBenchmarkState }): 'idle' | 'loading' | 'error' =>
   state.batchBenchmark.status;
 
-export const benchmarkErrorSelector = (state: { batchBenchmark: BatchBenchmarkState }): string | null =>
+export const benchmarkErrorSelector = (state: { batchBenchmark: IBatchBenchmarkState }): string | null =>
   state.batchBenchmark.error;
 
-export const benchmarkIsPanelOpenSelector = (state: { batchBenchmark: BatchBenchmarkState }): boolean =>
+export const benchmarkIsPanelOpenSelector = (state: { batchBenchmark: IBatchBenchmarkState }): boolean =>
   state.batchBenchmark.isPanelOpen;
 
-export const benchmarkShowModalSelector = (state: { batchBenchmark: BatchBenchmarkState }): boolean =>
+export const benchmarkShowModalSelector = (state: { batchBenchmark: IBatchBenchmarkState }): boolean =>
   state.batchBenchmark.showModal;

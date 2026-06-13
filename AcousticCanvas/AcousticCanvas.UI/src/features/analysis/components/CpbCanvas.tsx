@@ -3,7 +3,7 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import type { CpbBand } from '../types/cpbTypes';
 import styles from './CpbCanvas.module.scss';
 
-interface CpbCanvasProps {
+interface ICpbCanvasProps {
   bands: CpbBand[];
   dbUnit: string | null;
   // Cross-panel linked frequency cursor (Hz) driven by hovering another panel.
@@ -11,7 +11,7 @@ interface CpbCanvasProps {
   onHoverFrequency?: (frequencyHz: number | null) => void;
 }
 
-interface TooltipState {
+interface ITooltipState {
   x: number;
   y: number;
   label: string;
@@ -192,9 +192,9 @@ export const CpbCanvas = ({
   dbUnit,
   linkedFrequencyHz = null,
   onHoverFrequency,
-}: CpbCanvasProps): JSX.Element => {
+}: ICpbCanvasProps): JSX.Element => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [tooltip, setTooltip] = useState<ITooltipState | null>(null);
 
   const draw = useCallback(() => {
     if (canvasRef.current) {

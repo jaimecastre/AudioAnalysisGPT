@@ -5,20 +5,20 @@ import { API_ENDPOINTS } from '../../../shared/api/apiEndpoints';
 import { spectrumStarted, spectrumCompleted, spectrumFailed } from '../store/spectrumSlice';
 import type { SpectrumAnalysis, SpectrumUserParameters } from '../types/spectrumTypes';
 
-interface RunSpectrumArgs {
+interface IRunSpectrumArgs {
   fileId: string;
   startSeconds: number;
   endSeconds: number;
   parameters: SpectrumUserParameters;
 }
 
-export const useRunSpectrum = (): { runSpectrum: (args: RunSpectrumArgs) => Promise<void> } => {
+export const useRunSpectrum = (): { runSpectrum: (args: IRunSpectrumArgs) => Promise<void> } => {
   const dispatch = useAppDispatch();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => abortControllerRef.current?.abort(), []);
 
-  const runSpectrum = useCallback(async (args: RunSpectrumArgs): Promise<void> => {
+  const runSpectrum = useCallback(async (args: IRunSpectrumArgs): Promise<void> => {
     abortControllerRef.current?.abort();
     const abortController = new AbortController();
     const requestId = crypto.randomUUID();

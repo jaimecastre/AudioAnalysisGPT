@@ -4,7 +4,7 @@ import styles from './Sidebar.module.scss';
 import { useAppSelector, useAppDispatch } from '../store/reduxHooks';
 import { setActiveView } from '../features/navigation/store/navigationSlice';
 
-interface SidebarProps {
+interface ISidebarProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
@@ -12,7 +12,7 @@ interface SidebarProps {
 export const Sidebar = ({
   isCollapsed = false,
   onToggleCollapse,
-}: SidebarProps): JSX.Element => {
+}: ISidebarProps): JSX.Element => {
   const dispatch = useAppDispatch();
   const activeView = useAppSelector((state) => state.navigation.activeView);
 

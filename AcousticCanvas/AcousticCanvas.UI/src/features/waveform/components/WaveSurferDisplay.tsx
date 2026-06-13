@@ -27,7 +27,7 @@ export interface WaveSurferDisplayRef {
   setSelection: (startSeconds: number, endSeconds: number) => void;
 }
 
-interface WaveSurferDisplayProps {
+interface IWaveSurferDisplayProps {
   fileId: string;
   audioUrl: string;
   onReady?: (duration: number) => void;
@@ -133,7 +133,7 @@ export const WaveSurferDisplay = ({
   onFinish,
   onUserSelectionChange,
   displayRef,
-}: WaveSurferDisplayProps): JSX.Element => {
+}: IWaveSurferDisplayProps): JSX.Element => {
   const waveContainerRef = useRef<HTMLDivElement>(null);
   const axisCanvasRef = useRef<HTMLCanvasElement>(null);
   const [containerHeight, setContainerHeight] = useState(200);

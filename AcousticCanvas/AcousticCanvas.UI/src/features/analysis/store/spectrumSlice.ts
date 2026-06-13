@@ -5,7 +5,7 @@ import { DEFAULT_SPECTRUM_PARAMS } from '../types/spectrumTypes';
 
 export type SpectrumStatus = 'idle' | 'running' | 'complete' | 'error';
 
-interface SpectrumState {
+interface ISpectrumState {
   result: SpectrumAnalysis | null;
   status: SpectrumStatus;
   error: string | null;
@@ -14,7 +14,7 @@ interface SpectrumState {
   userParameters: SpectrumUserParameters;
 }
 
-const initialState: SpectrumState = {
+const initialState: ISpectrumState = {
   result: null,
   status: 'idle',
   error: null,
@@ -69,17 +69,17 @@ export const {
 
 export default spectrumSlice.reducer;
 
-export const spectrumResultSelector = (state: { spectrum: SpectrumState }): SpectrumAnalysis | null =>
+export const spectrumResultSelector = (state: { spectrum: ISpectrumState }): SpectrumAnalysis | null =>
   state.spectrum.result;
 
-export const spectrumStatusSelector = (state: { spectrum: SpectrumState }): SpectrumStatus =>
+export const spectrumStatusSelector = (state: { spectrum: ISpectrumState }): SpectrumStatus =>
   state.spectrum.status;
 
-export const spectrumErrorSelector = (state: { spectrum: SpectrumState }): string | null =>
+export const spectrumErrorSelector = (state: { spectrum: ISpectrumState }): string | null =>
   state.spectrum.error;
 
-export const spectrumSelectedChannelIdSelector = (state: { spectrum: SpectrumState }): string | null =>
+export const spectrumSelectedChannelIdSelector = (state: { spectrum: ISpectrumState }): string | null =>
   state.spectrum.selectedChannelId;
 
-export const spectrumUserParametersSelector = (state: { spectrum: SpectrumState }): SpectrumUserParameters =>
+export const spectrumUserParametersSelector = (state: { spectrum: ISpectrumState }): SpectrumUserParameters =>
   state.spectrum.userParameters;

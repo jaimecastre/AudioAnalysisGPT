@@ -5,20 +5,20 @@ import { API_ENDPOINTS } from '../../../shared/api/apiEndpoints';
 import { spectrogramStarted, spectrogramCompleted, spectrogramFailed } from '../store/spectrogramSlice';
 import type { SpectrogramAnalysis, SpectrogramUserParameters } from '../types/spectrogramTypes';
 
-interface RunSpectrogramArgs {
+interface IRunSpectrogramArgs {
   fileId: string;
   startSeconds: number;
   endSeconds: number;
   parameters: SpectrogramUserParameters;
 }
 
-export const useRunSpectrogram = (): { runSpectrogram: (args: RunSpectrogramArgs) => Promise<void> } => {
+export const useRunSpectrogram = (): { runSpectrogram: (args: IRunSpectrogramArgs) => Promise<void> } => {
   const dispatch = useAppDispatch();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => abortControllerRef.current?.abort(), []);
 
-  const runSpectrogram = useCallback(async (args: RunSpectrogramArgs): Promise<void> => {
+  const runSpectrogram = useCallback(async (args: IRunSpectrogramArgs): Promise<void> => {
     abortControllerRef.current?.abort();
     const abortController = new AbortController();
     const requestId = crypto.randomUUID();

@@ -2,11 +2,11 @@ import { useAppDispatch } from '../../../store/reduxHooks';
 import type { WorkspaceAction, WorkspaceResult } from '../types/agentToolTypes';
 import { applyWorkspaceAction } from '../utils/workspaceTool';
 
-interface UseWorkspaceToolReturn {
+interface IUseWorkspaceToolReturn {
   applyAction: (workspaceAction: WorkspaceAction) => WorkspaceResult;
 }
 
-export const useWorkspaceTool = (): UseWorkspaceToolReturn => {
+export const useWorkspaceTool = (): IUseWorkspaceToolReturn => {
   const dispatch = useAppDispatch();
 
   const applyAction = (workspaceAction: WorkspaceAction): WorkspaceResult => {

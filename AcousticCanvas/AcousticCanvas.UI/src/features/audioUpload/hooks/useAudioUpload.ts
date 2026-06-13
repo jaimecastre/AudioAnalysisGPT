@@ -6,13 +6,13 @@ import { useAppDispatch } from '../../../store/reduxHooks';
 import { addAudioFile } from '../../project/store/projectSlice';
 import type { AudioFileResponse } from '../services/audioUploadApi';
 
-interface UseAudioUploadReturn {
+interface IUseAudioUploadReturn {
   isUploading: boolean;
   uploadFile: (file: File) => Promise<AudioFileResponse | null>;
   uploadFiles: (files: File[]) => Promise<AudioFileResponse[]>;
 }
 
-export const useAudioUpload = (): UseAudioUploadReturn => {
+export const useAudioUpload = (): IUseAudioUploadReturn => {
   const dispatch = useAppDispatch();
   const [isUploading, setIsUploading] = useState(false);
 

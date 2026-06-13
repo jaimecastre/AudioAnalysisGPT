@@ -6,14 +6,14 @@ import type { FindingsResult } from '../types/findingsTypes';
 
 export type FindingsStatus = 'idle' | 'running' | 'complete' | 'error';
 
-interface FindingsState {
+interface IFindingsState {
   result: FindingsResult | null;
   status: FindingsStatus;
   error: string | null;
   showPanel: boolean;
 }
 
-const initialState: FindingsState = {
+const initialState: IFindingsState = {
   result: null,
   status: 'idle',
   error: null,
@@ -67,14 +67,14 @@ export const { findingsClear, findingsPanelOpened, findingsPanelClosed } = findi
 
 export default findingsSlice.reducer;
 
-export const findingsResultSelector = (state: { findings: FindingsState }): FindingsResult | null =>
+export const findingsResultSelector = (state: { findings: IFindingsState }): FindingsResult | null =>
   state.findings.result;
 
-export const findingsStatusSelector = (state: { findings: FindingsState }): FindingsStatus =>
+export const findingsStatusSelector = (state: { findings: IFindingsState }): FindingsStatus =>
   state.findings.status;
 
-export const findingsErrorSelector = (state: { findings: FindingsState }): string | null =>
+export const findingsErrorSelector = (state: { findings: IFindingsState }): string | null =>
   state.findings.error;
 
-export const findingsShowPanelSelector = (state: { findings: FindingsState }): boolean =>
+export const findingsShowPanelSelector = (state: { findings: IFindingsState }): boolean =>
   state.findings.showPanel;

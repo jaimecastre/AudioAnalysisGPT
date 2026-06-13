@@ -3,7 +3,7 @@ import { ActionIcon, Slider, Group, Text } from '@mantine/core';
 import { IconPlayerPlay, IconPlayerPause } from '@tabler/icons-react';
 import styles from './TransportUI.module.scss';
 
-interface TransportUIProps {
+interface ITransportUIProps {
   isPlaying: boolean;
   currentTime: number;
   duration: number;
@@ -33,7 +33,7 @@ export const TransportUI = ({
   onPause,
   onSeek,
   secondaryControls,
-}: TransportUIProps): JSX.Element => {
+}: ITransportUIProps): JSX.Element => {
   const handlePlayPause = (): void => {
     if (isPlaying) {
       onPause();
