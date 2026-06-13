@@ -109,7 +109,7 @@ export type SpectrumUserParameters = {
 };
 
 export const DEFAULT_SPECTRUM_PARAMS: SpectrumUserParameters = {
-  fftSize: 8192,
+  fftSize: 44100,
   windowType: 'hann',
   overlap: 0.677,
   format: 'msgpack',
