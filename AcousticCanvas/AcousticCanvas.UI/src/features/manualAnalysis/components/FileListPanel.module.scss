@@ -196,3 +196,29 @@
   color: #f08c00;
   background-color: rgba(240, 140, 0, 0.12);
 }
+
+.toolRowLabel {
+  flex: 1;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.toolRowActive {
+  background-color: var(--bg-overlay);
+
+  .toolRowLabel {
+    color: var(--text-primary);
+  }
+}
+
+.toolRowBadge {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background-color: rgba(0, 184, 169, 0.15);
+  color: #00b8a9;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}

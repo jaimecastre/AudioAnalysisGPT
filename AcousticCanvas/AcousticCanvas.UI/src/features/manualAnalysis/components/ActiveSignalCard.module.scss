@@ -72,11 +72,6 @@
   border-top: 1px solid var(--border);
   align-items: start;
 
-  // No analysis panels open — don't reserve any space.
-  &:empty {
-    display: none;
-  }
-
   // Adjust for wider screens - allow more columns
   @media (min-width: 1400px) {
     grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));

@@ -242,11 +242,9 @@ export const SpectrumPanel = ({
                 value={spectrumUserParameters.windowType}
                 data={[
                   { value: 'hann', label: 'Hann' },
-                  { value: 'hamming', label: 'Hamming' },
-                  { value: 'blackman', label: 'Blackman' },
                   { value: 'rectangular', label: 'Rectangular' },
                 ]}
-                onChange={(val) => val && dispatch(spectrumSetParameters({ windowType: val as 'hann' | 'hamming' | 'blackman' | 'rectangular' }))}
+                onChange={(val) => val && dispatch(spectrumSetParameters({ windowType: val as 'hann' | 'rectangular' }))}
                 style={{ width: 110 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
               />

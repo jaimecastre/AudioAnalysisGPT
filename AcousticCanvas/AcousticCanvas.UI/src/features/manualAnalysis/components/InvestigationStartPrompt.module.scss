@@ -1,0 +1,125 @@
+@keyframes promptFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.promptWrapper {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 16px 20px;
+  animation: promptFadeIn 0.25s ease both;
+}
+
+.promptHeadline {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 16px;
+}
+
+.tileRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  max-width: 740px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 1;
+  min-width: 180px;
+  max-width: 240px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-elevated);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.12s ease;
+
+  &:hover {
+    background-color: var(--bg-overlay);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.tileIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.tileOrange {
+  &:hover {
+    border-color: rgba(240, 140, 0, 0.5);
+  }
+
+  .tileIcon {
+    color: #f08c00;
+    background-color: rgba(240, 140, 0, 0.1);
+  }
+}
+
+.tileTeal {
+  &:hover {
+    border-color: rgba(0, 184, 169, 0.5);
+  }
+
+  .tileIcon {
+    color: #00b8a9;
+    background-color: rgba(0, 184, 169, 0.1);
+  }
+}
+
+.tilePurple {
+  &:hover {
+    border-color: rgba(121, 80, 242, 0.5);
+  }
+
+  .tileIcon {
+    color: #7950f2;
+    background-color: rgba(121, 80, 242, 0.1);
+  }
+}
+
+.tileLabel {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tileDescription {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.promptHint {
+  margin: 16px 0 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-style: italic;
+}

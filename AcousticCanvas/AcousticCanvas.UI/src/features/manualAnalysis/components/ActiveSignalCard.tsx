@@ -3,6 +3,7 @@ import { Text, Group, ActionIcon } from '@mantine/core';
 import { IconX, IconGitCompare } from '@tabler/icons-react';
 import { WaveSurferDisplay } from '../../waveform/components/WaveSurferDisplay';
 import type { WaveSurferDisplayRef } from '../../waveform/components/WaveSurferDisplay';
+import { InvestigationStartPrompt } from './InvestigationStartPrompt';
 import { ComparisonView } from '../../comparison/components/ComparisonView';
 import { BatchBenchmarkPanel } from '../../batchBenchmark/components/BatchBenchmarkPanel';
 import { FindingsPanel } from '../../findings/components/FindingsPanel';
@@ -48,6 +49,10 @@ interface IActiveSignalCardProps {
   onRerunBenchmark: () => void;
   onCloseBenchmarkPanel: () => void;
   onCloseFindingsPanel: () => void;
+  showInvestigationPrompt: boolean;
+  onPromptOpenFindings: () => void;
+  onPromptAddSpectrum: () => void;
+  onPromptAddSoundQuality: () => void;
   onToolPanelFileSelect: (panelId: string, fileId: string | null) => void;
   onToolPanelToggleSpan: (panelId: string) => void;
   onToolPanelClose: (panelId: string) => void;
@@ -79,6 +84,10 @@ export function ActiveSignalCard({
   onRerunBenchmark,
   onCloseBenchmarkPanel,
   onCloseFindingsPanel,
+  showInvestigationPrompt,
+  onPromptOpenFindings,
+  onPromptAddSpectrum,
+  onPromptAddSoundQuality,
   onToolPanelFileSelect,
   onToolPanelToggleSpan,
   onToolPanelClose,
@@ -102,6 +111,13 @@ export function ActiveSignalCard({
       </div>
 
       <div className={styles.analysisGrid}>
+      {showInvestigationPrompt && (
+        <InvestigationStartPrompt
+          onOpenFindings={onPromptOpenFindings}
+          onAddSpectrum={onPromptAddSpectrum}
+          onAddSoundQuality={onPromptAddSoundQuality}
+        />
+      )}
       {manualCompareResult !== null && (
         <div className={`${styles.comparisonPanel} ${styles.gridSpanFull}`}>
           <div className={styles.comparisonPanelHeader}>

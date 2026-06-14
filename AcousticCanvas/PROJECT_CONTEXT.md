@@ -175,6 +175,7 @@ SignalChannel {
 | Mode switcher (Manual ↔ Agent) | ✅ Done | Segmented control in header |
 | Resizable panels | ✅ Done | Drag handles, collapsible |
 | Keyboard shortcuts | ✅ Done | Arrow seek, space play/pause |
+| Guided investigation prompt | ✅ Done | Post-upload CTA tiles (Findings / Spectrum / Sound quality) + sidebar active-state badges |
 | Report generation UI | 🟡 Partial | Artifact type exists, no renderer |
 | Task progress panel | 🟡 Placeholder | Empty state only |
 | Calibration UI | 🟡 Referenced in types | Not implemented |
@@ -1902,12 +1903,12 @@ The product is directionally strong: it feels like a technical acoustic investig
      - Final answer, evidence, next steps, and errors appear in that same bubble.
      - Long-running tools show a clear tool/activity label.
 
-2. **Guided investigation workflow**
+2. **Guided investigation workflow** ✅ Done (2026-06-14) — `InvestigationStartPrompt` CTA tiles + sidebar `Open` badges
    - Problem: After loading a file, users may not know whether to open tools, read findings, ask the agent, or inspect plots.
    - Why it matters: New users need a clear next action; expert users need faster triage.
    - Target pattern: File loaded -> suggested analyses -> key findings -> evidence-backed next actions.
    - Acceptance criteria:
-     - Empty or sparse workspace states suggest the next useful analysis.
+     - ✅ Empty or sparse workspace states suggest the next useful analysis.
      - Findings and key summaries are visually prioritized over raw controls.
      - Agent and manual workflows point to the same evidence model.
 

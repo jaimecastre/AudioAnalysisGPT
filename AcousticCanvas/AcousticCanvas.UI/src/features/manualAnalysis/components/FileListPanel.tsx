@@ -146,49 +146,53 @@ export function FileListPanel({
           <Tooltip label={hasSpectrogramPanel ? 'Spectrogram panel already open' : 'Add spectrogram'} withArrow position="right">
             <button
               type="button"
-              className={styles.toolRow}
+              className={`${styles.toolRow} ${hasSpectrogramPanel ? styles.toolRowActive : ''}`}
               onClick={onAddSpectrogram}
               disabled={hasSpectrogramPanel}
               aria-label="Add spectrogram panel"
             >
               <span className={styles.toolRowIcon}><IconWaveSine size={18} /></span>
-              <Text size="xs" c="dimmed">Spectrogram</Text>
+              <Text size="xs" className={styles.toolRowLabel}>Spectrogram</Text>
+              {hasSpectrogramPanel && <span className={styles.toolRowBadge}>Open</span>}
             </button>
           </Tooltip>
           <Tooltip label={hasSpectrumPanel ? 'Spectrum panel already open' : 'Add spectrum'} withArrow position="right">
             <button
               type="button"
-              className={styles.toolRow}
+              className={`${styles.toolRow} ${hasSpectrumPanel ? styles.toolRowActive : ''}`}
               onClick={onAddSpectrum}
               disabled={hasSpectrumPanel}
               aria-label="Add spectrum panel"
             >
               <span className={styles.toolRowIcon}><IconChartLine size={18} /></span>
-              <Text size="xs" c="dimmed">Spectrum</Text>
+              <Text size="xs" className={styles.toolRowLabel}>Spectrum</Text>
+              {hasSpectrumPanel && <span className={styles.toolRowBadge}>Open</span>}
             </button>
           </Tooltip>
           <Tooltip label={hasCpbPanel ? 'CPB panel already open' : 'Add CPB analysis'} withArrow position="right">
             <button
               type="button"
-              className={styles.toolRow}
+              className={`${styles.toolRow} ${hasCpbPanel ? styles.toolRowActive : ''}`}
               onClick={onAddCpb}
               disabled={hasCpbPanel}
               aria-label="Add CPB panel"
             >
               <span className={styles.toolRowIcon}><IconChartBar size={18} /></span>
-              <Text size="xs" c="dimmed">CPB (1/3 octave)</Text>
+              <Text size="xs" className={styles.toolRowLabel}>CPB (1/3 octave)</Text>
+              {hasCpbPanel && <span className={styles.toolRowBadge}>Open</span>}
             </button>
           </Tooltip>
           <Tooltip label={hasSoundQualityPanel ? 'Sound-quality panel already open' : 'Add sound-quality metrics'} withArrow position="right">
             <button
               type="button"
-              className={styles.toolRow}
+              className={`${styles.toolRow} ${hasSoundQualityPanel ? styles.toolRowActive : ''}`}
               onClick={onAddSoundQuality}
               disabled={hasSoundQualityPanel}
               aria-label="Add sound-quality panel"
             >
               <span className={styles.toolRowIcon}><IconSparkles size={18} /></span>
-              <Text size="xs" c="dimmed">Sound quality</Text>
+              <Text size="xs" className={styles.toolRowLabel}>Sound quality</Text>
+              {hasSoundQualityPanel && <span className={styles.toolRowBadge}>Open</span>}
             </button>
           </Tooltip>
           <Tooltip
@@ -206,7 +210,7 @@ export function FileListPanel({
               <span className={styles.toolRowIcon}>
                 {isCompareLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconGitCompare size={18} />}
               </span>
-              <Text size="xs" c="dimmed">A/B compare</Text>
+              <Text size="xs" className={styles.toolRowLabel}>A/B compare</Text>
             </button>
           </Tooltip>
           <Tooltip
@@ -216,7 +220,7 @@ export function FileListPanel({
           >
             <button
               type="button"
-              className={`${styles.toolRow} ${styles.toolRowBlue}`}
+              className={`${styles.toolRow} ${styles.toolRowBlue} ${hasBenchmarkPanel ? styles.toolRowActive : ''}`}
               onClick={onRunBenchmark}
               disabled={files.length < 2 || hasBenchmarkPanel || isBenchmarkLoading}
               aria-label="Run batch benchmark"
@@ -224,7 +228,8 @@ export function FileListPanel({
               <span className={styles.toolRowIcon}>
                 {isBenchmarkLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconTable size={18} />}
               </span>
-              <Text size="xs" c="dimmed">Benchmark</Text>
+              <Text size="xs" className={styles.toolRowLabel}>Benchmark</Text>
+              {hasBenchmarkPanel && <span className={styles.toolRowBadge}>Open</span>}
             </button>
           </Tooltip>
           <Tooltip
@@ -234,13 +239,14 @@ export function FileListPanel({
           >
             <button
               type="button"
-              className={`${styles.toolRow} ${styles.toolRowOrange}`}
+              className={`${styles.toolRow} ${styles.toolRowOrange} ${isFindingsPanelOpen ? styles.toolRowActive : ''}`}
               onClick={onOpenFindings}
               disabled={isFindingsPanelOpen}
               aria-label="Open findings panel"
             >
               <span className={styles.toolRowIcon}><IconBug size={18} /></span>
-              <Text size="xs" c="dimmed">Findings</Text>
+              <Text size="xs" className={styles.toolRowLabel}>Findings</Text>
+              {isFindingsPanelOpen && <span className={styles.toolRowBadge}>Open</span>}
             </button>
           </Tooltip>
         </Stack>

@@ -440,6 +440,15 @@ export const ManualWorkspace = (): JSX.Element => {
                       manualBenchmarkError={manualBenchmarkError}
                       isBenchmarkPanelOpen={isBenchmarkPanelOpen}
                       isFindingsPanelOpen={isFindingsPanelOpen}
+                      showInvestigationPrompt={
+                        toolPanels.length === 0 &&
+                        !isFindingsPanelOpen &&
+                        !isBenchmarkPanelOpen &&
+                        manualCompareResult === null
+                      }
+                      onPromptOpenFindings={handleOpenFindingsPanel}
+                      onPromptAddSpectrum={handleAddSpectrumPanelForActiveFile}
+                      onPromptAddSoundQuality={handleAddSoundQualityPanelForActiveFile}
                       onWaveSurferReady={handleWaveSurferReady}
                       onWaveSurferTimeUpdate={handleWaveSurferTimeUpdate}
                       onWaveSurferFinish={handleWaveSurferFinish}

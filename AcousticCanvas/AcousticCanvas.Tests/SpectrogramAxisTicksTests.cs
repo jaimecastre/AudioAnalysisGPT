@@ -7,7 +7,7 @@ public sealed class SpectrogramAxisTicksTests
     [Fact]
     public void BuildTimeAxisTicks_ReturnsEvenlySpacedLabelsFromStartToEnd()
     {
-        var ticks = SpectrogramAnalyzer.BuildTimeAxisTicks(2.0, 7.0, 4);
+        var ticks = SpectrogramAxisBuilder.BuildTimeAxisTicks(2.0, 7.0, 4);
 
         Assert.Equal(4, ticks.Count);
         Assert.Equal(0.0, ticks[0].PositionPercent, precision: 3);
@@ -19,7 +19,7 @@ public sealed class SpectrogramAxisTicksTests
     [Fact]
     public void BuildTimeAxisTicks_ReturnsSingleTickForZeroDuration()
     {
-        var ticks = SpectrogramAnalyzer.BuildTimeAxisTicks(4.0, 4.0, 6);
+        var ticks = SpectrogramAxisBuilder.BuildTimeAxisTicks(4.0, 4.0, 6);
 
         Assert.Single(ticks);
         Assert.Equal(0.0, ticks[0].PositionPercent, precision: 3);
@@ -29,7 +29,7 @@ public sealed class SpectrogramAxisTicksTests
     [Fact]
     public void BuildFrequencyAxisTicks_ZeroHzAtBottomNyquistAtTop()
     {
-        var ticks = SpectrogramAnalyzer.BuildFrequencyAxisTicks(8000.0, "linear", 6);
+        var ticks = SpectrogramAxisBuilder.BuildFrequencyAxisTicks(8000.0, "linear", 6);
 
         // First tick (i=0, fraction=0) → lowest frequency → bottom of canvas (positionPercent ≈ 100)
         var bottomTick = ticks.OrderByDescending(t => t.PositionPercent).First();
@@ -43,7 +43,7 @@ public sealed class SpectrogramAxisTicksTests
     [Fact]
     public void BuildFrequencyAxisTicks_UsesHzForSubKilohertzFrequencies()
     {
-        var ticks = SpectrogramAnalyzer.BuildFrequencyAxisTicks(500.0, "linear", 3);
+        var ticks = SpectrogramAxisBuilder.BuildFrequencyAxisTicks(500.0, "linear", 3);
 
         var topTick = ticks.OrderBy(t => t.PositionPercent).First();
 
@@ -54,7 +54,7 @@ public sealed class SpectrogramAxisTicksTests
     [Fact]
     public void BuildTimeAxisTicks_MiddleTicksAreInterpolatedCorrectly()
     {
-        var ticks = SpectrogramAnalyzer.BuildTimeAxisTicks(0.0, 10.0, 3);
+        var ticks = SpectrogramAxisBuilder.BuildTimeAxisTicks(0.0, 10.0, 3);
 
         Assert.Equal(3, ticks.Count);
         Assert.Equal(0.0, ticks[0].PositionPercent, precision: 3);
