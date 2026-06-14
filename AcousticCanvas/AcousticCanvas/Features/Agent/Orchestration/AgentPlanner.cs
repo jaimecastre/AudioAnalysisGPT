@@ -80,7 +80,7 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         string? modelOverride = null
     )
     {
-        var systemPrompt = AgentPromptBuilder.BuildFinalAnswerSystemPrompt();
+        var systemPrompt = AgentPromptBuilder.BuildFinalAnswerSystemPromptWithBlocks();
 
         var evidenceJson = JsonSerializer.Serialize(
             evidencePackage,
@@ -108,7 +108,7 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
                 new ChatMessage { Role = "user", Content = userMessageContent },
             ],
             Temperature = 0.2,
-            MaxTokens = 1024,
+            MaxTokens = 4096,
         };
 
         var openAiResponse = await openAiChatService.CompleteAsync(
@@ -120,35 +120,63 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         var rawContent = openAiResponse.Choices[0].Message.Content ?? string.Empty;
         var cleanedContent = StripMarkdownCodeFences(rawContent);
 
+        // Log for debugging
+        Console.WriteLine($"[AgentPlanner] Raw content length: {rawContent.Length}");
+        Console.WriteLine($"[AgentPlanner] Cleaned content preview: {cleanedContent[..Math.Min(200, cleanedContent.Length)]}...");
+
         FinalAnswerResponse? finalAnswer;
+        Exception? parseError = null;
         try
         {
             finalAnswer = JsonSerializer.Deserialize<FinalAnswerResponse>(
                 cleanedContent,
                 JsonOptions
             );
+            Console.WriteLine($"[AgentPlanner] JSON parsed successfully. Has {finalAnswer?.Blocks?.Count ?? 0} blocks.");
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
+            parseError = ex;
+            Console.WriteLine($"[AgentPlanner] JSON parse error: {ex.Message}");
             finalAnswer = null;
         }
 
         if (finalAnswer is null)
         {
+            // Try to extract just the answer text from the malformed JSON
+            var extractedAnswer = ExtractAnswerFromMalformedJson(cleanedContent) ?? rawContent;
+
             return new FinalAnswerResponse
             {
-                Answer =
-                    rawContent.Length > 0
-                        ? rawContent
-                        : "Analysis complete. Please review the evidence package for details.",
+                Answer = extractedAnswer.Length > 0
+                    ? extractedAnswer
+                    : "Analysis complete. Please review the evidence package for details.",
                 EvidenceReferences = [],
                 Confidence = "low",
-                Limitations = ["Agent response could not be parsed into structured format."],
+                Limitations = [$"Agent response could not be parsed: {parseError?.Message}"],
                 SuggestedNextSteps = [],
             };
         }
 
         return finalAnswer;
+    }
+
+    private static string? ExtractAnswerFromMalformedJson(string content)
+    {
+        try
+        {
+            // Try to parse as loose JSON to extract just the answer field
+            using var doc = JsonDocument.Parse(content);
+            if (doc.RootElement.TryGetProperty("answer", out var answerEl))
+            {
+                return answerEl.GetString();
+            }
+        }
+        catch
+        {
+            // Ignore - we'll return null and use raw content
+        }
+        return null;
     }
 
     private static string BuildPlannerUserMessage(

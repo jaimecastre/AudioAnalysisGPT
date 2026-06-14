@@ -30,7 +30,8 @@ public sealed class AgentAskResultStreamOfThoughtTests
             ToolResultsData: null,
             PlannedTools: ["run_basic_metrics", "run_spectrum"],
             PlannerReason: "Checking levels and spectral peaks.",
-            InvestigationTrace: null);
+            InvestigationTrace: null,
+            Blocks: null);
 
         Assert.Equal(["run_basic_metrics", "run_spectrum"], result.PlannedTools);
         Assert.Equal("Checking levels and spectral peaks.", result.PlannerReason);
@@ -56,7 +57,8 @@ public sealed class AgentAskResultStreamOfThoughtTests
             ToolResultsData: null,
             PlannedTools: [],
             PlannerReason: null,
-            InvestigationTrace: null);
+            InvestigationTrace: null,
+            Blocks: null);
 
         Assert.Empty(result.PlannedTools);
         Assert.Null(result.PlannerReason);

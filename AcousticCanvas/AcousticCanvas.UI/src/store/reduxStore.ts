@@ -7,6 +7,7 @@ import spectrumReducer from '../features/analysis/store/spectrumSlice';
 import spectrogramReducer from '../features/analysis/store/spectrogramSlice';
 import cpbReducer from '../features/analysis/store/cpbSlice';
 import analysisCursorReducer from '../features/analysis/store/analysisCursorSlice';
+import { analysisResultsReducer } from '../features/analysis/store/analysisResultsSlice';
 import chatReducer from '../features/agentAnalysis/store/chatSlice';
 import agentWorkspaceReducer from '../features/agentAnalysis/store/agentWorkspaceSlice';
 import findingsReducer from '../features/findings/store/findingsSlice';
@@ -23,6 +24,7 @@ export const store = configureStore({
     spectrogram: spectrogramReducer,
     cpb: cpbReducer,
     analysisCursor: analysisCursorReducer,
+    analysisResults: analysisResultsReducer,
     chat: chatReducer,
     agentWorkspace: agentWorkspaceReducer,
     findings: findingsReducer,

@@ -1,6 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import { DEFAULT_MODEL_ID } from '../utils/agentModels';
+import type { AgentResponseBlock } from '../services/agentAskService';
 
 export type ChatRole = 'user' | 'assistant' | 'tool_call' | 'plan';
 
@@ -28,6 +29,7 @@ export type ChatMessage = {
   plannedTools?: string[];
   plannerReason?: string | null;
   planStatus?: 'planning' | 'done';
+  blocks?: AgentResponseBlock[];
 };
 
 interface IChatState {
@@ -65,6 +67,7 @@ const chatSlice = createSlice({
       validationWarning?: boolean;
       plannedTools?: string[];
       plannerReason?: string | null;
+      blocks?: AgentResponseBlock[];
     }>) => {
       const existingMessage = state.messages.find((message) => message.id === action.payload.id);
       if (existingMessage && existingMessage.role === 'assistant') {
@@ -77,6 +80,7 @@ const chatSlice = createSlice({
         existingMessage.validationWarning = action.payload.validationWarning;
         existingMessage.plannedTools = action.payload.plannedTools;
         existingMessage.plannerReason = action.payload.plannerReason;
+        existingMessage.blocks = action.payload.blocks;
       } else {
         state.messages.push({
           id: action.payload.id,
@@ -90,6 +94,7 @@ const chatSlice = createSlice({
           validationWarning: action.payload.validationWarning,
           plannedTools: action.payload.plannedTools,
           plannerReason: action.payload.plannerReason,
+          blocks: action.payload.blocks,
         });
       }
       state.isThinking = false;

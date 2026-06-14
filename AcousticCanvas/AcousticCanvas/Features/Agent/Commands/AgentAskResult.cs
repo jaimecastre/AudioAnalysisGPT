@@ -1,3 +1,6 @@
+using System.Text.Json;
+using AcousticCanvas.Features.Agent.Orchestration;
+
 namespace AcousticCanvas.Features.Agent.Commands;
 
 public record AgentAskResult(
@@ -14,7 +17,8 @@ public record AgentAskResult(
     IReadOnlyDictionary<string, object>? ToolResultsData,
     IReadOnlyList<string> PlannedTools,
     string? PlannerReason,
-    InvestigationTrace? InvestigationTrace
+    InvestigationTrace? InvestigationTrace,
+    List<JsonElement>? Blocks
 );
 
 public record AgentEvidenceItem(

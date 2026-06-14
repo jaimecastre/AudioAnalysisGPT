@@ -181,7 +181,8 @@ public sealed class AgentOrchestrator(
             ToolResultsData: toolResultsData,
             PlannedTools: plannedToolNames,
             PlannerReason: plannerReason,
-            InvestigationTrace: investigationTrace
+            InvestigationTrace: investigationTrace,
+            Blocks: finalAnswer.Blocks
         );
     }
 
@@ -248,7 +249,8 @@ public sealed class AgentOrchestrator(
             ToolResultsData: toolResultsData,
             PlannedTools: [deterministicPlan.ToolName],
             PlannerReason: null,
-            InvestigationTrace: investigationTrace
+            InvestigationTrace: investigationTrace,
+            Blocks: finalAnswer.Blocks
         );
     }
 

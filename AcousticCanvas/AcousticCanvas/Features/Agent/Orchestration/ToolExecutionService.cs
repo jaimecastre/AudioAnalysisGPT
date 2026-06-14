@@ -1,6 +1,7 @@
 using AcousticCanvas.Features.Analysis.Analyzers;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
+using AcousticCanvas.Features.Analysis.Endpoints;
 using AcousticCanvas.Features.Analysis.Importers;
 using AcousticCanvas.Features.Analysis.Services;
 using AcousticCanvas.Features.AudioUpload.Services;
@@ -12,7 +13,8 @@ public sealed class ToolExecutionService(
     AudioFileRepository audioFileRepository,
     SoundQualityAnalysisService soundQualityAnalysisService,
     IReadOnlyList<ISignalFileImporter> signalFileImporters,
-    SpectrogramCacheStore spectrogramCacheStore
+    SpectrogramCacheStore spectrogramCacheStore,
+    AnalysisResultCache analysisResultCache
 )
 {
     private const double DefaultSpectrumStartSeconds = 0.0;
@@ -319,6 +321,7 @@ public sealed class ToolExecutionService(
         var overlap = ToolArgumentParser.ExtractDoubleArgument(arguments, "overlap") ?? DefaultOverlap;
 
         var spectrumResults = new List<object>();
+        var storedResultIds = new List<string>();
 
         foreach (var fileId in fileIds)
         {
@@ -363,7 +366,11 @@ public sealed class ToolExecutionService(
                 })
                 .ToList();
 
-            var dataRef = "spectrum_" + Guid.NewGuid().ToString("N")[..8];
+            // Convert to points response format for storage
+            var pointsResponse = SpectrumPointsMapper.ToPointsResponse(spectrumResult);
+            var resultId = analysisResultCache.StoreResult(pointsResponse, "spectrum");
+            storedResultIds.Add(resultId);
+            Console.WriteLine($"[ExecuteRunSpectrumAsync] Stored result with ID: {resultId} for file {fileId}");
 
             spectrumResults.Add(
                 new
@@ -382,17 +389,17 @@ public sealed class ToolExecutionService(
                         overlap = spectrumResult.Parameters.Overlap,
                         blockCount = spectrumResult.Parameters.BlockCount,
                     },
-                    // FFT normalization: one-sided amplitude with Hann window coherent-gain correction.
-                    // Pressure channels are converted to dB SPL (dB re 20 µPa) via AcousticPressureConverter.
-                    dataRef,
+                    // Reference to full result for AnalysisViewBlock modal
+                    resultId,
                 }
             );
         }
 
-        var resultData = new { results = spectrumResults };
+        var resultData = new { results = spectrumResults, storedResultIds };
+        var primaryResultId = storedResultIds.FirstOrDefault() ?? $"spectrum_{Guid.NewGuid():N}";
         return ToolOutputBuilder.BuildSuccessOutput(
             "run_spectrum",
-            "spectrum_" + Guid.NewGuid().ToString("N")[..8],
+            primaryResultId,
             resultData
         );
     }

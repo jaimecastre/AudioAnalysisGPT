@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace AcousticCanvas.Features.Agent.Orchestration;
@@ -72,16 +73,19 @@ public sealed class FinalAnswerResponse
     public required string Answer { get; init; }
 
     [JsonPropertyName("evidenceReferences")]
-    public required List<string> EvidenceReferences { get; init; }
+    public List<string> EvidenceReferences { get; init; } = [];
 
     [JsonPropertyName("confidence")]
     public required string Confidence { get; init; }
 
     [JsonPropertyName("limitations")]
-    public required List<string> Limitations { get; init; }
+    public List<string> Limitations { get; init; } = [];
 
     [JsonPropertyName("suggestedNextSteps")]
-    public required List<string> SuggestedNextSteps { get; init; }
+    public List<string> SuggestedNextSteps { get; init; } = [];
+
+    [JsonPropertyName("blocks")]
+    public List<JsonElement>? Blocks { get; init; }
 }
 
 // ─── Validation result ─────────────────────────────────────────────────────

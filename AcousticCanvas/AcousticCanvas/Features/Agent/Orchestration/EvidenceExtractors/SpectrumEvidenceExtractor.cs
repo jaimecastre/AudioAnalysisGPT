@@ -57,6 +57,18 @@ public static class SpectrumEvidenceExtractor
                 evidenceData["dataRef"] = dataRefEl.GetString();
             }
 
+            // Include resultId for AnalysisViewBlock modal (stored in AnalysisResultCache)
+            if (fileResult.TryGetProperty("resultId", out var resultIdEl))
+            {
+                var resultId = resultIdEl.GetString();
+                evidenceData["resultId"] = resultId;
+                Console.WriteLine($"[SpectrumEvidenceExtractor] Extracted resultId: {resultId} for file {fileId}");
+            }
+            else
+            {
+                Console.WriteLine($"[SpectrumEvidenceExtractor] WARNING: No resultId found for file {fileId}");
+            }
+
             evidenceItems.Add(new EvidenceItem
             {
                 EvidenceId = evidenceId,

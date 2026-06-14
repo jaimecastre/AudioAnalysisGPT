@@ -52,7 +52,11 @@ public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
 
         try
         {
-            Response = await command.ExecuteAsync(cancellationToken);
+            var result = await command.ExecuteAsync(cancellationToken);
+            Console.WriteLine($"[AgentAskEndpoint] Result answer: {result.Answer.Substring(0, Math.Min(100, result.Answer.Length))}...");
+            Console.WriteLine($"[AgentAskEndpoint] Result blocks count: {result.Blocks?.Count ?? 0}");
+            Console.WriteLine($"[AgentAskEndpoint] Result confidence: {result.Confidence}");
+            Response = result;
         }
         catch (OperationCanceledException)
         {

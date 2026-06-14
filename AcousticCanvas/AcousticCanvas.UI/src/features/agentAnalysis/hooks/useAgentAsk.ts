@@ -158,6 +158,7 @@ export function useAgentAsk() {
         validationWarning: agentResponse.validationWarning,
         plannedTools: agentResponse.plannedTools,
         plannerReason: agentResponse.plannerReason,
+        blocks: agentResponse.blocks,
       }));
       dispatch(agentThinkingFinished());
     } catch (err) {

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using AcousticCanvas.Features.Agent.Handlers;
 using AcousticCanvas.Features.Agent.Orchestration;
@@ -16,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddFastEndpoints();
 builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
 {
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 builder.Services.AddSingleton<AudioFileRepository>();
@@ -43,6 +45,7 @@ builder.Services.AddSingleton<RunBatchBenchmarkHandler>();
 builder.Services.AddSingleton<FindEventsHandler>();
 builder.Services.AddSingleton<RunFindingsHandler>();
 builder.Services.AddSingleton<GetWaveformHandler>();
+builder.Services.AddSingleton<AnalysisResultCache>();
 builder.Services.AddSingleton<PlaybackStateStore>();
 builder.Services.AddSingleton<PlaybackControlHandler>();
 builder.Services.AddSingleton<GetPlaybackStateHandler>();

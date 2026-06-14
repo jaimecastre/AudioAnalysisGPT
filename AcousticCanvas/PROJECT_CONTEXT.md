@@ -169,6 +169,8 @@ SignalChannel {
 | Agent tool execution loop | ✅ Done | Tool dispatch → API calls → artifact storage |
 | Agent orchestrator workspace artifacts | ✅ Done | All 7 orchestrator tools produce deterministic workspace cards; evidence pills focus the matching artifact and keep detail cards expanded |
 | Agent orchestrator markdown responses | ✅ Done | Assistant answers rendered as markdown |
+| Agent visual response blocks (Generative UI Phase 1) | ✅ Done | Markdown, Statistics, Spectrum chart, Ranking, SuggestedActions blocks rendered inline in chat |
+| Agent analysis view blocks (Generative UI Phase 2a) | ✅ Done | `analysisView` block — compact card with mini preview + modal opener; spectrum, CPB, sound quality, findings viewers wired |
 | Agent findings investigation | ✅ Done | "Detect findings and issues" suggestion chip → run_findings → FindingsCard with per-finding rows |
 | Agent referenced context panel | ✅ Done | Workspace shows loaded files, active file/selection, analyses used, limitations, and validation warnings |
 | File @mentions in chat | ✅ Done | Autocomplete dropdown |
@@ -1137,7 +1139,7 @@ All acceptance criteria met:
 - ✅ Agent summary of batch results
 - ✅ Export batch report
 
-## ❌ Milestone 4.5 — AI-Generated Acoustic Visual Analysis (Generative UI) — NOT STARTED
+## 🔄 Milestone 4.5 — AI-Generated Acoustic Visual Analysis (Generative UI) — PHASE 1 IMPLEMENTED
 
 **Product positioning:** This milestone transforms AcousticGPT from "chat next to audio plots" into an AI acoustic engineering assistant that can decide what analysis is needed, run the analysis, visualize the evidence, rank results, and explain the engineering meaning. Similar in spirit to Generative UI products like Thesys, but specialized for acoustic engineering.
 
@@ -1186,8 +1188,21 @@ Agent response composition:
 
 ### Implementation phases:
 
-- **Phase 1:** Basic visual response blocks (Markdown, Statistics, Spectrum chart, Ranking)
-- **Phase 2:** Multi-tool investigations (comparison, ranking, multi-file questions)
+- **Phase 1:** ✅ Basic visual response blocks (Markdown, Statistics, Spectrum chart, Ranking, SuggestedActions)
+  - Backend: `AgentResponseBlockModels.cs` with typed blocks
+  - Backend: `AgentAskResult.Blocks` field added
+  - Backend: Updated `AgentPromptBuilder.BuildFinalAnswerSystemPromptWithBlocks()`
+  - Frontend: Block type definitions in `agentAskService.ts`
+  - Frontend: `AgentResponseBlockRenderer` component
+  - Frontend: Individual block components: `MarkdownBlock`, `StatisticsBlock`, `SpectrumChartBlock`, `RankingBlock`, `SuggestedActionsBlock`
+  - Frontend: Chat message rendering with block support + fallback to markdown
+- **Phase 2:** Unified visualization — Agent uses Manual mode chart components (mini inline + modal expansion)
+  - `AnalysisViewBlock` — References existing analysis results (`spectrum`, `spectrogram`, `cpb`, `soundQuality`, `findings`)
+  - Compact card view in chat using existing `SpectrumCard`, `SoundQualityPanel`, etc.
+  - Click to open full modal with all controls
+  - Consistent UI between Manual and Agent modes
+  - Backend: Agent triggers analysis → stores result → returns view reference
+  - Frontend: Mini-view component wraps existing Manual mode components
 - **Phase 3:** Acoustic investigation cards (Finding, Evidence, Plot, Interpretation, Suggested next)
 - **Phase 4:** Generated analysis workflows (Agent creates temporary workflow based on question)
 - **Phase 5:** Exportable AI-generated reports (PDF, HTML with plots, tables, metadata, reproducibility)
@@ -2039,6 +2054,102 @@ The product is directionally strong: it feels like a technical acoustic investig
      - "Explain what the current finding means."
      - "Identify which controls are clickable."
      - "Tell me when the app feels stuck or unclear."
+
+---
+
+# 12b. Generative UI — Phase 2 Planned Features
+
+These are agent chat UI features where the agent generates visual blocks inline in the chat. All require deterministic backend data — the LLM generates structure, not values.
+
+## Multi-file Overlay Chart (spectrum comparison)
+
+**User says:** *"Show me a spectrum comparison of all 3 files"* or *"Plot the spectrum for all files on the same graph"*
+
+**What it needs:**
+- Backend: `AnalysisResultCache.StoreMultiResult(resultIds[], type)` — groups per-file results under one combined ID
+- Block type: `analysisView` gets optional `resultIds: string[]` (multiple files) alongside existing `resultId`
+- Frontend: `useAnalysisResult` fetches all IDs in parallel; `SpectrumViewer` already accepts multi-channel — wire per-file as separate channels with file name as channel label
+- Prompt rule: when user asks to compare/overlay spectra across files, emit one `analysisView` block with all `resultIds`
+
+**Status:** ❌ Not started
+
+---
+
+## CPB Multi-file Overlay Chart
+
+**User says:** *"Compare the CPB of all files"* or *"Which file has more low-frequency energy?"*
+
+**What it needs:**
+- Same `resultIds[]` pattern as spectrum overlay
+- `CpbViewer` needs multi-file overlay mode (grouped bars or overlaid lines per file)
+- Planner prompt rule: CPB comparison → single `analysisView` block with all `resultIds`
+
+**Status:** ❌ Not started
+
+---
+
+## Sound Quality Radar / Spider Chart
+
+**User says:** *"Show me the psychoacoustic profile of all files"* or *"Compare loudness, sharpness, roughness across products"*
+
+**What it needs:**
+- New block type: `radarChart` — `{ blockType: "radarChart", metrics: [{ fileId, fileName, loudness, sharpness, roughness }] }`
+- Frontend: radar/spider chart component using `@mantine/charts` or a lightweight canvas renderer
+- No new backend endpoint needed — data comes from existing `run_sound_quality_metrics` evidence
+
+**Status:** ❌ Not started
+
+---
+
+## Findings Summary Block
+
+**User says:** *"What issues did you find?"* or *"Run a full diagnostic"*
+
+**What it needs:**
+- New block type: `findingsSummary` — compact severity-coded list inline in chat (not just a modal link)
+- Each finding row: icon + severity badge + short description + "View detail" → opens findings modal
+- Already have `FindingsViewer` — wire it as the modal target via `analysisView` with `viewType: "findings"`
+
+**Status:** 🟡 Partially wired — `analysisView` with findings viewer exists but agent doesn't always emit it for findings queries
+
+---
+
+## Spectrogram Thumbnail Block
+
+**User says:** *"Show me the spectrogram"* or *"What does the time-frequency content look like?"*
+
+**What it needs:**
+- `analysisView` with `viewType: "spectrogram"` — currently defined in types but spectrogram viewer not wired into `AnalysisViewModalContent`
+- Store spectrogram result in `AnalysisResultCache` during `run_spectrogram` execution
+- Thumbnail preview: base64 image (already computed by `SpectrogramAnalyzer`) shown inline before modal opens
+
+**Status:** ❌ Not started
+
+---
+
+## Investigation Timeline Block
+
+**User says:** *"What analysis did you run and why?"* or *"Show me your investigation steps"*
+
+**What it needs:**
+- New block type: `investigationTimeline` — ordered list of tool calls with status, duration, and one-line summary of what each tool found
+- Data already exists in `InvestigationTrace` returned in `AgentAskResult`
+- Frontend: collapsible step-by-step trace block
+
+**Status:** ❌ Not started
+
+---
+
+## Annotated Frequency Marker Block
+
+**User says:** *"Mark the tonal peak at 1 kHz on the spectrum"* or *"Show me where the clipping is"*
+
+**What it needs:**
+- `SpectrumCanvas` already renders the chart — needs an `annotations` prop: `{ frequencyHz, label, color }[]`
+- Agent emits `frequenciesHz` + `annotationMarkers` in the `analysisView` preview
+- Useful for findings: each tonal peak finding → one annotation marker on the spectrum
+
+**Status:** ❌ Not started
 
 ---
 
