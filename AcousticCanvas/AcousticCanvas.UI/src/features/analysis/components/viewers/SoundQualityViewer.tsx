@@ -8,6 +8,10 @@ interface ISoundQualityViewerProps {
   result: SoundQualityAnalysis;
 }
 
+interface ISoundQualityMetricBarsProps {
+  result: SoundQualityAnalysis;
+}
+
 interface IMetricBar {
   label: string;
   value: number;
@@ -23,6 +27,38 @@ const sharpnessColor = '#f59f00';
 const roughnessColor = '#845ef7';
 
 export function SoundQualityViewer({ result }: ISoundQualityViewerProps): JSX.Element {
+  return (
+    <Stack gap="md">
+      {/* Region info */}
+      <Group gap="xs">
+        <Badge variant="light" size="sm">
+          {result.region.startSeconds.toFixed(2)} – {result.region.endSeconds.toFixed(2)} s
+        </Badge>
+        <Badge variant="light" size="sm">
+          {result.parameters.method}
+        </Badge>
+      </Group>
+
+      <SoundQualityMetricBars result={result} />
+
+      {/* Limitations */}
+      {result.parameters.limitations.length > 0 && (
+        <div>
+          <Text size="xs" c="dimmed" mb="xs">Analysis Notes</Text>
+          <Stack gap="xs">
+            {result.parameters.limitations.map((limitation, index) => (
+              <Text key={index} size="xs" c="dimmed">
+                • {limitation}
+              </Text>
+            ))}
+          </Stack>
+        </div>
+      )}
+    </Stack>
+  );
+}
+
+export function SoundQualityMetricBars({ result }: ISoundQualityMetricBarsProps): JSX.Element {
   const metricBars: IMetricBar[] = [
     {
       label: 'Loudness',
@@ -63,62 +99,35 @@ export function SoundQualityViewer({ result }: ISoundQualityViewerProps): JSX.El
   ];
 
   return (
-    <Stack gap="md">
-      {/* Region info */}
-      <Group gap="xs">
-        <Badge variant="light" size="sm">
-          {result.region.startSeconds.toFixed(2)} – {result.region.endSeconds.toFixed(2)} s
-        </Badge>
-        <Badge variant="light" size="sm">
-          {result.parameters.method}
-        </Badge>
-      </Group>
-
-      {/* Metric bars */}
-      <div className={barStyles.barChart}>
-        {metricBars.map((metricBar) => (
-          <div key={metricBar.label} className={barStyles.barRow}>
-            <span className={barStyles.barRowLabel}>
-              <metricBar.icon size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
-              {metricBar.label}
-            </span>
-            <Tooltip
-              label={`${metricBar.value.toFixed(2)} ${metricBar.unit} (scale 0 - ${metricBar.displayCeiling} ${metricBar.unit})`}
-              withArrow
-            >
-              <div className={barStyles.barRowTrack}>
-                <div
-                  className={barStyles.barRowFill}
-                  style={{ width: `${metricBar.fillPercent}%`, backgroundColor: metricBar.fillColor }}
-                />
-              </div>
-            </Tooltip>
-            <span className={barStyles.barRowValue}>
-              {metricBar.value.toFixed(2)} {metricBar.unit}
-            </span>
-            <div className={barStyles.barRowAxis}>
-              <span className={barStyles.barRowAxisTick}>0</span>
-              <span className={barStyles.barRowAxisTick}>{formatAxisTickValue(metricBar.displayCeiling / 2)}</span>
-              <span className={barStyles.barRowAxisTick}>{metricBar.displayCeiling} {metricBar.unit}</span>
+    <div className={barStyles.barChart}>
+      {metricBars.map((metricBar) => (
+        <div key={metricBar.label} className={barStyles.barRow}>
+          <span className={barStyles.barRowLabel}>
+            <metricBar.icon size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+            {metricBar.label}
+          </span>
+          <Tooltip
+            label={`${metricBar.value.toFixed(2)} ${metricBar.unit} (scale 0 - ${metricBar.displayCeiling} ${metricBar.unit})`}
+            withArrow
+          >
+            <div className={barStyles.barRowTrack}>
+              <div
+                className={barStyles.barRowFill}
+                style={{ width: `${metricBar.fillPercent}%`, backgroundColor: metricBar.fillColor }}
+              />
             </div>
+          </Tooltip>
+          <span className={barStyles.barRowValue}>
+            {metricBar.value.toFixed(2)} {metricBar.unit}
+          </span>
+          <div className={barStyles.barRowAxis}>
+            <span className={barStyles.barRowAxisTick}>0</span>
+            <span className={barStyles.barRowAxisTick}>{formatAxisTickValue(metricBar.displayCeiling / 2)}</span>
+            <span className={barStyles.barRowAxisTick}>{metricBar.displayCeiling} {metricBar.unit}</span>
           </div>
-        ))}
-      </div>
-
-      {/* Limitations */}
-      {result.parameters.limitations.length > 0 && (
-        <div>
-          <Text size="xs" c="dimmed" mb="xs">Analysis Notes</Text>
-          <Stack gap="xs">
-            {result.parameters.limitations.map((limitation, index) => (
-              <Text key={index} size="xs" c="dimmed">
-                • {limitation}
-              </Text>
-            ))}
-          </Stack>
         </div>
-      )}
-    </Stack>
+      ))}
+    </div>
   );
 }
 

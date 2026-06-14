@@ -24,6 +24,7 @@ public static class AgentPromptBuilder
             You are the AcousticGPT planning agent.
 
             Your job is to decide which analysis tools are needed to answer the user's question about audio.
+            The planner user message may include Recent conversation plus the Current user question.
 
             Available tools:
             {{availableToolsSummary}}
@@ -58,6 +59,8 @@ public static class AgentPromptBuilder
             - Do not invent file IDs — use only the IDs listed above.
             - ALL files listed above are already loaded and available. NEVER ask which files to use — use all of them when a multi-file question is asked.
             - If the user asks about your previous behavior, tool choice, why you analyzed multiple files, or why a previous answer did something, use no_analysis_needed. Do not run audio tools for Agent behavior/meta questions.
+            - Use Recent conversation to resolve terse follow-ups. Example: if the user says "around 1000 Hz" after asking for an important graph area, remember that as a frequency focus; if the next current question is "spectrogram", run run_spectrogram and do not ask what graph they mean.
+            - If a recent turn provides a frequency focus such as "around 1000 hz", preserve that focus in the reasoning and final-answer context, but still use only available backend tool arguments. Do not invent unsupported crop parameters.
             - If the user asks for a definition, method explanation, or conceptual explanation such as "what is a spectrogram?", "what does CPB mean?", "how is roughness measured?", or "explain FFT", use no_analysis_needed. Do not run audio tools for method/definition questions unless the user also asks to analyze the loaded audio.
             - Distinguish method questions from data questions: "what is a spectrogram?" needs no tools; "what does the spectrogram show for @file.wav?" needs run_spectrogram.
             - For broad compare/difference/versus/A-B/"why does X sound different"/"which is louder"/"which is sharper" questions: run the FULL suite on ALL loaded files — get_metadata + run_basic_metrics + run_spectrum + run_cpb + run_sound_quality_metrics + run_event_detection(kind="clipping"). The explanation agent needs level, spectral, and psychoacoustic evidence to produce a coherent comparison narrative.
@@ -219,7 +222,7 @@ public static class AgentPromptBuilder
               "peakFrequencyHz": 500.0,
               "metadata": {
                 "sourceTool": "run_spectrum",
-                "fftSize": 8192,
+                "fftSize": 44100,
                 "windowType": "Hann",
                 "scaling": "amplitude"
               }
@@ -276,7 +279,8 @@ public static class AgentPromptBuilder
             - ALL numeric values in blocks must come from the evidence package. Never invent values.
             - For analysisView summary: use EITHER primaryMetric OR secondaryMetrics — never both. If you have individual labelled values (frequency, magnitude, score), use secondaryMetrics. Use primaryMetric only when there is a single one-liner headline with no breakdown available.
             - CRITICAL for analysisView: The resultId MUST be copied EXACTLY from evidence.data.resultId. It is a full 32-character hex string, e.g. "spectrum_3f1a2b4c5d6e7f8a9b0c1d2e3f4a5b6c". NEVER shorten, truncate, or invent a resultId — copy the full value character for character. If evidence.data.resultId is not present, omit the analysisView block entirely.
-            - For analysisView preview: Include frequenciesHz and magnitudesDb arrays (downsampled to ~100 points max) to show a mini chart inline. Copy these from spectrum evidence.
+            - For spectrum analysisView preview only: Include frequenciesHz and magnitudesDb arrays (downsampled to ~100 points max) to show a mini spectrum chart inline. Copy these from spectrum evidence.
+            - For non-spectrum analysisView blocks (spectrogram, cpb, soundQuality, findings): use resultId and summary metadata only. Do not add frequenciesHz or magnitudesDb because those fields render as a spectrum preview.
             - For spectrumChart: copy frequenciesHz and magnitudesDb arrays from the spectrum evidence.
             - For statistics: use exact values from basic_metrics evidence.
             - For ranking: use actual measured scores from sound_quality or basic_metrics.

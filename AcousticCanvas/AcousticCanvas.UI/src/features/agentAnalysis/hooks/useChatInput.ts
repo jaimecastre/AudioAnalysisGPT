@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
 import {
   userMessageSent,
   conversationCleared,
+  chatMessagesSelector,
 } from '../store/chatSlice';
 import { activeSelectionSelector } from '../../waveform/store/waveformSelectionSlice';
 import { projectFilesSelector, selectedSignalIdSelector } from '../../project/store/projectSlice';
@@ -25,6 +26,7 @@ import {
   getMentionedFileIdsFromMessage,
   resolveMentionsInText,
 } from '../utils/agentMentionTargets';
+import { buildRecentConversationContext } from '../utils/conversationContext';
 
 export type MentionCandidate = {
   fileId: string;
@@ -73,6 +75,7 @@ function getActiveMentionToken(text: string, cursorPosition: number): string | n
 export function useChatInput(isThinking: boolean): UseChatInputReturn {
   const dispatch = useAppDispatch();
   const activeSelection = useAppSelector(activeSelectionSelector);
+  const messages = useAppSelector(chatMessagesSelector);
   const projectFiles = useAppSelector(projectFilesSelector);
   const selectedSignalId = useAppSelector(selectedSignalIdSelector);
   const agentPromptPrefill = useAppSelector(agentPromptPrefillSelector);
@@ -180,6 +183,8 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
       pendingAttachments,
     );
 
+    const conversationContext = buildRecentConversationContext(messages, finalContent);
+
     dispatch(userMessageSent({
       id: crypto.randomUUID(),
       content: trimmedContent || `Attached: ${pendingAttachments.map((a) => a.name).join(', ')}`,
@@ -200,7 +205,7 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
     const targetFileIds = mentionedFileIds.length > 0
       ? mentionedFileIds
       : allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
-    submitQuestion(finalContent, targetFileIds);
+    submitQuestion(finalContent, targetFileIds, conversationContext);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -257,6 +262,8 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
     const endFormatted = activeSelection.endSeconds.toFixed(3);
     const explainMessage = `Explain the audio from ${startFormatted}s to ${endFormatted}s. Run level analysis and spectrum analysis on this region and describe what you find.`;
 
+    const conversationContext = buildRecentConversationContext(messages, explainMessage);
+
     dispatch(userMessageSent({
       id: crypto.randomUUID(),
       content: explainMessage,
@@ -265,7 +272,7 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
 
     const allLoadedFileIds = projectFiles.map((file) => file.id);
     const targetFileIds = allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
-    submitQuestion(explainMessage, targetFileIds);
+    submitQuestion(explainMessage, targetFileIds, conversationContext);
   };
 
   const handleClarificationReply = (replyText: string): void => {
@@ -273,6 +280,8 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
     const combinedQuestion = previousQuestion.length > 0
       ? `${previousQuestion} ${replyText}`
       : replyText;
+
+    const conversationContext = buildRecentConversationContext(messages, combinedQuestion);
 
     dispatch(userMessageSent({
       id: crypto.randomUUID(),
@@ -282,7 +291,7 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
 
     const allLoadedFileIds = projectFiles.map((file) => file.id);
     const targetFileIds = allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
-    submitQuestion(combinedQuestion, targetFileIds);
+    submitQuestion(combinedQuestion, targetFileIds, conversationContext);
   };
 
   const canSend = (inputValue.trim().length > 0 || pendingAttachments.length > 0) && !isThinking && !isUploading && !agentAskIsAnalyzing;

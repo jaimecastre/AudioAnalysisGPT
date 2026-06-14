@@ -8,6 +8,14 @@ export type ChatRole = 'user' | 'assistant' | 'tool_call' | 'plan';
 export type ToolCallStatus = 'running' | 'done' | 'error';
 export type AgentMessageStatus = 'thinking' | 'completed' | 'failed';
 
+export type AgentActivityLabel =
+  | 'planning'
+  | 'running_tools'
+  | 'building_results'
+  | 'generating_answer'
+  | 'complete'
+  | 'failed';
+
 export type ToolStep = {
   toolName: string;
   status: 'completed' | 'failed';
@@ -30,6 +38,7 @@ export type ChatMessage = {
   plannerReason?: string | null;
   planStatus?: 'planning' | 'done';
   blocks?: AgentResponseBlock[];
+  activityLabel?: AgentActivityLabel;
 };
 
 interface IChatState {
@@ -74,6 +83,7 @@ const chatSlice = createSlice({
         existingMessage.content = action.payload.content;
         existingMessage.timestamp = action.payload.timestamp;
         existingMessage.status = 'completed';
+        existingMessage.activityLabel = 'complete';
         existingMessage.toolSteps = action.payload.toolSteps;
         existingMessage.confidence = action.payload.confidence;
         existingMessage.limitations = action.payload.limitations;
@@ -103,11 +113,18 @@ const chatSlice = createSlice({
       state.messages.push({
         id: action.payload.id,
         role: 'assistant',
-        content: 'Analyzing request...',
+        content: '',
         timestamp: action.payload.timestamp,
         status: 'thinking',
+        activityLabel: 'planning',
       });
       state.isThinking = true;
+    },
+    assistantActivityUpdated: (state, action: PayloadAction<{ id: string; activityLabel: AgentActivityLabel }>) => {
+      const existingMessage = state.messages.find((message) => message.id === action.payload.id);
+      if (existingMessage && existingMessage.role === 'assistant') {
+        existingMessage.activityLabel = action.payload.activityLabel;
+      }
     },
     assistantMessageFailed: (state, action: PayloadAction<{ id: string; error: string; timestamp: string }>) => {
       const existingMessage = state.messages.find((message) => message.id === action.payload.id);
@@ -115,6 +132,7 @@ const chatSlice = createSlice({
         existingMessage.content = action.payload.error;
         existingMessage.timestamp = action.payload.timestamp;
         existingMessage.status = 'failed';
+        existingMessage.activityLabel = 'failed';
       } else {
         state.messages.push({
           id: action.payload.id,
@@ -202,6 +220,7 @@ export const {
   userMessageSent,
   assistantMessageReceived,
   assistantResponseStarted,
+  assistantActivityUpdated,
   assistantMessageFailed,
   agentThinkingFinished,
   toolCallStarted,

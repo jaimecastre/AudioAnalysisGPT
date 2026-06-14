@@ -13,6 +13,11 @@ interface IFindingsViewerProps {
   result: FindingsResult;
 }
 
+interface IFindingsTimelineProps {
+  result: FindingsResult;
+  maxItems?: number;
+}
+
 const findingTypeIcons: Record<string, typeof IconAlertCircle> = {
   clipping: IconVolume,
   silence: IconWaveSine,
@@ -49,54 +54,72 @@ export function FindingsViewer({ result }: IFindingsViewerProps): JSX.Element {
       </Group>
 
       <Timeline bulletSize={24} lineWidth={2}>
-        {findings.map((finding) => {
-          const Icon = findingTypeIcons[finding.type] ?? findingTypeIcons.default;
-          const color = severityColors[finding.severity] ?? 'gray';
-
-          return (
-            <Timeline.Item
-              key={finding.findingId}
-              bullet={<Icon size={14} />}
-              color={color}
-              title={
-                <Group gap="xs">
-                  <Text size="sm" fw={500}>
-                    {finding.title}
-                  </Text>
-                  <Badge size="xs" color={color} variant="light">
-                    {finding.severity}
-                  </Badge>
-                  <Badge size="xs" variant="outline">
-                    {finding.confidence}
-                  </Badge>
-                </Group>
-              }
-            >
-              <Text size="xs" c="dimmed" mb="xs">
-                {finding.description}
-              </Text>
-
-              {finding.startSeconds !== null && finding.endSeconds !== null && (
-                <Text size="xs" c="dimmed">
-                  Time: {finding.startSeconds.toFixed(2)} – {finding.endSeconds.toFixed(2)} s
-                </Text>
-              )}
-
-              {finding.frequencyHz !== null && (
-                <Text size="xs" c="dimmed">
-                  Frequency: {finding.frequencyHz.toFixed(0)} Hz
-                </Text>
-              )}
-
-              {finding.suggestedNextStep && (
-                <Text size="xs" c="blue" mt="xs">
-                  Suggestion: {finding.suggestedNextStep}
-                </Text>
-              )}
-            </Timeline.Item>
-          );
-        })}
+        <FindingsTimelineItems result={result} />
       </Timeline>
     </Stack>
+  );
+}
+
+export function FindingsTimeline({ result, maxItems }: IFindingsTimelineProps): JSX.Element {
+  return (
+    <Timeline bulletSize={20} lineWidth={2}>
+      <FindingsTimelineItems result={result} maxItems={maxItems} />
+    </Timeline>
+  );
+}
+
+function FindingsTimelineItems({ result, maxItems }: IFindingsTimelineProps): JSX.Element {
+  const findings = maxItems ? result.findings.slice(0, maxItems) : result.findings;
+
+  return (
+    <>
+      {findings.map((finding) => {
+        const Icon = findingTypeIcons[finding.type] ?? findingTypeIcons.default;
+        const color = severityColors[finding.severity] ?? 'gray';
+
+        return (
+          <Timeline.Item
+            key={finding.findingId}
+            bullet={<Icon size={14} />}
+            color={color}
+            title={
+              <Group gap="xs">
+                <Text size="sm" fw={500}>
+                  {finding.title}
+                </Text>
+                <Badge size="xs" color={color} variant="light">
+                  {finding.severity}
+                </Badge>
+                <Badge size="xs" variant="outline">
+                  {finding.confidence}
+                </Badge>
+              </Group>
+            }
+          >
+            <Text size="xs" c="dimmed" mb="xs">
+              {finding.description}
+            </Text>
+
+            {finding.startSeconds !== null && finding.endSeconds !== null && (
+              <Text size="xs" c="dimmed">
+                Time: {finding.startSeconds.toFixed(2)} – {finding.endSeconds.toFixed(2)} s
+              </Text>
+            )}
+
+            {finding.frequencyHz !== null && (
+              <Text size="xs" c="dimmed">
+                Frequency: {finding.frequencyHz.toFixed(0)} Hz
+              </Text>
+            )}
+
+            {finding.suggestedNextStep && (
+              <Text size="xs" c="blue" mt="xs">
+                Suggestion: {finding.suggestedNextStep}
+              </Text>
+            )}
+          </Timeline.Item>
+        );
+      })}
+    </>
   );
 }

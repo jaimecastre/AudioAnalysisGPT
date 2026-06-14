@@ -74,6 +74,19 @@ User question
 
 The agent should behave like an acoustic investigation copilot.
 
+The next strategic direction is **AI-generated acoustic visual analysis with expert visualization planning**. The agent should not simply answer with text next to plots. It should decide whether the user needs text only, statistics, plots, charts, rankings, tables, investigation cards, reports, or combinations; choose deterministic DSP tools; specify what data should be visualized; configure axes, units, scales, ranges, legends, annotations, markers, and metadata; and then explain the engineering meaning.
+
+Trust boundary:
+
+```text
+LLM plans.
+DSP backend computes.
+Frontend renders.
+LLM explains.
+```
+
+The LLM may plan tools, response blocks, visual specifications, overlays, zoom ranges, annotations, and explanations. It must never fabricate SPL, dBFS, RMS, peak, FFT peak, frequency, loudness, sharpness, roughness, tonality, source contribution, ranking, statistic, or chart data values.
+
 ---
 
 # When To Use The Agent Workflow
@@ -283,6 +296,43 @@ run_event_detection
 
 Do not allow arbitrary code execution. The registry is the gatekeeper.
 
+Future deterministic DSP tools for visual acoustic analysis:
+
+```text
+RunBasicStatistics
+RunWaveformSummary
+RunSpectrum
+RunSpectrumOverlay
+RunSpectrogram
+RunCpbAnalysis
+RunLoudness
+RunSharpness
+RunRoughness
+RunTonality
+DetectClipping
+DetectDominantPeaks
+CompareFiles
+RankFilesByMetric
+ComputeSourceContributions
+CompareMeasuredVsPredicted
+CompareBeforeAfterProcessing
+```
+
+Every tool result should include:
+
+* Result ID
+* Tool name
+* Tool input parameters
+* File ID/name
+* Channel
+* Time range
+* Sample rate
+* Units
+* Numerical results
+* Metadata
+* Warnings
+* Calibration assumptions
+
 ## 4. ToolExecutionService
 
 Responsible for executing approved analysis tools by calling existing backend handlers.
@@ -323,6 +373,96 @@ Verify:
 * Answer does not claim certainty when confidence is low
 
 If validation fails, return the answer with a warning flag rather than blocking the response.
+
+## 7. ExpertVisualizationPlanner
+
+Responsible for deciding the best response format for each user request.
+
+It should decide:
+
+* Whether visualization is needed.
+* Which response blocks are needed.
+* Which deterministic result references feed each block.
+* Whether files/channels/regions should be overlaid or separated.
+* Which axes, units, scales, ranges, legends, markers, annotations, highlighted regions, and metadata are required.
+* Whether fixed or automatic scaling is appropriate.
+* Why each visualization is useful for the question.
+
+If the user asks for "a plot", "graph this", or "show me a chart" without specifying the plot type, infer the best plot from the acoustic intent and include a short reason for the choice. Use spectrum for frequency content, tones, peaks, harmonics, resonances, tonal noise, broadband noise, and spectral differences. Use spectrogram for time variation, transients, tonal drift, and intermittent tones. Use waveform for clipping, transients, edits, or region selection. Use rankings, bar charts, tables, and investigation cards when they answer the user’s question more clearly than a single plot. If multiple views are plausible, choose the safest default and mention the best alternative, or return complementary blocks when both add distinct evidence.
+
+## 8. PlotSpecificationPlanner
+
+Responsible for converting a user question and deterministic result references into precise visualization specifications.
+
+A plot specification should include:
+
+* Plot type
+* Data sources/result references
+* Selected files
+* Selected channels
+* Selected time regions
+* Selected frequency range or metric set
+* Axis labels
+* Axis units
+* Axis scale
+* Axis min/max
+* Overlay strategy
+* Legend labels
+* Annotations
+* Peak markers
+* Highlighted regions
+* Metadata display
+* Default zoom/range
+* Fixed vs automatic scaling
+* Reason for the visualization choice
+* Confidence and limitations
+
+The agent should not request “make a plot” generically. It should specify what the plot contains and how it should be displayed.
+
+When choosing among plausible plot types, the plot specification should include a `reason` field that explains why this plot type was selected over alternatives.
+
+## 9. Agent Response Block Model
+
+The agent response is a list of typed blocks, not only a text string.
+
+Suggested block types:
+
+* `MarkdownBlock`
+* `StatisticsBlock`
+* `SpectrumChartBlock`
+* `SpectrumOverlayBlock`
+* `SpectrogramChartBlock`
+* `WaveformChartBlock`
+* `TimeSeriesMetricBlock`
+* `RankingBlock`
+* `MetricComparisonBlock`
+* `PeakTableBlock`
+* `ContributionChartBlock`
+* `AudioPlayerBlock`
+* `SuggestedActionsBlock`
+* `InvestigationCardBlock`
+* `ReportSummaryBlock`
+
+The frontend must render blocks using trusted acoustic visualization components. The agent must not generate arbitrary React code.
+
+## 10. InvestigationTrace Additions
+
+InvestigationTrace should capture:
+
+* User question
+* Interpreted intent
+* Selected tools
+* Reason for each selected tool
+* Tool inputs
+* Tool result references
+* Selected response blocks
+* Visualization specifications
+* Reason for each visualization
+* Final answer
+* Confidence
+* Timestamp
+
+This makes the visual plan reproducible and inspectable.
 
 ---
 

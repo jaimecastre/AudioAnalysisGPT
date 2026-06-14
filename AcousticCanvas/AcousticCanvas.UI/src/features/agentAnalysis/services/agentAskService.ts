@@ -131,9 +131,15 @@ export type AgentAskResponse = {
   blocks?: AgentResponseBlock[];
 };
 
+export type AgentConversationTurn = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
 export type AgentAskRequest = {
   question: string;
   selectedFileIds: string[];
+  conversationContext?: AgentConversationTurn[];
   projectId?: string;
   mode?: string;
   modelOverride?: string;

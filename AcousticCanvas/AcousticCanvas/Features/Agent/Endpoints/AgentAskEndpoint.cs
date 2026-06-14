@@ -7,6 +7,7 @@ public sealed class AgentAskRequest
 {
     public string Question { get; set; } = string.Empty;
     public List<string> SelectedFileIds { get; set; } = [];
+    public List<AgentConversationTurn> ConversationContext { get; set; } = [];
     public string? ProjectId { get; set; }
     public string? Mode { get; set; }
     public string? ModelOverride { get; set; }
@@ -45,6 +46,7 @@ public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
         var command = new AgentAskCommand(
             Question: request.Question,
             SelectedFileIds: request.SelectedFileIds,
+            ConversationContext: request.ConversationContext,
             ProjectId: request.ProjectId,
             Mode: request.Mode,
             ModelOverride: request.ModelOverride
@@ -53,9 +55,6 @@ public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
         try
         {
             var result = await command.ExecuteAsync(cancellationToken);
-            Console.WriteLine($"[AgentAskEndpoint] Result answer: {result.Answer.Substring(0, Math.Min(100, result.Answer.Length))}...");
-            Console.WriteLine($"[AgentAskEndpoint] Result blocks count: {result.Blocks?.Count ?? 0}");
-            Console.WriteLine($"[AgentAskEndpoint] Result confidence: {result.Confidence}");
             Response = result;
         }
         catch (OperationCanceledException)

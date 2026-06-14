@@ -51,6 +51,11 @@ public static class SpectrogramEvidenceExtractor
                 evidenceData["dataRef"] = dataRefElement.GetString();
             }
 
+            if (fileResult.TryGetProperty("resultId", out var resultIdElement))
+            {
+                evidenceData["resultId"] = resultIdElement.GetString();
+            }
+
             evidenceItems.Add(new EvidenceItem
             {
                 EvidenceId = evidenceId,

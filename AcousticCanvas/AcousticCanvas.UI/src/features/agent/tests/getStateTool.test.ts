@@ -34,7 +34,7 @@ const emptyState: RootState = {
     error: null,
     activeRequestId: null,
     selectedChannelId: null,
-    userParameters: { fftSize: 2048, windowType: 'hann' as const, overlap: 0.677, format: 'msgpack' as const, minFrequencyHz: 20, maxFrequencyHz: 20000 },
+    userParameters: { fftSize: 44100, windowType: 'hann' as const, overlap: 0.677, format: 'msgpack' as const, minFrequencyHz: 20, maxFrequencyHz: 20000 },
   },
   spectrogram: {
     result: null,
@@ -42,7 +42,7 @@ const emptyState: RootState = {
     error: null,
     activeRequestId: null,
     selectedChannelId: null,
-    userParameters: { fftSize: 1024, overlap: 0.75, scale: 'linear', rangeDb: 80, gainDb: 0, minDbSpl: 20, maxDbSpl: 100 },
+    userParameters: { fftSize: 44100, overlap: 0.75, scale: 'linear', rangeDb: 80, gainDb: 0, minDbSpl: 20, maxDbSpl: 100 },
   },
   chat: {
     messages: [],
@@ -62,7 +62,7 @@ const emptyState: RootState = {
     selectedChannelId: null,
     userParameters: {
       bandMode: 'third_octave',
-      fftSize: 8192,
+      fftSize: 44100,
       overlap: 0.5,
       weighting: 'z',
       method: 'fft_bin_power_sum',

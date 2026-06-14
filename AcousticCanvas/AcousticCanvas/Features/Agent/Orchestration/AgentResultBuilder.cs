@@ -82,31 +82,21 @@ public static class AgentResultBuilder
     {
         if (finalAnswer.Blocks is null || finalAnswer.Blocks.Count == 0)
         {
-            Console.WriteLine("[BuildResponseBlocks] No blocks in response");
             return null;
         }
-
-        Console.WriteLine($"[BuildResponseBlocks] Processing {finalAnswer.Blocks.Count} raw blocks");
 
         var blocks = new List<AgentResponseBlock>();
 
         for (int i = 0; i < finalAnswer.Blocks.Count; i++)
         {
             var element = finalAnswer.Blocks[i];
-            Console.WriteLine($"[BuildResponseBlocks] Block {i}: {element.ToString().Substring(0, Math.Min(100, element.ToString().Length))}...");
             var block = ParseBlock(element);
             if (block is not null)
             {
-                Console.WriteLine($"[BuildResponseBlocks] Block {i} parsed successfully as {block.BlockType}");
                 blocks.Add(block);
-            }
-            else
-            {
-                Console.WriteLine($"[BuildResponseBlocks] Block {i} failed to parse");
             }
         }
 
-        Console.WriteLine($"[BuildResponseBlocks] Returning {blocks.Count} parsed blocks");
         return blocks.Count > 0 ? blocks : null;
     }
 
@@ -114,12 +104,10 @@ public static class AgentResultBuilder
     {
         if (!element.TryGetProperty("blockType", out var blockTypeElement))
         {
-            Console.WriteLine("[ParseBlock] Missing blockType property");
             return null;
         }
 
         var blockType = blockTypeElement.GetString();
-        Console.WriteLine($"[ParseBlock] Processing blockType: {blockType}");
 
         return blockType switch
         {
@@ -268,14 +256,12 @@ public static class AgentResultBuilder
             !element.TryGetProperty("fileName", out var fileNameEl) ||
             !element.TryGetProperty("summary", out var summaryEl))
         {
-            Console.WriteLine("[ParseAnalysisViewBlock] Missing required properties");
             return null;
         }
 
         var resultId = resultIdEl.GetString() ?? string.Empty;
         if (!System.Text.RegularExpressions.Regex.IsMatch(resultId, @"^[a-z]+_[0-9a-f]{32}$"))
         {
-            Console.WriteLine($"[ParseAnalysisViewBlock] Rejected invalid resultId: '{resultId}'");
             return null;
         }
 

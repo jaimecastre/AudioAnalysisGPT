@@ -10,6 +10,7 @@ import {
 import type { ToolStep } from '../store/chatSlice';
 import type { ChatMessage } from '../store/chatSlice';
 import { AGENT_MODELS } from '../utils/agentModels';
+import { AgentActivityIndicator } from './AgentActivityIndicator';
 import { AgentResponseBlockRenderer } from './AgentResponseBlockRenderer';
 import { BlockSkeleton } from './BlockSkeleton';
 import { ATTACH_ACCEPT } from '../utils/chatAttachments';
@@ -58,11 +59,7 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
       </div>
       <div className={`${styles.messageContent} ${isFailedMessage ? styles.failedMessage : ''}`}>
         {isThinkingMessage ? (
-          <div className={styles.thinkingIndicator}>
-            <span className={styles.thinkingDot} />
-            <span className={styles.thinkingDot} />
-            <span className={styles.thinkingDot} />
-          </div>
+          <AgentActivityIndicator activityLabel={message.activityLabel ?? 'planning'} />
         ) : (
           <>
             <div className={styles.markdownBody}>

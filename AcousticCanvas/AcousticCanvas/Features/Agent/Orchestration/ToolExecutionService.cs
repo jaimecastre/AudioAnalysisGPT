@@ -19,9 +19,9 @@ public sealed class ToolExecutionService(
 {
     private const double DefaultSpectrumStartSeconds = 0.0;
     private const double DefaultSpectrumEndFallback = 600.0;
-    private const int DefaultFftSize = 32768;
+    private const int DefaultFftSize = 44100;
     private const double DefaultOverlap = 0.677;
-    private const int DefaultSpectrogramFftSize = 2048;
+    private const int DefaultSpectrogramFftSize = 44100;
     private const double DefaultSpectrogramOverlap = 0.75;
     private const string DefaultSpectrogramScale = "mel";
     private const double DefaultSpectrogramGainDb = 20.0;
@@ -370,7 +370,6 @@ public sealed class ToolExecutionService(
             var pointsResponse = SpectrumPointsMapper.ToPointsResponse(spectrumResult);
             var resultId = analysisResultCache.StoreResult(pointsResponse, "spectrum");
             storedResultIds.Add(resultId);
-            Console.WriteLine($"[ExecuteRunSpectrumAsync] Stored result with ID: {resultId} for file {fileId}");
 
             spectrumResults.Add(
                 new
@@ -480,6 +479,13 @@ public sealed class ToolExecutionService(
                     // TODO: Current CPB uses FFT-bin power summation. Not IEC 61260 compliant.
                     // Label as nominal CPB approximation.
                     method = "fft_bin_power_sum (nominal approximation, not IEC 61260)",
+                    parameters = new
+                    {
+                        fftSize = cpbResult.Parameters.FftSize,
+                        windowType = cpbResult.Parameters.WindowType,
+                        overlap = cpbResult.Parameters.Overlap,
+                        blockCount = cpbResult.Parameters.BlockCount,
+                    },
                     summary = new { highestBands = topBands },
                     dataRef,
                 }
@@ -546,6 +552,7 @@ public sealed class ToolExecutionService(
                 continue;
             }
 
+            var resultId = analysisResultCache.StoreResult(spectrogramResult, "spectrogram");
             var dataRef = "spectrogram_" + Guid.NewGuid().ToString("N")[..8];
 
             spectrogramResults.Add(
@@ -575,6 +582,7 @@ public sealed class ToolExecutionService(
                         nyquistHz = primaryChannel.NyquistHz,
                     },
                     dataRef,
+                    resultId,
                 }
             );
         }

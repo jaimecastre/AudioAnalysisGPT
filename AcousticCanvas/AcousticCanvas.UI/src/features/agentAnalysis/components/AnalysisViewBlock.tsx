@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import type { CSSProperties, JSX } from 'react';
 import { useState } from 'react';
 import {
   Paper,
@@ -21,13 +21,16 @@ import {
   IconExternalLink,
   IconChartBar,
 } from '@tabler/icons-react';
-import type { AnalysisViewBlock as AnalysisViewBlockType } from '../services/agentAskService';
+import type { AnalysisViewBlock as AnalysisViewBlockType, CompactSummary } from '../services/agentAskService';
 import { useAnalysisResult } from '../../analysis/hooks/useAnalysisResult';
 import { SpectrumViewer } from '../../analysis/components/viewers/SpectrumViewer';
-import { SoundQualityViewer } from '../../analysis/components/viewers/SoundQualityViewer';
+import { SpectrogramViewer } from '../../analysis/components/viewers/SpectrogramViewer';
+import { SoundQualityMetricBars, SoundQualityViewer } from '../../analysis/components/viewers/SoundQualityViewer';
 import { CpbViewer } from '../../analysis/components/viewers/CpbViewer';
-import { FindingsViewer } from '../../analysis/components/viewers/FindingsViewer';
+import { FindingsTimeline, FindingsViewer } from '../../analysis/components/viewers/FindingsViewer';
 import { SpectrumCanvas } from '../../analysis/components/SpectrumCanvas';
+import { SpectrogramPlot } from '../../analysis/components/SpectrogramPlot';
+import { CpbCanvas } from '../../analysis/components/CpbCanvas';
 
 interface IAnalysisViewBlockProps {
   block: AnalysisViewBlockType;
@@ -48,6 +51,111 @@ const VIEW_LABELS: Record<string, string> = {
   soundQuality: 'Sound Quality',
   findings: 'Findings',
 };
+
+function CompactAnalysisPreview({
+  viewType,
+  summary,
+  resultId,
+}: {
+  viewType: AnalysisViewBlockType['viewType'];
+  summary: CompactSummary;
+  resultId: string;
+}): JSX.Element | null {
+  const { result, isLoading, error } = useAnalysisResult(resultId);
+
+  if (viewType === 'spectrum') {
+    return null;
+  }
+
+  if (isLoading) {
+    return (
+      <div data-preview-type={viewType} style={previewFrameStyle}>
+        <Group gap="xs" justify="center">
+          <Loader size="xs" color="blue" />
+          <Text size="xs" c="dimmed">Loading preview...</Text>
+        </Group>
+      </div>
+    );
+  }
+
+  if (error || !result) {
+    return (
+      <div data-preview-type={viewType} style={previewFrameStyle}>
+        <Text size="xs" c="dimmed" ta="center">
+          {summary.statusText ?? 'Preview opens in full analysis'}
+        </Text>
+      </div>
+    );
+  }
+
+  if (viewType === 'spectrogram' && result.type === 'spectrogram') {
+    return (
+      <div data-preview-type="spectrogram" style={previewFrameStyle}>
+        <SpectrogramPlot result={result.data} height={96} />
+      </div>
+    );
+  }
+
+  if (viewType === 'cpb' && result.type === 'cpb') {
+    const selectedChannel = result.data.channels[0] ?? null;
+
+    return (
+      <div data-preview-type="cpb" style={previewFrameStyle}>
+        {selectedChannel && (
+          <div style={{ height: 118, width: '100%' }}>
+            <CpbCanvas bands={selectedChannel.bands} dbUnit={selectedChannel.dbUnit} />
+          </div>
+        )}
+        {!selectedChannel && (
+          <Text size="xs" c="dimmed" ta="center">No CPB bands available</Text>
+        )}
+      </div>
+    );
+  }
+
+  if (viewType === 'soundQuality' && result.type === 'soundQuality') {
+    return (
+      <div data-preview-type="soundQuality" style={previewFrameStyle}>
+        <SoundQualityMetricBars result={result.data} />
+      </div>
+    );
+  }
+
+  if (viewType === 'findings' && result.type === 'findings') {
+    return (
+      <div data-preview-type="findings" style={previewFrameStyle}>
+        <FindingsTimeline result={result.data} maxItems={2} />
+        {result.data.findings.length === 0 && (
+          <Text size="xs" c="dimmed" ta="center">No issues detected</Text>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div data-preview-type={viewType} style={previewFrameStyle}>
+      <Text size="xs" c="dimmed" ta="center">
+        Result type mismatch: expected {viewType} but got {result.type}
+      </Text>
+    </div>
+  );
+}
+
+const previewFrameStyle = {
+  marginTop: 12,
+  marginBottom: 8,
+  border: '1px solid var(--mantine-color-gray-2)',
+  background: 'var(--mantine-color-gray-0)',
+  borderRadius: 6,
+  padding: 10,
+} satisfies CSSProperties;
+
+const spectrumPreviewStyle = {
+  height: 180,
+  width: '100%',
+  marginTop: 12,
+  marginBottom: 8,
+} satisfies CSSProperties;
 
 function AnalysisViewModalContent({
   viewType,
@@ -88,6 +196,10 @@ function AnalysisViewModalContent({
     return <SpectrumViewer result={result.data} />;
   }
 
+  if (result.type === 'spectrogram' && viewType === 'spectrogram') {
+    return <SpectrogramViewer result={result.data} />;
+  }
+
   if (result.type === 'soundQuality' && viewType === 'soundQuality') {
     return <SoundQualityViewer result={result.data} />;
   }
@@ -116,6 +228,13 @@ export function AnalysisViewBlock({ block }: IAnalysisViewBlockProps): JSX.Eleme
   const Icon = VIEW_ICONS[block.viewType] || IconChartLine;
   const title = block.title || VIEW_LABELS[block.viewType] || 'Analysis';
   const { summary } = block;
+  const spectrumPreviewFrequenciesHz = block.viewType === 'spectrum'
+    ? block.preview?.frequenciesHz
+    : undefined;
+  const spectrumPreviewMagnitudesDb = block.viewType === 'spectrum'
+    ? block.preview?.magnitudesDb
+    : undefined;
+  const shouldRenderSpectrumPreview = spectrumPreviewFrequenciesHz && spectrumPreviewMagnitudesDb;
 
   return (
     <>
@@ -178,19 +297,23 @@ export function AnalysisViewBlock({ block }: IAnalysisViewBlockProps): JSX.Eleme
         )}
 
         {/* Mini Chart Preview */}
-        {block.preview?.frequenciesHz && block.preview?.magnitudesDb && (
-          <div style={{ height: 100, width: '100%', marginTop: 12, marginBottom: 8 }}>
+        {shouldRenderSpectrumPreview && (
+          <div style={spectrumPreviewStyle}>
             <SpectrumCanvas
               channels={[{
                 channelId: '1',
                 channelName: 'Channel 1',
-                points: block.preview.frequenciesHz.map((freq, i) => [freq, block.preview?.magnitudesDb?.[i] ?? -120]),
+                points: spectrumPreviewFrequenciesHz.map((freq, i) => [freq, spectrumPreviewMagnitudesDb[i] ?? -120]),
                 yUnit: 'dB',
                 yAxisLabel: 'Level [dB]',
                 originalIndex: 0,
               }]}
             />
           </div>
+        )}
+
+        {!shouldRenderSpectrumPreview && (
+          <CompactAnalysisPreview viewType={block.viewType} summary={summary} resultId={block.resultId} />
         )}
 
         {/* Mini Hint */}

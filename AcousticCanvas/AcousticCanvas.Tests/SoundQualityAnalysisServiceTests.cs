@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace AcousticCanvas.Tests;
 
+[Trait("Category", "Integration")]
 public sealed class SoundQualityAnalysisServiceTests
 {
     [Fact]

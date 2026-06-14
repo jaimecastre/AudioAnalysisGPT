@@ -7,10 +7,7 @@ import {
   analysisResultFailed,
   type AnalysisResult,
 } from '../store/analysisResultsSlice';
-import type { SpectrumPointsResponse } from '../types/spectrumTypes';
-import type { SoundQualityAnalysis } from '../types/soundQualityTypes';
-import type { CpbAnalysis } from '../types/cpbTypes';
-import type { FindingsResult } from '../../findings/types/findingsTypes';
+import { mapAnalysisResultResponse } from './analysisResultMapping';
 
 interface IUseAnalysisResultReturn {
   result: AnalysisResult | null;
@@ -62,14 +59,7 @@ export const useAnalysisResult = (resultId: string | null): IUseAnalysisResultRe
       }
 
       const data = await response.json() as { type: string; data: unknown };
-      const typedResult: AnalysisResult =
-        data.type === 'spectrum'
-          ? { type: 'spectrum', data: data.data as SpectrumPointsResponse }
-          : data.type === 'soundQuality'
-            ? { type: 'soundQuality', data: data.data as SoundQualityAnalysis }
-            : data.type === 'cpb'
-              ? { type: 'cpb', data: data.data as CpbAnalysis }
-              : { type: 'findings', data: data.data as FindingsResult };
+      const typedResult = mapAnalysisResultResponse(data);
       dispatch(analysisResultLoaded({ resultId: id, result: typedResult }));
     } catch (err) {
       if (abortController.signal.aborted) return;

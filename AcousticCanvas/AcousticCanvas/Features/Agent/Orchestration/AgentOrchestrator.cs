@@ -85,6 +85,7 @@ public sealed class AgentOrchestrator(
             command.Question,
             command.SelectedFileIds,
             selectedFileNames,
+            command.ConversationContext,
             cancellationToken,
             command.ModelOverride
         );

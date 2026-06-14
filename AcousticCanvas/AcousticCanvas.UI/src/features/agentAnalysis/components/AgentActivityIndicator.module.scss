@@ -1,0 +1,38 @@
+@keyframes activitySpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.activityIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 184, 169, 0.15);
+  border-top-color: rgba(0, 184, 169, 0.8);
+  animation: activitySpin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.label {
+  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  color: rgba(0, 184, 169, 0.85);
+  font-weight: 500;
+}
+
+.failed .label {
+  color: #f87171;
+}
+
+.failed .spinner {
+  display: none;
+}

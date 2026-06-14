@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch } from '../../../store/reduxStore';
 import {
   agentThinkingFinished,
+  assistantActivityUpdated,
   assistantMessageFailed,
   assistantMessageReceived,
   assistantResponseStarted,
@@ -11,7 +12,7 @@ import {
   planBubbleRemoved,
 } from '../store/chatSlice';
 import type { ToolStep } from '../store/chatSlice';
-import type { AgentAskResponse } from '../services/agentAskService';
+import type { AgentAskResponse, AgentConversationTurn } from '../services/agentAskService';
 import { callAgentAskEndpoint } from '../services/agentAskService';
 import {
   agentAskStarted,
@@ -58,7 +59,11 @@ export function useAgentAsk() {
     return content;
   }
 
-  async function submitQuestion(question: string, selectedFileIds: string[]) {
+  async function submitQuestion(
+    question: string,
+    selectedFileIds: string[],
+    conversationContext: AgentConversationTurn[] = [],
+  ) {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -80,10 +85,13 @@ export function useAgentAsk() {
     }));
 
     try {
+      dispatch(assistantActivityUpdated({ id: assistantMessageId, activityLabel: 'running_tools' }));
+
       const agentResponse = await callAgentAskEndpoint(
         {
           question,
           selectedFileIds,
+          conversationContext,
           mode: 'investigate',
           modelOverride: selectedModel,
         },
@@ -91,6 +99,7 @@ export function useAgentAsk() {
       );
 
       dispatch(agentAskSucceeded(agentResponse));
+      dispatch(assistantActivityUpdated({ id: assistantMessageId, activityLabel: 'building_results' }));
 
       if (agentResponse.plannedTools?.length) {
         dispatch(planBubbleReceived({
@@ -144,6 +153,8 @@ export function useAgentAsk() {
         }
       }
 
+      dispatch(assistantActivityUpdated({ id: assistantMessageId, activityLabel: 'generating_answer' }));
+
       dispatch(assistantMessageReceived({
         id: assistantMessageId,
         content: buildChatContent(agentResponse),
@@ -168,6 +179,7 @@ export function useAgentAsk() {
 
       const errorMessage = err instanceof Error ? err.message : 'Unknown error from agent.';
       dispatch(agentAskFailed(errorMessage));
+      dispatch(assistantActivityUpdated({ id: assistantMessageId, activityLabel: 'failed' }));
       dispatch(assistantMessageFailed({
         id: assistantMessageId,
         error: errorMessage,

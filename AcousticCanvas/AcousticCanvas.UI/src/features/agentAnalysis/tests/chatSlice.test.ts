@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import chatReducer, {
   agentThinkingFinished,
+  assistantActivityUpdated,
   assistantMessageReceived,
   assistantMessageFailed,
   assistantResponseStarted,
@@ -190,6 +191,74 @@ describe('chatSlice', () => {
       role: 'plan',
       plannerReason: null,
     });
+  });
+
+  it('assistantResponseStarted sets activityLabel to planning', () => {
+    const state = chatReducer(undefined, assistantResponseStarted({
+      id: 'assistant-1',
+      timestamp: '2026-06-08T00:00:01.000Z',
+    }));
+
+    expect(state.messages[0]).toMatchObject({
+      role: 'assistant',
+      status: 'thinking',
+      activityLabel: 'planning',
+    });
+  });
+
+  it('assistantActivityUpdated progresses through activity labels', () => {
+    const pendingState = chatReducer(undefined, assistantResponseStarted({
+      id: 'assistant-1',
+      timestamp: '2026-06-08T00:00:01.000Z',
+    }));
+
+    const runningState = chatReducer(pendingState, assistantActivityUpdated({
+      id: 'assistant-1',
+      activityLabel: 'running_tools',
+    }));
+    expect(runningState.messages[0]?.activityLabel).toBe('running_tools');
+
+    const buildingState = chatReducer(runningState, assistantActivityUpdated({
+      id: 'assistant-1',
+      activityLabel: 'building_results',
+    }));
+    expect(buildingState.messages[0]?.activityLabel).toBe('building_results');
+
+    const generatingState = chatReducer(buildingState, assistantActivityUpdated({
+      id: 'assistant-1',
+      activityLabel: 'generating_answer',
+    }));
+    expect(generatingState.messages[0]?.activityLabel).toBe('generating_answer');
+  });
+
+  it('assistantMessageReceived sets activityLabel to complete', () => {
+    const pendingState = chatReducer(undefined, assistantResponseStarted({
+      id: 'assistant-1',
+      timestamp: '2026-06-08T00:00:01.000Z',
+    }));
+
+    const completedState = chatReducer(pendingState, assistantMessageReceived({
+      id: 'assistant-1',
+      content: 'Done.',
+      timestamp: '2026-06-08T00:00:05.000Z',
+    }));
+
+    expect(completedState.messages[0]?.activityLabel).toBe('complete');
+  });
+
+  it('assistantMessageFailed sets activityLabel to failed', () => {
+    const pendingState = chatReducer(undefined, assistantResponseStarted({
+      id: 'assistant-1',
+      timestamp: '2026-06-08T00:00:01.000Z',
+    }));
+
+    const failedState = chatReducer(pendingState, assistantMessageFailed({
+      id: 'assistant-1',
+      error: 'Timeout',
+      timestamp: '2026-06-08T00:00:05.000Z',
+    }));
+
+    expect(failedState.messages[0]?.activityLabel).toBe('failed');
   });
 
   it('planBubbleRemoved removes a no-tool planning bubble without removing the assistant response', () => {

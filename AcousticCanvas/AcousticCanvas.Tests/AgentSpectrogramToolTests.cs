@@ -77,12 +77,13 @@ public sealed class AgentSpectrogramToolTests
         var audioFileRepository = BuildAudioFileRepository(storagePath);
         var soundQualityService = new SoundQualityAnalysisService(new FakeSoundQualityClient(), new SoundQualityCacheStore());
         var importers = new List<ISignalFileImporter> { new WavSignalFileImporter() };
+        var analysisResultCache = new AnalysisResultCache();
         var toolExecutionService = new ToolExecutionService(
             audioFileRepository,
             soundQualityService,
             importers,
             new SpectrogramCacheStore(),
-            new AnalysisResultCache());
+            analysisResultCache);
 
         var toolOutput = await toolExecutionService.ExecuteToolAsync(
             new PlannerToolRequest
@@ -106,12 +107,18 @@ public sealed class AgentSpectrogramToolTests
         var fileResult = parsedData.GetProperty("results")[0];
         Assert.Equal(fileId, fileResult.GetProperty("fileId").GetString());
         Assert.True(fileResult.GetProperty("region").GetProperty("endSeconds").GetDouble() > 0.9);
-        Assert.Equal(2048, fileResult.GetProperty("parameters").GetProperty("fftSize").GetInt32());
+        Assert.Equal(44100, fileResult.GetProperty("parameters").GetProperty("fftSize").GetInt32());
         Assert.Equal("mel", fileResult.GetProperty("parameters").GetProperty("scale").GetString());
         Assert.True(fileResult.GetProperty("summary").GetProperty("frameCount").GetInt32() > 0);
         Assert.True(fileResult.GetProperty("summary").GetProperty("binCount").GetInt32() > 0);
         Assert.True(fileResult.GetProperty("summary").GetProperty("nyquistHz").GetDouble() > 0);
         Assert.StartsWith("spectrogram_", fileResult.GetProperty("dataRef").GetString());
+
+        var resultId = fileResult.GetProperty("resultId").GetString();
+        Assert.StartsWith("spectrogram_", resultId);
+        var cachedResult = analysisResultCache.GetResult(resultId!);
+        Assert.NotNull(cachedResult);
+        Assert.Equal("spectrogram", cachedResult!.Type);
     }
 
     [Fact]
@@ -145,6 +152,7 @@ public sealed class AgentSpectrogramToolTests
                             nyquistHz = 24000.0,
                         },
                         dataRef = "spectrogram_abcdef12",
+                        resultId = "spectrogram_0123456789abcdef0123456789abcdef",
                     },
                 },
             },
@@ -166,6 +174,7 @@ public sealed class AgentSpectrogramToolTests
         Assert.Equal(1025, evidence.Data["binCount"]);
         Assert.Equal(24000.0, evidence.Data["nyquistHz"]);
         Assert.Equal("spectrogram_abcdef12", evidence.Data["dataRef"]);
+        Assert.Equal("spectrogram_0123456789abcdef0123456789abcdef", evidence.Data["resultId"]);
         Assert.DoesNotContain(evidencePackage.Limitations, limitation => limitation.Contains("No psychoacoustic metrics", StringComparison.OrdinalIgnoreCase));
     }
 

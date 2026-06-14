@@ -52,6 +52,7 @@ public sealed class CpbAnalysisServiceTests
     }
 
     [Fact]
+    [Trait("Category", "Integration")]
     public async Task PythonFilterBankPeaksAtOneKilohertzForOneKilohertzSine()
     {
         var fixturePath = WriteSineWaveFixture(frequencyHz: 1000.0, amplitude: 0.5);
@@ -72,6 +73,7 @@ public sealed class CpbAnalysisServiceTests
     }
 
     [Fact]
+    [Trait("Category", "Integration")]
     public async Task PythonFilterBankAWeightingAttenuatesOneHundredHertzComparedWithZWeighting()
     {
         var fixturePath = WriteSineWaveFixture(frequencyHz: 100.0, amplitude: 0.5);

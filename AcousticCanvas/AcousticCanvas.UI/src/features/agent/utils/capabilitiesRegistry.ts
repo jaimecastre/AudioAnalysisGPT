@@ -45,7 +45,7 @@ const ANALYSIS_KINDS: AnalysisKindEntry[] = [
     description: 'Computes a frequency-domain spectrum (FFT) over a time region, returning peak frequency and magnitude per channel.',
     requiresRegion: true,
     defaultOptions: {
-      fftSize: 8192,
+      fftSize: 44100,
       windowType: 'hann' as const,
       overlap: 0.677,
     },
@@ -56,7 +56,7 @@ const ANALYSIS_KINDS: AnalysisKindEntry[] = [
     requiresRegion: false,
     defaultOptions: {
       backendTool: 'run_spectrogram',
-      fftSize: 2048,
+      fftSize: 44100,
       overlap: 0.75,
       scale: 'mel',
     },

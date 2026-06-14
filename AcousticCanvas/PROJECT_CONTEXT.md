@@ -37,6 +37,32 @@ Import sound data
 
 The AI should behave more like a junior acoustic engineer or investigation copilot, not like a generic chatbot.
 
+## 1.1 New Core Direction — AI-Generated Acoustic Visual Analysis
+
+AcousticGPT should evolve from a text-only assistant into an **AI acoustic engineering assistant with expert visualization planning**.
+
+The goal is not "chat next to plots." The goal is an Agent that behaves like an expert acoustic engineer:
+
+- Understand what the user is trying to investigate.
+- Decide whether the answer needs text only, statistics, plots, charts, rankings, tables, investigation cards, reports, or a combination.
+- Choose the correct deterministic DSP tools.
+- Decide what data should be shown and how it should be plotted.
+- Decide whether multiple files, signals, channels, or regions should be overlaid in one chart or separated.
+- Configure axes, scales, units, legends, ranges, annotations, markers, highlighted regions, and engineering metadata.
+- Rank or compare results when useful.
+- Explain the engineering meaning and suggest useful next analyses.
+
+This direction is inspired by constrained Generative UI concepts, but specialized for acoustic engineering. AcousticGPT should not generate arbitrary React code. The Agent chooses from trusted predefined acoustic response blocks, the frontend renders those blocks, and the backend provides the numerical truth.
+
+The architectural mantra is:
+
+```text
+LLM plans.
+DSP backend computes.
+Frontend renders.
+LLM explains.
+```
+
 ---
 
 # 2. Current State of the Application (Last updated: 2026-06-14)
@@ -102,7 +128,7 @@ The UI supports two main workspaces:
 - Multi-channel averaging
 
 **Spectrum Analyzer:**
-- FFT size: configurable (default 8192)
+- FFT size: configurable (default 44100)
 - Window: Hann
 - Overlap: 50%
 - Scaling: one-sided amplitude, coherent-gain corrected
@@ -112,7 +138,7 @@ The UI supports two main workspaces:
 **Spectrogram Analyzer:**
 - Adaptive frame capping (max 1000 frames)
 - Frequency scales: linear, mel, log
-- FFT: default 2048, overlap 75%
+- FFT: default 44100, overlap 75%
 - Gain range: −10 to +30 dB, dynamic range: 20–120 dB
 - Output: byte-normalized (0–255) frames, base64 encoded
 
@@ -170,6 +196,7 @@ SignalChannel {
 | Agent orchestrator workspace artifacts | ✅ Done | All 7 orchestrator tools produce deterministic workspace cards; evidence pills focus the matching artifact and keep detail cards expanded |
 | Agent orchestrator markdown responses | ✅ Done | Assistant answers rendered as markdown |
 | Agent visual response blocks (Generative UI Phase 1) | ✅ Done | Markdown, Statistics, Spectrum chart, Ranking, SuggestedActions blocks rendered inline in chat |
+| Agent response activity status | ✅ Done | Live activity label in assistant bubble: planning → running tools → building results → generating answer → complete/failed |
 | Agent analysis view blocks (Generative UI Phase 2a) | ✅ Done | `analysisView` block — compact card with mini preview + modal opener; spectrum, CPB, sound quality, findings viewers wired |
 | Agent findings investigation | ✅ Done | "Detect findings and issues" suggestion chip → run_findings → FindingsCard with per-finding rows |
 | Agent referenced context panel | ✅ Done | Workspace shows loaded files, active file/selection, analyses used, limitations, and validation warnings |
@@ -303,6 +330,8 @@ The strongest product direction is:
 
 > **AI benchmark intelligence and acoustic investigation for product sound teams.**
 
+The strongest differentiator is that AcousticGPT is not a chatbot bolted onto an audio analysis tool. It is an AI acoustic engineering assistant that can decide what evidence is needed, run the right DSP tools, create the right visual evidence, configure plots like an expert, compare and rank signals, explain the result in engineering language, and suggest what to do next.
+
 ---
 
 # 4. Target Users
@@ -425,6 +454,8 @@ Reports must be grounded in measured data.
 The backend computes facts.
 The AI explains facts.
 Never let the OpenAI API invent conclusions directly from raw audio.
+
+The LLM may decide what analysis is needed, which trusted response blocks should be shown, what data should be compared, how axes/scales/units should be configured, and how to explain the result. It must not fabricate SPL, dBFS, RMS, peak, FFT peak, frequency, loudness, sharpness, roughness, tonality, source contribution, ranking, statistic, or chart data values. All numbers must come from deterministic backend tools.
 
 The correct architecture is:
 
@@ -700,6 +731,119 @@ Frontend responsibilities:
 AcousticGPT/SoundLens visualizations must be engineering-grade, not merely decorative.
 Every plot must make it clear what data is shown, what units are used, how it was computed,
 and how it supports the acoustic investigation.
+
+## Agent Visual Planning Architecture
+
+Agent-generated visual analysis must use constrained Generative UI: the Agent returns typed response blocks and visualization specifications, not arbitrary UI code. The frontend owns rendering, and the backend owns the numerical truth.
+
+### Expert Visualization Planner
+
+The Expert Visualization Planner decides the best response format for each user request. Internally it should decide:
+
+1. Whether visualization is needed at all.
+2. Which visualization type is most appropriate.
+3. Which files, channels, time regions, signals, or metrics should be included.
+4. Whether multiple signals should be overlaid, separated, or shown as coordinated views.
+5. What the x-axis and y-axis represent, including units and scale.
+6. What range or zoom should be displayed, including focused ranges such as `800-1200 Hz` for a 1 kHz issue.
+7. Whether to show markers, peak labels, cursors, annotations, thresholds, reference lines, highlighted regions, legends, or metadata.
+8. Whether raw, averaged, smoothed, filtered, octave-band, one-third-octave, or derived-metric data is required.
+9. What engineering metadata is required for trust.
+10. What minimal visual evidence answers the question clearly.
+
+The Agent should not always create plots. Some questions need only text; some need statistics; some need one plot; some need multiple coordinated plots; some need rankings, tables, or report-style investigation cards.
+
+### PlotSpecificationPlanner
+
+The PlotSpecificationPlanner converts the user question and available deterministic analysis results into precise visualization specifications. A specification should include:
+
+- Plot type.
+- Data sources and result references.
+- Selected files, channels, and time regions.
+- Selected frequency range or metric set.
+- Axis labels, units, scale, and min/max.
+- Overlay strategy and legend labels.
+- Annotations, peak markers, harmonic markers, thresholds, highlighted regions, and selected regions.
+- Metadata display requirements.
+- Default zoom/range.
+- Fixed vs automatic scaling.
+- Reason for the visualization choice.
+- Confidence and limitations.
+
+Example target shape:
+
+```json
+{
+  "type": "spectrumOverlay",
+  "title": "Spectrum comparison, File A vs File B",
+  "dataSources": [
+    { "resultRef": "spectrum_file_a_001", "label": "File A", "channel": "Mono", "timeRangeSeconds": [0, 5] },
+    { "resultRef": "spectrum_file_b_001", "label": "File B", "channel": "Mono", "timeRangeSeconds": [0, 5] }
+  ],
+  "xAxis": { "label": "Frequency", "unit": "Hz", "scale": "linear", "min": 20, "max": 10000 },
+  "yAxis": { "label": "Level", "unit": "dB SPL", "scale": "dB", "autoScale": true },
+  "displayOptions": {
+    "showLegend": true,
+    "showGrid": true,
+    "showPeakMarkers": true,
+    "showDominantFrequencyLabels": true,
+    "showMetadata": true
+  }
+}
+```
+
+### Agent Response Block Model
+
+Agent responses should be lists of typed blocks, not only a text string. Supported and planned block types include:
+
+- `MarkdownBlock`
+- `StatisticsBlock`
+- `SpectrumChartBlock`
+- `SpectrumOverlayBlock`
+- `SpectrogramChartBlock`
+- `WaveformChartBlock`
+- `TimeSeriesMetricBlock`
+- `RankingBlock`
+- `MetricComparisonBlock`
+- `PeakTableBlock`
+- `ContributionChartBlock`
+- `AudioPlayerBlock`
+- `SuggestedActionsBlock`
+- `InvestigationCardBlock`
+- `ReportSummaryBlock`
+
+The Agent chooses the block structure. Backend DSP tools provide `resultId`/`dataRef` values and measured data. The frontend renders each block with trusted acoustic components.
+
+### Visualization Decision Rules
+
+- If the user asks generically for "a plot", "graph this", or "show me a chart" without naming the plot type, the Agent should infer the most useful visual from the investigation intent and explain the reason for that choice in one short sentence. If multiple plot types are plausible, it should either choose the safest default and mention the alternative, or show complementary blocks when both add distinct evidence. It should not ask a clarification question unless choosing the plot would materially change the analysis or risk misleading the user.
+- Use **text only** for definitions, concepts, implementation guidance, or cases where no file/data/result is involved and a visual would not add evidence.
+- Use **statistics blocks** for level, RMS, peak, crest factor, duration, clipping, metadata, or compact signal-property summaries.
+- Use **spectrum plots** for frequency content, tones, peaks, harmonics, resonances, tonal noise, broadband noise, or spectral differences.
+- Use **spectrum overlays** when comparing files, channels, regions, before/after processing, or measured vs predicted data that share the same x-axis and y-axis units.
+- Use **spectrograms** when the user asks how sound changes over time, about transient events, tonal drift, intermittent tones, or anything an averaged spectrum would hide.
+- Use **waveform plots** for clipping, transients, edits/cuts, region selection, or when time-domain shape matters.
+- Use **metric-over-time plots** for temporal variation in loudness, sharpness, roughness, level, tonality, or annoyance-related metrics.
+- Use **bar charts** for rankings, dominant contributors, top frequencies, source contributions, and metric comparisons.
+- Use **tables** when exact values, multi-metric traceability, or engineering auditability matter.
+- Use **investigation cards** for broad diagnostic questions like "Why does this sound annoying?", "What is wrong with this sound?", "Which file is worse?", "Which source contributes most?", or "What should I look at?"
+
+### Plot Combination Rules
+
+- Overlay signals in the same plot when they share the same x-axis and y-axis units, the number of series is readable, and overlaying makes comparison easier.
+- Use separate plots when units differ, scales are too different, one signal would hide another, one view is time-domain and another is frequency-domain, or there are too many series to read clearly.
+- Use shared axes for comparable files/channels/regions, before/after processing, and measured-vs-predicted comparisons.
+- Use fixed scales for side-by-side comparisons, spectrogram comparisons, before/after views, and any situation where visual fairness matters.
+- Use auto-scale for a single signal when the goal is detail inspection and comparison fairness is not the main objective.
+
+### Axis and Scale Rules
+
+- Spectra: x-axis `Frequency [Hz]`; y-axis `Level [dB SPL]` or `Level [dBFS]` depending on calibration; include FFT size, window, overlap, averaging, scaling, and calibration.
+- Spectrograms: x-axis `Time [s]`; y-axis `Frequency [Hz]`; color scale `Level [dB SPL]` or `Amplitude [dBFS]`; use fixed color scale when comparing spectrograms.
+- Waveforms: x-axis `Time [s]`; y-axis calibrated pressure, normalized amplitude, or dBFS depending on available calibration.
+- Metric-over-time: x-axis `Time [s]`; y-axis metric value with unit, such as `Loudness [sone]`, `Sharpness [acum]`, `Roughness [asper]`, or `Level [dB SPL]`.
+- Rankings: rows or x-axis show file/source/channel names; metric score is clearly labeled; sort descending unless lower is better.
+- Source contribution plots: show whether values are absolute, relative, dB, percentage, or contribution level.
 
 ### 1. Axis labels and units are required
 
@@ -1139,32 +1283,39 @@ All acceptance criteria met:
 - ✅ Agent summary of batch results
 - ✅ Export batch report
 
-## 🔄 Milestone 4.5 — AI-Generated Acoustic Visual Analysis (Generative UI) — PHASE 1 IMPLEMENTED
+## 🔄 Milestone 4.5 — AI-Generated Acoustic Visual Analysis and Expert Plot Specification Planning — IN PROGRESS
 
-**Product positioning:** This milestone transforms AcousticGPT from "chat next to audio plots" into an AI acoustic engineering assistant that can decide what analysis is needed, run the analysis, visualize the evidence, rank results, and explain the engineering meaning. Similar in spirit to Generative UI products like Thesys, but specialized for acoustic engineering.
+**Goal:** Allow the Agent to decide whether a user request needs text, plots, charts, statistics, rankings, tables, investigation cards, reports, or combinations of these. The Agent should behave like an expert acoustic engineer and select the most useful evidence for the question. It should also decide what data goes into each visualization, how signals are combined, how axes are scaled, what units are used, what annotations are shown, and what metadata is required.
 
-**Core principle:** The LLM generates UI structure, not data. All numerical values, plots, and metrics come from deterministic backend DSP tools. The AI Agent decides which analyses are needed and which visual response blocks should be shown, but never invents or fabricates results.
+**Product positioning:** This milestone transforms AcousticGPT from "chat next to audio plots" into an AI acoustic engineering assistant that can decide what analysis is needed, run deterministic DSP tools, create the right visual evidence, configure plots like an expert, rank/compare results, and explain the engineering meaning.
+
+**Core principle:** The LLM generates UI structure and visualization intent, not data. All numerical values, plots, rankings, statistics, and metrics come from deterministic backend DSP tools. The AI Agent may choose analyses, response blocks, overlay/separation strategy, axes, ranges, annotations, and explanation, but it must never invent or fabricate results.
 
 ### Must-have features:
 
+- **Expert Visualization Planner** — decides whether visualization is needed and selects the minimal useful visual evidence for the question.
+- **PlotSpecificationPlanner** — emits precise visualization specifications with data sources, axes, units, scales, ranges, overlay strategy, legend labels, annotations, peak markers, metadata display, default zoom, confidence, and result references.
 - **Agent Response Block Model** — Agent returns typed response blocks instead of only text:
-  - `MarkdownBlock` — explanatory text
-  - `SpectrumChartBlock` — FFT spectrum visualization
-  - `SpectrogramChartBlock` — time-frequency heatmap
-  - `WaveformChartBlock` — waveform summary/selection
-  - `StatisticsBlock` — metrics table/card
-  - `RankingBlock` — sorted file/region comparison
-  - `MetricComparisonBlock` — side-by-side metric comparison
-  - `PeakTableBlock` — dominant peaks list
-  - `AudioPlayerBlock` — playback with selection
-  - `SuggestedActionsBlock` — next analysis suggestions
-  - `ReportSummaryBlock` — mini investigation report
-
-- **Agent Planner Enhancement** — Planner decides which DSP tools AND which visual blocks are needed per question
-- **DSP Tool Layer** — All existing tools (`run_spectrum`, `run_spectrogram`, `run_cpb`, `run_sound_quality_metrics`, `run_findings`, etc.) return structured JSON with metadata (units, FFT size, window, calibration assumptions)
-- **Frontend Block Renderer** — React component that renders each block type using trusted visualization components (SciChart/Mantine Charts), including titles, legends, axis labels, units, and source metadata
-- **Multi-tool Investigation Flow** — Single user question triggers multiple DSP tools; results compose into a unified visual response
-- **Mixed Response Format** — Every agent answer combines: short explanation + visual blocks + statistics + suggested next action
+  - `MarkdownBlock` — explanatory text.
+  - `StatisticsBlock` — metrics table/card.
+  - `SpectrumChartBlock` — FFT spectrum visualization.
+  - `SpectrumOverlayBlock` — shared-axis multi-file/channel/region spectrum comparison.
+  - `SpectrogramChartBlock` — time-frequency heatmap.
+  - `WaveformChartBlock` — waveform summary/selection.
+  - `TimeSeriesMetricBlock` — level/loudness/sharpness/roughness over time.
+  - `RankingBlock` — sorted file/source/channel comparison.
+  - `MetricComparisonBlock` — side-by-side metric comparison.
+  - `PeakTableBlock` — dominant peaks list.
+  - `ContributionChartBlock` — source contribution or contributor ranking.
+  - `AudioPlayerBlock` — playback with region context.
+  - `SuggestedActionsBlock` — next analysis suggestions.
+  - `InvestigationCardBlock` — evidence + interpretation + limitations + next test.
+  - `ReportSummaryBlock` — mini investigation report.
+- **DSP Tool Layer** — tools such as `RunBasicStatistics`, `RunWaveformSummary`, `RunSpectrum`, `RunSpectrumOverlay`, `RunSpectrogram`, `RunCpbAnalysis`, `RunLoudness`, `RunSharpness`, `RunRoughness`, `RunTonality`, `DetectClipping`, `DetectDominantPeaks`, `CompareFiles`, `RankFilesByMetric`, `ComputeSourceContributions`, `CompareMeasuredVsPredicted`, and `CompareBeforeAfterProcessing` return structured results with metadata.
+- **Frontend Block Renderer** — `AgentResponseRenderer` renders each block using trusted acoustic visualization components only. The Agent does not produce arbitrary React.
+- **Multi-tool Investigation Flow** — one question can trigger several DSP tools and compose results into a unified visual response.
+- **Engineering Metadata and Reproducibility** — every plot or visual block includes file/channel/region, sample rate, units, method, parameters, calibration assumptions, result references, timestamp, and warnings.
+- **Investigation Trace Integration** — trace captures user question, interpreted intent, selected tools, reasons, tool inputs, result references, selected response blocks, visualization specifications, reasons for each visualization, final answer, confidence, and timestamp.
 
 ### Example user experience:
 
@@ -1196,25 +1347,43 @@ Agent response composition:
   - Frontend: `AgentResponseBlockRenderer` component
   - Frontend: Individual block components: `MarkdownBlock`, `StatisticsBlock`, `SpectrumChartBlock`, `RankingBlock`, `SuggestedActionsBlock`
   - Frontend: Chat message rendering with block support + fallback to markdown
-- **Phase 2:** Unified visualization — Agent uses Manual mode chart components (mini inline + modal expansion)
+- **Phase 2:** ✅ Unified visualization — Agent uses Manual mode chart components (mini inline + modal expansion)
   - `AnalysisViewBlock` — References existing analysis results (`spectrum`, `spectrogram`, `cpb`, `soundQuality`, `findings`)
-  - Compact card view in chat using existing `SpectrumCard`, `SoundQualityPanel`, etc.
+  - Compact card view in chat using Manual Analysis visualization primitives
   - Click to open full modal with all controls
   - Consistent UI between Manual and Agent modes
   - Backend: Agent triggers analysis → stores result → returns view reference
   - Frontend: Mini-view component wraps existing Manual mode components
-- **Phase 3:** Acoustic investigation cards (Finding, Evidence, Plot, Interpretation, Suggested next)
-- **Phase 4:** Generated analysis workflows (Agent creates temporary workflow based on question)
-- **Phase 5:** Exportable AI-generated reports (PDF, HTML with plots, tables, metadata, reproducibility)
+- **Phase 3:** Expert Visualization Planner
+  - Decide text/statistics/spectrum/spectrogram/waveform/ranking/table/investigation-card response shape
+  - Add traceability explaining why each tool and visual block was selected
+- **Phase 4:** Expert Plot Specification
+  - Specify data sources, selected files, channels, regions, axes, units, scales, ranges, overlay strategy, legends, annotations, markers, metadata, default zoom, and fixed vs auto scaling
+- **Phase 5:** Multi-Signal and Multi-File Visualizations
+  - Spectrum overlays, multi-file chart comparison, before/after comparisons, channel comparisons, measured-vs-predicted comparisons, selected time-region comparisons, and source contribution comparisons
+- **Phase 6:** Multi-Tool Acoustic Investigations
+  - Combine several DSP tools into investigation cards for diagnostic questions such as "Why does this sound annoying?", "Which file is most tonal?", "Which source contributes most?", "What changed after filtering?", "Is this signal clipped?", or "Where does the tone appear?"
+- **Phase 7:** Generated Analysis Workflows
+  - Let the Agent generate temporary workflows such as Import files → Statistics → Spectrum overlay → Loudness comparison → Ranking → Report summary
+- **Phase 8:** Exportable Investigation Reports
+  - Export AI-generated acoustic investigations as PDF, HTML, or project reports including plots, tables, metadata, calibration assumptions, and reproducible analysis parameters
 
 ### Acceptance criteria:
 
-- Agent can answer multi-file comparison questions with visual responses
-- All chart data comes from deterministic DSP tools
-- Every visual block includes source metadata and calibration assumptions
-- Agent explanation references computed values from tool results
-- Frontend renders blocks using trusted internal components only
-- Responses feel like mini engineering dashboards, not chat-only replies
+- AcousticGPT supports AI-generated acoustic visual analysis.
+- The Agent dynamically decides whether visual output is needed and does not always create plots.
+- The Agent can choose text-only, statistics, plots, charts, rankings, tables, or investigation cards.
+- The Agent can combine multiple signals/files/channels in the same chart when useful and separate them when overlay would mislead.
+- The Agent can decide plot type, included data, axes, scales, units, ranges, legends, annotations, markers, and metadata.
+- The Agent uses predefined trusted acoustic response blocks.
+- The frontend renders visualizations using trusted components only.
+- The LLM never invents numerical data.
+- All chart data, rankings, statistics, and metrics come from deterministic backend DSP tools.
+- Every visualization includes units and engineering metadata.
+- Calibration assumptions are clearly displayed, especially when SPL is unavailable or assumed.
+- Visualization specifications are stored for reproducibility.
+- InvestigationTrace captures tool choices, visualization choices, reasons, result references, final answer, and confidence.
+- This feature is positioned as a major differentiator against traditional acoustic tools.
 
 ---
 
@@ -1245,6 +1414,7 @@ Key concepts required for Milestone 5 (all **Future / Not Started**):
 |---------|--------|
 | Explicit agent intent classification | Future |
 | Explicit evidence planning (evidenceNeeded field) | Future |
+| Expert visualization planning and plot specifications | Future |
 | Tool metadata + safety levels | Future |
 | `AgentPlanValidator` / `ToolPolicyValidator` | Future |
 | Proposed workspace actions separate from analysis tools | Future |
@@ -1325,7 +1495,7 @@ question wording / prompt rules → tools → evidence → final answer
 toward:
 
 ```
-intent → evidence needed → tools → policy → execution → hypotheses → trace
+intent → evidence needed → tools → policy → execution → visualization specs → hypotheses → trace
 ```
 
 The agent should **not** become an endless list of hardcoded rules:
@@ -1343,6 +1513,7 @@ intent classification
   + evidence requirements
   + approved tool capabilities
   + safety policies
+  + visualization planning
   + hypothesis ranking
   + investigation trace
 ```
@@ -1480,7 +1651,73 @@ Question: "Why does this sound harsh?"
 
 ---
 
-## 11.5 Concept 3 — Tool Metadata and Tool Policy
+## 11.5 Concept 3 — Expert Visualization Planning and Plot Specifications
+
+**Status: Future**
+
+The future planner should not merely say "show a plot." It should produce a visualization plan that explains whether visual evidence is needed, what block types should be returned, which results should feed each block, and how each plot should be configured.
+
+This layer contains two concepts:
+
+- **Expert Visualization Planner** — chooses the response format and visual evidence strategy.
+- **PlotSpecificationPlanner** — converts available result references into precise plot specifications.
+
+**Future visualization plan JSON:**
+
+```json
+{
+  "responseBlocks": [
+    {
+      "type": "markdown",
+      "reason": "Briefly explain the comparison result before showing evidence."
+    },
+    {
+      "type": "spectrumOverlay",
+      "reason": "The user is comparing files and spectra share frequency and level axes.",
+      "plotSpecification": {
+        "title": "Spectrum overlay - Reference vs Candidate",
+        "dataSources": [
+          { "resultRef": "spectrum_ref_001", "label": "Reference", "channel": "Mono" },
+          { "resultRef": "spectrum_candidate_001", "label": "Candidate", "channel": "Mono" }
+        ],
+        "xAxis": { "label": "Frequency", "unit": "Hz", "scale": "linear", "min": 20, "max": 10000 },
+        "yAxis": { "label": "Level", "unit": "dBFS", "scale": "dB", "autoScale": false },
+        "displayOptions": {
+          "showLegend": true,
+          "showGrid": true,
+          "showPeakMarkers": true,
+          "showMetadata": true
+        }
+      }
+    }
+  ]
+}
+```
+
+**Visualization planning rules:**
+
+- When the user asks for "a plot" without specifying plot type, infer the best plot from the acoustic question and return the reason. Examples: choose a spectrum for "around 1 kHz" or tonal/frequency questions; choose a spectrogram for "over time", drift, bursts, or intermittent tones; choose a waveform for clipping/transients/edits; choose ranking or metric comparison blocks for "which is worse/better/louder/sharper." If more than one plot is useful, include complementary blocks or state the alternative next view.
+- Use text only for definitions, method explanations, or questions where a visual adds no evidence.
+- Use statistics blocks for compact numerical summaries.
+- Use spectrum plots for frequency content, tones, peaks, harmonics, resonances, and spectral differences.
+- Use spectrum overlays when compared signals share axes/units and overlay is readable.
+- Use spectrograms for time-varying sound, transient events, tonal drift, or intermittent tones.
+- Use waveform plots for clipping, transients, edits/cuts, and region selection.
+- Use time-series metric plots for loudness, sharpness, roughness, level, or tonality over time.
+- Use bar charts for rankings, contributors, source contribution, top frequencies, and metric comparisons.
+- Use tables when exact values and traceability matter.
+- Use investigation cards for broad diagnostic questions requiring multiple evidence types.
+
+**Trust requirements:**
+
+- Every visual block must reference deterministic `resultId` or `dataRef` values.
+- Axis units, scale changes, smoothing, filtering, averaging, normalization, zooming, and calibration assumptions must be visible.
+- Fixed scales should be used for fair comparisons; auto-scale may be used for single-signal inspection when clearly labeled.
+- Visualization specifications must be stored in `InvestigationTrace` so users can inspect how each plot was configured.
+
+---
+
+## 11.6 Concept 4 — Tool Metadata and Tool Policy
 
 **Status: Future (current `AgentToolRegistry` only implements the whitelist check)**
 
@@ -1540,7 +1777,7 @@ limitations               ← known accuracy or scope limitations
 
 ---
 
-## 11.6 Concept 4 — Agent Plan Validation
+## 11.7 Concept 5 — Agent Plan Validation
 
 **Status: Future**
 
@@ -1575,7 +1812,7 @@ This is more robust than relying on prompt wording alone, especially when autono
 
 ---
 
-## 11.7 Concept 5 — Proposed Actions Separate from Analysis Tools
+## 11.8 Concept 6 — Proposed Actions Separate from Analysis Tools
 
 **Status: Future**
 
@@ -1645,7 +1882,7 @@ The planner JSON should separate these into `tools` and `proposedActions` arrays
 
 ---
 
-## 11.8 Concept 6 — Structured Hypothesis Ranking
+## 11.9 Concept 7 — Structured Hypothesis Ranking
 
 **Status: Future**
 
@@ -1692,7 +1929,7 @@ This is one of the key features that will make the agent feel like an autonomous
 
 ---
 
-## 11.9 Concept 7 — Investigation Trace / Timeline
+## 11.10 Concept 8 — Investigation Trace / Timeline
 
 **Status: Future**
 
@@ -1724,6 +1961,9 @@ The current response is good for chat. The future product should store a **first
   "toolsRun": [],
   "parameters": {},
   "evidenceUsed": [],
+  "responseBlocks": [],
+  "visualizationSpecifications": [],
+  "visualizationReasons": [],
   "hypotheses": [],
   "actionsTaken": [],
   "finalAnswer": "",
@@ -1739,6 +1979,7 @@ The investigation trace will support:
 ```
 reproducibility          ← same question → same tools → same evidence → same answer
 debugging                ← why did the agent say that?
+visual auditability      ← why this plot/table/ranking was selected and how it was configured
 report generation        ← trace feeds directly into a structured report
 investigation timeline   ← user can see the history of all questions asked in a session
 project memory           ← past investigations inform future ones
@@ -1746,9 +1987,21 @@ auditability             ← every claim references measured evidence
 user trust               ← users can inspect the full reasoning path
 ```
 
+At minimum, InvestigationTrace should capture:
+
+- User question.
+- Interpreted intent.
+- Selected tools and reason for each selected tool.
+- Tool inputs and result references.
+- Selected response blocks.
+- Visualization specifications and reason for each visualization.
+- Final answer.
+- Confidence.
+- Timestamp.
+
 ---
 
-## 11.10 Concept 8 — Autonomy Modes
+## 11.11 Concept 9 — Autonomy Modes
 
 **Status: Future**
 
@@ -1769,7 +2022,7 @@ The future agent should support configurable **autonomy modes** so users can con
 
 ---
 
-## 11.11 Concept 9 — External Knowledge Policy
+## 11.12 Concept 10 — External Knowledge Policy
 
 **Status: Future**
 
@@ -1800,7 +2053,7 @@ The agent must never mix unverified external data with measured acoustic evidenc
 
 ---
 
-## 11.12 Concept 10 — Bounded Multi-step Observation Loop
+## 11.13 Concept 11 — Bounded Multi-step Observation Loop
 
 **Status: Future**
 
@@ -1833,7 +2086,7 @@ This loop is only appropriate for complex multi-hypothesis investigations (e.g.,
 
 ---
 
-## 11.13 Concept 11 — Core Product Principle
+## 11.14 Concept 12 — Core Product Principle
 
 **Status: Current (principle) / Future (full execution)**
 
@@ -1851,7 +2104,7 @@ This principle applies to every design decision in the agent architecture. Any f
 
 ---
 
-## 11.14 Implementation TODOs for Future Architecture
+## 11.15 Implementation TODOs for Future Architecture
 
 These items must be explicitly assigned before any implementation begins.
 
@@ -1864,39 +2117,44 @@ TODO [Concept 2]:  Add `evidenceNeeded` and `reason` fields to PlannerResponse a
                    Update AgentPromptBuilder to instruct LLM to populate evidenceNeeded
                    Use evidenceNeeded in EvidencePackageBuilder to validate coverage
 
-TODO [Concept 3]:  Extend AgentToolDefinition with safetyLevel, requiresConfirmation,
+TODO [Concept 3]:  Add ExpertVisualizationPlanner and PlotSpecificationPlanner contracts
+                   Add responseBlocks and visualizationSpecifications to planner/final-answer contracts
+                   Store visualization specs and reasons in InvestigationTrace
+                   Ensure every visual spec references deterministic resultId/dataRef values
+
+TODO [Concept 4]:  Extend AgentToolDefinition with safetyLevel, requiresConfirmation,
                    evidenceProduced, allowedAutonomyModes, limitations fields
                    No behavior change — metadata only until policy engine is added
 
-TODO [Concept 4]:  Create AgentPlanValidator (or ToolPolicyValidator) class
+TODO [Concept 5]:  Create AgentPlanValidator (or ToolPolicyValidator) class
                    Move whitelist check from AgentOrchestrator into this class
                    Add intent validation, argument schema validation, safety level check
 
-TODO [Concept 5]:  Add proposedActions array to PlannerResponse
+TODO [Concept 6]:  Add proposedActions array to PlannerResponse
                    Create WorkspaceAction model with name, arguments, safetyLevel, requiresConfirmation, reason
                    Route workspace actions through a separate execution path from analysis tools
 
-TODO [Concept 6]:  Add HypothesisRanker component
+TODO [Concept 7]:  Add HypothesisRanker component
                    Define Hypothesis record type with confidence, supportingEvidence, contradictingEvidence, nextStep
                    Integrate hypothesis list into AgentAskResult response contract
 
-TODO [Concept 7]:  Create InvestigationTrace record type
+TODO [Concept 8]:  Create InvestigationTrace record type
                    Persist trace per question in the backend (in-memory first, database later)
                    Expose trace in AgentAskResult so frontend can show "How I investigated this"
 
-TODO [Concept 8]:  Add AutonomyMode enum and configuration
+TODO [Concept 9]:  Add AutonomyMode enum and configuration
                    Pass mode through AgentAskCommand
                    Use mode in AgentPlanValidator to gate Level 2/3/4 actions
 
-TODO [Concept 9]:  Add KnowledgeSourceType enum to EvidenceItem and FinalAnswerResponse
+TODO [Concept 10]: Add KnowledgeSourceType enum to EvidenceItem and FinalAnswerResponse
                    Implement external knowledge policy rules in AgentResponseValidator
                    Never add external upload functionality without explicit confirmation flow
 
-TODO [Concept 10]: Design bounded observation loop as a separate orchestration path
+TODO [Concept 11]: Design bounded observation loop as a separate orchestration path
                    Add MaxToolCallsPerQuestion and MaxPlanningIterations configuration
                    Implement stopping condition check in loop controller
 
-TODO [Concept 11]: Add AgentRunTrace and trace-based eval harness
+TODO [Concept 12]: Add AgentRunTrace and trace-based eval harness
                    Implement after the current JSONL contract evals are stable and before
                    adding higher-autonomy investigation loops, batch-ranking explanations,
                    or report generation.
@@ -1904,14 +2162,14 @@ TODO [Concept 11]: Add AgentRunTrace and trace-based eval harness
                    planner response, planned tools, tool args, tool output refs, evidence package,
                    final answer, validation warnings, latency, token usage, and model id.
 
-TODO [Concept 12]: Add end-to-end agent eval suite with audio fixtures
+TODO [Concept 13]: Add end-to-end agent eval suite with audio fixtures
                    Implement after AgentRunTrace exists and before changing planner prompts,
                    upgrading models, or expanding Agent tools beyond the current DSP suite.
                    Each eval case should define expected tools, expected evidence types,
                    prohibited claims, required answer facts, and outcome graders over the
                    trace/final answer.
 
-TODO [Concept 13]: Add multi-trial and model-graded evals
+TODO [Concept 14]: Add multi-trial and model-graded evals
                    Implement when the Agent begins producing richer comparative reports,
                    recommendations, or autonomous next-step plans where deterministic graders
                    are insufficient.
@@ -1975,15 +2233,15 @@ The product is directionally strong: it feels like a technical acoustic investig
 
 ### Critical UX Tasks
 
-1. **Agent response status clarity**
+1. **Agent response status clarity** ✅ Done (2026-06-14) — `AgentActivityIndicator` component with live status labels
    - Problem: Long-running agent analysis can feel stalled if the user only sees a generic loading state.
    - Why it matters: Trust drops quickly when analysis status is ambiguous, especially for MoSQITo and multi-file workflows.
    - Target pattern: One assistant bubble per request with visible user-facing activity states: planning, running tools, building evidence, generating answer, failed.
    - Acceptance criteria:
-     - A request never shows duplicate temporary assistant bubbles.
-     - The active assistant bubble shows the current status.
-     - Final answer, evidence, next steps, and errors appear in that same bubble.
-     - Long-running tools show a clear tool/activity label.
+     - ✅ A request never shows duplicate temporary assistant bubbles.
+     - ✅ The active assistant bubble shows the current status.
+     - ✅ Final answer, evidence, next steps, and errors appear in that same bubble.
+     - ✅ Long-running tools show a clear tool/activity label.
 
 2. **Guided investigation workflow** ✅ Done (2026-06-14) — `InvestigationStartPrompt` CTA tiles + sidebar `Open` badges
    - Problem: After loading a file, users may not know whether to open tools, read findings, ask the agent, or inspect plots.

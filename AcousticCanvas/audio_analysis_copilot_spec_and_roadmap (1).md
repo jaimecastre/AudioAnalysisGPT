@@ -6,6 +6,8 @@ A professional audio-analysis workspace with two modes: a manual analysis mode f
 
 The AI does not directly “judge” raw audio. It receives structured data from the DSP backend and may only make technical claims traceable to tool outputs.
 
+The next strategic direction is **AI-generated acoustic visual analysis with expert visualization planning**. The agent should decide whether a request needs text only, statistics, plots, charts, rankings, tables, investigation cards, reports, or a combination. It should choose deterministic DSP tools, specify what data should be visualized, configure axes/scales/units/legends/ranges/annotations/metadata, and explain the engineering meaning. It must use trusted predefined acoustic response blocks, not arbitrary generated UI code.
+
 ---
 
 ## 1. Product principles
@@ -87,6 +89,26 @@ Every analysis result should store:
 - source action: manual or agent
 
 A user should be able to click an agent claim and see the supporting analysis card.
+
+### 1.6 Constrained generative acoustic UI
+
+The agent should not always create plots. It should select the response format that answers the question with the minimum useful evidence:
+
+- If the user asks for "a plot", "graph this", or "show me a chart" without specifying the plot type, infer the best plot from the acoustic intent and briefly explain the reason for that choice. Use spectrum for frequency/tonal questions, spectrogram for time-varying behavior, waveform for clipping/transients/edits, and ranking or metric-comparison blocks for best/worst/louder/sharper questions. If multiple views are useful, show complementary blocks or mention the alternative next view.
+- Text only for definitions, method explanations, or questions with no file/data/result involved.
+- Statistics blocks for level, RMS, peak, crest factor, duration, clipping, and metadata.
+- Spectrum plots for tones, peaks, harmonics, resonances, tonal noise, broadband noise, and spectral differences.
+- Spectrum overlays for file/channel/region/before-after comparisons when axes and units match.
+- Spectrograms for time-varying sound, transients, tonal drift, or intermittent tones.
+- Waveforms for clipping, transients, edits/cuts, and region selection.
+- Metric-over-time plots for loudness, sharpness, roughness, level, tonality, or annoyance-related temporal variation.
+- Bar charts for rankings, contributors, top frequencies, source contribution, and metric comparisons.
+- Tables when exact values and engineering traceability matter.
+- Investigation cards for broad diagnostic questions that require several evidence types.
+
+All visual blocks must reference deterministic `resultId` or `dataRef` values. The LLM plans the block structure and plot specifications; the DSP backend computes; the frontend renders with trusted components; the LLM explains.
+
+The LLM must never fabricate SPL values, dBFS values, RMS values, peak values, FFT peaks, frequency values, loudness values, sharpness values, roughness values, tonality values, source contribution values, rankings, statistics, or chart data. All numerical values must come from deterministic backend tools.
 
 ---
 
@@ -1599,6 +1621,123 @@ Acceptance criteria:
 
 ---
 
+## Phase 10 — AI-generated acoustic visual analysis
+
+Goal: Let the agent plan expert acoustic visual responses instead of returning text-only answers or generic plots.
+
+### Branch 10.1 — `agent-response-block-model`
+
+Scope:
+
+- typed response block model
+- `MarkdownBlock`
+- `StatisticsBlock`
+- `SpectrumChartBlock`
+- `PeakTableBlock`
+- `SuggestedActionsBlock`
+- `AgentResponseRenderer` in React
+
+Acceptance criteria:
+
+- “Analyze this file” can return text + stats + spectrum + peaks + suggested next action
+- every block references backend evidence or deterministic result IDs
+- frontend renders blocks with trusted components only
+
+---
+
+### Branch 10.2 — `expert-visualization-planner`
+
+Scope:
+
+- planner decides whether visualization is needed
+- rules for text/statistics/spectrum/spectrogram/waveform/ranking/table/investigation-card response formats
+- traceability for why each tool and visual block was selected
+
+Acceptance criteria:
+
+- concept questions return text only
+- generic plot requests explain why the selected plot type was chosen
+- ambiguous plot requests either include complementary plot blocks or mention the best alternative next view
+- frequency-content questions choose spectrum evidence
+- time-varying questions choose spectrogram evidence
+- comparison questions choose overlay or separate plots based on units/readability
+
+---
+
+### Branch 10.3 — `plot-specification-planner`
+
+Scope:
+
+- structured plot specifications
+- data sources and result references
+- selected files/channels/regions
+- axis labels, units, scales, min/max
+- overlay strategy and legend labels
+- annotations, peak markers, highlighted regions
+- metadata display
+- fixed vs auto scaling
+
+Acceptance criteria:
+
+- agent does not request “make a plot” generically
+- every plot block includes reproducible visualization parameters
+- zooming, filtering, smoothing, averaging, normalization, scale changes, and calibration assumptions are visible to the user
+
+---
+
+### Branch 10.4 — `multi-signal-visual-blocks`
+
+Scope:
+
+- `SpectrumOverlayBlock`
+- `MetricComparisonBlock`
+- `RankingBlock`
+- `TimeSeriesMetricBlock`
+- `ContributionChartBlock`
+- shared-axis and fixed-scale comparison rules
+
+Acceptance criteria:
+
+- spectra from multiple files can be overlaid when units and axes match
+- side-by-side plots use fixed scales where fairness matters
+- too many or mismatched signals are separated rather than overlaid
+
+---
+
+### Branch 10.5 — `investigation-cards-and-trace`
+
+Scope:
+
+- `InvestigationCardBlock`
+- selected tools and reasons
+- selected visual blocks and reasons
+- visualization specifications in `InvestigationTrace`
+- final answer and confidence in trace
+
+Acceptance criteria:
+
+- broad questions such as “Why does this sound annoying?” produce evidence cards, not just prose
+- users can inspect why a plot/table/ranking was selected
+- every claim links to measured evidence and visualization configuration
+
+---
+
+### Branch 10.6 — `exportable-visual-investigation-reports`
+
+Scope:
+
+- report summary blocks
+- export-ready report structure
+- plots, tables, metadata, calibration assumptions, and reproducible analysis parameters
+
+Acceptance criteria:
+
+- generated reports include visual evidence and traceability
+- no report contains unsupported numerical values
+- calibration assumptions are visible in exported output
+
+---
+
 # 13. Suggested release milestones
 
 ## Milestone A — Manual inspection prototype
@@ -1796,4 +1935,3 @@ Build in this order:
 The first serious demo should be:
 
 > Import two kick drums, ask “why does B sound brighter?”, watch the agent run a normalized comparison, open the spectrum view, highlight the high-frequency band, and produce a grounded explanation with a reproducible analysis card.
-

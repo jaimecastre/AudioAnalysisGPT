@@ -17,12 +17,10 @@ public class GetAnalysisResultEndpoint(AnalysisResultCache resultCache)
         CancellationToken cancellationToken
     )
     {
-        Console.WriteLine($"[GetAnalysisResultEndpoint] Requested resultId: {request.ResultId}");
         var cachedResult = resultCache.GetResult(request.ResultId);
 
         if (cachedResult == null)
         {
-            Console.WriteLine($"[GetAnalysisResultEndpoint] Result NOT FOUND: {request.ResultId}");
             HttpContext.Response.StatusCode = 404;
             await HttpContext.Response.WriteAsJsonAsync(
                 new { error = "Analysis result not found or expired" },
@@ -30,7 +28,6 @@ public class GetAnalysisResultEndpoint(AnalysisResultCache resultCache)
             );
             return;
         }
-        Console.WriteLine($"[GetAnalysisResultEndpoint] Found result: {request.ResultId} of type {cachedResult.Type}");
 
         // Wrap in a type envelope for frontend discrimination
         var response = new AnalysisResultResponse

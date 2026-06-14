@@ -40,6 +40,8 @@ const AXIS_COLOR = 'rgba(0,0,0,0.4)';
 const LABEL_COLOR = 'rgba(0,0,0,0.6)';
 const FONT = '10px ui-monospace, SFMono-Regular, Menlo, monospace';
 const AXIS_LINE_WIDTH = 1;
+const MIN_Y_TICK_SPACING_PX = 16;
+const DEFAULT_DB_Y_STEP = 10;
 
 // Colors for different channels - expanded palette for multi-channel recordings
 const CHANNEL_COLORS = [
@@ -73,6 +75,28 @@ function ceilTo(value: number, step: number): number {
 // Round down to nearest multiple of step.
 function floorTo(value: number, step: number): number {
   return Math.floor(value / step) * step;
+}
+
+export function chooseSpectrumYAxisStep(yMin: number, yMax: number, plotHeight: number): number {
+  const range = Math.max(1, yMax - yMin);
+  const maxTickIntervals = Math.max(1, Math.floor(plotHeight / MIN_Y_TICK_SPACING_PX));
+  const rawStep = range / maxTickIntervals;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const normalised = rawStep / magnitude;
+
+  if (normalised <= 1) {
+    return magnitude;
+  }
+
+  if (normalised <= 2) {
+    return 2 * magnitude;
+  }
+
+  if (normalised <= 5) {
+    return 5 * magnitude;
+  }
+
+  return 10 * magnitude;
 }
 
 function drawSpectrum(
@@ -128,24 +152,26 @@ function drawSpectrum(
 
   let yMin: number;
   let yMax: number;
-  const Y_STEP = 10;
-
   if (isDb) {
-    yMax = ceilTo(dataMax + 5, Y_STEP);
-    yMin = floorTo(dataMin - 5, Y_STEP);
+    yMax = ceilTo(dataMax + 5, DEFAULT_DB_Y_STEP);
+    yMin = floorTo(dataMin - 5, DEFAULT_DB_Y_STEP);
   } else {
     yMax = Math.max(...allYValues) * 1.1;
     yMin = 0;
   }
 
+  const yStep = chooseSpectrumYAxisStep(yMin, yMax, plotHeight);
+  yMax = ceilTo(yMax, yStep);
+  yMin = floorTo(yMin, yStep);
+
   const toY = (value: number): number =>
     MARGIN.top + ((yMax - value) / (yMax - yMin)) * plotHeight;
 
-  // Y grid lines — every Y_STEP.
+  // Y grid lines — adaptive spacing prevents compact previews from overlapping labels.
   ctx.font = FONT;
   ctx.textAlign = 'right';
 
-  for (let yValue = yMin; yValue <= yMax; yValue += Y_STEP) {
+  for (let yValue = yMin; yValue <= yMax; yValue += yStep) {
     const yPixel = toY(yValue);
     ctx.strokeStyle = yValue === 0 ? 'rgba(0,0,0,0.25)' : GRID_COLOR;
     ctx.lineWidth = yValue === 0 ? 1 : 1;

@@ -1,14 +1,16 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import type { SpectrumPointsResponse } from '../types/spectrumTypes';
+import type { SpectrogramAnalysis } from '../types/spectrogramTypes';
 import type { SoundQualityAnalysis } from '../types/soundQualityTypes';
 import type { CpbAnalysis } from '../types/cpbTypes';
 import type { FindingsResult } from '../../findings/types/findingsTypes';
 
-export type AnalysisResultType = 'spectrum' | 'soundQuality' | 'cpb' | 'findings';
+export type AnalysisResultType = 'spectrum' | 'spectrogram' | 'soundQuality' | 'cpb' | 'findings';
 
 export type AnalysisResult =
   | { type: 'spectrum'; data: SpectrumPointsResponse }
+  | { type: 'spectrogram'; data: SpectrogramAnalysis }
   | { type: 'soundQuality'; data: SoundQualityAnalysis }
   | { type: 'cpb'; data: CpbAnalysis }
   | { type: 'findings'; data: FindingsResult };

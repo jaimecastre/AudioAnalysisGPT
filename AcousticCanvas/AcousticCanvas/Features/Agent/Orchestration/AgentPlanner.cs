@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text;
+using AcousticCanvas.Features.Agent.Commands;
 using AcousticCanvas.Features.Agent.Domain;
 using AcousticCanvas.Features.Agent.Services;
 
@@ -15,6 +17,7 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         string userQuestion,
         IReadOnlyList<string> selectedFileIds,
         IReadOnlyList<string> selectedFileNames,
+        IReadOnlyList<AgentConversationTurn> conversationContext,
         CancellationToken cancellationToken,
         string? modelOverride = null
     )
@@ -26,7 +29,7 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
             selectedFileNames
         );
 
-        var userMessageContent = BuildPlannerUserMessage(userQuestion, selectedFileIds);
+        var userMessageContent = BuildPlannerUserMessage(userQuestion, selectedFileIds, conversationContext);
 
         var plannerRequest = new ChatCompletionRequest
         {
@@ -120,10 +123,6 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         var rawContent = openAiResponse.Choices[0].Message.Content ?? string.Empty;
         var cleanedContent = StripMarkdownCodeFences(rawContent);
 
-        // Log for debugging
-        Console.WriteLine($"[AgentPlanner] Raw content length: {rawContent.Length}");
-        Console.WriteLine($"[AgentPlanner] Cleaned content preview: {cleanedContent[..Math.Min(200, cleanedContent.Length)]}...");
-
         FinalAnswerResponse? finalAnswer;
         Exception? parseError = null;
         try
@@ -132,12 +131,10 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
                 cleanedContent,
                 JsonOptions
             );
-            Console.WriteLine($"[AgentPlanner] JSON parsed successfully. Has {finalAnswer?.Blocks?.Count ?? 0} blocks.");
         }
         catch (JsonException ex)
         {
             parseError = ex;
-            Console.WriteLine($"[AgentPlanner] JSON parse error: {ex.Message}");
             finalAnswer = null;
         }
 
@@ -179,14 +176,38 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         return null;
     }
 
-    private static string BuildPlannerUserMessage(
+    public static string BuildPlannerUserMessage(
         string userQuestion,
-        IReadOnlyList<string> selectedFileIds
+        IReadOnlyList<string> selectedFileIds,
+        IReadOnlyList<AgentConversationTurn> conversationContext
     )
     {
         var fileIdsText = selectedFileIds.Count > 0 ? string.Join(", ", selectedFileIds) : "none";
 
-        return $"User question: {userQuestion}\n\nSelected file IDs: {fileIdsText}";
+        var contextBuilder = new StringBuilder();
+        if (conversationContext.Count > 0)
+        {
+            contextBuilder.AppendLine("Recent conversation:");
+            foreach (var turn in conversationContext)
+            {
+                var role = turn.Role.Equals("assistant", StringComparison.OrdinalIgnoreCase)
+                    ? "assistant"
+                    : "user";
+                var content = turn.Content.ReplaceLineEndings(" ").Trim();
+                if (content.Length == 0)
+                {
+                    continue;
+                }
+                contextBuilder.AppendLine($"{role}: {content}");
+            }
+            contextBuilder.AppendLine();
+        }
+
+        contextBuilder.AppendLine($"Current user question: {userQuestion}");
+        contextBuilder.AppendLine();
+        contextBuilder.Append($"Selected file IDs: {fileIdsText}");
+
+        return contextBuilder.ToString();
     }
 
     private static string StripMarkdownCodeFences(string raw)
