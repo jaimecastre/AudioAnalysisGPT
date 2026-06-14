@@ -132,6 +132,7 @@ public sealed class AgentOrchestrator(
             selectedFileNames,
             toolExecutionOutputs
         );
+        var visualizationPlan = ExpertVisualizationPlanner.Plan(evidencePackage);
 
         // Step 7: Generate the final grounded answer from the evidence package.
         var finalAnswer = await agentPlanner.GenerateFinalAnswerAsync(
@@ -163,7 +164,8 @@ public sealed class AgentOrchestrator(
             plannedToolTraces,
             toolExecutionTraces,
             answerWithEmbeddedTokens,
-            finalAnswer.Confidence
+            finalAnswer.Confidence,
+            visualizationPlan
         );
 
         investigationTraceStore.Store(investigationTrace);
@@ -212,6 +214,7 @@ public sealed class AgentOrchestrator(
             selectedFileNames,
             [toolOutput]
         );
+        var visualizationPlan = ExpertVisualizationPlanner.Plan(evidencePackage);
 
         var finalAnswer = DeterministicAnswerWriter.Write(deterministicPlan, evidencePackage);
         var toolExecutionRecords = AgentResultBuilder.BuildToolExecutionRecords([toolOutput]);
@@ -231,7 +234,8 @@ public sealed class AgentOrchestrator(
             [],
             toolExecutionTraces,
             answerWithEmbeddedTokens,
-            finalAnswer.Confidence
+            finalAnswer.Confidence,
+            visualizationPlan
         );
 
         investigationTraceStore.Store(investigationTrace);

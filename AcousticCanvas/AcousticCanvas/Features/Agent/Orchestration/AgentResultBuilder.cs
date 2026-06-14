@@ -438,7 +438,8 @@ public static class AgentResultBuilder
         IReadOnlyList<PlannedToolTrace> plannedTools,
         IReadOnlyList<ToolExecutionTrace> toolExecutions,
         string finalAnswer,
-        string confidence
+        string confidence,
+        VisualizationPlan? visualizationPlan = null
     )
     {
         return new InvestigationTrace(
@@ -449,7 +450,37 @@ public static class AgentResultBuilder
             ToolExecutions: toolExecutions,
             FinalAnswer: finalAnswer,
             Confidence: confidence,
-            TimestampUtc: DateTime.UtcNow
+            TimestampUtc: DateTime.UtcNow,
+            VisualizationPlan: BuildVisualizationPlanTrace(visualizationPlan)
+        );
+    }
+
+    private static VisualizationPlanTrace? BuildVisualizationPlanTrace(
+        VisualizationPlan? visualizationPlan
+    )
+    {
+        if (visualizationPlan is null)
+        {
+            return null;
+        }
+
+        var blocks = new List<VisualizationPlanBlockTrace>();
+
+        foreach (var block in visualizationPlan.Blocks)
+        {
+            blocks.Add(
+                new VisualizationPlanBlockTrace(
+                    BlockType: block.BlockType,
+                    Reason: block.Reason,
+                    ViewType: block.ViewType,
+                    SourceEvidenceId: block.SourceEvidenceId
+                )
+            );
+        }
+
+        return new VisualizationPlanTrace(
+            PrimaryEvidenceType: visualizationPlan.PrimaryEvidenceType,
+            Blocks: blocks
         );
     }
 

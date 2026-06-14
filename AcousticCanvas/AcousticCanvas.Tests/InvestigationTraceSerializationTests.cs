@@ -81,4 +81,36 @@ public sealed class InvestigationTraceSerializationTests
             Assert.Contains(expectedString, json);
         }
     }
+
+    [Fact]
+    public void InvestigationTraceSerializesVisualizationPlan()
+    {
+        var trace = new InvestigationTrace(
+            Question: "Show me the spectrum.",
+            ConversationId: "conv_visual",
+            Path: InvestigationPath.LlmPlanned,
+            PlannedTools: [],
+            ToolExecutions: [],
+            FinalAnswer: "The spectrum result is available.",
+            Confidence: "high",
+            TimestampUtc: DateTime.UtcNow,
+            VisualizationPlan: new VisualizationPlanTrace(
+                PrimaryEvidenceType: "spectrum",
+                Blocks:
+                [
+                    new VisualizationPlanBlockTrace(
+                        BlockType: "analysisView",
+                        Reason: "Show the measured spectrum result.",
+                        ViewType: "spectrum",
+                        SourceEvidenceId: "ev_spectrum_file1")
+                ]));
+
+        var json = JsonSerializer.Serialize(trace, JsonOptions);
+
+        Assert.Contains("\"visualizationPlan\"", json);
+        Assert.Contains("\"primaryEvidenceType\":\"spectrum\"", json);
+        Assert.Contains("\"blockType\":\"analysisView\"", json);
+        Assert.Contains("\"viewType\":\"spectrum\"", json);
+        Assert.Contains("\"sourceEvidenceId\":\"ev_spectrum_file1\"", json);
+    }
 }

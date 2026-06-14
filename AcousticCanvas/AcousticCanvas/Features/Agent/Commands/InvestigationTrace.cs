@@ -21,6 +21,18 @@ public record ToolExecutionTrace(
     string? ErrorMessage
 );
 
+public record VisualizationPlanBlockTrace(
+    string BlockType,
+    string Reason,
+    string? ViewType,
+    string? SourceEvidenceId
+);
+
+public record VisualizationPlanTrace(
+    string PrimaryEvidenceType,
+    IReadOnlyList<VisualizationPlanBlockTrace> Blocks
+);
+
 public record InvestigationTrace(
     string Question,
     string ConversationId,
@@ -29,5 +41,6 @@ public record InvestigationTrace(
     IReadOnlyList<ToolExecutionTrace> ToolExecutions,
     string FinalAnswer,
     string Confidence,
-    DateTime TimestampUtc
+    DateTime TimestampUtc,
+    VisualizationPlanTrace? VisualizationPlan = null
 );
