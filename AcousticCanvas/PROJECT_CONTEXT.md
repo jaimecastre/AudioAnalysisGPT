@@ -295,6 +295,7 @@ AcousticGPT should differentiate through:
 8. Reproducible reports
 9. Project memory
 10. Ability to compare many products/signals/settings
+11. **AI-generated visual analysis / Generative UI** — Agent dynamically generates plots, charts, rankings, and investigation dashboards instead of text-only replies
 
 The strongest product direction is:
 
@@ -1135,6 +1136,72 @@ All acceptance criteria met:
 - ✅ Batch findings
 - ✅ Agent summary of batch results
 - ✅ Export batch report
+
+## ❌ Milestone 4.5 — AI-Generated Acoustic Visual Analysis (Generative UI) — NOT STARTED
+
+**Product positioning:** This milestone transforms AcousticGPT from "chat next to audio plots" into an AI acoustic engineering assistant that can decide what analysis is needed, run the analysis, visualize the evidence, rank results, and explain the engineering meaning. Similar in spirit to Generative UI products like Thesys, but specialized for acoustic engineering.
+
+**Core principle:** The LLM generates UI structure, not data. All numerical values, plots, and metrics come from deterministic backend DSP tools. The AI Agent decides which analyses are needed and which visual response blocks should be shown, but never invents or fabricates results.
+
+### Must-have features:
+
+- **Agent Response Block Model** — Agent returns typed response blocks instead of only text:
+  - `MarkdownBlock` — explanatory text
+  - `SpectrumChartBlock` — FFT spectrum visualization
+  - `SpectrogramChartBlock` — time-frequency heatmap
+  - `WaveformChartBlock` — waveform summary/selection
+  - `StatisticsBlock` — metrics table/card
+  - `RankingBlock` — sorted file/region comparison
+  - `MetricComparisonBlock` — side-by-side metric comparison
+  - `PeakTableBlock` — dominant peaks list
+  - `AudioPlayerBlock` — playback with selection
+  - `SuggestedActionsBlock` — next analysis suggestions
+  - `ReportSummaryBlock` — mini investigation report
+
+- **Agent Planner Enhancement** — Planner decides which DSP tools AND which visual blocks are needed per question
+- **DSP Tool Layer** — All existing tools (`run_spectrum`, `run_spectrogram`, `run_cpb`, `run_sound_quality_metrics`, `run_findings`, etc.) return structured JSON with metadata (units, FFT size, window, calibration assumptions)
+- **Frontend Block Renderer** — React component that renders each block type using trusted visualization components (SciChart/Mantine Charts), including titles, legends, axis labels, units, and source metadata
+- **Multi-tool Investigation Flow** — Single user question triggers multiple DSP tools; results compose into a unified visual response
+- **Mixed Response Format** — Every agent answer combines: short explanation + visual blocks + statistics + suggested next action
+
+### Example user experience:
+
+User asks: *"Which of these three fan recordings sounds worse?"*
+
+Agent response composition:
+1. Text summary: *"Based on loudness, sharpness, and peak analysis..."*
+2. Ranking table: Files ranked by composite metric
+3. Loudness/sharpness comparison chart
+4. Spectrum overlay of all three files
+5. Key findings card (highlights, issues)
+6. Suggested next analysis
+
+### Architecture:
+
+1. **Agent Planner** — Interprets intent → plans required DSP tools → plans visual response structure
+2. **DSP Tool Layer** — Computes metrics deterministically, returns structured results with full metadata
+3. **Agent Response Block Model** — Typed block schema for all visual responses
+4. **Frontend Renderer** — Block-type-specific React components using existing chart infrastructure
+5. **Safety Constraints** — All plotted data from backend; every block includes source metadata; calibration assumptions clearly stated
+
+### Implementation phases:
+
+- **Phase 1:** Basic visual response blocks (Markdown, Statistics, Spectrum chart, Ranking)
+- **Phase 2:** Multi-tool investigations (comparison, ranking, multi-file questions)
+- **Phase 3:** Acoustic investigation cards (Finding, Evidence, Plot, Interpretation, Suggested next)
+- **Phase 4:** Generated analysis workflows (Agent creates temporary workflow based on question)
+- **Phase 5:** Exportable AI-generated reports (PDF, HTML with plots, tables, metadata, reproducibility)
+
+### Acceptance criteria:
+
+- Agent can answer multi-file comparison questions with visual responses
+- All chart data comes from deterministic DSP tools
+- Every visual block includes source metadata and calibration assumptions
+- Agent explanation references computed values from tool results
+- Frontend renders blocks using trusted internal components only
+- Responses feel like mini engineering dashboards, not chat-only replies
+
+---
 
 ## ❌ Milestone 5 — Investigation Workspace — NOT STARTED
 
