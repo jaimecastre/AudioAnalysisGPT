@@ -115,7 +115,7 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
                 new ChatMessage { Role = "user", Content = userMessageContent },
             ],
             Temperature = 0.2,
-            MaxTokens = 4096,
+            MaxTokens = 8192,
         };
 
         var openAiResponse = await openAiChatService.CompleteAsync(

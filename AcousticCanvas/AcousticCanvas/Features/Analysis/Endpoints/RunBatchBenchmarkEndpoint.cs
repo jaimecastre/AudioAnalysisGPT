@@ -1,12 +1,22 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using AcousticCanvas.Features.Analysis.Commands;
+using AcousticCanvas.Features.Analysis.Domain;
+using AcousticCanvas.Features.Analysis.Handlers;
 using AcousticCanvas.Features.AudioUpload.Services;
 using FastEndpoints;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
 public class RunBatchBenchmarkEndpoint(AudioFileRepository audioFileRepository)
-    : Endpoint<RunBatchBenchmarkRequest, BatchBenchmarkResult>
+    : Endpoint<RunBatchBenchmarkRequest>
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
     public override void Configure()
     {
         Post("/api/analysis/batch-benchmark");
@@ -45,25 +55,82 @@ public class RunBatchBenchmarkEndpoint(AudioFileRepository audioFileRepository)
             filePaths.Add(filePath);
         }
 
-        var command = new RunBatchBenchmarkCommand(
-            FileIds: request.FileIds,
-            FilePaths: filePaths,
-            StartSeconds: request.StartSeconds,
-            EndSeconds: request.EndSeconds
-        );
+        HttpContext.Response.ContentType = "application/x-ndjson";
+        HttpContext.Response.Headers.CacheControl = "no-cache";
+        HttpContext.Features.Get<IHttpResponseBodyFeature>()?.DisableBuffering();
 
         try
         {
-            Response = await command.ExecuteAsync(cancellationToken);
+            var fileCount = request.FileIds.Count;
+
+            var compareTask = new RunCompareCommand(
+                FilePaths: filePaths,
+                StartSeconds: request.StartSeconds,
+                EndSeconds: request.EndSeconds
+            ).ExecuteAsync(cancellationToken);
+
+            var findingsTasks = filePaths
+                .Select((path, i) => (Index: i, Task: new RunFindingsCommand(FilePath: path).ExecuteAsync(cancellationToken)))
+                .ToList();
+
+            var findingsResults = new FindingsResult[fileCount];
+            var pending = findingsTasks.ToList();
+            var completedCount = 0;
+
+            while (pending.Count > 0)
+            {
+                var doneTasks = pending.Select(p => (Task)p.Task).ToArray();
+                var doneTask = await Task.WhenAny(doneTasks);
+
+                var entry = pending.First(p => (Task)p.Task == doneTask);
+                pending.Remove(entry);
+
+                findingsResults[entry.Index] = await entry.Task;
+                completedCount++;
+
+                var fileName = Path.GetFileNameWithoutExtension(filePaths[entry.Index]);
+                await WriteLineAsync(
+                    new { type = "progress", completed = completedCount, total = fileCount, fileName },
+                    cancellationToken
+                );
+            }
+
+            var compareResult = await compareTask;
+            var sources = filePaths
+                .Select((_, index) => new BatchBenchmarkSource(
+                    compareResult.Files[index],
+                    findingsResults[index].Findings,
+                    request.FileIds[index]
+                ))
+                .ToList();
+
+            var benchmarkResult = BatchBenchmarkBuilder.Build(sources, DateTimeOffset.UtcNow);
+
+            if (request.StartSeconds.HasValue || request.EndSeconds.HasValue)
+            {
+                var limitations = benchmarkResult.Limitations.ToList();
+                limitations.Add(
+                    "Level, spectrum, and sound-quality metrics use the selected region; findings counts are evaluated over full files in this version."
+                );
+                benchmarkResult = benchmarkResult with { Limitations = limitations };
+            }
+
+            await WriteLineAsync(new { type = "result", data = benchmarkResult }, cancellationToken);
         }
         catch (Exception ex)
         {
-            HttpContext.Response.StatusCode = 500;
-            await HttpContext.Response.WriteAsync(
-                $"Batch benchmark error: {ex.GetType().Name}: {ex.Message}",
+            await WriteLineAsync(
+                new { type = "error", message = $"Batch benchmark error: {ex.GetType().Name}: {ex.Message}" },
                 cancellationToken
             );
         }
+    }
+
+    private async Task WriteLineAsync(object value, CancellationToken ct)
+    {
+        var json = JsonSerializer.Serialize(value, JsonOptions);
+        await HttpContext.Response.WriteAsync(json + "\n", ct);
+        await HttpContext.Response.Body.FlushAsync(ct);
     }
 }
 

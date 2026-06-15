@@ -60,7 +60,7 @@ function RawDataDrawer({ data }: { data: unknown }): JSX.Element {
         type="button"
         className={styles.rawDrawerToggle}
         onClick={toggle}
-        aria-expanded={isExpanded ? 'true' : 'false'}
+        aria-expanded={isExpanded}
       >
         {isExpanded ? <IconChevronDown size={10} /> : <IconChevronRight size={10} />}
         Raw data

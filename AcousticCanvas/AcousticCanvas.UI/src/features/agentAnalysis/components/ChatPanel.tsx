@@ -1,6 +1,5 @@
 import type { JSX } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Text } from '@mantine/core';
 import {
   IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX,
   IconAlignBoxLeftMiddle, IconPaperclip, IconFileMusic, IconFileText,
@@ -12,7 +11,6 @@ import type { ChatMessage } from '../store/chatSlice';
 import { AGENT_MODELS } from '../utils/agentModels';
 import { AgentActivityIndicator } from './AgentActivityIndicator';
 import { AgentResponseBlockRenderer } from './AgentResponseBlockRenderer';
-import { BlockSkeleton } from './BlockSkeleton';
 import { ATTACH_ACCEPT } from '../utils/chatAttachments';
 import { AgentAnswerPanel } from './AgentAnswerPanel';
 import type { MentionCandidate } from '../hooks/useChatInput';
@@ -50,7 +48,6 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
   const isThinkingMessage = message.status === 'thinking';
   const isFailedMessage = message.status === 'failed';
   const hasBlocks = message.blocks && message.blocks.length > 0;
-  const isGeneratingBlocks = !isThinkingMessage && !hasBlocks && message.toolSteps && message.toolSteps.length > 0 && message.toolSteps.every(s => s.status === 'completed');
 
   return (
     <div className={`${styles.messageWrapper} ${styles.assistant}`}>
@@ -65,14 +62,6 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
             <div className={styles.markdownBody}>
               <ReactMarkdown>{parsedText}</ReactMarkdown>
             </div>
-            {isGeneratingBlocks && (
-              <>
-                <Text size="sm" c="dimmed" mt="sm" mb="xs">
-                  Generating visual response...
-                </Text>
-                <BlockSkeleton count={2} />
-              </>
-            )}
             {hasBlocks && (
               <AgentResponseBlockRenderer blocks={message.blocks} answerText={message.content} />
             )}

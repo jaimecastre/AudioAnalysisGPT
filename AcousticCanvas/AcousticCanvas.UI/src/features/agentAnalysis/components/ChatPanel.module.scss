@@ -527,6 +527,7 @@ button.evidenceCitationPill {
   list-style: none;
   cursor: pointer;
   outline: none;
+  -webkit-user-select: none;
   user-select: none;
   padding: 2px 0;
 

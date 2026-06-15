@@ -22,6 +22,7 @@ import {
   benchmarkStarted,
   benchmarkCompleted,
   benchmarkFailed,
+  benchmarkProgressUpdated,
   benchmarkPanelClosed,
   benchmarkResultSelector,
   benchmarkStatusSelector,
@@ -308,11 +309,14 @@ export const ManualWorkspace = (): JSX.Element => {
 
     dispatch(benchmarkStarted());
     try {
-      const result = await callBatchBenchmarkTool({
-        fileIds,
-        startSeconds: activeSelection?.startSeconds ?? null,
-        endSeconds: activeSelection?.endSeconds ?? null,
-      });
+      const result = await callBatchBenchmarkTool(
+        {
+          fileIds,
+          startSeconds: activeSelection?.startSeconds ?? null,
+          endSeconds: activeSelection?.endSeconds ?? null,
+        },
+        (event) => dispatch(benchmarkProgressUpdated(event)),
+      );
       dispatch(benchmarkCompleted(result));
     } catch (error) {
       dispatch(benchmarkFailed(error instanceof Error ? error.message : 'Benchmark failed'));

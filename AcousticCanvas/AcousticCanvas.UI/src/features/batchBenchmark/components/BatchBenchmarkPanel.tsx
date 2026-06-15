@@ -1,10 +1,11 @@
 import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
-import { ActionIcon, Tooltip } from '@mantine/core';
+import { ActionIcon, Progress, Tooltip } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconRobot, IconRotateClockwise2, IconX } from '@tabler/icons-react';
-import { useAppDispatch } from '../../../store/reduxHooks';
+import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
 import { agentPromptPrefillSet, setActiveMode } from '../../navigation/store/navigationSlice';
 import type { BatchBenchmarkFileRow, BatchBenchmarkResult } from '../types/batchBenchmarkTypes';
+import { benchmarkProgressSelector } from '../store/batchBenchmarkSlice';
 import {
   type BenchmarkSortKey,
   type BenchmarkSortState,
@@ -54,6 +55,7 @@ export const BatchBenchmarkPanel = ({
   onRerun,
 }: IBatchBenchmarkPanelProps): JSX.Element => {
   const dispatch = useAppDispatch();
+  const progress = useAppSelector(benchmarkProgressSelector);
   const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(new Set());
   const [sortState, setSortState] = useState<BenchmarkSortState>({
     key: 'attention',
@@ -134,6 +136,22 @@ export const BatchBenchmarkPanel = ({
           </ActionIcon>
         </div>
       </div>
+
+      {status === 'loading' && (
+        <div className={styles.progressStrip}>
+          <Progress
+            value={progress !== null ? Math.round((progress.completed / progress.total) * 100) : 0}
+            size="xs"
+            animated
+            className={styles.progressBar}
+          />
+          <span className={styles.progressLabel}>
+            {progress !== null
+              ? `${progress.completed}/${progress.total} — ${progress.fileName}`
+              : 'Starting…'}
+          </span>
+        </div>
+      )}
 
       {status === 'error' && error !== null && (
         <div className={styles.errorStrip}>{error}</div>

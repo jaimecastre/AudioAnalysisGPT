@@ -30,7 +30,6 @@ export function SpectrumChartBlock({
     );
   }
 
-  // Convert to points format expected by SpectrumCanvas
   const points = frequenciesHz.map((freq, index) => [freq, magnitudesDb[index] ?? -120]);
 
   const subtitleParts: string[] = [];

@@ -61,6 +61,24 @@
   }
 }
 
+.progressStrip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.progressBar {
+  width: 100%;
+}
+
+.progressLabel {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+}
+
 .errorStrip {
   padding: 8px 12px;
   border-bottom: 1px solid rgba(224, 82, 82, 0.2);

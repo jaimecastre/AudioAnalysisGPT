@@ -13,6 +13,9 @@ public class RunCompareHandler(
 {
     private const int DefaultFftSize = 44100;
     private const double DefaultOverlap = 0.5;
+    private const int MaxConcurrentFileSummaries = 8;
+
+    private readonly SemaphoreSlim _summarySemaphore = new(MaxConcurrentFileSummaries, MaxConcurrentFileSummaries);
 
     public override async Task<CompareResult> ExecuteAsync(
         RunCompareCommand command,
@@ -37,11 +40,30 @@ public class RunCompareHandler(
         }
 
         var summaryTasks = command
-            .FilePaths.Select(filePath =>
-                BuildFileSummaryAsync(filePath, command.StartSeconds, command.EndSeconds, ct)
-            )
+            .FilePaths.Select(async filePath =>
+            {
+                await _summarySemaphore.WaitAsync(ct);
+                try
+                {
+                    return await BuildFileSummaryAsync(filePath, command.StartSeconds, command.EndSeconds, ct);
+                }
+                finally
+                {
+                    _summarySemaphore.Release();
+                }
+            })
             .ToArray();
         var summaries = await Task.WhenAll(summaryTasks);
+
+        if (command.SkipPairwiseDiffs)
+        {
+            return new CompareResult
+            {
+                Files = summaries,
+                PairwiseDiffs = [],
+                RanAt = DateTimeOffset.UtcNow,
+            };
+        }
 
         var pairwiseDiffs = new List<PairwiseDiff>();
         for (int i = 0; i < summaries.Length; i++)
