@@ -60,7 +60,11 @@ public sealed class AgentOrchestrator(
 
             investigationTraceStore.Store(noFilesInvestigationTrace);
 
-            return AgentResultBuilder.BuildNoToolConversationResult(conversationId, answer, noFilesInvestigationTrace);
+            return AgentResultBuilder.BuildNoToolConversationResult(
+                conversationId,
+                answer,
+                noFilesInvestigationTrace
+            );
         }
 
         // Step 0: Answer plain deterministic-fact questions (peak/RMS/sample rate/etc.)
@@ -146,7 +150,9 @@ public sealed class AgentOrchestrator(
         var validationResult = AgentResponseValidator.Validate(finalAnswer, evidencePackage);
 
         // Step 9: Build and return the result.
-        var toolExecutionRecords = AgentResultBuilder.BuildToolExecutionRecords(toolExecutionOutputs);
+        var toolExecutionRecords = AgentResultBuilder.BuildToolExecutionRecords(
+            toolExecutionOutputs
+        );
         var toolResultsData = AgentResultBuilder.BuildToolResultsData(toolExecutionOutputs);
         var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(
             finalAnswer.Answer,
@@ -177,7 +183,10 @@ public sealed class AgentOrchestrator(
             EvidenceReferences: finalAnswer.EvidenceReferences,
             EvidenceItems: AgentResultBuilder.BuildEvidenceItems(evidencePackage),
             Confidence: finalAnswer.Confidence,
-            Limitations: AgentResultBuilder.MergeAndDeduplicate(finalAnswer.Limitations, evidencePackage.Limitations),
+            Limitations: AgentResultBuilder.MergeAndDeduplicate(
+                finalAnswer.Limitations,
+                evidencePackage.Limitations
+            ),
             SuggestedNextSteps: finalAnswer.SuggestedNextSteps,
             ToolExecutions: toolExecutionRecords,
             ValidationWarning: validationResult.HasWarning,

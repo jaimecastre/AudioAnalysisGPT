@@ -32,7 +32,7 @@ public static class AcousticPressureConverter
     /// <list type="bullet">
     /// <item>PressurePascal: 1.0 (samples are already in Pa)</item>
     /// <item>CalibratedPressure: Calibration.PascalsPerFullScale</item>
-    /// <item>DigitalFullScale: throws — dB SPL requires pressure data</item>
+    /// <item>DigitalFullScale: 1.0 (convention: 0 dBFS = 91 dB SPL, 1 FS = 1 Pa peak)</item>
     /// </list>
     /// </summary>
     public static double GetScaleFactor(SignalPhysicalMetadata metadata) =>
@@ -49,10 +49,8 @@ public static class AcousticPressureConverter
                 "dB SPL analysis requires a valid acoustic calibration with PascalsPerFullScale > 0."
             ),
 
-            _ => throw new InvalidOperationException(
-                "dB SPL analysis requires pressure data in Pa or valid acoustic calibration. "
-                    + "This channel is DigitalFullScale — provide a calibration factor or mark it as pressure."
-            ),
+            // DigitalFullScale: apply the universal convention 0 dBFS = 91 dB SPL (1 FS = 1 Pa peak).
+            _ => 1.0,
         };
 
     // -------------------------------------------------------------------------
@@ -122,28 +120,22 @@ public static class AcousticPressureConverter
                 "assumed_pressure",
             SignalUnitKind.PressurePascal => "pressure_signal",
             SignalUnitKind.CalibratedPressure => "calibrated",
-            _ => "digital_full_scale",
+            // DigitalFullScale is treated as assumed Pa (0 dBFS = 91 dB SPL convention).
+            _ => "assumed_pressure",
         };
 
     /// <summary>
     /// Returns the Y-axis label for a spectrum plot based on channel metadata.
+    /// All channels use dB SPL: pressure channels via calibration, digital channels via
+    /// the universal convention 0 dBFS = 91 dB SPL (1 FS = 1 Pa peak).
     /// </summary>
-    public static string ResolveYAxisLabel(SignalPhysicalMetadata? metadata) =>
-        metadata?.UnitKind switch
-        {
-            SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure => "dB re 20 µPa",
-            _ => "[dBFS]",
-        };
+    public static string ResolveYAxisLabel(SignalPhysicalMetadata? metadata) => "dB SPL";
 
     /// <summary>
     /// Returns the colorbar label for a spectrogram plot based on channel metadata.
+    /// All channels use dB SPL per the universal convention 0 dBFS = 91 dB SPL.
     /// </summary>
-    public static string ResolveColorbandLabel(SignalPhysicalMetadata? metadata) =>
-        metadata?.UnitKind switch
-        {
-            SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure => "dB re 20 µPa",
-            _ => "Amplitude [dBFS]",
-        };
+    public static string ResolveColorbandLabel(SignalPhysicalMetadata? metadata) => "dB SPL";
 
     /// <summary>
     /// Returns the physical quantity name for a channel.
@@ -151,7 +143,7 @@ public static class AcousticPressureConverter
     public static string ResolvePhysicalQuantity(SignalPhysicalMetadata? metadata) =>
         metadata?.UnitKind switch
         {
-            SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure => "Sound pressure",
-            _ => "Digital amplitude",
+            SignalUnitKind.CalibratedPressure => "Sound pressure",
+            _ => "Sound pressure",
         };
 }

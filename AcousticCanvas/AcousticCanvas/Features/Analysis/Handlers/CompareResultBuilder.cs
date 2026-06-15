@@ -120,13 +120,15 @@ public static class CompareResultBuilder
                 energyDb = double.NegativeInfinity;
             }
 
-            results.Add(new CompareBandEnergy
-            {
-                BandName = bandName,
-                LowHz = lowHz,
-                HighHz = highHz,
-                EnergyDb = energyDb,
-            });
+            results.Add(
+                new CompareBandEnergy
+                {
+                    BandName = bandName,
+                    LowHz = lowHz,
+                    HighHz = highHz,
+                    EnergyDb = energyDb,
+                }
+            );
         }
 
         return results;
@@ -176,13 +178,15 @@ public static class CompareResultBuilder
                     ? double.NegativeInfinity
                     : Math.Round(b.EnergyDb - a.EnergyDb, 2);
 
-            deltas.Add(new CompareBandEnergy
-            {
-                BandName = a.BandName,
-                LowHz = a.LowHz,
-                HighHz = a.HighHz,
-                EnergyDb = deltaDb,
-            });
+            deltas.Add(
+                new CompareBandEnergy
+                {
+                    BandName = a.BandName,
+                    LowHz = a.LowHz,
+                    HighHz = a.HighHz,
+                    EnergyDb = deltaDb,
+                }
+            );
         }
 
         return deltas;
@@ -204,16 +208,18 @@ public static class CompareResultBuilder
                     ? Math.Round(b.LevelDb.Value - a.LevelDb.Value, 2)
                     : (double?)null;
 
-            deltas.Add(new CompareCpbBand
-            {
-                Label = a.Label,
-                CenterFrequencyHz = a.CenterFrequencyHz,
-                LowerFrequencyHz = a.LowerFrequencyHz,
-                UpperFrequencyHz = a.UpperFrequencyHz,
-                LevelDb = deltaDb,
-                Weighting = a.Weighting,
-                WeightingMethod = a.WeightingMethod,
-            });
+            deltas.Add(
+                new CompareCpbBand
+                {
+                    Label = a.Label,
+                    CenterFrequencyHz = a.CenterFrequencyHz,
+                    LowerFrequencyHz = a.LowerFrequencyHz,
+                    UpperFrequencyHz = a.UpperFrequencyHz,
+                    LevelDb = deltaDb,
+                    Weighting = a.Weighting,
+                    WeightingMethod = a.WeightingMethod,
+                }
+            );
         }
 
         return deltas;

@@ -178,6 +178,7 @@ public static class AgentPromptBuilder
 
             Answer format rules:
             - The "answer" field should contain a short, concise explanation (under 100 words).
+            - The "answer" field must be plain prose only — no numbered lists, bullet points, or markdown headings. Structured data (tables, rankings, steps) belongs in the "blocks" array.
             - Visual evidence goes in the "blocks" array — but ONLY when it adds value. A simple question doesn't need a chart.
 
             When to include visual blocks:

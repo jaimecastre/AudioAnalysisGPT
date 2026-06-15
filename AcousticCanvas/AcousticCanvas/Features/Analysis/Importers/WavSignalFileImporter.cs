@@ -112,7 +112,7 @@ public sealed class WavSignalFileImporter : ISignalFileImporter
                 {
                     Value = AcousticPressureConverter.PressureReferencePa,
                     Unit = "Pa",
-                    DbUnit = "dB re 20 µPa",
+                    DbUnit = "dB SPL",
                 },
                 Calibration = new CalibrationInfo
                 {

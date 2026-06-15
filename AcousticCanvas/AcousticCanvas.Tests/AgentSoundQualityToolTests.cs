@@ -1,5 +1,5 @@
-using System.Text.Json;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using AcousticCanvas.Features.Agent.Orchestration;
 using AcousticCanvas.Features.Analysis.Commands;
 using AcousticCanvas.Features.Analysis.Domain;
@@ -30,16 +30,33 @@ public sealed class AgentSoundQualityToolTests
         var prompt = AgentPromptBuilder.BuildPlannerSystemPrompt(
             AgentToolRegistry.BuildToolListSummaryForPrompt(),
             ["file-a", "file-b"],
-            ["a.wav", "b.wav"]);
+            ["a.wav", "b.wav"]
+        );
 
-        Assert.Contains("loudness, sharpness, roughness", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "loudness, sharpness, roughness",
+            prompt,
+            StringComparison.OrdinalIgnoreCase
+        );
         Assert.Contains("perceived quality", prompt, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("psychoacoustic questions", prompt, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("run_sound_quality_metrics on each file", prompt, StringComparison.Ordinal);
         Assert.Contains("sound-quality comparisons", prompt, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("run_sound_quality_metrics on all referenced or loaded files", prompt, StringComparison.Ordinal);
-        Assert.Contains("unsupported sound-quality conversions", prompt, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("harshness or spectral questions", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "run_sound_quality_metrics on all referenced or loaded files",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "unsupported sound-quality conversions",
+            prompt,
+            StringComparison.OrdinalIgnoreCase
+        );
+        Assert.Contains(
+            "harshness or spectral questions",
+            prompt,
+            StringComparison.OrdinalIgnoreCase
+        );
     }
 
     [Fact]
@@ -47,43 +64,80 @@ public sealed class AgentSoundQualityToolTests
     {
         var prompt = AgentPromptBuilder.BuildFinalAnswerSystemPrompt();
 
-        Assert.Contains("When a sound_quality_comparison evidence item exists", prompt, StringComparison.Ordinal);
-        Assert.Contains("always cite loudness/sharpness/roughness deltas with units", prompt, StringComparison.Ordinal);
+        Assert.Contains(
+            "When a sound_quality_comparison evidence item exists",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "always cite loudness/sharpness/roughness deltas with units",
+            prompt,
+            StringComparison.Ordinal
+        );
         Assert.Contains("sone is NOT convertible to LUFS", prompt, StringComparison.Ordinal);
-        Assert.Contains("For harshness comparisons: use sharpness", prompt, StringComparison.Ordinal);
-        Assert.Contains("Do NOT cite peakFrequencyHz as a harshness proxy", prompt, StringComparison.Ordinal);
-        Assert.Contains("Sound-quality evidence is psychoacoustic metric evidence", prompt, StringComparison.Ordinal);
-        Assert.Contains("they do not identify the mechanical/electrical source", prompt, StringComparison.Ordinal);
+        Assert.Contains(
+            "For harshness comparisons: use sharpness",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "Do NOT cite peakFrequencyHz as a harshness proxy",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "Sound-quality evidence is psychoacoustic metric evidence",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "they do not identify the mechanical/electrical source",
+            prompt,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
     public async Task ToolExecutionServiceRunsFullFileSoundQualityMetrics()
     {
         var fileId = Guid.NewGuid().ToString("N")[..12];
-        var storagePath = Path.Combine(Path.GetTempPath(), $"acousticcanvas_agent_sq_{Guid.NewGuid():N}");
+        var storagePath = Path.Combine(
+            Path.GetTempPath(),
+            $"acousticcanvas_agent_sq_{Guid.NewGuid():N}"
+        );
         Directory.CreateDirectory(storagePath);
-        await File.WriteAllBytesAsync(Path.Combine(storagePath, $"{fileId}_agent_sound_quality.wav"), BuildSineWaveBytes());
+        await File.WriteAllBytesAsync(
+            Path.Combine(storagePath, $"{fileId}_agent_sound_quality.wav"),
+            BuildSineWaveBytes()
+        );
         var audioFileRepository = BuildAudioFileRepository(storagePath);
         var fakeClient = new FakeSoundQualityClient();
-        var soundQualityService = new SoundQualityAnalysisService(fakeClient, new SoundQualityCacheStore());
+        var soundQualityService = new SoundQualityAnalysisService(
+            fakeClient,
+            new SoundQualityCacheStore()
+        );
         var importers = new List<ISignalFileImporter> { new WavSignalFileImporter() };
+        var signalAnalysisService = new SignalAnalysisService(
+            importers,
+            new SignalFileCacheStore()
+        );
         var toolExecutionService = new ToolExecutionService(
             audioFileRepository,
+            signalAnalysisService,
             soundQualityService,
             importers,
             new SpectrogramCacheStore(),
-            new AnalysisResultCache());
+            new AnalysisResultCache()
+        );
 
         var toolOutput = await toolExecutionService.ExecuteToolAsync(
             new PlannerToolRequest
             {
                 Name = "run_sound_quality_metrics",
-                Arguments = new Dictionary<string, object?>
-                {
-                    ["fileIds"] = new[] { fileId },
-                },
+                Arguments = new Dictionary<string, object?> { ["fileIds"] = new[] { fileId } },
             },
-            CancellationToken.None);
+            CancellationToken.None
+        );
 
         Assert.Equal("completed", toolOutput.Status);
         Assert.Equal("run_sound_quality_metrics", toolOutput.ToolName);
@@ -115,11 +169,31 @@ public sealed class AgentSoundQualityToolTests
                     new
                     {
                         fileId = "file123456789",
-                        region = new { startSeconds = 0.0, endSeconds = 1.0, durationSeconds = 1.0 },
+                        region = new
+                        {
+                            startSeconds = 0.0,
+                            endSeconds = 1.0,
+                            durationSeconds = 1.0,
+                        },
                         method = "mosqito_stationary_zwicker",
-                        loudness = new { value = 10.5, unit = "sone", method = "MoSQITo loudness_zwst" },
-                        sharpness = new { value = 1.25, unit = "acum", method = "MoSQITo sharpness_din_from_loudness" },
-                        roughness = new { value = 0.75, unit = "asper", method = "MoSQITo roughness_dw" },
+                        loudness = new
+                        {
+                            value = 10.5,
+                            unit = "sone",
+                            method = "MoSQITo loudness_zwst",
+                        },
+                        sharpness = new
+                        {
+                            value = 1.25,
+                            unit = "acum",
+                            method = "MoSQITo sharpness_din_from_loudness",
+                        },
+                        roughness = new
+                        {
+                            value = 0.75,
+                            unit = "asper",
+                            method = "MoSQITo roughness_dw",
+                        },
                         limitations = new[] { "Uncalibrated digital-amplitude WAV samples." },
                     },
                 },
@@ -130,11 +204,19 @@ public sealed class AgentSoundQualityToolTests
             userQuestion: "What is the loudness and roughness?",
             selectedFileIds: ["file123456789"],
             selectedFileNames: ["test_file.wav"],
-            toolOutputs: [toolOutput]);
+            toolOutputs: [toolOutput]
+        );
 
         Assert.Contains("run_sound_quality_metrics", evidencePackage.AnalysesRun);
-        Assert.DoesNotContain(evidencePackage.Limitations, limitation => limitation.Contains("No psychoacoustic metrics", StringComparison.OrdinalIgnoreCase));
-        var evidence = Assert.Single(evidencePackage.KeyEvidence, item => item.Type == "sound_quality");
+        Assert.DoesNotContain(
+            evidencePackage.Limitations,
+            limitation =>
+                limitation.Contains("No psychoacoustic metrics", StringComparison.OrdinalIgnoreCase)
+        );
+        var evidence = Assert.Single(
+            evidencePackage.KeyEvidence,
+            item => item.Type == "sound_quality"
+        );
         Assert.Equal("ev_sound_quality_file1234", evidence.EvidenceId);
         Assert.Equal(10.5, evidence.Data["loudnessSone"]);
         Assert.Equal(1.25, evidence.Data["sharpnessAcum"]);
@@ -157,20 +239,60 @@ public sealed class AgentSoundQualityToolTests
                     new
                     {
                         fileId = "fileA123456",
-                        region = new { startSeconds = 0.0, endSeconds = 1.0, durationSeconds = 1.0 },
+                        region = new
+                        {
+                            startSeconds = 0.0,
+                            endSeconds = 1.0,
+                            durationSeconds = 1.0,
+                        },
                         method = "mosqito_stationary_zwicker",
-                        loudness = new { value = 10.5, unit = "sone", method = "MoSQITo loudness_zwst" },
-                        sharpness = new { value = 1.25, unit = "acum", method = "MoSQITo sharpness_din_from_loudness" },
-                        roughness = new { value = 0.75, unit = "asper", method = "MoSQITo roughness_dw" },
+                        loudness = new
+                        {
+                            value = 10.5,
+                            unit = "sone",
+                            method = "MoSQITo loudness_zwst",
+                        },
+                        sharpness = new
+                        {
+                            value = 1.25,
+                            unit = "acum",
+                            method = "MoSQITo sharpness_din_from_loudness",
+                        },
+                        roughness = new
+                        {
+                            value = 0.75,
+                            unit = "asper",
+                            method = "MoSQITo roughness_dw",
+                        },
                     },
                     new
                     {
                         fileId = "fileB123456",
-                        region = new { startSeconds = 0.0, endSeconds = 1.0, durationSeconds = 1.0 },
+                        region = new
+                        {
+                            startSeconds = 0.0,
+                            endSeconds = 1.0,
+                            durationSeconds = 1.0,
+                        },
                         method = "mosqito_stationary_zwicker",
-                        loudness = new { value = 12.25, unit = "sone", method = "MoSQITo loudness_zwst" },
-                        sharpness = new { value = 0.95, unit = "acum", method = "MoSQITo sharpness_din_from_loudness" },
-                        roughness = new { value = 0.04, unit = "asper", method = "MoSQITo roughness_dw" },
+                        loudness = new
+                        {
+                            value = 12.25,
+                            unit = "sone",
+                            method = "MoSQITo loudness_zwst",
+                        },
+                        sharpness = new
+                        {
+                            value = 0.95,
+                            unit = "acum",
+                            method = "MoSQITo sharpness_din_from_loudness",
+                        },
+                        roughness = new
+                        {
+                            value = 0.04,
+                            unit = "asper",
+                            method = "MoSQITo roughness_dw",
+                        },
                     },
                 },
             },
@@ -180,10 +302,14 @@ public sealed class AgentSoundQualityToolTests
             userQuestion: "Compare sound quality.",
             selectedFileIds: ["fileA123456", "fileB123456"],
             selectedFileNames: ["a.wav", "b.wav"],
-            toolOutputs: [toolOutput]);
+            toolOutputs: [toolOutput]
+        );
 
         Assert.Equal(2, evidencePackage.KeyEvidence.Count(item => item.Type == "sound_quality"));
-        var comparison = Assert.Single(evidencePackage.KeyEvidence, item => item.Type == "sound_quality_comparison");
+        var comparison = Assert.Single(
+            evidencePackage.KeyEvidence,
+            item => item.Type == "sound_quality_comparison"
+        );
         Assert.Equal("a.wav", comparison.Data["fileNameA"]);
         Assert.Equal("b.wav", comparison.Data["fileNameB"]);
         Assert.Equal(10.5, comparison.Data["loudnessASone"]);
@@ -229,9 +355,16 @@ public sealed class AgentSoundQualityToolTests
 
     private static AudioFileRepository BuildAudioFileRepository(string storagePath)
     {
-        var repository = (AudioFileRepository)RuntimeHelpers.GetUninitializedObject(typeof(AudioFileRepository));
-        var storagePathField = typeof(AudioFileRepository).GetField("_storagePath", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            ?? throw new InvalidOperationException("Could not locate AudioFileRepository storage path field.");
+        var repository = (AudioFileRepository)
+            RuntimeHelpers.GetUninitializedObject(typeof(AudioFileRepository));
+        var storagePathField =
+            typeof(AudioFileRepository).GetField(
+                "_storagePath",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic
+            )
+            ?? throw new InvalidOperationException(
+                "Could not locate AudioFileRepository storage path field."
+            );
         storagePathField.SetValue(repository, storagePath);
         return repository;
     }
@@ -240,7 +373,10 @@ public sealed class AgentSoundQualityToolTests
     {
         public RunSoundQualityQuery? LastQuery { get; private set; }
 
-        public Task<SoundQualityAnalysis> AnalyzeAsync(RunSoundQualityQuery query, CancellationToken cancellationToken)
+        public Task<SoundQualityAnalysis> AnalyzeAsync(
+            RunSoundQualityQuery query,
+            CancellationToken cancellationToken
+        )
         {
             LastQuery = query;
             var analysis = new SoundQualityAnalysis

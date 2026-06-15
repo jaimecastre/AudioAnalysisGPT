@@ -93,6 +93,7 @@ const HIDDEN_KEYS = new Set([
   'highestBands',
   'findings',
   'firstEvents',
+  'levelDbUnit',
 ]);
 
 const LABELS: Record<string, string> = {
@@ -162,7 +163,7 @@ export function buildEvidenceRows(item: AgentEvidenceItem): EvidenceDisplayRow[]
     const value = item.data[key];
     if (value === undefined || value === null) continue;
 
-    rows.push({ label: getRowLabel(key), value: formatEvidenceValue(key, value) });
+    rows.push({ label: getRowLabel(key), value: formatEvidenceValue(key, value, item.data) });
     emittedKeys.add(key);
   }
 
@@ -170,7 +171,7 @@ export function buildEvidenceRows(item: AgentEvidenceItem): EvidenceDisplayRow[]
     if (emittedKeys.has(key) || HIDDEN_KEYS.has(key) || value === undefined || value === null) continue;
     if (Array.isArray(value) || typeof value === 'object') continue;
 
-    rows.push({ label: getRowLabel(key), value: formatEvidenceValue(key, value) });
+    rows.push({ label: getRowLabel(key), value: formatEvidenceValue(key, value, item.data) });
   }
 
   return rows.slice(0, 8);
@@ -185,7 +186,7 @@ function getRowLabel(key: string): string {
     .toLowerCase();
 }
 
-function formatEvidenceValue(key: string, value: unknown): string {
+function formatEvidenceValue(key: string, value: unknown, data: Record<string, unknown> = {}): string {
   if (typeof value === 'boolean') {
     return value ? 'yes' : 'no';
   }
@@ -195,7 +196,8 @@ function formatEvidenceValue(key: string, value: unknown): string {
   }
 
   if (key.endsWith('DbFs')) {
-    return `${value.toFixed(2)} dBFS`;
+    const unit = typeof data['levelDbUnit'] === 'string' ? data['levelDbUnit'] : 'dB SPL';
+    return `${value.toFixed(2)} ${unit}`;
   }
 
   if (key.endsWith('Db')) {

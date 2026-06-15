@@ -1,6 +1,6 @@
-using MathNet.Numerics.IntegralTransforms;
 using System.Numerics;
 using AcousticCanvas.Features.Analysis.Domain;
+using MathNet.Numerics.IntegralTransforms;
 
 namespace AcousticCanvas.Features.Analysis.Analyzers;
 
@@ -110,11 +110,14 @@ public static class SpectrumFftEngine
     {
         for (var i = 0; i < magnitudes.Length; i++)
         {
-            var peakAmplitudePa = magnitudes[i] * scaleFactor;
-            magnitudesDb[i] = Math.Round(
-                AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(peakAmplitudePa),
-                3
-            );
+            if (magnitudes[i] > 0)
+            {
+                var peakAmplitudePa = magnitudes[i] * scaleFactor;
+                magnitudesDb[i] = Math.Round(
+                    AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(peakAmplitudePa),
+                    3
+                );
+            }
         }
     }
 
@@ -124,7 +127,7 @@ public static class SpectrumFftEngine
         {
             SpectrumWindowType.Rectangular => BuildRectangularWindow(size),
             SpectrumWindowType.Hann => BuildPeriodicHannWindow(size),
-            _ => BuildPeriodicHannWindow(size)
+            _ => BuildPeriodicHannWindow(size),
         };
     }
 

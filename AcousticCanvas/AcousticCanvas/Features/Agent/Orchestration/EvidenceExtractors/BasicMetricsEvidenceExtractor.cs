@@ -57,12 +57,19 @@ public static class BasicMetricsEvidenceExtractor
                 evidenceData["dcOffsetLinear"] = dcOffsetElement.GetDouble();
             }
 
-            evidenceItems.Add(new EvidenceItem
+            if (metricsElement.TryGetProperty("dbUnit", out var dbUnitElement))
             {
-                EvidenceId = evidenceId,
-                Type = "basic_metrics",
-                Data = evidenceData,
-            });
+                evidenceData["levelDbUnit"] = dbUnitElement.GetString();
+            }
+
+            evidenceItems.Add(
+                new EvidenceItem
+                {
+                    EvidenceId = evidenceId,
+                    Type = "basic_metrics",
+                    Data = evidenceData,
+                }
+            );
         }
 
         LevelComparisonEvidenceExtractor.TryEmit(resultsArray, evidenceItems, fileIdToNameMap);

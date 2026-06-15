@@ -55,16 +55,22 @@ public static class BatchBenchmarkBuilder
             PeakFrequencyMagnitudeDb: summary.PeakFrequencyMagnitudeDb,
             FindingCount: findings.Count,
             HighSeverityFindingCount: BatchBenchmarkStatistics.CountBySeverity(findings, "high"),
-            MediumSeverityFindingCount: BatchBenchmarkStatistics.CountBySeverity(findings, "medium"),
+            MediumSeverityFindingCount: BatchBenchmarkStatistics.CountBySeverity(
+                findings,
+                "medium"
+            ),
             StrongestTonalPeakFrequencyHz: strongestTonalPeak.FrequencyHz,
             StrongestTonalPeakProminenceDb: strongestTonalPeak.ProminenceDb,
             LoudnessSone: summary.SoundQuality?.LoudnessSone,
             SharpnessAcum: summary.SoundQuality?.SharpnessAcum,
             RoughnessAsper: summary.SoundQuality?.RoughnessAsper,
             SoundQualityUnavailableReason: summary.SoundQualityUnavailableReason,
-            FlagLabels: BatchBenchmarkStatistics.BuildInitialFlags(findings, summary.SoundQualityUnavailableReason),
-            TopFindings: topFindings
+            FlagLabels: BatchBenchmarkStatistics.BuildInitialFlags(
+                findings,
+                summary.SoundQualityUnavailableReason
+            ),
+            TopFindings: topFindings,
+            DbUnit: summary.DbUnit
         );
     }
-
 }

@@ -1,6 +1,7 @@
 import type { JSX } from 'react';
 import { useRef, useEffect, useCallback, useState } from 'react';
 import styles from './SpectrumCanvas.module.scss';
+import { chooseSpectrumYAxisStep } from './spectrumYAxis';
 
 interface ISpectrumChannel {
   channelId: string;
@@ -8,7 +9,7 @@ interface ISpectrumChannel {
   // [x, y] pairs where x = frequencyHz and y = magnitudeDb (or linear magnitude)
   points: number[][];
   yUnit: string;
-  // Full label from backend e.g. 'Level [dB re 20 µPa]' or '[dBFS]'.
+  // Full label from backend — always 'dB SPL' (0 dBFS = 91 dB SPL).
   // When present, used verbatim as the Y-axis title instead of the generic 'Magnitude [...]'.
   yAxisLabel?: string | null;
   // Original index in the backend response for stable color assignment
@@ -40,7 +41,6 @@ const AXIS_COLOR = 'rgba(0,0,0,0.4)';
 const LABEL_COLOR = 'rgba(0,0,0,0.6)';
 const FONT = '10px ui-monospace, SFMono-Regular, Menlo, monospace';
 const AXIS_LINE_WIDTH = 1;
-const MIN_Y_TICK_SPACING_PX = 16;
 const DEFAULT_DB_Y_STEP = 10;
 
 // Colors for different channels - expanded palette for multi-channel recordings
@@ -75,28 +75,6 @@ function ceilTo(value: number, step: number): number {
 // Round down to nearest multiple of step.
 function floorTo(value: number, step: number): number {
   return Math.floor(value / step) * step;
-}
-
-export function chooseSpectrumYAxisStep(yMin: number, yMax: number, plotHeight: number): number {
-  const range = Math.max(1, yMax - yMin);
-  const maxTickIntervals = Math.max(1, Math.floor(plotHeight / MIN_Y_TICK_SPACING_PX));
-  const rawStep = range / maxTickIntervals;
-  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const normalised = rawStep / magnitude;
-
-  if (normalised <= 1) {
-    return magnitude;
-  }
-
-  if (normalised <= 2) {
-    return 2 * magnitude;
-  }
-
-  if (normalised <= 5) {
-    return 5 * magnitude;
-  }
-
-  return 10 * magnitude;
 }
 
 function drawSpectrum(

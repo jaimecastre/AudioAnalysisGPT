@@ -41,18 +41,20 @@ public static class AudioEventFinders
                         regionOffsetSeconds + (clipStart - startSample) / (double)sampleRate;
                     var endSec = regionOffsetSeconds + (i - startSample) / (double)sampleRate;
                     var peakAmplitude = FindPeakAbsolute(samples, clipStart, i);
-                    events.Add(MakeEvent(
-                        "clipping",
-                        startSec,
-                        endSec,
-                        $"Clipping: {clippedSampleCount} consecutive saturated samples (≥ {ClippingThreshold:F2} FS)",
-                        new()
-                        {
-                            ["sampleCount"] = clippedSampleCount,
-                            ["peakAmplitude"] = Math.Round(peakAmplitude, 6),
-                            ["thresholdFs"] = ClippingThreshold,
-                        }
-                    ));
+                    events.Add(
+                        MakeEvent(
+                            "clipping",
+                            startSec,
+                            endSec,
+                            $"Clipping: {clippedSampleCount} consecutive saturated samples (≥ {ClippingThreshold:F2} FS)",
+                            new()
+                            {
+                                ["sampleCount"] = clippedSampleCount,
+                                ["peakAmplitude"] = Math.Round(peakAmplitude, 6),
+                                ["thresholdFs"] = ClippingThreshold,
+                            }
+                        )
+                    );
                 }
             }
         }
@@ -92,13 +94,19 @@ public static class AudioEventFinders
                     var startSec =
                         regionOffsetSeconds + (silenceStart - startSample) / (double)sampleRate;
                     var endSec = regionOffsetSeconds + (i - startSample) / (double)sampleRate;
-                    events.Add(MakeEvent(
-                        "silence",
-                        startSec,
-                        endSec,
-                        $"Silence: {Math.Round(endSec - startSec, 3)}s below {SilenceThresholdDb} dBFS (EBU QC 0078B)",
-                        new() { ["thresholdDb"] = SilenceThresholdDb, ["sampleCount"] = silenceSamples }
-                    ));
+                    events.Add(
+                        MakeEvent(
+                            "silence",
+                            startSec,
+                            endSec,
+                            $"Silence: {Math.Round(endSec - startSec, 3)}s below {SilenceThresholdDb} dBFS (EBU QC 0078B)",
+                            new()
+                            {
+                                ["thresholdDb"] = SilenceThresholdDb,
+                                ["sampleCount"] = silenceSamples,
+                            }
+                        )
+                    );
                 }
             }
         }
@@ -172,7 +180,11 @@ public static class AudioEventFinders
         for (int i = startSample + releaseWindowSamples; i < endSample - attackWindowSamples; i++)
         {
             var attackRms = ComputeRms(samples, i, Math.Min(i + attackWindowSamples, endSample));
-            var releaseRms = ComputeRms(samples, Math.Max(startSample, i - releaseWindowSamples), i);
+            var releaseRms = ComputeRms(
+                samples,
+                Math.Max(startSample, i - releaseWindowSamples),
+                i
+            );
 
             if (releaseRms <= 0.0)
                 continue;
@@ -189,18 +201,20 @@ public static class AudioEventFinders
                 if (!tooClose)
                 {
                     var attackEndSec = transientSec + attackWindowSamples / (double)sampleRate;
-                    events.Add(MakeEvent(
-                        "transient",
-                        transientSec,
-                        attackEndSec,
-                        $"Transient onset: {Math.Round(ratioDb, 1)} dB attack ratio",
-                        new()
-                        {
-                            ["attackRatioDb"] = Math.Round(ratioDb, 2),
-                            ["attackRms"] = Math.Round(attackRms, 6),
-                            ["preRms"] = Math.Round(releaseRms, 6),
-                        }
-                    ));
+                    events.Add(
+                        MakeEvent(
+                            "transient",
+                            transientSec,
+                            attackEndSec,
+                            $"Transient onset: {Math.Round(ratioDb, 1)} dB attack ratio",
+                            new()
+                            {
+                                ["attackRatioDb"] = Math.Round(ratioDb, 2),
+                                ["attackRms"] = Math.Round(attackRms, 6),
+                                ["preRms"] = Math.Round(releaseRms, 6),
+                            }
+                        )
+                    );
                 }
             }
         }

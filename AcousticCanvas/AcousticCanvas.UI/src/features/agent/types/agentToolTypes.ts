@@ -214,6 +214,7 @@ export type CompareFileSummary = {
   cpbBands: CompareCpbBand[];
   soundQuality?: CompareSoundQuality;
   soundQualityUnavailableReason?: string;
+  dbUnit?: string;
 };
 
 export type PairwiseDiff = {

@@ -37,56 +37,62 @@ public sealed class AcousticPressureTests
     }
 
     // -----------------------------------------------------------------
-    // 2. DigitalFullScale WAV cannot produce dB SPL spectrum
-    //    (shows dBFS labels, not dB re 20 µPa)
-    //    Note: WAV import now defaults to PressurePascal+IsUserAssumed (1 FS = 1 Pa).
-    //    DigitalFullScale can still be set explicitly and must not produce SPL labels.
+    // 2. DigitalFullScale channels now produce dB SPL using the convention
+    //    0 dBFS = 91 dB SPL (1 FS = 1 Pa peak). Labels always say "dB SPL".
     // -----------------------------------------------------------------
 
     [Fact]
-    public void ExplicitDigitalFullScaleSpectrumShowsDatabaseFsNotSpl()
+    public void ExplicitDigitalFullScaleSpectrumShowsDbSplLabel()
     {
         var channel = BuildDigitalChannel(amplitudeFs: 0.5, frequencyHz: 1000.0);
 
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 1024, 0.5);
 
         var ch = analysis.Channels[0];
-        Assert.Equal("digital_full_scale", ch.CalibrationState);
-        Assert.Equal("[dBFS]", ch.YAxisLabel);
-        Assert.DoesNotContain("µPa", ch.DbUnit ?? string.Empty);
+        Assert.Equal("assumed_pressure", ch.CalibrationState);
+        Assert.Equal("dB SPL", ch.YAxisLabel);
+        Assert.Equal("dB SPL", ch.DbUnit);
     }
 
     // -----------------------------------------------------------------
-    // 3. DigitalFullScale WAV cannot produce dB SPL spectrogram
-    //    (shows relative-dB colorbar label, not dB SPL)
+    // 3. DigitalFullScale spectrogram also shows dB SPL colorbar label.
     // -----------------------------------------------------------------
 
     [Fact]
-    public void ExplicitDigitalFullScaleSpectrogramShowsRelativeDbLabel()
+    public void ExplicitDigitalFullScaleSpectrogramShowsDbSplColorbandLabel()
     {
         var channel = BuildDigitalChannel(amplitudeFs: 0.5, frequencyHz: 1000.0);
 
-        var analysis = SpectrogramAnalyzer.Analyze([channel], 0.0, 1.0, 512, 0.5, "linear", 20.0, 80.0);
+        var analysis = SpectrogramAnalyzer.Analyze(
+            [channel],
+            0.0,
+            1.0,
+            512,
+            0.5,
+            "linear",
+            20.0,
+            80.0
+        );
 
         var ch = analysis.Channels[0];
-        Assert.Equal("digital_full_scale", ch.CalibrationState);
-        Assert.Equal("Amplitude [dBFS]", ch.ColorbandLabel);
+        Assert.Equal("assumed_pressure", ch.CalibrationState);
+        Assert.Equal("dB SPL", ch.ColorbandLabel);
     }
 
     // -----------------------------------------------------------------
-    // 4. PressurePascal signal renders dB re 20 µPa
+    // 4. PressurePascal signal shows dB SPL label
     // -----------------------------------------------------------------
 
     [Fact]
-    public void PressurePascalSpectrumShowsDbreference20uPaLabel()
+    public void PressurePascalSpectrumShowsDbSplLabel()
     {
         var channel = BuildPressurePascalChannel(amplitudePeakPa: 1.0, frequencyHz: 1000.0);
 
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 2048, 0.5);
 
         var ch = analysis.Channels[0];
-        Assert.Equal("dB re 20 µPa", ch.YAxisLabel);
-        Assert.Equal("dB re 20 µPa", ch.DbUnit);
+        Assert.Equal("dB SPL", ch.YAxisLabel);
+        Assert.Equal("dB SPL", ch.DbUnit);
         Assert.Equal(AcousticPressureConverter.PressureReferencePa, ch.DbReferenceValue);
         Assert.Equal("Pa", ch.DbReferenceUnit);
     }
@@ -105,12 +111,14 @@ public sealed class AcousticPressureTests
         var calibratedChannel = BuildCalibratedChannel(
             amplitudeFs: amplitudeFs,
             pascalsPerFullScale: pascalsPerFullScale,
-            frequencyHz: 1000.0);
+            frequencyHz: 1000.0
+        );
 
         // Equivalent PressurePascal channel: directly 0.05 Pa peak
         var pressureChannel = BuildPressurePascalChannel(
             amplitudePeakPa: amplitudeFs * pascalsPerFullScale,
-            frequencyHz: 1000.0);
+            frequencyHz: 1000.0
+        );
 
         var calibratedAnalysis = SpectrumAnalyzer.Analyze([calibratedChannel], 0.0, 1.0, 2048, 0.5);
         var pressureAnalysis = SpectrumAnalyzer.Analyze([pressureChannel], 0.0, 1.0, 2048, 0.5);
@@ -137,19 +145,19 @@ public sealed class AcousticPressureTests
             Calibration = null,
         };
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => AcousticPressureConverter.GetScaleFactor(metadataNoCalibration));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            AcousticPressureConverter.GetScaleFactor(metadataNoCalibration)
+        );
         Assert.Contains("PascalsPerFullScale", ex.Message);
     }
 
     [Fact]
-    public void DigitalFullScaleGetScaleFactorThrows()
+    public void DigitalFullScaleGetScaleFactorReturnsOne()
     {
         var metadata = new SignalPhysicalMetadata { UnitKind = SignalUnitKind.DigitalFullScale };
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => AcousticPressureConverter.GetScaleFactor(metadata));
-        Assert.Contains("dB SPL", ex.Message);
+        var scale = AcousticPressureConverter.GetScaleFactor(metadata);
+        Assert.Equal(1.0, scale);
     }
 
     // -----------------------------------------------------------------
@@ -175,7 +183,10 @@ public sealed class AcousticPressureTests
         // AcousticPressureConverter.ComputeDbSplFromPeakAmplitude applies peak-to-RMS (÷√2)
         // so the result should be 20 × log10(1 / 20e-6) ≈ 93.98 dB SPL.
         const double oneRmsPeakPa = 1.41421356237; // sqrt(2)
-        var channel = BuildPressurePascalChannel(amplitudePeakPa: oneRmsPeakPa, frequencyHz: 1000.0);
+        var channel = BuildPressurePascalChannel(
+            amplitudePeakPa: oneRmsPeakPa,
+            frequencyHz: 1000.0
+        );
 
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 4096, 0.5);
 
@@ -192,13 +203,18 @@ public sealed class AcousticPressureTests
     {
         // 1 nPa peak → RMS ≈ 0.71 nPa → far below 20 µPa → very negative dB SPL
         const double verySmallPressurePa = 1e-9;
-        var channel = BuildPressurePascalChannel(amplitudePeakPa: verySmallPressurePa, frequencyHz: 1000.0);
+        var channel = BuildPressurePascalChannel(
+            amplitudePeakPa: verySmallPressurePa,
+            frequencyHz: 1000.0
+        );
 
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 2048, 0.5);
 
         Assert.NotNull(analysis.Channels[0].MaxMagnitudeDb);
-        Assert.True(analysis.Channels[0].MaxMagnitudeDb!.Value < 0.0,
-            $"Expected negative dB SPL but got {analysis.Channels[0].MaxMagnitudeDb!.Value}");
+        Assert.True(
+            analysis.Channels[0].MaxMagnitudeDb!.Value < 0.0,
+            $"Expected negative dB SPL but got {analysis.Channels[0].MaxMagnitudeDb!.Value}"
+        );
     }
 
     // -----------------------------------------------------------------
@@ -209,8 +225,14 @@ public sealed class AcousticPressureTests
     public void SpectrumDbSplDoesNotNormalizeToGlobalMaximum()
     {
         const double frequencyHz = 1000.0;
-        var loudChannel = BuildPressurePascalChannel(amplitudePeakPa: 1.0, frequencyHz: frequencyHz);
-        var quietChannel = BuildPressurePascalChannel(amplitudePeakPa: 0.01, frequencyHz: frequencyHz);
+        var loudChannel = BuildPressurePascalChannel(
+            amplitudePeakPa: 1.0,
+            frequencyHz: frequencyHz
+        );
+        var quietChannel = BuildPressurePascalChannel(
+            amplitudePeakPa: 0.01,
+            frequencyHz: frequencyHz
+        );
 
         var loudAnalysis = SpectrumAnalyzer.Analyze([loudChannel], 0.0, 1.0, 2048, 0.5);
         var quietAnalysis = SpectrumAnalyzer.Analyze([quietChannel], 0.0, 1.0, 2048, 0.5);
@@ -235,13 +257,39 @@ public sealed class AcousticPressureTests
         const double minDbSpl = 20.0;
         const double maxDbSpl = 100.0;
 
-        var loudChannel = BuildPressurePascalChannel(amplitudePeakPa: 1.0, frequencyHz: frequencyHz);
-        var quietChannel = BuildPressurePascalChannel(amplitudePeakPa: 0.01, frequencyHz: frequencyHz);
+        var loudChannel = BuildPressurePascalChannel(
+            amplitudePeakPa: 1.0,
+            frequencyHz: frequencyHz
+        );
+        var quietChannel = BuildPressurePascalChannel(
+            amplitudePeakPa: 0.01,
+            frequencyHz: frequencyHz
+        );
 
         var loudAnalysis = SpectrogramAnalyzer.Analyze(
-            [loudChannel], 0.0, 1.0, 512, 0.5, "linear", 20.0, 80.0, minDbSpl, maxDbSpl);
+            [loudChannel],
+            0.0,
+            1.0,
+            512,
+            0.5,
+            "linear",
+            20.0,
+            80.0,
+            minDbSpl,
+            maxDbSpl
+        );
         var quietAnalysis = SpectrogramAnalyzer.Analyze(
-            [quietChannel], 0.0, 1.0, 512, 0.5, "linear", 20.0, 80.0, minDbSpl, maxDbSpl);
+            [quietChannel],
+            0.0,
+            1.0,
+            512,
+            0.5,
+            "linear",
+            20.0,
+            80.0,
+            minDbSpl,
+            maxDbSpl
+        );
 
         // Find max byte in each spectrogram (first frame for simplicity).
         var loudMax = loudAnalysis.Channels[0].FrequencyData[0].Max();
@@ -250,8 +298,10 @@ public sealed class AcousticPressureTests
         // If global-max normalization were used, both would have max byte = 255.
         // With fixed SPL range [20..100], the loud signal (≈94 dB SPL peak) will have
         // higher max byte than the quiet signal (≈54 dB SPL peak).
-        Assert.True(loudMax > quietMax,
-            $"Loud spectrogram max byte {loudMax} should exceed quiet max byte {quietMax}");
+        Assert.True(
+            loudMax > quietMax,
+            $"Loud spectrogram max byte {loudMax} should exceed quiet max byte {quietMax}"
+        );
     }
 
     // -----------------------------------------------------------------
@@ -265,7 +315,10 @@ public sealed class AcousticPressureTests
         Assert.Equal(255, AcousticPressureConverter.MapDbSplToByte(9999.0, 20.0, 100.0));
         Assert.Equal(0, AcousticPressureConverter.MapDbSplToByte(-9999.0, 20.0, 100.0));
         Assert.Equal(0, AcousticPressureConverter.MapDbSplToByte(double.NaN, 20.0, 100.0));
-        Assert.Equal(0, AcousticPressureConverter.MapDbSplToByte(double.NegativeInfinity, 20.0, 100.0));
+        Assert.Equal(
+            0,
+            AcousticPressureConverter.MapDbSplToByte(double.NegativeInfinity, 20.0, 100.0)
+        );
 
         // 60 dB in [20..100] range: (60-20)/(100-20) = 0.5 → byte = round(0.5*255) = 128
         Assert.Equal(128, AcousticPressureConverter.MapDbSplToByte(60.0, 20.0, 100.0));
@@ -275,31 +328,31 @@ public sealed class AcousticPressureTests
     }
 
     // -----------------------------------------------------------------
-    // 13. Spectrum Y-axis label is "Level [dB re 20 µPa]"
+    // 13. Spectrum Y-axis label is always "dB SPL"
     // -----------------------------------------------------------------
 
     [Fact]
-    public void SpectrumYAxisLabelContains20uPaForPressureChannel()
+    public void SpectrumYAxisLabelIsDbSplForPressureChannel()
     {
         var channel = BuildPressurePascalChannel(amplitudePeakPa: 1.0, frequencyHz: 1000.0);
 
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 1024, 0.5);
 
-        Assert.Equal("dB re 20 µPa", analysis.Channels[0].YAxisLabel);
+        Assert.Equal("dB SPL", analysis.Channels[0].YAxisLabel);
     }
 
     [Fact]
-    public void SpectrumYAxisLabelIsDbFsForDigitalChannel()
+    public void SpectrumYAxisLabelIsDbSplForDigitalChannel()
     {
         var channel = BuildDigitalChannel(amplitudeFs: 0.5, frequencyHz: 1000.0);
 
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 1024, 0.5);
 
-        Assert.Equal("[dBFS]", analysis.Channels[0].YAxisLabel);
+        Assert.Equal("dB SPL", analysis.Channels[0].YAxisLabel);
     }
 
     // -----------------------------------------------------------------
-    // 14. Spectrogram colorbar label uses calibrated pressure reference wording.
+    // 14. Spectrogram colorbar label is always "dB SPL".
     // -----------------------------------------------------------------
 
     [Fact]
@@ -307,9 +360,18 @@ public sealed class AcousticPressureTests
     {
         var channel = BuildPressurePascalChannel(amplitudePeakPa: 1.0, frequencyHz: 1000.0);
 
-        var analysis = SpectrogramAnalyzer.Analyze([channel], 0.0, 1.0, 512, 0.5, "linear", 20.0, 80.0);
+        var analysis = SpectrogramAnalyzer.Analyze(
+            [channel],
+            0.0,
+            1.0,
+            512,
+            0.5,
+            "linear",
+            20.0,
+            80.0
+        );
 
-        Assert.Equal("dB re 20 µPa", analysis.Channels[0].ColorbandLabel);
+        Assert.Equal("dB SPL", analysis.Channels[0].ColorbandLabel);
     }
 
     // -----------------------------------------------------------------
@@ -322,7 +384,16 @@ public sealed class AcousticPressureTests
         var channel = BuildAssumedPressureChannel(amplitudePeakPa: 0.1, frequencyHz: 1000.0);
 
         var spectrumAnalysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 1024, 0.5);
-        var spectrogramAnalysis = SpectrogramAnalyzer.Analyze([channel], 0.0, 1.0, 512, 0.5, "linear", 20.0, 80.0);
+        var spectrogramAnalysis = SpectrogramAnalyzer.Analyze(
+            [channel],
+            0.0,
+            1.0,
+            512,
+            0.5,
+            "linear",
+            20.0,
+            80.0
+        );
 
         Assert.Equal("assumed_pressure", spectrumAnalysis.Channels[0].CalibrationState);
         Assert.Equal("assumed_pressure", spectrogramAnalysis.Channels[0].CalibrationState);
@@ -343,9 +414,9 @@ public sealed class AcousticPressureTests
         Assert.Equal("Sound pressure", ch.PhysicalQuantity);
         Assert.Equal(AcousticPressureConverter.PressureReferencePa, ch.DbReferenceValue);
         Assert.Equal("Pa", ch.DbReferenceUnit);
-        Assert.Equal("dB re 20 µPa", ch.DbUnit);
+        Assert.Equal("dB SPL", ch.DbUnit);
         Assert.Equal("pressure_signal", ch.CalibrationState);
-        Assert.Equal("dB re 20 µPa", ch.YAxisLabel);
+        Assert.Equal("dB SPL", ch.YAxisLabel);
     }
 
     // =================================================================
@@ -359,7 +430,8 @@ public sealed class AcousticPressureTests
         double amplitudeFs,
         double frequencyHz,
         int sampleRate = DefaultSampleRate,
-        double durationSeconds = DefaultDurationSeconds)
+        double durationSeconds = DefaultDurationSeconds
+    )
     {
         var samples = BuildSineSamples(amplitudeFs, frequencyHz, sampleRate, durationSeconds);
 
@@ -371,8 +443,16 @@ public sealed class AcousticPressureTests
             SampleCount = samples.Length,
             Quantity = "digital_amplitude",
             Unit = "FS",
-            DbReference = new DbReference { Value = 1.0, Unit = "FS", DbUnit = "dBFS" },
-            PhysicalMetadata = new SignalPhysicalMetadata { UnitKind = SignalUnitKind.DigitalFullScale },
+            DbReference = new DbReference
+            {
+                Value = 1.0,
+                Unit = "FS",
+                DbUnit = "dBFS",
+            },
+            PhysicalMetadata = new SignalPhysicalMetadata
+            {
+                UnitKind = SignalUnitKind.DigitalFullScale,
+            },
             Samples = samples,
         };
     }
@@ -381,7 +461,8 @@ public sealed class AcousticPressureTests
         double amplitudePeakPa,
         double frequencyHz,
         int sampleRate = DefaultSampleRate,
-        double durationSeconds = DefaultDurationSeconds)
+        double durationSeconds = DefaultDurationSeconds
+    )
     {
         var samples = BuildSineSamples(amplitudePeakPa, frequencyHz, sampleRate, durationSeconds);
 
@@ -397,9 +478,12 @@ public sealed class AcousticPressureTests
             {
                 Value = AcousticPressureConverter.PressureReferencePa,
                 Unit = "Pa",
-                DbUnit = "dB re 20 µPa",
+                DbUnit = "dB SPL",
             },
-            PhysicalMetadata = new SignalPhysicalMetadata { UnitKind = SignalUnitKind.PressurePascal },
+            PhysicalMetadata = new SignalPhysicalMetadata
+            {
+                UnitKind = SignalUnitKind.PressurePascal,
+            },
             Samples = samples,
         };
     }
@@ -409,7 +493,8 @@ public sealed class AcousticPressureTests
         double pascalsPerFullScale,
         double frequencyHz,
         int sampleRate = DefaultSampleRate,
-        double durationSeconds = DefaultDurationSeconds)
+        double durationSeconds = DefaultDurationSeconds
+    )
     {
         var samples = BuildSineSamples(amplitudeFs, frequencyHz, sampleRate, durationSeconds);
 
@@ -438,7 +523,8 @@ public sealed class AcousticPressureTests
         double amplitudePeakPa,
         double frequencyHz,
         int sampleRate = DefaultSampleRate,
-        double durationSeconds = DefaultDurationSeconds)
+        double durationSeconds = DefaultDurationSeconds
+    )
     {
         var samples = BuildSineSamples(amplitudePeakPa, frequencyHz, sampleRate, durationSeconds);
 
@@ -468,14 +554,17 @@ public sealed class AcousticPressureTests
         double amplitude,
         double frequencyHz,
         int sampleRate,
-        double durationSeconds)
+        double durationSeconds
+    )
     {
         var sampleCount = (int)(sampleRate * durationSeconds);
         var samples = new float[sampleCount];
 
         for (var i = 0; i < sampleCount; i++)
         {
-            samples[i] = (float)(amplitude * Math.Sin(2.0 * Math.PI * frequencyHz * i / sampleRate));
+            samples[i] = (float)(
+                amplitude * Math.Sin(2.0 * Math.PI * frequencyHz * i / sampleRate)
+            );
         }
 
         return samples;
@@ -489,7 +578,8 @@ public sealed class AcousticPressureTests
         double amplitudeFs,
         double frequencyHz,
         int sampleRate,
-        double durationSeconds = 1.0)
+        double durationSeconds = 1.0
+    )
     {
         var sampleCount = (int)(sampleRate * durationSeconds);
         using var memoryStream = new MemoryStream();

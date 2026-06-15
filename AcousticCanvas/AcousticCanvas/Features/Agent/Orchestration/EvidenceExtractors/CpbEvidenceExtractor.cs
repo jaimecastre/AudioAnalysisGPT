@@ -57,12 +57,14 @@ public static class CpbEvidenceExtractor
                 evidenceData["dataRef"] = dataRefEl.GetString();
             }
 
-            evidenceItems.Add(new EvidenceItem
-            {
-                EvidenceId = evidenceId,
-                Type = "cpb",
-                Data = evidenceData,
-            });
+            evidenceItems.Add(
+                new EvidenceItem
+                {
+                    EvidenceId = evidenceId,
+                    Type = "cpb",
+                    Data = evidenceData,
+                }
+            );
         }
     }
 
@@ -72,11 +74,22 @@ public static class CpbEvidenceExtractor
 
         foreach (var band in bandsArray.EnumerateArray())
         {
-            var freqHz = band.TryGetProperty("centerFrequencyHz", out var freqEl) ? freqEl.GetDouble() : 0.0;
-            var levelDb = band.TryGetProperty("levelDb", out var levelEl) ? levelEl.GetDouble() : 0.0;
+            var freqHz = band.TryGetProperty("centerFrequencyHz", out var freqEl)
+                ? freqEl.GetDouble()
+                : 0.0;
+            var levelDb = band.TryGetProperty("levelDb", out var levelEl)
+                ? levelEl.GetDouble()
+                : 0.0;
             var label = band.TryGetProperty("label", out var labelEl) ? labelEl.GetString() : "";
 
-            bandsList.Add(new { centerFrequencyHz = freqHz, levelDb, label });
+            bandsList.Add(
+                new
+                {
+                    centerFrequencyHz = freqHz,
+                    levelDb,
+                    label,
+                }
+            );
         }
 
         return bandsList;

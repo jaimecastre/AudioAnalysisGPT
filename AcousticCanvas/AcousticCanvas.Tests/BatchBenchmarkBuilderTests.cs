@@ -10,9 +10,30 @@ public sealed class BatchBenchmarkBuilderTests
     {
         var rows = new[]
         {
-            BuildSource("quiet", rmsDb: -24, peakDb: -8, sharpness: 0.5, roughness: 0.001, findings: []),
-            BuildSource("loud", rmsDb: -12, peakDb: -2, sharpness: 1.2, roughness: 0.005, findings: []),
-            BuildSource("middle", rmsDb: -18, peakDb: -4, sharpness: 0.8, roughness: 0.003, findings: []),
+            BuildSource(
+                "quiet",
+                rmsDb: -24,
+                peakDb: -8,
+                sharpness: 0.5,
+                roughness: 0.001,
+                findings: []
+            ),
+            BuildSource(
+                "loud",
+                rmsDb: -12,
+                peakDb: -2,
+                sharpness: 1.2,
+                roughness: 0.005,
+                findings: []
+            ),
+            BuildSource(
+                "middle",
+                rmsDb: -18,
+                peakDb: -4,
+                sharpness: 0.8,
+                roughness: 0.003,
+                findings: []
+            ),
         };
 
         var result = BatchBenchmarkBuilder.Build(rows, DateTimeOffset.UnixEpoch);
@@ -20,7 +41,10 @@ public sealed class BatchBenchmarkBuilderTests
         var rmsRanking = Assert.Single(result.Rankings, ranking => ranking.Metric == "rmsDb");
         Assert.Equal(["loud", "middle", "quiet"], rmsRanking.FileIds);
 
-        var sharpnessRanking = Assert.Single(result.Rankings, ranking => ranking.Metric == "sharpnessAcum");
+        var sharpnessRanking = Assert.Single(
+            result.Rankings,
+            ranking => ranking.Metric == "sharpnessAcum"
+        );
         Assert.Equal(["loud", "middle", "quiet"], sharpnessRanking.FileIds);
     }
 
@@ -29,22 +53,56 @@ public sealed class BatchBenchmarkBuilderTests
     {
         var rows = new[]
         {
-            BuildSource("a", rmsDb: -21, peakDb: -6, sharpness: 0.5, roughness: 0.001, findings: []),
-            BuildSource("b", rmsDb: -20, peakDb: -6, sharpness: 0.6, roughness: 0.001, findings: []),
-            BuildSource("c", rmsDb: -19, peakDb: -5, sharpness: 0.7, roughness: 0.001, findings: []),
-            BuildSource("outlier", rmsDb: -4, peakDb: -1, sharpness: 3.2, roughness: 0.001, findings: []),
+            BuildSource(
+                "a",
+                rmsDb: -21,
+                peakDb: -6,
+                sharpness: 0.5,
+                roughness: 0.001,
+                findings: []
+            ),
+            BuildSource(
+                "b",
+                rmsDb: -20,
+                peakDb: -6,
+                sharpness: 0.6,
+                roughness: 0.001,
+                findings: []
+            ),
+            BuildSource(
+                "c",
+                rmsDb: -19,
+                peakDb: -5,
+                sharpness: 0.7,
+                roughness: 0.001,
+                findings: []
+            ),
+            BuildSource(
+                "outlier",
+                rmsDb: -4,
+                peakDb: -1,
+                sharpness: 3.2,
+                roughness: 0.001,
+                findings: []
+            ),
         };
 
         var result = BatchBenchmarkBuilder.Build(rows, DateTimeOffset.UnixEpoch);
 
-        Assert.Contains(result.Outliers, outlier =>
-            outlier.FileId == "outlier" &&
-            outlier.Metric == "rmsDb" &&
-            outlier.Direction == "high");
-        Assert.Contains(result.Outliers, outlier =>
-            outlier.FileId == "outlier" &&
-            outlier.Metric == "sharpnessAcum" &&
-            outlier.Direction == "high");
+        Assert.Contains(
+            result.Outliers,
+            outlier =>
+                outlier.FileId == "outlier"
+                && outlier.Metric == "rmsDb"
+                && outlier.Direction == "high"
+        );
+        Assert.Contains(
+            result.Outliers,
+            outlier =>
+                outlier.FileId == "outlier"
+                && outlier.Metric == "sharpnessAcum"
+                && outlier.Direction == "high"
+        );
     }
 
     [Fact]
@@ -52,14 +110,25 @@ public sealed class BatchBenchmarkBuilderTests
     {
         var rows = new[]
         {
-            BuildSource("a", rmsDb: -30, peakDb: -10, sharpness: 0.5, roughness: 0.001, findings: []),
+            BuildSource(
+                "a",
+                rmsDb: -30,
+                peakDb: -10,
+                sharpness: 0.5,
+                roughness: 0.001,
+                findings: []
+            ),
             BuildSource("b", rmsDb: -4, peakDb: -1, sharpness: 3.2, roughness: 0.001, findings: []),
         };
 
         var result = BatchBenchmarkBuilder.Build(rows, DateTimeOffset.UnixEpoch);
 
         Assert.Empty(result.Outliers);
-        Assert.Contains(result.Limitations, limitation => limitation.Contains("at least 4 files", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            result.Limitations,
+            limitation =>
+                limitation.Contains("at least 4 files", StringComparison.OrdinalIgnoreCase)
+        );
     }
 
     [Fact]
@@ -74,15 +143,29 @@ public sealed class BatchBenchmarkBuilderTests
                 sharpness: null,
                 roughness: null,
                 findings: [],
-                soundQualityUnavailableReason: "Sound-quality metrics unavailable for this file."),
-            BuildSource("b", rmsDb: -18, peakDb: -3, sharpness: 0.8, roughness: 0.001, findings: []),
+                soundQualityUnavailableReason: "Sound-quality metrics unavailable for this file."
+            ),
+            BuildSource(
+                "b",
+                rmsDb: -18,
+                peakDb: -3,
+                sharpness: 0.8,
+                roughness: 0.001,
+                findings: []
+            ),
         };
 
         var result = BatchBenchmarkBuilder.Build(rows, DateTimeOffset.UnixEpoch);
 
-        Assert.Contains(result.Limitations, limitation =>
-            limitation.Contains("a.wav", StringComparison.OrdinalIgnoreCase) &&
-            limitation.Contains("Sound-quality metrics unavailable", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            result.Limitations,
+            limitation =>
+                limitation.Contains("a.wav", StringComparison.OrdinalIgnoreCase)
+                && limitation.Contains(
+                    "Sound-quality metrics unavailable",
+                    StringComparison.OrdinalIgnoreCase
+                )
+        );
     }
 
     private static BatchBenchmarkSource BuildSource(
@@ -92,7 +175,8 @@ public sealed class BatchBenchmarkBuilderTests
         double? sharpness,
         double? roughness,
         IReadOnlyList<Finding> findings,
-        string? soundQualityUnavailableReason = null)
+        string? soundQualityUnavailableReason = null
+    )
     {
         CompareSoundQuality? soundQuality = null;
 

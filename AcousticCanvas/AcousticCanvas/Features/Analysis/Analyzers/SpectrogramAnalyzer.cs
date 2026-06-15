@@ -109,8 +109,16 @@ public static class SpectrogramAnalyzer
             DurationSeconds = clampedEndSeconds - clampedStartSeconds,
         };
 
-        var timeAxisTicks = SpectrogramAxisBuilder.BuildTimeAxisTicks(clampedStartSeconds, clampedEndSeconds, 6);
-        var frequencyAxisTicks = SpectrogramAxisBuilder.BuildFrequencyAxisTicks(sampleRate / 2.0, scale, 6);
+        var timeAxisTicks = SpectrogramAxisBuilder.BuildTimeAxisTicks(
+            clampedStartSeconds,
+            clampedEndSeconds,
+            6
+        );
+        var frequencyAxisTicks = SpectrogramAxisBuilder.BuildFrequencyAxisTicks(
+            sampleRate / 2.0,
+            scale,
+            6
+        );
 
         return new SpectrogramAnalysis
         {
@@ -152,7 +160,9 @@ public static class SpectrogramAnalyzer
                 window,
                 coherentGain
             );
-            frames.Add(SpectrogramAxisBuilder.RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0));
+            frames.Add(
+                SpectrogramAxisBuilder.RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0)
+            );
             blockStart += hopSize;
         }
 
@@ -166,80 +176,32 @@ public static class SpectrogramAnalyzer
                 window,
                 coherentGain
             );
-            frames.Add(SpectrogramAxisBuilder.RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0));
+            frames.Add(
+                SpectrogramAxisBuilder.RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0)
+            );
         }
 
-        var isPressure =
-            channel.PhysicalMetadata is
-            { UnitKind: SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure };
+        // All channels use the dB SPL path: Pa or digital with 0 dBFS = 91 dB SPL convention.
+        // GetScaleFactor returns 1.0 for PressurePascal and DigitalFullScale.
+        var scaleFactor =
+            channel.PhysicalMetadata != null
+                ? AcousticPressureConverter.GetScaleFactor(channel.PhysicalMetadata)
+                : 1.0;
 
         var frequencyData = new List<byte[]>();
 
-        if (isPressure)
+        foreach (var frame in frames)
         {
-            // dB SPL path: fixed physical display range, no normalisation to global max.
-            // FFT amplitudes are peak amplitudes; AcousticPressureConverter applies peak-to-RMS
-            // conversion before computing dB re 20 µPa.
-            var scaleFactor = AcousticPressureConverter.GetScaleFactor(channel.PhysicalMetadata!);
-
-            foreach (var frame in frames)
+            var frameBytes = new byte[binCount];
+            for (var k = 0; k < binCount; k++)
             {
-                var frameBytes = new byte[binCount];
-                for (var k = 0; k < binCount; k++)
-                {
-                    var peakAmplitudePa = frame[k] * scaleFactor;
-                    var dbSpl = AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(
-                        peakAmplitudePa
-                    );
-                    frameBytes[k] = AcousticPressureConverter.MapDbSplToByte(
-                        dbSpl,
-                        minDbSpl,
-                        maxDbSpl
-                    );
-                }
-                frequencyData.Add(frameBytes);
+                var peakAmplitudePa = frame[k] * scaleFactor;
+                var dbSpl = AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(
+                    peakAmplitudePa
+                );
+                frameBytes[k] = AcousticPressureConverter.MapDbSplToByte(dbSpl, minDbSpl, maxDbSpl);
             }
-        }
-        else
-        {
-            // Relative dB path: normalised to global max (original behaviour).
-            // 255 = loudest bin in the region, 0 = below floor.
-            var globalMaxAmplitude = 0.0;
-            foreach (var frame in frames)
-            {
-                foreach (var amplitude in frame)
-                {
-                    if (amplitude > globalMaxAmplitude)
-                    {
-                        globalMaxAmplitude = amplitude;
-                    }
-                }
-            }
-
-            var floorDb = -(gainDb + rangeDb);
-
-            foreach (var frame in frames)
-            {
-                var frameBytes = new byte[binCount];
-                for (var k = 0; k < binCount; k++)
-                {
-                    double byteValue;
-
-                    if (globalMaxAmplitude <= 0.0 || frame[k] <= 0.0)
-                    {
-                        byteValue = 0.0;
-                    }
-                    else
-                    {
-                        var db = 20.0 * Math.Log10(frame[k] / globalMaxAmplitude) + gainDb;
-                        var normalised = (db - floorDb) / (gainDb - floorDb);
-                        byteValue = Math.Clamp(normalised * 255.0, 0.0, 255.0);
-                    }
-
-                    frameBytes[k] = (byte)Math.Round(byteValue);
-                }
-                frequencyData.Add(frameBytes);
-            }
+            frequencyData.Add(frameBytes);
         }
 
         return new ChannelSpectrogramAnalysis
@@ -297,7 +259,6 @@ public static class SpectrogramAnalyzer
 
         return amplitudes;
     }
-
 
     private static double[] BuildHannWindow(int size)
     {

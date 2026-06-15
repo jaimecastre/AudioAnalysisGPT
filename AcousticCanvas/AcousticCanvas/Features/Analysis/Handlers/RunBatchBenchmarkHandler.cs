@@ -6,6 +6,10 @@ namespace AcousticCanvas.Features.Analysis.Handlers;
 public class RunBatchBenchmarkHandler
     : CommandHandler<RunBatchBenchmarkCommand, BatchBenchmarkResult>
 {
+    private const int MaxConcurrentFindingsPipelines = 8;
+
+    private readonly SemaphoreSlim _findingsSemaphore = new(MaxConcurrentFindingsPipelines, MaxConcurrentFindingsPipelines);
+
     public override async Task<BatchBenchmarkResult> ExecuteAsync(
         RunBatchBenchmarkCommand command,
         CancellationToken ct
@@ -28,14 +32,24 @@ public class RunBatchBenchmarkHandler
         var compareCommand = new RunCompareCommand(
             FilePaths: command.FilePaths,
             StartSeconds: command.StartSeconds,
-            EndSeconds: command.EndSeconds
+            EndSeconds: command.EndSeconds,
+            SkipPairwiseDiffs: true
         );
 
         var compareTask = compareCommand.ExecuteAsync(ct);
         var findingsTasks = command
-            .FilePaths.Select(filePath =>
-                new RunFindingsCommand(FilePath: filePath).ExecuteAsync(ct)
-            )
+            .FilePaths.Select(async filePath =>
+            {
+                await _findingsSemaphore.WaitAsync(ct);
+                try
+                {
+                    return await new RunFindingsCommand(FilePath: filePath).ExecuteAsync(ct);
+                }
+                finally
+                {
+                    _findingsSemaphore.Release();
+                }
+            })
             .ToArray();
 
         var compareResult = await compareTask;

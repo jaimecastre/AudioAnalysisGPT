@@ -10,7 +10,8 @@ public static class SpectrumComparisonEvidenceExtractor
         Dictionary<string, string> fileIdToNameMap
     )
     {
-        var fileResults = new List<(string FileId, double PeakFreq, double MaxMag, List<object?> Peaks)>();
+        var fileResults =
+            new List<(string FileId, double PeakFreq, double MaxMag, List<object?> Peaks)>();
 
         foreach (var fileResult in resultsArray.EnumerateArray())
         {
@@ -26,8 +27,12 @@ public static class SpectrumComparisonEvidenceExtractor
                 continue;
             }
 
-            var peakFreq = summaryEl.TryGetProperty("peakFrequencyHz", out var freqEl) ? freqEl.GetDouble() : double.NaN;
-            var maxMag = summaryEl.TryGetProperty("maxMagnitudeDb", out var magEl) ? magEl.GetDouble() : double.NaN;
+            var peakFreq = summaryEl.TryGetProperty("peakFrequencyHz", out var freqEl)
+                ? freqEl.GetDouble()
+                : double.NaN;
+            var maxMag = summaryEl.TryGetProperty("maxMagnitudeDb", out var magEl)
+                ? magEl.GetDouble()
+                : double.NaN;
 
             if (double.IsNaN(peakFreq))
             {
@@ -39,7 +44,9 @@ public static class SpectrumComparisonEvidenceExtractor
             {
                 foreach (var peak in peaksArray.EnumerateArray())
                 {
-                    var freqHz = peak.TryGetProperty("frequencyHz", out var f) ? f.GetDouble() : 0.0;
+                    var freqHz = peak.TryGetProperty("frequencyHz", out var f)
+                        ? f.GetDouble()
+                        : 0.0;
                     var magDb = peak.TryGetProperty("magnitudeDb", out var m) ? m.GetDouble() : 0.0;
                     peaks.Add(new { frequencyHz = freqHz, magnitudeDb = magDb });
                 }
@@ -60,26 +67,28 @@ public static class SpectrumComparisonEvidenceExtractor
         var maxMagDelta = Math.Round(b.MaxMag - a.MaxMag, 2);
         var evidenceId = "ev_spectrum_cmp_" + a.FileId[..Math.Min(a.FileId.Length, 8)];
 
-        evidenceItems.Add(new EvidenceItem
-        {
-            EvidenceId = evidenceId,
-            Type = "spectrum_comparison",
-            Data = new Dictionary<string, object?>
+        evidenceItems.Add(
+            new EvidenceItem
             {
-                ["type"] = "spectrum_comparison",
-                ["fileIdA"] = a.FileId,
-                ["fileNameA"] = fileIdToNameMap.GetValueOrDefault(a.FileId, a.FileId),
-                ["fileIdB"] = b.FileId,
-                ["fileNameB"] = fileIdToNameMap.GetValueOrDefault(b.FileId, b.FileId),
-                ["peakFrequencyAHz"] = a.PeakFreq,
-                ["peakFrequencyBHz"] = b.PeakFreq,
-                ["peakFrequencyDeltaHz"] = peakFreqDelta,
-                ["maxMagnitudeADb"] = a.MaxMag,
-                ["maxMagnitudeBDb"] = b.MaxMag,
-                ["maxMagnitudeDeltaDb"] = maxMagDelta,
-                ["dominantPeaksA"] = a.Peaks,
-                ["dominantPeaksB"] = b.Peaks,
-            },
-        });
+                EvidenceId = evidenceId,
+                Type = "spectrum_comparison",
+                Data = new Dictionary<string, object?>
+                {
+                    ["type"] = "spectrum_comparison",
+                    ["fileIdA"] = a.FileId,
+                    ["fileNameA"] = fileIdToNameMap.GetValueOrDefault(a.FileId, a.FileId),
+                    ["fileIdB"] = b.FileId,
+                    ["fileNameB"] = fileIdToNameMap.GetValueOrDefault(b.FileId, b.FileId),
+                    ["peakFrequencyAHz"] = a.PeakFreq,
+                    ["peakFrequencyBHz"] = b.PeakFreq,
+                    ["peakFrequencyDeltaHz"] = peakFreqDelta,
+                    ["maxMagnitudeADb"] = a.MaxMag,
+                    ["maxMagnitudeBDb"] = b.MaxMag,
+                    ["maxMagnitudeDeltaDb"] = maxMagDelta,
+                    ["dominantPeaksA"] = a.Peaks,
+                    ["dominantPeaksB"] = b.Peaks,
+                },
+            }
+        );
     }
 }

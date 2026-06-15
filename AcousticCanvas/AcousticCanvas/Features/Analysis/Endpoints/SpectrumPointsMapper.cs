@@ -21,9 +21,10 @@ public static class SpectrumPointsMapper
             for (var i = 0; i < channel.FrequenciesHz.Count; i++)
             {
                 var frequencyHz = channel.FrequenciesHz[i];
-                var yValue = hasDb && channel.MagnitudesDb[i].HasValue
-                    ? channel.MagnitudesDb[i]!.Value
-                    : channel.Magnitudes[i];
+                var yValue =
+                    hasDb && channel.MagnitudesDb[i].HasValue
+                        ? channel.MagnitudesDb[i]!.Value
+                        : channel.Magnitudes[i];
                 points[i] = new[] { frequencyHz, yValue };
             }
 

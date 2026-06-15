@@ -6,5 +6,6 @@ namespace AcousticCanvas.Features.Analysis.Commands;
 public record RunCompareCommand(
     IReadOnlyList<string> FilePaths,
     double? StartSeconds,
-    double? EndSeconds
+    double? EndSeconds,
+    bool SkipPairwiseDiffs = false
 ) : ICommand<CompareResult>;

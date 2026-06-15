@@ -34,7 +34,13 @@ public sealed class DeterministicAnswerWriterTests
         };
     }
 
-    private static EvidenceItem MetadataItem(string fileName, double duration, int sampleRate, int channels, int bitDepth)
+    private static EvidenceItem MetadataItem(
+        string fileName,
+        double duration,
+        int sampleRate,
+        int channels,
+        int bitDepth
+    )
     {
         return new EvidenceItem
         {
@@ -55,7 +61,11 @@ public sealed class DeterministicAnswerWriterTests
     [Fact]
     public void WritesPeakLevelAnswerWithHighConfidence()
     {
-        var plan = new DeterministicFactPlan { ToolName = "run_basic_metrics", RequestedFields = ["peak"] };
+        var plan = new DeterministicFactPlan
+        {
+            ToolName = "run_basic_metrics",
+            RequestedFields = ["peak"],
+        };
         var package = BuildPackage(BasicMetricsItem(peak: -8.627, rms: -12.82, crest: 4.20));
 
         var answer = DeterministicAnswerWriter.Write(plan, package);
@@ -69,7 +79,11 @@ public sealed class DeterministicAnswerWriterTests
     [Fact]
     public void WritesOnlyRequestedMetricField()
     {
-        var plan = new DeterministicFactPlan { ToolName = "run_basic_metrics", RequestedFields = ["peak"] };
+        var plan = new DeterministicFactPlan
+        {
+            ToolName = "run_basic_metrics",
+            RequestedFields = ["peak"],
+        };
         var package = BuildPackage(BasicMetricsItem(peak: -8.627, rms: -12.82, crest: 4.20));
 
         var answer = DeterministicAnswerWriter.Write(plan, package);
@@ -81,8 +95,20 @@ public sealed class DeterministicAnswerWriterTests
     [Fact]
     public void WritesSampleRateAnswer()
     {
-        var plan = new DeterministicFactPlan { ToolName = "get_metadata", RequestedFields = ["sampleRate"] };
-        var package = BuildPackage(MetadataItem("product_a.wav", duration: 3.0, sampleRate: 48000, channels: 1, bitDepth: 32));
+        var plan = new DeterministicFactPlan
+        {
+            ToolName = "get_metadata",
+            RequestedFields = ["sampleRate"],
+        };
+        var package = BuildPackage(
+            MetadataItem(
+                "product_a.wav",
+                duration: 3.0,
+                sampleRate: 48000,
+                channels: 1,
+                bitDepth: 32
+            )
+        );
 
         var answer = DeterministicAnswerWriter.Write(plan, package);
 
@@ -98,7 +124,15 @@ public sealed class DeterministicAnswerWriterTests
             ToolName = "get_metadata",
             RequestedFields = ["fileName", "duration", "sampleRate", "channels", "bitDepth"],
         };
-        var package = BuildPackage(MetadataItem("product_a.wav", duration: 3.0, sampleRate: 48000, channels: 1, bitDepth: 32));
+        var package = BuildPackage(
+            MetadataItem(
+                "product_a.wav",
+                duration: 3.0,
+                sampleRate: 48000,
+                channels: 1,
+                bitDepth: 32
+            )
+        );
 
         var answer = DeterministicAnswerWriter.Write(plan, package);
 
@@ -110,7 +144,11 @@ public sealed class DeterministicAnswerWriterTests
     [Fact]
     public void ReturnsLowConfidenceWhenNoEvidenceAvailable()
     {
-        var plan = new DeterministicFactPlan { ToolName = "run_basic_metrics", RequestedFields = ["peak"] };
+        var plan = new DeterministicFactPlan
+        {
+            ToolName = "run_basic_metrics",
+            RequestedFields = ["peak"],
+        };
         var package = BuildPackage();
 
         var answer = DeterministicAnswerWriter.Write(plan, package);

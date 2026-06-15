@@ -15,8 +15,12 @@ public sealed class SoundQualityAnalysisServiceTests
             carrierFrequencyHz: 1000.0,
             modulationFrequencyHz: 70.0,
             amplitude: 0.1,
-            modulationDepth: 0.8);
-        var service = new SoundQualityAnalysisService(BuildPythonClient(), new SoundQualityCacheStore());
+            modulationDepth: 0.8
+        );
+        var service = new SoundQualityAnalysisService(
+            BuildPythonClient(),
+            new SoundQualityCacheStore()
+        );
         var query = BuildQuery(fixturePath);
 
         var result = await service.AnalyzeAsync(query, CancellationToken.None);
@@ -37,10 +41,19 @@ public sealed class SoundQualityAnalysisServiceTests
     {
         var lowFixturePath = WriteSineWaveFixture(frequencyHz: 500.0, amplitude: 0.1);
         var highFixturePath = WriteSineWaveFixture(frequencyHz: 4000.0, amplitude: 0.1);
-        var service = new SoundQualityAnalysisService(BuildPythonClient(), new SoundQualityCacheStore());
+        var service = new SoundQualityAnalysisService(
+            BuildPythonClient(),
+            new SoundQualityCacheStore()
+        );
 
-        var lowResult = await service.AnalyzeAsync(BuildQuery(lowFixturePath), CancellationToken.None);
-        var highResult = await service.AnalyzeAsync(BuildQuery(highFixturePath), CancellationToken.None);
+        var lowResult = await service.AnalyzeAsync(
+            BuildQuery(lowFixturePath),
+            CancellationToken.None
+        );
+        var highResult = await service.AnalyzeAsync(
+            BuildQuery(highFixturePath),
+            CancellationToken.None
+        );
 
         Assert.True(highResult.Sharpness.Value > lowResult.Sharpness.Value);
     }
@@ -49,11 +62,24 @@ public sealed class SoundQualityAnalysisServiceTests
     {
         var repositoryRoot = FindRepositoryRoot();
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["PythonSidecar:Executable"] = Path.Combine(repositoryRoot, "AcousticCanvas", ".venv", "bin", "python"),
-                ["PythonSidecar:SoundQualityScript"] = Path.Combine(repositoryRoot, "AcousticCanvas", "AcousticCanvas.ML", "sound_quality.py"),
-            })
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["PythonSidecar:Executable"] = Path.Combine(
+                        repositoryRoot,
+                        "AcousticCanvas",
+                        ".venv",
+                        "bin",
+                        "python"
+                    ),
+                    ["PythonSidecar:SoundQualityScript"] = Path.Combine(
+                        repositoryRoot,
+                        "AcousticCanvas",
+                        "AcousticCanvas.ML",
+                        "sound_quality.py"
+                    ),
+                }
+            )
             .Build();
 
         return new PythonSoundQualityClient(configuration);
@@ -65,7 +91,8 @@ public sealed class SoundQualityAnalysisServiceTests
             FilePath: fixturePath,
             StartSeconds: 0.0,
             EndSeconds: 1.0,
-            Method: "mosqito_stationary_zwicker");
+            Method: "mosqito_stationary_zwicker"
+        );
     }
 
     private static string FindRepositoryRoot()
@@ -73,14 +100,20 @@ public sealed class SoundQualityAnalysisServiceTests
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            var projectContextPath = Path.Combine(directory.FullName, "AcousticCanvas", "PROJECT_CONTEXT.md");
+            var projectContextPath = Path.Combine(
+                directory.FullName,
+                "AcousticCanvas",
+                "PROJECT_CONTEXT.md"
+            );
             if (File.Exists(projectContextPath))
             {
                 return directory.FullName;
             }
             directory = directory.Parent;
         }
-        throw new DirectoryNotFoundException("Could not locate repository root containing AcousticCanvas/PROJECT_CONTEXT.md.");
+        throw new DirectoryNotFoundException(
+            "Could not locate repository root containing AcousticCanvas/PROJECT_CONTEXT.md."
+        );
     }
 
     private static string WriteSineWaveFixture(double frequencyHz, double amplitude)
@@ -88,30 +121,43 @@ public sealed class SoundQualityAnalysisServiceTests
         return WriteWaveFixture(
             label: $"{frequencyHz:0}_hz",
             sampleGenerator: (sampleIndex, sampleRate) =>
-                amplitude * Math.Sin(2.0 * Math.PI * frequencyHz * sampleIndex / sampleRate));
+                amplitude * Math.Sin(2.0 * Math.PI * frequencyHz * sampleIndex / sampleRate)
+        );
     }
 
     private static string WriteAmplitudeModulatedSineWaveFixture(
         double carrierFrequencyHz,
         double modulationFrequencyHz,
         double amplitude,
-        double modulationDepth)
+        double modulationDepth
+    )
     {
         return WriteWaveFixture(
             label: $"{carrierFrequencyHz:0}_hz_{modulationFrequencyHz:0}_hz_mod",
             sampleGenerator: (sampleIndex, sampleRate) =>
             {
-                var carrier = Math.Sin(2.0 * Math.PI * carrierFrequencyHz * sampleIndex / sampleRate);
-                var modulation = 1.0 + modulationDepth * Math.Sin(2.0 * Math.PI * modulationFrequencyHz * sampleIndex / sampleRate);
+                var carrier = Math.Sin(
+                    2.0 * Math.PI * carrierFrequencyHz * sampleIndex / sampleRate
+                );
+                var modulation =
+                    1.0
+                    + modulationDepth
+                        * Math.Sin(
+                            2.0 * Math.PI * modulationFrequencyHz * sampleIndex / sampleRate
+                        );
                 return amplitude * modulation * carrier;
-            });
+            }
+        );
     }
 
     private static string WriteWaveFixture(string label, Func<int, int, double> sampleGenerator)
     {
         const int sampleRate = 48_000;
         const int sampleCount = sampleRate;
-        var filePath = Path.Combine(Path.GetTempPath(), $"acousticcanvas_sq_{label}_{Guid.NewGuid():N}.wav");
+        var filePath = Path.Combine(
+            Path.GetTempPath(),
+            $"acousticcanvas_sq_{label}_{Guid.NewGuid():N}.wav"
+        );
 
         using var fileStream = File.Create(filePath);
         using var writer = new BinaryWriter(fileStream);

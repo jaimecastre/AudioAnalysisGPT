@@ -13,6 +13,9 @@ public class RunCompareHandler(
 {
     private const int DefaultFftSize = 44100;
     private const double DefaultOverlap = 0.5;
+    private const int MaxConcurrentFileSummaries = 8;
+
+    private readonly SemaphoreSlim _summarySemaphore = new(MaxConcurrentFileSummaries, MaxConcurrentFileSummaries);
 
     public override async Task<CompareResult> ExecuteAsync(
         RunCompareCommand command,
@@ -37,11 +40,30 @@ public class RunCompareHandler(
         }
 
         var summaryTasks = command
-            .FilePaths.Select(filePath =>
-                BuildFileSummaryAsync(filePath, command.StartSeconds, command.EndSeconds, ct)
-            )
+            .FilePaths.Select(async filePath =>
+            {
+                await _summarySemaphore.WaitAsync(ct);
+                try
+                {
+                    return await BuildFileSummaryAsync(filePath, command.StartSeconds, command.EndSeconds, ct);
+                }
+                finally
+                {
+                    _summarySemaphore.Release();
+                }
+            })
             .ToArray();
         var summaries = await Task.WhenAll(summaryTasks);
+
+        if (command.SkipPairwiseDiffs)
+        {
+            return new CompareResult
+            {
+                Files = summaries,
+                PairwiseDiffs = [],
+                RanAt = DateTimeOffset.UtcNow,
+            };
+        }
 
         var pairwiseDiffs = new List<PairwiseDiff>();
         for (int i = 0; i < summaries.Length; i++)
@@ -50,8 +72,14 @@ public class RunCompareHandler(
             {
                 var a = summaries[i];
                 var b = summaries[j];
-                var spectrumDelta = CompareResultBuilder.BuildSpectrumDelta(a.SpectrumCurve, b.SpectrumCurve);
-                var bandEnergyDeltas = CompareResultBuilder.BuildBandEnergyDeltas(a.BandEnergies, b.BandEnergies);
+                var spectrumDelta = CompareResultBuilder.BuildSpectrumDelta(
+                    a.SpectrumCurve,
+                    b.SpectrumCurve
+                );
+                var bandEnergyDeltas = CompareResultBuilder.BuildBandEnergyDeltas(
+                    a.BandEnergies,
+                    b.BandEnergies
+                );
                 var cpbBandDeltas = CompareResultBuilder.BuildCpbBandDeltas(a.CpbBands, b.CpbBands);
                 var (soundQualityDelta, soundQualityUnavailableReason) =
                     CompareSoundQualityBuilder.BuildDeltaAndUnavailableReason(a, b);
@@ -132,7 +160,12 @@ public class RunCompareHandler(
         var spectrumCurve = CompareResultBuilder.BuildSpectrumCurve(firstSpectrumChannel);
         var bandEnergies = CompareResultBuilder.ComputeBandEnergies(firstSpectrumChannel);
         var sampleRate = signalFile.Channels.Count > 0 ? signalFile.Channels[0].SampleRate : 0;
-        var cpbBands = CompareResultBuilder.ComputeCpbBands(spectrumAnalysis, resolvedStart, resolvedEnd, sampleRate);
+        var cpbBands = CompareResultBuilder.ComputeCpbBands(
+            spectrumAnalysis,
+            resolvedStart,
+            resolvedEnd,
+            sampleRate
+        );
 
         CompareSoundQuality? soundQuality = null;
         string? soundQualityUnavailableReason = null;
@@ -180,7 +213,7 @@ public class RunCompareHandler(
             CpbBands = cpbBands,
             SoundQuality = soundQuality,
             SoundQualityUnavailableReason = soundQualityUnavailableReason,
+            DbUnit = firstLevelChannel?.DbUnit,
         };
     }
-
 }

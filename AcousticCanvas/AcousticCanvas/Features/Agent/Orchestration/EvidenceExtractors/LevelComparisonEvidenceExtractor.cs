@@ -10,7 +10,14 @@ public static class LevelComparisonEvidenceExtractor
         Dictionary<string, string> fileIdToNameMap
     )
     {
-        var fileResults = new List<(string FileId, double Rms, double Peak, double CrestFactor)>();
+        var fileResults =
+            new List<(
+                string FileId,
+                double Rms,
+                double Peak,
+                double CrestFactor,
+                string? DbUnit
+            )>();
 
         foreach (var fileResult in resultsArray.EnumerateArray())
         {
@@ -26,16 +33,25 @@ public static class LevelComparisonEvidenceExtractor
                 continue;
             }
 
-            var rms = metricsEl.TryGetProperty("rmsDbFs", out var rmsEl) ? rmsEl.GetDouble() : double.NaN;
-            var peak = metricsEl.TryGetProperty("peakDbFs", out var peakEl) ? peakEl.GetDouble() : double.NaN;
-            var crest = metricsEl.TryGetProperty("crestFactorDb", out var crestEl) ? crestEl.GetDouble() : double.NaN;
+            var rms = metricsEl.TryGetProperty("rmsDbFs", out var rmsEl)
+                ? rmsEl.GetDouble()
+                : double.NaN;
+            var peak = metricsEl.TryGetProperty("peakDbFs", out var peakEl)
+                ? peakEl.GetDouble()
+                : double.NaN;
+            var crest = metricsEl.TryGetProperty("crestFactorDb", out var crestEl)
+                ? crestEl.GetDouble()
+                : double.NaN;
+            var dbUnit = metricsEl.TryGetProperty("dbUnit", out var dbUnitEl)
+                ? dbUnitEl.GetString()
+                : null;
 
             if (double.IsNaN(rms) || double.IsNaN(peak))
             {
                 continue;
             }
 
-            fileResults.Add((fileId, rms, peak, crest));
+            fileResults.Add((fileId, rms, peak, crest, dbUnit));
         }
 
         if (fileResults.Count < 2)
@@ -51,30 +67,33 @@ public static class LevelComparisonEvidenceExtractor
         var crestDelta = Math.Round(b.CrestFactor - a.CrestFactor, 2);
         var evidenceId = "ev_level_cmp_" + a.FileId[..Math.Min(a.FileId.Length, 8)];
 
-        evidenceItems.Add(new EvidenceItem
-        {
-            EvidenceId = evidenceId,
-            Type = "level_comparison",
-            Data = new Dictionary<string, object?>
+        evidenceItems.Add(
+            new EvidenceItem
             {
-                ["type"] = "level_comparison",
-                ["fileIdA"] = a.FileId,
-                ["fileNameA"] = fileIdToNameMap.GetValueOrDefault(a.FileId, a.FileId),
-                ["fileIdB"] = b.FileId,
-                ["fileNameB"] = fileIdToNameMap.GetValueOrDefault(b.FileId, b.FileId),
-                ["rmsADbFs"] = a.Rms,
-                ["rmsBDbFs"] = b.Rms,
-                ["rmsDeltaDb"] = rmsDelta,
-                ["louderFileId"] = a.Rms >= b.Rms ? a.FileId : b.FileId,
-                ["peakADbFs"] = a.Peak,
-                ["peakBDbFs"] = b.Peak,
-                ["peakDeltaDb"] = peakDelta,
-                ["higherPeakFileId"] = a.Peak >= b.Peak ? a.FileId : b.FileId,
-                ["crestFactorADb"] = a.CrestFactor,
-                ["crestFactorBDb"] = b.CrestFactor,
-                ["crestFactorDeltaDb"] = crestDelta,
-                ["moreDynamicFileId"] = a.CrestFactor >= b.CrestFactor ? a.FileId : b.FileId,
-            },
-        });
+                EvidenceId = evidenceId,
+                Type = "level_comparison",
+                Data = new Dictionary<string, object?>
+                {
+                    ["type"] = "level_comparison",
+                    ["fileIdA"] = a.FileId,
+                    ["fileNameA"] = fileIdToNameMap.GetValueOrDefault(a.FileId, a.FileId),
+                    ["fileIdB"] = b.FileId,
+                    ["fileNameB"] = fileIdToNameMap.GetValueOrDefault(b.FileId, b.FileId),
+                    ["rmsADbFs"] = a.Rms,
+                    ["rmsBDbFs"] = b.Rms,
+                    ["rmsDeltaDb"] = rmsDelta,
+                    ["louderFileId"] = a.Rms >= b.Rms ? a.FileId : b.FileId,
+                    ["peakADbFs"] = a.Peak,
+                    ["peakBDbFs"] = b.Peak,
+                    ["peakDeltaDb"] = peakDelta,
+                    ["higherPeakFileId"] = a.Peak >= b.Peak ? a.FileId : b.FileId,
+                    ["crestFactorADb"] = a.CrestFactor,
+                    ["crestFactorBDb"] = b.CrestFactor,
+                    ["crestFactorDeltaDb"] = crestDelta,
+                    ["moreDynamicFileId"] = a.CrestFactor >= b.CrestFactor ? a.FileId : b.FileId,
+                    ["levelDbUnit"] = a.DbUnit ?? b.DbUnit,
+                },
+            }
+        );
     }
 }

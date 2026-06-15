@@ -1,5 +1,5 @@
-using AcousticCanvas.Features.Analysis.Domain;
 using AcousticCanvas.Features.Analysis.Analyzers;
+using AcousticCanvas.Features.Analysis.Domain;
 
 namespace AcousticCanvas.Features.Analysis.Endpoints;
 
@@ -32,7 +32,8 @@ public static class SpectrogramPointsMapper
             var frequencyPerBin = nyquistHz / Math.Max(1, binCount - 1);
 
             // Determine if this is pressure-calibrated data
-            var isPressureCalibrated = channel.CalibrationState == "pressure_signal" 
+            var isPressureCalibrated =
+                channel.CalibrationState == "pressure_signal"
                 || channel.CalibrationState == "calibrated";
 
             for (var frameIndex = 0; frameIndex < frameCount; frameIndex++)

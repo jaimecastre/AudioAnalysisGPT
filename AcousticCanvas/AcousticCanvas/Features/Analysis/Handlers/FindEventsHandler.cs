@@ -8,7 +8,6 @@ namespace AcousticCanvas.Features.Analysis.Handlers;
 public class FindEventsHandler(SignalAnalysisService analysisService)
     : CommandHandler<FindEventsCommand, FindEventsResult>
 {
-
     public override Task<FindEventsResult> ExecuteAsync(
         FindEventsCommand command,
         CancellationToken ct
@@ -108,5 +107,4 @@ public class FindEventsHandler(SignalAnalysisService analysisService)
             }
         );
     }
-
 }

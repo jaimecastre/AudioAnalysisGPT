@@ -117,7 +117,7 @@ public static class AgentResultBuilder
             "ranking" => ParseRankingBlock(element),
             "suggestedActions" => ParseSuggestedActionsBlock(element),
             "analysisView" => ParseAnalysisViewBlock(element),
-            _ => null
+            _ => null,
         };
     }
 
@@ -139,36 +139,59 @@ public static class AgentResultBuilder
         var rows = new List<StatisticRow>();
         foreach (var row in rowsElement.EnumerateArray())
         {
-            var label = row.TryGetProperty("label", out var labelEl) ? labelEl.GetString() ?? "" : "";
-            var value = row.TryGetProperty("value", out var valueEl) ? valueEl.GetString() ?? "" : "";
+            var label = row.TryGetProperty("label", out var labelEl)
+                ? labelEl.GetString() ?? ""
+                : "";
+            var value = row.TryGetProperty("value", out var valueEl)
+                ? valueEl.GetString() ?? ""
+                : "";
             var unit = row.TryGetProperty("unit", out var unitEl) ? unitEl.GetString() : null;
-            rows.Add(new StatisticRow { Label = label, Value = value, Unit = unit });
+            rows.Add(
+                new StatisticRow
+                {
+                    Label = label,
+                    Value = value,
+                    Unit = unit,
+                }
+            );
         }
 
-        return new StatisticsBlock { Title = titleElement.GetString() ?? string.Empty, Rows = rows };
+        return new StatisticsBlock
+        {
+            Title = titleElement.GetString() ?? string.Empty,
+            Rows = rows,
+        };
     }
 
     private static SpectrumChartBlock? ParseSpectrumChartBlock(JsonElement element)
     {
-        if (!element.TryGetProperty("fileId", out var fileIdEl) ||
-            !element.TryGetProperty("fileName", out var fileNameEl) ||
-            !element.TryGetProperty("frequenciesHz", out var freqEl) ||
-            !element.TryGetProperty("magnitudesDb", out var magEl))
+        if (
+            !element.TryGetProperty("fileId", out var fileIdEl)
+            || !element.TryGetProperty("fileName", out var fileNameEl)
+            || !element.TryGetProperty("frequenciesHz", out var freqEl)
+            || !element.TryGetProperty("magnitudesDb", out var magEl)
+        )
         {
             return null;
         }
 
         var frequencies = freqEl.EnumerateArray().Select(f => f.GetDouble()).ToList();
         var magnitudes = magEl.EnumerateArray().Select(m => m.GetDouble()).ToList();
-        var peakFreq = element.TryGetProperty("peakFrequencyHz", out var peakEl) ? peakEl.GetDouble() : (double?)null;
+        var peakFreq = element.TryGetProperty("peakFrequencyHz", out var peakEl)
+            ? peakEl.GetDouble()
+            : (double?)null;
 
         var metadata = new ChartMetadata();
         if (element.TryGetProperty("metadata", out var metaEl))
         {
-            if (metaEl.TryGetProperty("sourceTool", out var srcEl)) metadata = metadata with { SourceTool = srcEl.GetString() };
-            if (metaEl.TryGetProperty("fftSize", out var fftEl)) metadata = metadata with { FftSize = fftEl.GetInt32() };
-            if (metaEl.TryGetProperty("windowType", out var winEl)) metadata = metadata with { WindowType = winEl.GetString() };
-            if (metaEl.TryGetProperty("scaling", out var scaleEl)) metadata = metadata with { Scaling = scaleEl.GetString() };
+            if (metaEl.TryGetProperty("sourceTool", out var srcEl))
+                metadata = metadata with { SourceTool = srcEl.GetString() };
+            if (metaEl.TryGetProperty("fftSize", out var fftEl))
+                metadata = metadata with { FftSize = fftEl.GetInt32() };
+            if (metaEl.TryGetProperty("windowType", out var winEl))
+                metadata = metadata with { WindowType = winEl.GetString() };
+            if (metaEl.TryGetProperty("scaling", out var scaleEl))
+                metadata = metadata with { Scaling = scaleEl.GetString() };
         }
 
         return new SpectrumChartBlock
@@ -178,15 +201,17 @@ public static class AgentResultBuilder
             FrequenciesHz = frequencies,
             MagnitudesDb = magnitudes,
             PeakFrequencyHz = peakFreq,
-            Metadata = metadata
+            Metadata = metadata,
         };
     }
 
     private static RankingBlock? ParseRankingBlock(JsonElement element)
     {
-        if (!element.TryGetProperty("title", out var titleEl) ||
-            !element.TryGetProperty("metricName", out var metricEl) ||
-            !element.TryGetProperty("rankedItems", out var itemsEl))
+        if (
+            !element.TryGetProperty("title", out var titleEl)
+            || !element.TryGetProperty("metricName", out var metricEl)
+            || !element.TryGetProperty("rankedItems", out var itemsEl)
+        )
         {
             return null;
         }
@@ -194,31 +219,37 @@ public static class AgentResultBuilder
         var items = new List<RankedItem>();
         foreach (var item in itemsEl.EnumerateArray())
         {
-            if (!item.TryGetProperty("rank", out var rankEl) ||
-                !item.TryGetProperty("fileId", out var fileIdEl) ||
-                !item.TryGetProperty("fileName", out var fileNameEl) ||
-                !item.TryGetProperty("score", out var scoreEl) ||
-                !item.TryGetProperty("scoreLabel", out var scoreLabelEl))
+            if (
+                !item.TryGetProperty("rank", out var rankEl)
+                || !item.TryGetProperty("fileId", out var fileIdEl)
+                || !item.TryGetProperty("fileName", out var fileNameEl)
+                || !item.TryGetProperty("score", out var scoreEl)
+                || !item.TryGetProperty("scoreLabel", out var scoreLabelEl)
+            )
             {
                 continue;
             }
 
-            items.Add(new RankedItem
-            {
-                Rank = rankEl.GetInt32(),
-                FileId = fileIdEl.GetString() ?? string.Empty,
-                FileName = fileNameEl.GetString() ?? string.Empty,
-                Score = scoreEl.GetDouble(),
-                ScoreLabel = scoreLabelEl.GetString() ?? string.Empty,
-                ScoreUnit = item.TryGetProperty("scoreUnit", out var unitEl) ? unitEl.GetString() : null
-            });
+            items.Add(
+                new RankedItem
+                {
+                    Rank = rankEl.GetInt32(),
+                    FileId = fileIdEl.GetString() ?? string.Empty,
+                    FileName = fileNameEl.GetString() ?? string.Empty,
+                    Score = scoreEl.GetDouble(),
+                    ScoreLabel = scoreLabelEl.GetString() ?? string.Empty,
+                    ScoreUnit = item.TryGetProperty("scoreUnit", out var unitEl)
+                        ? unitEl.GetString()
+                        : null,
+                }
+            );
         }
 
         return new RankingBlock
         {
             Title = titleEl.GetString() ?? string.Empty,
             MetricName = metricEl.GetString() ?? string.Empty,
-            RankedItems = items
+            RankedItems = items,
         };
     }
 
@@ -230,19 +261,27 @@ public static class AgentResultBuilder
         var actions = new List<SuggestedAction>();
         foreach (var action in actionsEl.EnumerateArray())
         {
-            if (!action.TryGetProperty("label", out var labelEl) ||
-                !action.TryGetProperty("actionType", out var typeEl))
+            if (
+                !action.TryGetProperty("label", out var labelEl)
+                || !action.TryGetProperty("actionType", out var typeEl)
+            )
             {
                 continue;
             }
 
-            actions.Add(new SuggestedAction
-            {
-                Label = labelEl.GetString() ?? string.Empty,
-                ActionType = typeEl.GetString() ?? string.Empty,
-                ToolName = action.TryGetProperty("toolName", out var toolEl) ? toolEl.GetString() : null,
-                PromptText = action.TryGetProperty("promptText", out var promptEl) ? promptEl.GetString() : null
-            });
+            actions.Add(
+                new SuggestedAction
+                {
+                    Label = labelEl.GetString() ?? string.Empty,
+                    ActionType = typeEl.GetString() ?? string.Empty,
+                    ToolName = action.TryGetProperty("toolName", out var toolEl)
+                        ? toolEl.GetString()
+                        : null,
+                    PromptText = action.TryGetProperty("promptText", out var promptEl)
+                        ? promptEl.GetString()
+                        : null,
+                }
+            );
         }
 
         return new SuggestedActionsBlock { Actions = actions };
@@ -250,11 +289,13 @@ public static class AgentResultBuilder
 
     private static AnalysisViewBlock? ParseAnalysisViewBlock(JsonElement element)
     {
-        if (!element.TryGetProperty("viewType", out var viewTypeEl) ||
-            !element.TryGetProperty("resultId", out var resultIdEl) ||
-            !element.TryGetProperty("fileId", out var fileIdEl) ||
-            !element.TryGetProperty("fileName", out var fileNameEl) ||
-            !element.TryGetProperty("summary", out var summaryEl))
+        if (
+            !element.TryGetProperty("viewType", out var viewTypeEl)
+            || !element.TryGetProperty("resultId", out var resultIdEl)
+            || !element.TryGetProperty("fileId", out var fileIdEl)
+            || !element.TryGetProperty("fileName", out var fileNameEl)
+            || !element.TryGetProperty("summary", out var summaryEl)
+        )
         {
             return null;
         }
@@ -278,7 +319,7 @@ public static class AgentResultBuilder
             FileName = fileNameEl.GetString() ?? string.Empty,
             Summary = summary,
             Title = element.TryGetProperty("title", out var titleEl) ? titleEl.GetString() : null,
-            Preview = preview
+            Preview = preview,
         };
     }
 
@@ -287,12 +328,18 @@ public static class AgentResultBuilder
         double[]? frequenciesHz = null;
         double[]? magnitudesDb = null;
 
-        if (element.TryGetProperty("frequenciesHz", out var freqEl) && freqEl.ValueKind == JsonValueKind.Array)
+        if (
+            element.TryGetProperty("frequenciesHz", out var freqEl)
+            && freqEl.ValueKind == JsonValueKind.Array
+        )
         {
             frequenciesHz = freqEl.EnumerateArray().Select(e => e.GetDouble()).ToArray();
         }
 
-        if (element.TryGetProperty("magnitudesDb", out var magEl) && magEl.ValueKind == JsonValueKind.Array)
+        if (
+            element.TryGetProperty("magnitudesDb", out var magEl)
+            && magEl.ValueKind == JsonValueKind.Array
+        )
         {
             magnitudesDb = magEl.EnumerateArray().Select(e => e.GetDouble()).ToArray();
         }
@@ -300,11 +347,7 @@ public static class AgentResultBuilder
         if (frequenciesHz == null || magnitudesDb == null)
             return null;
 
-        return new AnalysisPreview
-        {
-            FrequenciesHz = frequenciesHz,
-            MagnitudesDb = magnitudesDb
-        };
+        return new AnalysisPreview { FrequenciesHz = frequenciesHz, MagnitudesDb = magnitudesDb };
     }
 
     private static CompactSummary ParseCompactSummary(JsonElement element)
@@ -325,15 +368,21 @@ public static class AgentResultBuilder
             var metrics = new List<MetricItem>();
             foreach (var metric in metricsEl.EnumerateArray())
             {
-                if (metric.TryGetProperty("label", out var labelEl) &&
-                    metric.TryGetProperty("value", out var valueEl))
+                if (
+                    metric.TryGetProperty("label", out var labelEl)
+                    && metric.TryGetProperty("value", out var valueEl)
+                )
                 {
-                    metrics.Add(new MetricItem
-                    {
-                        Label = labelEl.GetString() ?? string.Empty,
-                        Value = valueEl.GetString() ?? string.Empty,
-                        Unit = metric.TryGetProperty("unit", out var unitEl) ? unitEl.GetString() : null
-                    });
+                    metrics.Add(
+                        new MetricItem
+                        {
+                            Label = labelEl.GetString() ?? string.Empty,
+                            Value = valueEl.GetString() ?? string.Empty,
+                            Unit = metric.TryGetProperty("unit", out var unitEl)
+                                ? unitEl.GetString()
+                                : null,
+                        }
+                    );
                 }
             }
             summary = summary with { SecondaryMetrics = metrics };
@@ -350,13 +399,15 @@ public static class AgentResultBuilder
 
         foreach (var output in toolOutputs)
         {
-            records.Add(new AgentToolExecutionRecord(
-                ToolName: output.ToolName,
-                Status: output.Status,
-                ResultRef: output.Status == "completed" ? output.ResultRef : null,
-                ErrorCode: output.ErrorCode,
-                ErrorMessage: output.ErrorMessage
-            ));
+            records.Add(
+                new AgentToolExecutionRecord(
+                    ToolName: output.ToolName,
+                    Status: output.Status,
+                    ResultRef: output.Status == "completed" ? output.ResultRef : null,
+                    ErrorCode: output.ErrorCode,
+                    ErrorMessage: output.ErrorMessage
+                )
+            );
         }
 
         return records;
@@ -370,9 +421,11 @@ public static class AgentResultBuilder
 
         foreach (var output in toolOutputs)
         {
-            if (output.Status == "completed"
+            if (
+                output.Status == "completed"
                 && output.ResultData is not null
-                && !string.IsNullOrEmpty(output.ResultRef))
+                && !string.IsNullOrEmpty(output.ResultRef)
+            )
             {
                 dict[output.ResultRef] = output.ResultData;
             }
@@ -381,17 +434,17 @@ public static class AgentResultBuilder
         return dict.Count > 0 ? dict : null;
     }
 
-    public static IReadOnlyList<AgentEvidenceItem> BuildEvidenceItems(EvidencePackage evidencePackage)
+    public static IReadOnlyList<AgentEvidenceItem> BuildEvidenceItems(
+        EvidencePackage evidencePackage
+    )
     {
         var evidenceItems = new List<AgentEvidenceItem>();
 
         foreach (var item in evidencePackage.KeyEvidence)
         {
-            evidenceItems.Add(new AgentEvidenceItem(
-                EvidenceId: item.EvidenceId,
-                Type: item.Type,
-                Data: item.Data
-            ));
+            evidenceItems.Add(
+                new AgentEvidenceItem(EvidenceId: item.EvidenceId, Type: item.Type, Data: item.Data)
+            );
         }
 
         return evidenceItems;
@@ -419,13 +472,15 @@ public static class AgentResultBuilder
 
         foreach (var output in toolOutputs)
         {
-            traces.Add(new ToolExecutionTrace(
-                Name: output.ToolName,
-                Status: output.Status,
-                StartedAtUtc: output.StartedAtUtc,
-                FinishedAtUtc: output.FinishedAtUtc,
-                ErrorMessage: output.ErrorMessage
-            ));
+            traces.Add(
+                new ToolExecutionTrace(
+                    Name: output.ToolName,
+                    Status: output.Status,
+                    StartedAtUtc: output.StartedAtUtc,
+                    FinishedAtUtc: output.FinishedAtUtc,
+                    ErrorMessage: output.ErrorMessage
+                )
+            );
         }
 
         return traces;

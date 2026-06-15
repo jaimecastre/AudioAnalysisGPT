@@ -23,17 +23,24 @@ public sealed class ExpertVisualizationPlannerTests
                         ["resultId"] = "spectrum_0123456789abcdef0123456789abcdef",
                     },
                 },
-            ]);
+            ]
+        );
 
         var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
 
-        Assert.Contains(plan.Blocks, block =>
-            block.BlockType == "analysisView"
-            && block.SourceEvidenceId == "ev_spectrum_file1"
-            && block.ViewType == "spectrum");
-        Assert.Contains(plan.Blocks, block =>
-            block.BlockType == "markdown"
-            && block.Reason.Contains("summarize", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            plan.Blocks,
+            block =>
+                block.BlockType == "analysisView"
+                && block.SourceEvidenceId == "ev_spectrum_file1"
+                && block.ViewType == "spectrum"
+        );
+        Assert.Contains(
+            plan.Blocks,
+            block =>
+                block.BlockType == "markdown"
+                && block.Reason.Contains("summarize", StringComparison.OrdinalIgnoreCase)
+        );
     }
 
     [Fact]
@@ -67,13 +74,17 @@ public sealed class ExpertVisualizationPlannerTests
                         ["resultId"] = "sound_quality_b",
                     },
                 },
-            ]);
+            ]
+        );
 
         var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
 
-        Assert.Contains(plan.Blocks, block =>
-            block.BlockType == "ranking"
-            && block.Reason.Contains("compare", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            plan.Blocks,
+            block =>
+                block.BlockType == "ranking"
+                && block.Reason.Contains("compare", StringComparison.OrdinalIgnoreCase)
+        );
         Assert.Equal("sound_quality", plan.PrimaryEvidenceType);
     }
 
@@ -83,7 +94,8 @@ public sealed class ExpertVisualizationPlannerTests
         var evidencePackage = BuildEvidencePackage(
             question: "What is a spectrogram?",
             analysesRun: [],
-            evidenceItems: []);
+            evidenceItems: []
+        );
 
         var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
 
@@ -97,7 +109,8 @@ public sealed class ExpertVisualizationPlannerTests
         string question,
         IReadOnlyList<string>? selectedFileIds = null,
         IReadOnlyList<string>? analysesRun = null,
-        IReadOnlyList<EvidenceItem>? evidenceItems = null)
+        IReadOnlyList<EvidenceItem>? evidenceItems = null
+    )
     {
         return new EvidencePackage
         {

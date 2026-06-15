@@ -1,10 +1,11 @@
 import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
-import { ActionIcon, Tooltip } from '@mantine/core';
+import { ActionIcon, Progress, Tooltip } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconRobot, IconRotateClockwise2, IconX } from '@tabler/icons-react';
-import { useAppDispatch } from '../../../store/reduxHooks';
+import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
 import { agentPromptPrefillSet, setActiveMode } from '../../navigation/store/navigationSlice';
 import type { BatchBenchmarkFileRow, BatchBenchmarkResult } from '../types/batchBenchmarkTypes';
+import { benchmarkProgressSelector } from '../store/batchBenchmarkSlice';
 import {
   type BenchmarkSortKey,
   type BenchmarkSortState,
@@ -34,8 +35,8 @@ type HeaderDefinition = {
 
 const HEADERS: HeaderDefinition[] = [
   { key: 'fileName', label: 'File', tooltip: 'Loaded audio file', numeric: false },
-  { key: 'rmsDb', label: 'RMS', tooltip: 'Root mean square level in dBFS', numeric: true },
-  { key: 'peakDb', label: 'Peak', tooltip: 'Peak sample level in dBFS', numeric: true },
+  { key: 'rmsDb', label: 'RMS', tooltip: 'Root mean square level in dB SPL', numeric: true },
+  { key: 'peakDb', label: 'Peak', tooltip: 'Peak sample level in dB SPL', numeric: true },
   { key: 'crestFactorDb', label: 'Crest', tooltip: 'Peak-to-RMS crest factor in dB', numeric: true },
   { key: 'peakFrequencyHz', label: 'Peak freq', tooltip: 'Strongest spectrum bin frequency', numeric: true },
   { key: 'findingCount', label: 'Findings', tooltip: 'Detected acoustic findings', numeric: true },
@@ -54,6 +55,7 @@ export const BatchBenchmarkPanel = ({
   onRerun,
 }: IBatchBenchmarkPanelProps): JSX.Element => {
   const dispatch = useAppDispatch();
+  const progress = useAppSelector(benchmarkProgressSelector);
   const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(new Set());
   const [sortState, setSortState] = useState<BenchmarkSortState>({
     key: 'attention',
@@ -135,6 +137,22 @@ export const BatchBenchmarkPanel = ({
         </div>
       </div>
 
+      {status === 'loading' && (
+        <div className={styles.progressStrip}>
+          <Progress
+            value={progress !== null ? Math.round((progress.completed / progress.total) * 100) : 0}
+            size="xs"
+            animated
+            className={styles.progressBar}
+          />
+          <span className={styles.progressLabel}>
+            {progress !== null
+              ? `${progress.completed}/${progress.total} — ${progress.fileName}`
+              : 'Starting…'}
+          </span>
+        </div>
+      )}
+
       {status === 'error' && error !== null && (
         <div className={styles.errorStrip}>{error}</div>
       )}
@@ -211,8 +229,8 @@ const BenchmarkRow = ({ row, isExpanded, onToggleExpanded }: IBenchmarkRowProps)
           </button>
         </td>
         <th scope="row" className={styles.fileCell} title={row.fileName}>{row.fileName}</th>
-        <td className={styles.numericCell}>{formatDbFs(row.rmsDb)}</td>
-        <td className={styles.numericCell}>{formatDbFs(row.peakDb)}</td>
+        <td className={styles.numericCell}>{formatDbFs(row.rmsDb, row.dbUnit)}</td>
+        <td className={styles.numericCell}>{formatDbFs(row.peakDb, row.dbUnit)}</td>
         <td className={styles.numericCell}>{formatDb(row.crestFactorDb)}</td>
         <td className={styles.numericCell}>{formatFrequencyHz(row.peakFrequencyHz)}</td>
         <td className={styles.numericCell}>

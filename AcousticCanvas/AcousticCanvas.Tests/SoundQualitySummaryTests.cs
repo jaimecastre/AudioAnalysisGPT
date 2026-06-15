@@ -11,7 +11,7 @@ public sealed class SoundQualitySummaryTests
         {
             ["loudness"] = "Good",
             ["sharpness"] = "Good",
-            ["roughness"] = "Good"
+            ["roughness"] = "Good",
         };
 
         var result = DetermineOverallAssessment(assessments);
@@ -25,7 +25,7 @@ public sealed class SoundQualitySummaryTests
         {
             ["loudness"] = "Good",
             ["sharpness"] = "Fair",
-            ["roughness"] = "Good"
+            ["roughness"] = "Good",
         };
 
         var result = DetermineOverallAssessment(assessments);
@@ -39,7 +39,7 @@ public sealed class SoundQualitySummaryTests
         {
             ["loudness"] = "Good",
             ["sharpness"] = "Good",
-            ["roughness"] = "Poor"
+            ["roughness"] = "Poor",
         };
 
         var result = DetermineOverallAssessment(assessments);
@@ -53,7 +53,7 @@ public sealed class SoundQualitySummaryTests
         {
             ["loudness"] = "Poor",
             ["sharpness"] = "Fair",
-            ["roughness"] = "Good"
+            ["roughness"] = "Good",
         };
 
         var result = DetermineOverallAssessment(assessments);

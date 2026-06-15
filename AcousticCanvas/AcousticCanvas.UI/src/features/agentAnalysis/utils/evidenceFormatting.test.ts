@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildEvidenceRows, getEvidenceLabel } from './evidenceFormatting';
 
 describe('evidenceFormatting', () => {
-  it('formats basic metric evidence with dBFS and dB units', () => {
+  it('formats basic metric evidence with dB SPL and dB units', () => {
     const rows = buildEvidenceRows({
       evidenceId: 'ev_metrics_file_1',
       type: 'basic_metrics',
@@ -17,8 +17,8 @@ describe('evidenceFormatting', () => {
     expect(getEvidenceLabel('basic_metrics')).toBe('Basic metrics');
     expect(rows).toEqual([
       { label: 'file', value: 'motor.wav' },
-      { label: 'peak', value: '-3.21 dBFS' },
-      { label: 'RMS', value: '-18.46 dBFS' },
+      { label: 'peak', value: '-3.21 dB SPL' },
+      { label: 'RMS', value: '-18.46 dB SPL' },
       { label: 'crest factor', value: '15.25 dB' },
     ]);
   });

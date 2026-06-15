@@ -1,6 +1,6 @@
-using AcousticCanvas.Features.Agent.Commands;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AcousticCanvas.Features.Agent.Commands;
 
 namespace AcousticCanvas.Tests;
 
@@ -9,7 +9,7 @@ public sealed class InvestigationTraceSerializationTests
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters = { new JsonStringEnumConverter() }
+        Converters = { new JsonStringEnumConverter() },
     };
 
     [Fact]
@@ -23,10 +23,11 @@ public sealed class InvestigationTraceSerializationTests
             ToolExecutions: [],
             FinalAnswer: "Test answer",
             Confidence: "high",
-            TimestampUtc: DateTime.UtcNow);
+            TimestampUtc: DateTime.UtcNow
+        );
 
         var json = JsonSerializer.Serialize(trace, JsonOptions);
-        
+
         Assert.Contains("\"path\":\"LlmPlanned\"", json);
         Assert.DoesNotContain("\"path\":0", json);
     }
@@ -35,20 +36,20 @@ public sealed class InvestigationTraceSerializationTests
     public void InvestigationPathDeserializesFromString()
     {
         var json = """
-        {
-            "question": "Test question",
-            "conversationId": "conv_test",
-            "path": "DeterministicFact",
-            "plannedTools": [],
-            "toolExecutions": [],
-            "finalAnswer": "Test answer",
-            "confidence": "high",
-            "timestampUtc": "2026-06-11T20:00:00Z"
-        }
-        """;
+            {
+                "question": "Test question",
+                "conversationId": "conv_test",
+                "path": "DeterministicFact",
+                "plannedTools": [],
+                "toolExecutions": [],
+                "finalAnswer": "Test answer",
+                "confidence": "high",
+                "timestampUtc": "2026-06-11T20:00:00Z"
+            }
+            """;
 
         var trace = JsonSerializer.Deserialize<InvestigationTrace>(json, JsonOptions);
-        
+
         Assert.NotNull(trace);
         Assert.Equal(InvestigationPath.DeterministicFact, trace!.Path);
     }
@@ -61,7 +62,7 @@ public sealed class InvestigationTraceSerializationTests
             InvestigationPath.LlmPlanned,
             InvestigationPath.DeterministicFact,
             InvestigationPath.MetaQuestion,
-            InvestigationPath.NoFiles
+            InvestigationPath.NoFiles,
         };
 
         foreach (var path in paths)
@@ -74,7 +75,8 @@ public sealed class InvestigationTraceSerializationTests
                 ToolExecutions: [],
                 FinalAnswer: "Test",
                 Confidence: "high",
-                TimestampUtc: DateTime.UtcNow);
+                TimestampUtc: DateTime.UtcNow
+            );
 
             var json = JsonSerializer.Serialize(trace, JsonOptions);
             var expectedString = $"\"path\":\"{path}\"";
@@ -102,8 +104,11 @@ public sealed class InvestigationTraceSerializationTests
                         BlockType: "analysisView",
                         Reason: "Show the measured spectrum result.",
                         ViewType: "spectrum",
-                        SourceEvidenceId: "ev_spectrum_file1")
-                ]));
+                        SourceEvidenceId: "ev_spectrum_file1"
+                    ),
+                ]
+            )
+        );
 
         var json = JsonSerializer.Serialize(trace, JsonOptions);
 

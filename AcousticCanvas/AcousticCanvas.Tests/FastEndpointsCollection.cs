@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using AcousticCanvas.Features.Agent.Orchestration;
 using AcousticCanvas.Features.Agent.Services;
 using AcousticCanvas.Features.Analysis.Importers;
@@ -6,7 +7,6 @@ using AcousticCanvas.Features.AudioUpload.Services;
 using AcousticCanvas.Features.Playback.Services;
 using FastEndpoints;
 using Microsoft.Extensions.DependencyInjection;
-using System.Runtime.CompilerServices;
 
 namespace AcousticCanvas.Tests;
 

@@ -37,7 +37,7 @@ public sealed class ChannelSpectrogramAnalysis
     public required IReadOnlyList<byte[]> FrequencyData { get; init; }
 
     // Colorbar label for the frontend.
-    // "Level [dB re 20 µPa]" or "Amplitude [dBFS]"
+    // ColorbandLabel: always "dB SPL" (0 dBFS = 91 dB SPL, 1 FS = 1 Pa peak)
     public string? ColorbandLabel { get; init; }
 
     // "digital_full_scale" | "pressure_signal" | "calibrated" | "assumed_pressure"

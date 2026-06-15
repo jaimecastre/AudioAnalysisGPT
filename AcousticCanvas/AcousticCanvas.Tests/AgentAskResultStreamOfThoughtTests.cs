@@ -10,11 +10,8 @@ public sealed class AgentAskResultStreamOfThoughtTests
         var evidenceItem = new AgentEvidenceItem(
             EvidenceId: "ev_metrics_file_1",
             Type: "basic_metrics",
-            Data: new Dictionary<string, object?>
-            {
-                ["peakDbFs"] = -3.2,
-                ["rmsDbFs"] = -12.4,
-            });
+            Data: new Dictionary<string, object?> { ["peakDbFs"] = -3.2, ["rmsDbFs"] = -12.4 }
+        );
 
         var result = new AgentAskResult(
             ConversationId: "conv_abc12345",
@@ -31,7 +28,8 @@ public sealed class AgentAskResultStreamOfThoughtTests
             PlannedTools: ["run_basic_metrics", "run_spectrum"],
             PlannerReason: "Checking levels and spectral peaks.",
             InvestigationTrace: null,
-            Blocks: null);
+            Blocks: null
+        );
 
         Assert.Equal(["run_basic_metrics", "run_spectrum"], result.PlannedTools);
         Assert.Equal("Checking levels and spectral peaks.", result.PlannerReason);
@@ -58,7 +56,8 @@ public sealed class AgentAskResultStreamOfThoughtTests
             PlannedTools: [],
             PlannerReason: null,
             InvestigationTrace: null,
-            Blocks: null);
+            Blocks: null
+        );
 
         Assert.Empty(result.PlannedTools);
         Assert.Null(result.PlannerReason);
