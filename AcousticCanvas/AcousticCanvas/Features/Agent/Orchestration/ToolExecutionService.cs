@@ -11,6 +11,7 @@ namespace AcousticCanvas.Features.Agent.Orchestration;
 
 public sealed class ToolExecutionService(
     AudioFileRepository audioFileRepository,
+    SignalAnalysisService signalAnalysisService,
     SoundQualityAnalysisService soundQualityAnalysisService,
     IReadOnlyList<ISignalFileImporter> signalFileImporters,
     SpectrogramCacheStore spectrogramCacheStore,
@@ -189,6 +190,10 @@ public sealed class ToolExecutionService(
             );
         }
 
+        var startSeconds = ToolArgumentParser.ExtractDoubleArgument(arguments, "startSeconds");
+        var endSeconds = ToolArgumentParser.ExtractDoubleArgument(arguments, "endSeconds");
+        var hasTimeRange = startSeconds.HasValue || endSeconds.HasValue;
+
         var metricsResults = new List<object>();
 
         foreach (var fileId in fileIds)
@@ -200,10 +205,22 @@ public sealed class ToolExecutionService(
                 continue;
             }
 
-            var query = new RunAnalysisQuery(FilePath: filePath);
-            var analysisResult = await query.ExecuteAsync(cancellationToken);
+            LevelAnalysis levelAnalysis;
+            if (hasTimeRange)
+            {
+                var signalFile = signalAnalysisService.ImportFile(filePath);
+                var effectiveStart = startSeconds ?? 0.0;
+                var effectiveEnd = endSeconds ?? signalFile.FileInfo.DurationSeconds;
+                levelAnalysis = LevelAnalyzer.Analyze(signalFile.Channels, effectiveStart, effectiveEnd);
+            }
+            else
+            {
+                var query = new RunAnalysisQuery(FilePath: filePath);
+                var analysisResult = await query.ExecuteAsync(cancellationToken);
+                levelAnalysis = analysisResult.Level;
+            }
 
-            var primaryChannel = GetPrimaryChannel(analysisResult.Level);
+            var primaryChannel = GetPrimaryChannel(levelAnalysis);
             if (primaryChannel is null)
             {
                 metricsResults.Add(new { fileId, error = "No channel data available." });
@@ -214,6 +231,9 @@ public sealed class ToolExecutionService(
                 new
                 {
                     fileId,
+                    region = hasTimeRange
+                        ? new { startSeconds = startSeconds ?? 0.0, endSeconds }
+                        : (object?)null,
                     metrics = new
                     {
                         rmsDbFs = primaryChannel.RmsDb,
@@ -319,6 +339,8 @@ public sealed class ToolExecutionService(
 
         var fftSize = ToolArgumentParser.ExtractIntArgument(arguments, "fftSize") ?? DefaultFftSize;
         var overlap = ToolArgumentParser.ExtractDoubleArgument(arguments, "overlap") ?? DefaultOverlap;
+        var requestedStart = ToolArgumentParser.ExtractDoubleArgument(arguments, "startSeconds");
+        var requestedEnd = ToolArgumentParser.ExtractDoubleArgument(arguments, "endSeconds");
 
         var spectrumResults = new List<object>();
         var storedResultIds = new List<string>();
@@ -333,13 +355,15 @@ public sealed class ToolExecutionService(
             }
 
             var durationSeconds = GetFileDurationSeconds(filePath);
-            var effectiveEndSeconds =
-                durationSeconds > 0 ? durationSeconds : DefaultSpectrumEndFallback;
+            var effectiveEndSeconds = durationSeconds > 0 ? durationSeconds : DefaultSpectrumEndFallback;
+
+            var queryStart = requestedStart ?? DefaultSpectrumStartSeconds;
+            var queryEnd = requestedEnd ?? effectiveEndSeconds;
 
             var query = new RunSpectrumQuery(
                 FilePath: filePath,
-                StartSeconds: DefaultSpectrumStartSeconds,
-                EndSeconds: effectiveEndSeconds,
+                StartSeconds: queryStart,
+                EndSeconds: queryEnd,
                 FftSize: fftSize,
                 Overlap: overlap
             );
@@ -375,6 +399,9 @@ public sealed class ToolExecutionService(
                 new
                 {
                     fileId,
+                    region = (requestedStart.HasValue || requestedEnd.HasValue)
+                        ? new { startSeconds = queryStart, endSeconds = queryEnd }
+                        : (object?)null,
                     summary = new
                     {
                         peakFrequencyHz = primaryChannel.PeakFrequencyHz,

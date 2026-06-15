@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseSpectrumYAxisStep } from './SpectrumCanvas';
+import { chooseSpectrumYAxisStep } from './spectrumYAxis';
 
 describe('SpectrumCanvas', () => {
   it('uses wider y-axis tick spacing when the plot area is compact', () => {

@@ -87,27 +87,16 @@ public static class SpectrumAnalyzer
             windowType
         );
 
-        var isPressure =
-            channel.PhysicalMetadata is
-            { UnitKind: SignalUnitKind.PressurePascal or SignalUnitKind.CalibratedPressure };
-
-        if (isPressure)
-        {
-            var scaleFactor = AcousticPressureConverter.GetScaleFactor(channel.PhysicalMetadata!);
-            SpectrumFftEngine.ApplyAcousticPressureDbInPlace(
-                spectrumData.Magnitudes,
-                spectrumData.MagnitudesDb,
-                scaleFactor
-            );
-        }
-        else if (channel.DbReference != null)
-        {
-            SpectrumFftEngine.ApplyDbReferenceInPlace(
-                spectrumData.Magnitudes,
-                spectrumData.MagnitudesDb,
-                channel.DbReference
-            );
-        }
+        // All channels use the acoustic pressure path: Pa or digital with 0 dBFS = 91 dB SPL.
+        // GetScaleFactor returns 1.0 for both PressurePascal and DigitalFullScale.
+        var scaleFactor = channel.PhysicalMetadata != null
+            ? AcousticPressureConverter.GetScaleFactor(channel.PhysicalMetadata)
+            : 1.0;
+        SpectrumFftEngine.ApplyAcousticPressureDbInPlace(
+            spectrumData.Magnitudes,
+            spectrumData.MagnitudesDb,
+            scaleFactor
+        );
 
         // Find peak bin, then apply quadratic interpolation for sub-bin frequency accuracy.
         double? maxMagnitude = null;
@@ -160,11 +149,9 @@ public static class SpectrumAnalyzer
                 ? Math.Round(peakFrequencyHz.Value, 3)
                 : null,
             TonalPeaks = tonalPeaks,
-            DbUnit = isPressure ? "dB re 20 µPa" : channel.DbReference?.DbUnit,
-            DbReferenceValue = isPressure
-                ? AcousticPressureConverter.PressureReferencePa
-                : channel.DbReference?.Value,
-            DbReferenceUnit = isPressure ? "Pa" : channel.DbReference?.Unit,
+            DbUnit = "dB SPL",
+            DbReferenceValue = AcousticPressureConverter.PressureReferencePa,
+            DbReferenceUnit = "Pa",
             YAxisLabel = AcousticPressureConverter.ResolveYAxisLabel(channel.PhysicalMetadata),
             CalibrationState = AcousticPressureConverter.ResolveCalibrationState(
                 channel.PhysicalMetadata

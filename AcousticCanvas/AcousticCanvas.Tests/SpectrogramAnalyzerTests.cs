@@ -68,12 +68,9 @@ public sealed class SpectrogramAnalyzerTests
         var loudMaxByte = MaxByteInSpectrogram(loudResult.Channels[0]);
         var quietMaxByte = MaxByteInSpectrogram(quietResult.Channels[0]);
 
-        // Digital path normalizes to global max, so the loud signal's max should be 255
-        // and quiet signal's max should also be 255 (both normalize independently).
-        // But if we compare the same spectrogram with different amplitudes,
-        // we verify at least that both produce valid output.
-        Assert.Equal(255, loudMaxByte);
-        Assert.Equal(255, quietMaxByte);
+        // Fixed dB SPL range maps loud signals to high bytes and quiet to lower bytes.
+        Assert.True(loudMaxByte > quietMaxByte,
+            $"Loud max byte {loudMaxByte} should exceed quiet max byte {quietMaxByte}");
     }
 
     [Fact]
@@ -174,14 +171,14 @@ public sealed class SpectrogramAnalyzerTests
     }
 
     [Fact]
-    public void DigitalChannelUsesDbFsColorbandLabel()
+    public void DigitalChannelUsesDbSplColorbandLabel()
     {
         var channel = BuildSineChannel(0.5, 1000.0, 1.0);
 
         var result = Analyze(channel);
 
-        Assert.Equal("Amplitude [dBFS]", result.Channels[0].ColorbandLabel);
-        Assert.Equal("digital_full_scale", result.Channels[0].CalibrationState);
+        Assert.Equal("dB SPL", result.Channels[0].ColorbandLabel);
+        Assert.Equal("assumed_pressure", result.Channels[0].CalibrationState);
     }
 
     [Fact]

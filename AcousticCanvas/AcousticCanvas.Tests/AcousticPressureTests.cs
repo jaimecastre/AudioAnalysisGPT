@@ -37,56 +37,53 @@ public sealed class AcousticPressureTests
     }
 
     // -----------------------------------------------------------------
-    // 2. DigitalFullScale WAV cannot produce dB SPL spectrum
-    //    (shows dBFS labels, not dB re 20 µPa)
-    //    Note: WAV import now defaults to PressurePascal+IsUserAssumed (1 FS = 1 Pa).
-    //    DigitalFullScale can still be set explicitly and must not produce SPL labels.
+    // 2. DigitalFullScale channels now produce dB SPL using the convention
+    //    0 dBFS = 91 dB SPL (1 FS = 1 Pa peak). Labels always say "dB SPL".
     // -----------------------------------------------------------------
 
     [Fact]
-    public void ExplicitDigitalFullScaleSpectrumShowsDatabaseFsNotSpl()
+    public void ExplicitDigitalFullScaleSpectrumShowsDbSplLabel()
     {
         var channel = BuildDigitalChannel(amplitudeFs: 0.5, frequencyHz: 1000.0);
 
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 1024, 0.5);
 
         var ch = analysis.Channels[0];
-        Assert.Equal("digital_full_scale", ch.CalibrationState);
-        Assert.Equal("[dBFS]", ch.YAxisLabel);
-        Assert.DoesNotContain("µPa", ch.DbUnit ?? string.Empty);
+        Assert.Equal("assumed_pressure", ch.CalibrationState);
+        Assert.Equal("dB SPL", ch.YAxisLabel);
+        Assert.Equal("dB SPL", ch.DbUnit);
     }
 
     // -----------------------------------------------------------------
-    // 3. DigitalFullScale WAV cannot produce dB SPL spectrogram
-    //    (shows relative-dB colorbar label, not dB SPL)
+    // 3. DigitalFullScale spectrogram also shows dB SPL colorbar label.
     // -----------------------------------------------------------------
 
     [Fact]
-    public void ExplicitDigitalFullScaleSpectrogramShowsRelativeDbLabel()
+    public void ExplicitDigitalFullScaleSpectrogramShowsDbSplColorbandLabel()
     {
         var channel = BuildDigitalChannel(amplitudeFs: 0.5, frequencyHz: 1000.0);
 
         var analysis = SpectrogramAnalyzer.Analyze([channel], 0.0, 1.0, 512, 0.5, "linear", 20.0, 80.0);
 
         var ch = analysis.Channels[0];
-        Assert.Equal("digital_full_scale", ch.CalibrationState);
-        Assert.Equal("Amplitude [dBFS]", ch.ColorbandLabel);
+        Assert.Equal("assumed_pressure", ch.CalibrationState);
+        Assert.Equal("dB SPL", ch.ColorbandLabel);
     }
 
     // -----------------------------------------------------------------
-    // 4. PressurePascal signal renders dB re 20 µPa
+    // 4. PressurePascal signal shows dB SPL label
     // -----------------------------------------------------------------
 
     [Fact]
-    public void PressurePascalSpectrumShowsDbreference20uPaLabel()
+    public void PressurePascalSpectrumShowsDbSplLabel()
     {
         var channel = BuildPressurePascalChannel(amplitudePeakPa: 1.0, frequencyHz: 1000.0);
 
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 2048, 0.5);
 
         var ch = analysis.Channels[0];
-        Assert.Equal("dB re 20 µPa", ch.YAxisLabel);
-        Assert.Equal("dB re 20 µPa", ch.DbUnit);
+        Assert.Equal("dB SPL", ch.YAxisLabel);
+        Assert.Equal("dB SPL", ch.DbUnit);
         Assert.Equal(AcousticPressureConverter.PressureReferencePa, ch.DbReferenceValue);
         Assert.Equal("Pa", ch.DbReferenceUnit);
     }
@@ -143,13 +140,12 @@ public sealed class AcousticPressureTests
     }
 
     [Fact]
-    public void DigitalFullScaleGetScaleFactorThrows()
+    public void DigitalFullScaleGetScaleFactorReturnsOne()
     {
         var metadata = new SignalPhysicalMetadata { UnitKind = SignalUnitKind.DigitalFullScale };
 
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => AcousticPressureConverter.GetScaleFactor(metadata));
-        Assert.Contains("dB SPL", ex.Message);
+        var scale = AcousticPressureConverter.GetScaleFactor(metadata);
+        Assert.Equal(1.0, scale);
     }
 
     // -----------------------------------------------------------------
@@ -275,31 +271,31 @@ public sealed class AcousticPressureTests
     }
 
     // -----------------------------------------------------------------
-    // 13. Spectrum Y-axis label is "Level [dB re 20 µPa]"
+    // 13. Spectrum Y-axis label is always "dB SPL"
     // -----------------------------------------------------------------
 
     [Fact]
-    public void SpectrumYAxisLabelContains20uPaForPressureChannel()
+    public void SpectrumYAxisLabelIsDbSplForPressureChannel()
     {
         var channel = BuildPressurePascalChannel(amplitudePeakPa: 1.0, frequencyHz: 1000.0);
 
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 1024, 0.5);
 
-        Assert.Equal("dB re 20 µPa", analysis.Channels[0].YAxisLabel);
+        Assert.Equal("dB SPL", analysis.Channels[0].YAxisLabel);
     }
 
     [Fact]
-    public void SpectrumYAxisLabelIsDbFsForDigitalChannel()
+    public void SpectrumYAxisLabelIsDbSplForDigitalChannel()
     {
         var channel = BuildDigitalChannel(amplitudeFs: 0.5, frequencyHz: 1000.0);
 
         var analysis = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 1024, 0.5);
 
-        Assert.Equal("[dBFS]", analysis.Channels[0].YAxisLabel);
+        Assert.Equal("dB SPL", analysis.Channels[0].YAxisLabel);
     }
 
     // -----------------------------------------------------------------
-    // 14. Spectrogram colorbar label uses calibrated pressure reference wording.
+    // 14. Spectrogram colorbar label is always "dB SPL".
     // -----------------------------------------------------------------
 
     [Fact]
@@ -309,7 +305,7 @@ public sealed class AcousticPressureTests
 
         var analysis = SpectrogramAnalyzer.Analyze([channel], 0.0, 1.0, 512, 0.5, "linear", 20.0, 80.0);
 
-        Assert.Equal("dB re 20 µPa", analysis.Channels[0].ColorbandLabel);
+        Assert.Equal("dB SPL", analysis.Channels[0].ColorbandLabel);
     }
 
     // -----------------------------------------------------------------
@@ -343,9 +339,9 @@ public sealed class AcousticPressureTests
         Assert.Equal("Sound pressure", ch.PhysicalQuantity);
         Assert.Equal(AcousticPressureConverter.PressureReferencePa, ch.DbReferenceValue);
         Assert.Equal("Pa", ch.DbReferenceUnit);
-        Assert.Equal("dB re 20 µPa", ch.DbUnit);
+        Assert.Equal("dB SPL", ch.DbUnit);
         Assert.Equal("pressure_signal", ch.CalibrationState);
-        Assert.Equal("dB re 20 µPa", ch.YAxisLabel);
+        Assert.Equal("dB SPL", ch.YAxisLabel);
     }
 
     // =================================================================
@@ -397,7 +393,7 @@ public sealed class AcousticPressureTests
             {
                 Value = AcousticPressureConverter.PressureReferencePa,
                 Unit = "Pa",
-                DbUnit = "dB re 20 µPa",
+                DbUnit = "dB SPL",
             },
             PhysicalMetadata = new SignalPhysicalMetadata { UnitKind = SignalUnitKind.PressurePascal },
             Samples = samples,

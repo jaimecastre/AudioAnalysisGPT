@@ -63,10 +63,6 @@ function CompactAnalysisPreview({
 }): JSX.Element | null {
   const { result, isLoading, error } = useAnalysisResult(resultId);
 
-  if (viewType === 'spectrum') {
-    return null;
-  }
-
   if (isLoading) {
     return (
       <div data-preview-type={viewType} style={previewFrameStyle}>
@@ -84,6 +80,24 @@ function CompactAnalysisPreview({
         <Text size="xs" c="dimmed" ta="center">
           {summary.statusText ?? 'Preview opens in full analysis'}
         </Text>
+      </div>
+    );
+  }
+
+  if (viewType === 'spectrum' && result.type === 'spectrum') {
+    const channels = result.data.channels.map((ch, index) => ({
+      channelId: ch.channelId,
+      channelName: ch.channelName,
+      points: ch.points,
+      yUnit: ch.yUnit,
+      yAxisLabel: ch.yAxisLabel,
+      originalIndex: index,
+    }));
+    return (
+      <div data-preview-type="spectrum" style={previewFrameStyle}>
+        <div style={{ height: 160, width: '100%' }}>
+          <SpectrumCanvas channels={channels} />
+        </div>
       </div>
     );
   }
@@ -148,13 +162,6 @@ const previewFrameStyle = {
   background: 'var(--mantine-color-gray-0)',
   borderRadius: 6,
   padding: 10,
-} satisfies CSSProperties;
-
-const spectrumPreviewStyle = {
-  height: 180,
-  width: '100%',
-  marginTop: 12,
-  marginBottom: 8,
 } satisfies CSSProperties;
 
 function AnalysisViewModalContent({
@@ -228,14 +235,6 @@ export function AnalysisViewBlock({ block }: IAnalysisViewBlockProps): JSX.Eleme
   const Icon = VIEW_ICONS[block.viewType] || IconChartLine;
   const title = block.title || VIEW_LABELS[block.viewType] || 'Analysis';
   const { summary } = block;
-  const spectrumPreviewFrequenciesHz = block.viewType === 'spectrum'
-    ? block.preview?.frequenciesHz
-    : undefined;
-  const spectrumPreviewMagnitudesDb = block.viewType === 'spectrum'
-    ? block.preview?.magnitudesDb
-    : undefined;
-  const shouldRenderSpectrumPreview = spectrumPreviewFrequenciesHz && spectrumPreviewMagnitudesDb;
-
   return (
     <>
       {/* Compact Inline Card */}
@@ -297,24 +296,7 @@ export function AnalysisViewBlock({ block }: IAnalysisViewBlockProps): JSX.Eleme
         )}
 
         {/* Mini Chart Preview */}
-        {shouldRenderSpectrumPreview && (
-          <div style={spectrumPreviewStyle}>
-            <SpectrumCanvas
-              channels={[{
-                channelId: '1',
-                channelName: 'Channel 1',
-                points: spectrumPreviewFrequenciesHz.map((freq, i) => [freq, spectrumPreviewMagnitudesDb[i] ?? -120]),
-                yUnit: 'dB',
-                yAxisLabel: 'Level [dB]',
-                originalIndex: 0,
-              }]}
-            />
-          </div>
-        )}
-
-        {!shouldRenderSpectrumPreview && (
-          <CompactAnalysisPreview viewType={block.viewType} summary={summary} resultId={block.resultId} />
-        )}
+        <CompactAnalysisPreview viewType={block.viewType} summary={summary} resultId={block.resultId} />
 
         {/* Mini Hint */}
         <Text size="xs" c="dimmed" mt="sm" style={{ textAlign: 'center' }}>

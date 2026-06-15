@@ -110,11 +110,14 @@ public static class SpectrumFftEngine
     {
         for (var i = 0; i < magnitudes.Length; i++)
         {
-            var peakAmplitudePa = magnitudes[i] * scaleFactor;
-            magnitudesDb[i] = Math.Round(
-                AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(peakAmplitudePa),
-                3
-            );
+            if (magnitudes[i] > 0)
+            {
+                var peakAmplitudePa = magnitudes[i] * scaleFactor;
+                magnitudesDb[i] = Math.Round(
+                    AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(peakAmplitudePa),
+                    3
+                );
+            }
         }
     }
 

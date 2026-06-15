@@ -77,8 +77,8 @@ public sealed class AgentMetaQuestionRouterTests
         var answer = AgentMetaQuestionRouter.TryAnswer("What is the SPL of the spectral peak?");
 
         Assert.NotNull(answer);
-        Assert.Contains("cannot report SPL", answer!, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("calibration", answer!, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("dB SPL", answer!, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("0 dBFS", answer!, StringComparison.OrdinalIgnoreCase);
     }
 
     [Theory]
@@ -113,8 +113,8 @@ public sealed class AgentMetaQuestionRouterTests
         var answer = AgentMetaQuestionRouter.TryAnswer("What is the SPL of the CPB band?");
 
         Assert.NotNull(answer);
-        Assert.Contains("cannot report SPL", answer!, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("calibration", answer!, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("dB SPL", answer!, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("0 dBFS", answer!, StringComparison.OrdinalIgnoreCase);
     }
 
     [Theory]

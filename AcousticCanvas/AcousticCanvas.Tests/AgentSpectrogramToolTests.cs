@@ -77,9 +77,11 @@ public sealed class AgentSpectrogramToolTests
         var audioFileRepository = BuildAudioFileRepository(storagePath);
         var soundQualityService = new SoundQualityAnalysisService(new FakeSoundQualityClient(), new SoundQualityCacheStore());
         var importers = new List<ISignalFileImporter> { new WavSignalFileImporter() };
+        var signalAnalysisService = new SignalAnalysisService(importers, new SignalFileCacheStore());
         var analysisResultCache = new AnalysisResultCache();
         var toolExecutionService = new ToolExecutionService(
             audioFileRepository,
+            signalAnalysisService,
             soundQualityService,
             importers,
             new SpectrogramCacheStore(),

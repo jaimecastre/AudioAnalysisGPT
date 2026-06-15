@@ -67,8 +67,10 @@ public sealed class AgentSoundQualityToolTests
         var fakeClient = new FakeSoundQualityClient();
         var soundQualityService = new SoundQualityAnalysisService(fakeClient, new SoundQualityCacheStore());
         var importers = new List<ISignalFileImporter> { new WavSignalFileImporter() };
+        var signalAnalysisService = new SignalAnalysisService(importers, new SignalFileCacheStore());
         var toolExecutionService = new ToolExecutionService(
             audioFileRepository,
+            signalAnalysisService,
             soundQualityService,
             importers,
             new SpectrogramCacheStore(),

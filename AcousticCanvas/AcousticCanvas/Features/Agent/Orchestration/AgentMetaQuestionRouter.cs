@@ -53,12 +53,12 @@ public static class AgentMetaQuestionRouter
 
         if (IsSpectrumSplQuestion(normalized))
         {
-            return "The Agent spectrum is reported in digital dBFS unless the recording has calibration metadata. It cannot report SPL from an uncalibrated audio file. To report SPL, the recording chain needs calibration to a physical pressure reference such as 20 uPa.";
+            return "All spectra are reported in dB SPL using the universal convention 0 dBFS = 91 dB SPL (1 FS = 1 Pa peak). Calibrated recordings with a PascalsPerFullScale factor apply that factor before computing dB SPL.";
         }
 
         if (IsCpbSplQuestion(normalized))
         {
-            return "The Agent CPB result is reported in digital dBFS unless the recording has calibration metadata. It cannot report SPL or standards-compliant octave-band levels from an uncalibrated audio file.";
+            return "All CPB results are reported in dB SPL using the universal convention 0 dBFS = 91 dB SPL (1 FS = 1 Pa peak). Calibrated recordings apply the PascalsPerFullScale factor before computing dB SPL.";
         }
 
         if (IsSoundQualityConversionQuestion(normalized))

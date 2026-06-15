@@ -24,14 +24,14 @@ public static class AgentToolRegistry
             {
                 Name = "run_basic_metrics",
                 Description =
-                    "Compute peak level, RMS level, crest factor, DC offset, and digital clipping detection.",
+                    "Compute peak level, RMS level, crest factor, DC offset, and digital clipping detection. Supports optional startSeconds and endSeconds to restrict analysis to a time region.",
                 MaxFileCount = 10,
                 MaxFileDurationSeconds = 300.0,
             },
             ["run_spectrum"] = new AgentToolDefinition
             {
                 Name = "run_spectrum",
-                Description = "Compute averaged FFT spectrum with tonal peak detection.",
+                Description = "Compute averaged FFT spectrum with tonal peak detection. Supports optional startSeconds and endSeconds to restrict analysis to a time region.",
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
@@ -104,9 +104,9 @@ public static class AgentToolRegistry
             "- get_metadata: Return file metadata: duration, sample rate, channels, bit depth.",
             "  Arguments: { \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
             "- run_basic_metrics: Compute peak level, RMS, crest factor, DC offset, clipping detection.",
-            "  Arguments: { \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
+            "  Arguments: { \"fileIds\": [\"<id1>\"], \"startSeconds\": 0.0, \"endSeconds\": 5.0 }  ← fileIds required; startSeconds/endSeconds optional (omit to analyse full file)",
             "- run_spectrum: Compute averaged FFT spectrum with tonal peak detection.",
-            "  Arguments: { \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
+            "  Arguments: { \"fileIds\": [\"<id1>\"], \"startSeconds\": 0.0, \"endSeconds\": 5.0 }  ← fileIds required; startSeconds/endSeconds optional (omit to analyse full file)",
             "- run_spectrogram: Compute full-file spectrogram time-frequency summary.",
             "  Arguments: { \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
             "- run_cpb: Compute octave or 1/3-octave band levels.",

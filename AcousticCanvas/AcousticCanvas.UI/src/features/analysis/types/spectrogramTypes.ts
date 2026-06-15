@@ -29,9 +29,9 @@ export type ChannelSpectrogramAnalysis = {
   // Each backend byte[] frame is serialized by System.Text.Json as a base64 string.
   frequencyData: string[];
   // Acoustic calibration metadata from backend.
-  // 'digital_full_scale' | 'pressure_signal' | 'calibrated' | 'assumed_pressure'
+  // 'pressure_signal' | 'calibrated' | 'assumed_pressure'
   calibrationState: string | null;
-  // 'Level [dB re 20 µPa]' or 'Amplitude [dBFS]'
+  // Always 'dB SPL' (0 dBFS = 91 dB SPL, 1 FS = 1 Pa peak)
   colorbandLabel: string | null;
 };
 

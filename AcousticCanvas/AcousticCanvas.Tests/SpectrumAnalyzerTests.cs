@@ -115,14 +115,14 @@ public sealed class SpectrumAnalyzerTests
     }
 
     [Fact]
-    public void DigitalChannelUsesDbFsLabel()
+    public void DigitalChannelUsesDbSplLabel()
     {
         var channel = BuildDigitalSineChannel(0.5, 1000.0, DefaultSampleRate, 1.0);
 
         var result = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 2048, 0.5);
 
-        Assert.Equal("[dBFS]", result.Channels[0].YAxisLabel);
-        Assert.Equal("digital_full_scale", result.Channels[0].CalibrationState);
+        Assert.Equal("dB SPL", result.Channels[0].YAxisLabel);
+        Assert.Equal("assumed_pressure", result.Channels[0].CalibrationState);
     }
 
     [Fact]

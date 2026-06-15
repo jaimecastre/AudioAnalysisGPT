@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import { ComparisonView } from '../../comparison/components/ComparisonView';
-import { IconArrowRight, IconFileMusic, IconAlignBoxLeftMiddle, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { IconArrowRight, IconFileMusic, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { useAppDispatch } from '../../../store/reduxHooks';
 import type {
   AgentArtifact,
@@ -10,7 +10,6 @@ import type {
   AgentArtifactCompare,
   AgentArtifactFind,
   AgentArtifactFindings,
-  AgentArtifactToolResult,
   AgentArtifactReport,
 } from '../store/agentWorkspaceSlice';
 import { setActiveMode } from '../../navigation/store/navigationSlice';
@@ -20,86 +19,29 @@ import { useRawDataDrawer } from '../hooks/useRawDataDrawer';
 import { useReportCopy } from '../hooks/useReportCopy';
 import styles from './AgentWorkspacePanel.module.scss';
 
-const TOOL_LABELS: Record<string, string> = {
-  get_metadata: 'Metadata',
-  run_basic_metrics: 'Level metrics',
-  run_event_detection: 'Event detection',
-  run_spectrum: 'Spectrum',
-  run_spectrogram: 'Spectrogram',
-  run_cpb: 'CPB bands',
-  run_sound_quality_metrics: 'Sound quality',
-  run_findings: 'Findings',
-};
-
 function WorkspaceContextCard(): JSX.Element {
-  const {
-    files,
-    activeFile,
-    activeSelection,
-    plannedTools,
-    limitations,
-    hasValidationWarning,
-    hasValidSelection,
-  } = useWorkspaceContext();
+  const { files, activeFile } = useWorkspaceContext();
 
   return (
     <div className={styles.contextCard}>
-      <div className={styles.contextHeading}>Referenced context</div>
-      <div className={styles.contextSection}>
-        <div className={styles.contextSectionLabel}>Files</div>
-        {files.length === 0 && (
-          <div className={styles.contextEmpty}>No loaded files</div>
-        )}
-        {files.map((file) => (
-          <div key={file.id} className={styles.contextFileBlock}>
-            <div className={styles.contextRow}>
-              <IconFileMusic size={12} className={styles.contextIcon} />
-              <span className={styles.contextFileName} title={file.name}>{file.name}</span>
-              {activeFile?.id === file.id && <span className={styles.contextActiveTag}>active</span>}
-            </div>
-            <div className={styles.contextMeta}>
-              {file.sampleRate / 1000}kHz
-              {' · '}{file.channels}ch
-              {file.bitDepth ? ` · ${file.bitDepth}bit` : ''}
-            </div>
-          </div>
-        ))}
-      </div>
-      {hasValidSelection && activeSelection && (
-        <div className={styles.contextSection}>
-          <div className={styles.contextSectionLabel}>Selection</div>
+      <div className={styles.contextHeading}>Imported files</div>
+      {files.length === 0 && (
+        <div className={styles.contextEmpty}>No loaded files</div>
+      )}
+      {files.map((file) => (
+        <div key={file.id} className={styles.contextFileBlock}>
           <div className={styles.contextRow}>
-            <IconAlignBoxLeftMiddle size={12} className={styles.contextSelectionIcon} />
-            <span className={styles.contextSelectionLabel}>
-              {activeSelection.startSeconds.toFixed(3)}s
-              {' – '}
-              {activeSelection.endSeconds.toFixed(3)}s
-              {' ('}{(activeSelection.endSeconds - activeSelection.startSeconds).toFixed(3)}s{')'}
-            </span>
+            <IconFileMusic size={12} className={styles.contextIcon} />
+            <span className={styles.contextFileName} title={file.name}>{file.name}</span>
+            {activeFile?.id === file.id && <span className={styles.contextActiveTag}>active</span>}
+          </div>
+          <div className={styles.contextMeta}>
+            {file.sampleRate / 1000}kHz
+            {' · '}{file.channels}ch
+            {file.bitDepth ? ` · ${file.bitDepth}bit` : ''}
           </div>
         </div>
-      )}
-      {plannedTools.length > 0 && (
-        <div className={styles.contextSection}>
-          <div className={styles.contextSectionLabel}>Analyses</div>
-          <div className={styles.contextToolList}>
-            {plannedTools.map((tool, index) => (
-              <span key={`${tool}-${index}`} className={styles.contextToolTag}>{TOOL_LABELS[tool] ?? tool}</span>
-            ))}
-          </div>
-        </div>
-      )}
-      {(limitations.length > 0 || hasValidationWarning) && (
-        <div className={styles.contextSection}>
-          <div className={styles.contextSectionLabel}>Limits</div>
-          {hasValidationWarning && (
-            <div className={styles.contextWarning}>Response validation warning</div>
-          )}
-          {limitations.slice(0, 3).map((limitation) => (
-            <div key={limitation} className={styles.contextLimitation}>{limitation}</div>
-          ))}
-        </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -118,7 +60,7 @@ function RawDataDrawer({ data }: { data: unknown }): JSX.Element {
         type="button"
         className={styles.rawDrawerToggle}
         onClick={toggle}
-        aria-expanded={isExpanded}
+        aria-expanded={isExpanded ? 'true' : 'false'}
       >
         {isExpanded ? <IconChevronDown size={10} /> : <IconChevronRight size={10} />}
         Raw data
@@ -355,34 +297,6 @@ function FindCard({ artifact }: { artifact: AgentArtifactFind }): JSX.Element {
   );
 }
 
-function ToolResultCard({ artifact }: { artifact: AgentArtifactToolResult }): JSX.Element {
-  const isExpanded = useArtifactExpanded(artifact.id);
-
-  return (
-    <div className={`${styles.card} ${styles.cardToolResult}`}>
-      <div className={styles.cardHeader}>
-        <span className={`${styles.cardKindTag} ${styles.cardKindTagToolResult}`}>{artifact.title}</span>
-        <span className={styles.cardTimestamp}>{formatTimestamp(artifact.timestamp)}</span>
-      </div>
-      {!isExpanded && (
-        <div className={styles.cardBody}>
-          <div className={styles.findingsCollapsedHint}>Click the badge in the chat to see details</div>
-        </div>
-      )}
-      {isExpanded && (
-        <div className={styles.cardBody}>
-          {artifact.rows.map((row, i) => (
-            <div key={i} className={styles.metricRow}>
-              <span className={styles.metricLabel}>{row.label}</span>
-              <span className={styles.metricValue}>{row.value}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function ReportCard({ artifact }: { artifact: AgentArtifactReport }): JSX.Element {
   const { copied, handleCopy } = useReportCopy(artifact.markdownContent);
 
@@ -427,7 +341,7 @@ function ArtifactCard({ artifact }: { artifact: AgentArtifact }): JSX.Element {
     return <FindingsCard artifact={artifact} />;
   }
   if (artifact.type === 'tool_result') {
-    return <ToolResultCard artifact={artifact} />;
+    return <></>;
   }
   if (artifact.type === 'report') {
     return <ReportCard artifact={artifact} />;
