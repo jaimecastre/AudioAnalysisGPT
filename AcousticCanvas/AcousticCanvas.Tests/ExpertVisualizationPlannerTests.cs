@@ -290,6 +290,242 @@ public sealed class ExpertVisualizationPlannerTests
     }
 
     [Fact]
+    public void TwoSpectrumEvidenceItemsProduceSpectrumOverlayPlanBlock()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Compare the two spectra.",
+            analysesRun: ["run_spectrum"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_file1",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "a.wav",
+                        ["resultId"] = "spectrum_aaa",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_file2",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file2",
+                        ["fileName"] = "b.wav",
+                        ["resultId"] = "spectrum_bbb",
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        var overlayBlock = plan.Blocks.FirstOrDefault(b => b.BlockType == "spectrumOverlay");
+        Assert.NotNull(overlayBlock);
+        Assert.NotNull(overlayBlock.SourceEvidenceIds);
+        Assert.Equal(2, overlayBlock.SourceEvidenceIds.Count);
+    }
+
+    [Fact]
+    public void SingleSpectrumEvidenceItemDoesNotProduceSpectrumOverlayPlanBlock()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Show the spectrum.",
+            analysesRun: ["run_spectrum"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_file1",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "a.wav",
+                        ["resultId"] = "spectrum_aaa",
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        Assert.DoesNotContain(plan.Blocks, b => b.BlockType == "spectrumOverlay");
+    }
+
+    [Fact]
+    public void BuildSpectrumOverlayBlocksBuildsSignalsWithCorrectResultIds()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Compare the spectra.",
+            analysesRun: ["run_spectrum"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_file1",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "a.wav",
+                        ["resultId"] = "spectrum_aaa",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_file2",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file2",
+                        ["fileName"] = "b.wav",
+                        ["resultId"] = "spectrum_bbb",
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+        var overlays = AgentResultBuilder.BuildSpectrumOverlayBlocks(plan, evidencePackage);
+
+        Assert.Single(overlays);
+        Assert.Equal("Spectrum Comparison", overlays[0].Title);
+        Assert.Equal(2, overlays[0].Signals.Count);
+        Assert.Equal("spectrum_aaa", overlays[0].Signals[0].ResultId);
+        Assert.Equal("a.wav", overlays[0].Signals[0].FileName);
+        Assert.Equal("spectrum_bbb", overlays[0].Signals[1].ResultId);
+        Assert.Equal("b.wav", overlays[0].Signals[1].FileName);
+    }
+
+    [Fact]
+    public void MixedEvidenceTypesProduceInvestigationPlanBlock()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Why does this sound harsh?",
+            analysesRun: ["run_spectrum", "run_sound_quality"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_1",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "a.wav",
+                        ["resultId"] = "spectrum_aaa",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_1",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "a.wav",
+                        ["resultId"] = "sq_aaa",
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        var investigationBlock = plan.Blocks.FirstOrDefault(b => b.BlockType == "investigation");
+        Assert.NotNull(investigationBlock);
+        Assert.NotNull(investigationBlock.SourceEvidenceIds);
+        Assert.Equal(2, investigationBlock.SourceEvidenceIds.Count);
+    }
+
+    [Fact]
+    public void SingleEvidenceTypeDoesNotProduceInvestigationPlanBlock()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Show spectrum.",
+            analysesRun: ["run_spectrum"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_1",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "a.wav",
+                        ["resultId"] = "spectrum_aaa",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_2",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file2",
+                        ["fileName"] = "b.wav",
+                        ["resultId"] = "spectrum_bbb",
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        Assert.DoesNotContain(plan.Blocks, b => b.BlockType == "investigation");
+    }
+
+    [Fact]
+    public void BuildInvestigationBlocksBuildsCorrectSignalViewTypes()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Why does this sound harsh?",
+            analysesRun: ["run_spectrum", "run_sound_quality"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_1",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "a.wav",
+                        ["resultId"] = "spectrum_aaa",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_1",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "a.wav",
+                        ["resultId"] = "sq_aaa",
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+        var investigations = AgentResultBuilder.BuildInvestigationBlocks(plan, evidencePackage);
+
+        Assert.Single(investigations);
+        Assert.Equal(2, investigations[0].Signals.Count);
+        Assert.Equal("spectrum", investigations[0].Signals[0].ViewType);
+        Assert.Equal("spectrum_aaa", investigations[0].Signals[0].ResultId);
+        Assert.Equal("soundQuality", investigations[0].Signals[1].ViewType);
+        Assert.Equal("sq_aaa", investigations[0].Signals[1].ResultId);
+    }
+
+    [Fact]
     public void SpectrumEvidenceWithPeakFrequencyProducesPlotHintsOnAnalysisViewBlock()
     {
         var evidencePackage = BuildEvidencePackage(

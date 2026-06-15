@@ -192,6 +192,8 @@ export function useAgentAsk() {
         plannedTools: agentResponse.plannedTools,
         plannerReason: agentResponse.plannerReason,
         blocks: mergeBlocksWithPlotHints(agentResponse.blocks, agentResponse.plotHintsMap),
+        overlayBlocks: agentResponse.overlayBlocks ?? null,
+        investigationBlocks: agentResponse.investigationBlocks ?? null,
         visualizationPlanTrace: agentResponse.investigationTrace?.visualizationPlan ?? null,
       }));
       dispatch(agentThinkingFinished());

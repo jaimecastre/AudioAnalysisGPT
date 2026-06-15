@@ -16,6 +16,8 @@ public static class ExpertVisualizationPlanner
             },
         };
 
+        AddSpectrumOverlayBlockWhenUseful(evidencePackage, blocks);
+        AddInvestigationBlockWhenUseful(evidencePackage, blocks);
         AddEvidenceViewBlocks(evidencePackage, blocks);
         AddRankingBlockWhenUseful(evidencePackage, blocks);
 
@@ -42,7 +44,7 @@ public static class ExpertVisualizationPlanner
                 continue;
             }
 
-            var plotHints = BuildPlotHintsForEvidence(evidenceItem);
+            var plotHints = BuildPlotHintsFor(evidenceItem);
 
             blocks.Add(
                 new VisualizationPlanBlock
@@ -56,6 +58,67 @@ public static class ExpertVisualizationPlanner
                 }
             );
         }
+    }
+
+    private static void AddInvestigationBlockWhenUseful(
+        EvidencePackage evidencePackage,
+        List<VisualizationPlanBlock> blocks
+    )
+    {
+        var viewableItems = evidencePackage.KeyEvidence
+            .Where(item => MapEvidenceTypeToViewType(item.Type) is not null && HasResultId(item))
+            .ToList();
+
+        var distinctViewTypes = viewableItems
+            .Select(item => MapEvidenceTypeToViewType(item.Type)!)
+            .Distinct()
+            .ToList();
+
+        if (distinctViewTypes.Count < 2)
+        {
+            return;
+        }
+
+        var sourceIds = viewableItems.Select(item => item.EvidenceId).ToList();
+
+        blocks.Add(
+            new VisualizationPlanBlock
+            {
+                BlockType = "investigation",
+                SourceEvidenceId = sourceIds[0],
+                SourceEvidenceIds = sourceIds,
+                Reason =
+                    $"Group {distinctViewTypes.Count} different analysis types ({string.Join(", ", distinctViewTypes)}) into one investigation card so the diagnostic picture is immediately clear.",
+            }
+        );
+    }
+
+    private static void AddSpectrumOverlayBlockWhenUseful(
+        EvidencePackage evidencePackage,
+        List<VisualizationPlanBlock> blocks
+    )
+    {
+        var spectrumItems = evidencePackage.KeyEvidence
+            .Where(item => item.Type == "spectrum" && HasResultId(item))
+            .ToList();
+
+        if (spectrumItems.Count < 2)
+        {
+            return;
+        }
+
+        var sourceIds = spectrumItems.Select(item => item.EvidenceId).ToList();
+
+        blocks.Add(
+            new VisualizationPlanBlock
+            {
+                BlockType = "spectrumOverlay",
+                SourceEvidenceId = sourceIds[0],
+                SourceEvidenceIds = sourceIds,
+                Reason =
+                    $"Overlay {spectrumItems.Count} spectrum results in one chart so differences in tonal balance, peaks, and frequency content are immediately visible.",
+            }
+        );
     }
 
     private static void AddRankingBlockWhenUseful(
@@ -123,6 +186,8 @@ public static class ExpertVisualizationPlanner
         return evidencePackage.KeyEvidence[0].Type;
     }
 
+    public static string? MapViewType(string evidenceType) => MapEvidenceTypeToViewType(evidenceType);
+
     private static string? MapEvidenceTypeToViewType(string evidenceType)
     {
         return evidenceType switch
@@ -146,7 +211,7 @@ public static class ExpertVisualizationPlanner
         return resultId is string resultIdString && !string.IsNullOrWhiteSpace(resultIdString);
     }
 
-    private static PlotHints? BuildPlotHintsForEvidence(EvidenceItem evidenceItem)
+    public static PlotHints? BuildPlotHintsFor(EvidenceItem evidenceItem)
     {
         if (evidenceItem.Type != "spectrum")
         {
@@ -199,5 +264,6 @@ public sealed record VisualizationPlanBlock
     public required string Reason { get; init; }
     public string? ViewType { get; init; }
     public string? SourceEvidenceId { get; init; }
+    public IReadOnlyList<string>? SourceEvidenceIds { get; init; }
     public PlotHints? PlotHints { get; init; }
 }

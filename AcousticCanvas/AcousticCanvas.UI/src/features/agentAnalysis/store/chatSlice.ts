@@ -1,7 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import { DEFAULT_MODEL_ID } from '../utils/agentModels';
-import type { AgentResponseBlock, VisualizationPlanTrace } from '../services/agentAskService';
+import type { AgentResponseBlock, InvestigationBlock, SpectrumOverlayBlock, VisualizationPlanTrace } from '../services/agentAskService';
 
 export type ChatRole = 'user' | 'assistant' | 'tool_call' | 'plan';
 
@@ -38,6 +38,8 @@ export type ChatMessage = {
   plannerReason?: string | null;
   planStatus?: 'planning' | 'done';
   blocks?: AgentResponseBlock[];
+  overlayBlocks?: SpectrumOverlayBlock[] | null;
+  investigationBlocks?: InvestigationBlock[] | null;
   activityLabel?: AgentActivityLabel;
   visualizationPlanTrace?: VisualizationPlanTrace | null;
 };
@@ -78,6 +80,8 @@ const chatSlice = createSlice({
       plannedTools?: string[];
       plannerReason?: string | null;
       blocks?: AgentResponseBlock[];
+      overlayBlocks?: SpectrumOverlayBlock[] | null;
+      investigationBlocks?: InvestigationBlock[] | null;
       visualizationPlanTrace?: VisualizationPlanTrace | null;
     }>) => {
       const existingMessage = state.messages.find((message) => message.id === action.payload.id);
@@ -93,6 +97,8 @@ const chatSlice = createSlice({
         existingMessage.plannedTools = action.payload.plannedTools;
         existingMessage.plannerReason = action.payload.plannerReason;
         existingMessage.blocks = action.payload.blocks;
+        existingMessage.overlayBlocks = action.payload.overlayBlocks;
+        existingMessage.investigationBlocks = action.payload.investigationBlocks;
         existingMessage.visualizationPlanTrace = action.payload.visualizationPlanTrace;
       } else {
         state.messages.push({
@@ -108,6 +114,8 @@ const chatSlice = createSlice({
           plannedTools: action.payload.plannedTools,
           plannerReason: action.payload.plannerReason,
           blocks: action.payload.blocks,
+          overlayBlocks: action.payload.overlayBlocks,
+          investigationBlocks: action.payload.investigationBlocks,
           visualizationPlanTrace: action.payload.visualizationPlanTrace,
         });
       }

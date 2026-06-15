@@ -118,13 +118,45 @@ export type AnalysisViewBlock = {
   plotHints?: PlotHints | null;
 };
 
+// Phase 5: Spectrum overlay — multi-file comparison in one chart
+export type OverlaySignal = {
+  resultId: string;
+  fileId: string;
+  fileName: string;
+  plotHints?: PlotHints | null;
+};
+
+export type SpectrumOverlayBlock = {
+  blockType: 'spectrumOverlay';
+  title: string;
+  signals: OverlaySignal[];
+  sharedPlotHints?: PlotHints | null;
+};
+
+// Phase 6: Multi-tool investigation card
+export type InvestigationSignal = {
+  resultId: string;
+  fileId: string;
+  fileName: string;
+  viewType: string;
+  plotHints?: PlotHints | null;
+};
+
+export type InvestigationBlock = {
+  blockType: 'investigation';
+  diagnosticQuestion: string;
+  signals: InvestigationSignal[];
+};
+
 export type AgentResponseBlock =
   | MarkdownBlock
   | StatisticsBlock
   | SpectrumChartBlock
   | RankingBlock
   | SuggestedActionsBlock
-  | AnalysisViewBlock;
+  | AnalysisViewBlock
+  | SpectrumOverlayBlock
+  | InvestigationBlock;
 
 export type VisualizationPlanBlockTrace = {
   blockType: string;
@@ -165,6 +197,8 @@ export type AgentAskResponse = {
   blocks?: AgentResponseBlock[];
   investigationTrace?: InvestigationTrace | null;
   plotHintsMap?: Record<string, PlotHints> | null;
+  overlayBlocks?: SpectrumOverlayBlock[] | null;
+  investigationBlocks?: InvestigationBlock[] | null;
 };
 
 export type AgentConversationTurn = {

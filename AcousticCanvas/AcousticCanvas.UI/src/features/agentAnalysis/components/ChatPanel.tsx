@@ -11,6 +11,8 @@ import type { ChatMessage } from '../store/chatSlice';
 import { AGENT_MODELS } from '../utils/agentModels';
 import { AgentActivityIndicator } from './AgentActivityIndicator';
 import { AgentResponseBlockRenderer } from './AgentResponseBlockRenderer';
+import { SpectrumOverlayBlockView } from './SpectrumOverlayBlockView';
+import { InvestigationBlockView } from './InvestigationBlockView';
 import { ATTACH_ACCEPT } from '../utils/chatAttachments';
 import { AgentAnswerPanel } from './AgentAnswerPanel';
 import type { MentionCandidate } from '../hooks/useChatInput';
@@ -85,6 +87,8 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
   const isThinkingMessage = message.status === 'thinking';
   const isFailedMessage = message.status === 'failed';
   const hasBlocks = message.blocks && message.blocks.length > 0;
+  const hasOverlayBlocks = message.overlayBlocks && message.overlayBlocks.length > 0;
+  const hasInvestigationBlocks = message.investigationBlocks && message.investigationBlocks.length > 0;
 
   return (
     <div className={`${styles.messageWrapper} ${styles.assistant}`}>
@@ -103,6 +107,12 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
             {hasBlocks && (
               <AgentResponseBlockRenderer blocks={message.blocks} answerText={message.content} />
             )}
+            {hasOverlayBlocks && message.overlayBlocks?.map((overlayBlock, index) => (
+              <SpectrumOverlayBlockView key={index} block={overlayBlock} />
+            ))}
+            {hasInvestigationBlocks && message.investigationBlocks?.map((invBlock, index) => (
+              <InvestigationBlockView key={index} block={invBlock} />
+            ))}
             {message.toolSteps && message.toolSteps.length > 0 && (
               <AnalysisSteps steps={message.toolSteps} confidence={message.confidence} />
             )}

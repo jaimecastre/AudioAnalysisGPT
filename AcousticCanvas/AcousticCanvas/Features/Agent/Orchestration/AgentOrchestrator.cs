@@ -180,6 +180,14 @@ public sealed class AgentOrchestrator(
             visualizationPlan,
             evidencePackage
         );
+        var overlayBlocks = AgentResultBuilder.BuildSpectrumOverlayBlocks(
+            visualizationPlan,
+            evidencePackage
+        );
+        var investigationBlocks = AgentResultBuilder.BuildInvestigationBlocks(
+            visualizationPlan,
+            evidencePackage
+        );
 
         return new AgentAskResult(
             ConversationId: conversationId,
@@ -200,7 +208,9 @@ public sealed class AgentOrchestrator(
             PlannerReason: plannerReason,
             InvestigationTrace: investigationTrace,
             Blocks: finalAnswer.Blocks,
-            PlotHintsMap: plotHintsLookup.Count > 0 ? plotHintsLookup : null
+            PlotHintsMap: plotHintsLookup.Count > 0 ? plotHintsLookup : null,
+            OverlayBlocks: overlayBlocks.Count > 0 ? overlayBlocks : null,
+            InvestigationBlocks: investigationBlocks.Count > 0 ? investigationBlocks : null
         );
     }
 
@@ -259,6 +269,14 @@ public sealed class AgentOrchestrator(
             visualizationPlan,
             evidencePackage
         );
+        var deterministicOverlayBlocks = AgentResultBuilder.BuildSpectrumOverlayBlocks(
+            visualizationPlan,
+            evidencePackage
+        );
+        var deterministicInvestigationBlocks = AgentResultBuilder.BuildInvestigationBlocks(
+            visualizationPlan,
+            evidencePackage
+        );
 
         return new AgentAskResult(
             ConversationId: conversationId,
@@ -276,7 +294,9 @@ public sealed class AgentOrchestrator(
             PlannerReason: null,
             InvestigationTrace: investigationTrace,
             Blocks: finalAnswer.Blocks,
-            PlotHintsMap: deterministicPlotHintsLookup.Count > 0 ? deterministicPlotHintsLookup : null
+            PlotHintsMap: deterministicPlotHintsLookup.Count > 0 ? deterministicPlotHintsLookup : null,
+            OverlayBlocks: deterministicOverlayBlocks.Count > 0 ? deterministicOverlayBlocks : null,
+            InvestigationBlocks: deterministicInvestigationBlocks.Count > 0 ? deterministicInvestigationBlocks : null
         );
     }
 

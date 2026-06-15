@@ -162,6 +162,66 @@ public sealed record PlotHints
     public string? ScaleOverride { get; init; }
 }
 
+// ─── Phase 5: Spectrum Overlay Block ──────────────────────────────────────
+
+/// <summary>
+/// One signal entry in a spectrum overlay — carries the result reference and per-signal focus hints.
+/// </summary>
+public sealed record OverlaySignal
+{
+    public required string ResultId { get; init; }
+    public required string FileId { get; init; }
+    public required string FileName { get; init; }
+    public PlotHints? PlotHints { get; init; }
+}
+
+/// <summary>
+/// Deterministic multi-file spectrum overlay block — built by ExpertVisualizationPlanner,
+/// never by the LLM. Renders all signals in a single SpectrumCanvas for direct comparison.
+/// </summary>
+public sealed record SpectrumOverlayBlock : AgentResponseBlock
+{
+    public override string BlockType => "spectrumOverlay";
+
+    /// <summary>Title shown above the overlay chart</summary>
+    public required string Title { get; init; }
+
+    /// <summary>Ordered list of signals to overlay</summary>
+    public required IReadOnlyList<OverlaySignal> Signals { get; init; }
+
+    /// <summary>Shared frequency window hint (union of individual signal hints)</summary>
+    public PlotHints? SharedPlotHints { get; init; }
+}
+
+// ─── Phase 6: Investigation Block ─────────────────────────────────────────
+
+/// <summary>
+/// One DSP result contributing to a multi-tool investigation.
+/// </summary>
+public sealed record InvestigationSignal
+{
+    public required string ResultId { get; init; }
+    public required string FileId { get; init; }
+    public required string FileName { get; init; }
+    public required string ViewType { get; init; }
+    public PlotHints? PlotHints { get; init; }
+}
+
+/// <summary>
+/// Groups multiple DSP results from different tool types into one diagnostic card.
+/// Built by ExpertVisualizationPlanner — never by the LLM.
+/// </summary>
+public sealed record InvestigationBlock : AgentResponseBlock
+{
+    public override string BlockType => "investigation";
+
+    /// <summary>Short diagnostic question this investigation answers</summary>
+    public required string DiagnosticQuestion { get; init; }
+
+    /// <summary>Ordered DSP results that together answer the question</summary>
+    public required IReadOnlyList<InvestigationSignal> Signals { get; init; }
+}
+
 /// <summary>
 /// Preview data for inline mini-chart in AnalysisViewBlock
 /// </summary>

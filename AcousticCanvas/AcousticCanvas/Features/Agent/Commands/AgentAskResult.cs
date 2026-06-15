@@ -19,7 +19,9 @@ public record AgentAskResult(
     string? PlannerReason,
     InvestigationTrace? InvestigationTrace,
     List<JsonElement>? Blocks,
-    IReadOnlyDictionary<string, PlotHints>? PlotHintsMap = null
+    IReadOnlyDictionary<string, PlotHints>? PlotHintsMap = null,
+    IReadOnlyList<SpectrumOverlayBlock>? OverlayBlocks = null,
+    IReadOnlyList<InvestigationBlock>? InvestigationBlocks = null
 );
 
 public record AgentEvidenceItem(

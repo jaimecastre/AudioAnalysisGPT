@@ -131,8 +131,8 @@ function drawSpectrum(
   const allYValues = channels.flatMap((ch) => ch.points.map((p) => p[1]));
   if (allYValues.length === 0) return;
 
-  const dataMax = Math.max(...allYValues);
-  const dataMin = Math.min(...allYValues);
+  const dataMax = allYValues.reduce((a, b) => (b > a ? b : a), -Infinity);
+  const dataMin = allYValues.reduce((a, b) => (b < a ? b : a), Infinity);
   const isDb = dataMax < 200; // Heuristic: dB values are typically < 200, linear can be much larger
 
   let yMin: number;
@@ -141,7 +141,7 @@ function drawSpectrum(
     yMax = ceilTo(dataMax + 5, DEFAULT_DB_Y_STEP);
     yMin = floorTo(dataMin - 5, DEFAULT_DB_Y_STEP);
   } else {
-    yMax = Math.max(...allYValues) * 1.1;
+    yMax = dataMax * 1.1;
     yMin = 0;
   }
 

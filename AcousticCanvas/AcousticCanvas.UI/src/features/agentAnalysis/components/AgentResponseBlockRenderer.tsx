@@ -9,6 +9,8 @@ import { SpectrumChartBlock } from './SpectrumChartBlock';
 import { RankingBlock } from './RankingBlock';
 import { SuggestedActionsBlock } from './SuggestedActionsBlock';
 import { AnalysisViewBlock } from './AnalysisViewBlock';
+import { SpectrumOverlayBlockView } from './SpectrumOverlayBlockView';
+import { InvestigationBlockView } from './InvestigationBlockView';
 
 interface IAgentResponseBlockRendererProps {
   blocks?: AgentResponseBlock[];
@@ -116,6 +118,12 @@ function renderBlock(
 
     case 'analysisView':
       return <AnalysisViewBlock block={block} />;
+
+    case 'spectrumOverlay':
+      return <SpectrumOverlayBlockView block={block} />;
+
+    case 'investigation':
+      return <InvestigationBlockView block={block} />;
 
     default:
       return null;

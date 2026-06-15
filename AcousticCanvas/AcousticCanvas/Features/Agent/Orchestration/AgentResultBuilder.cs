@@ -99,6 +99,151 @@ public static class AgentResultBuilder
         return blocks.Count > 0 ? blocks : null;
     }
 
+    public static IReadOnlyList<SpectrumOverlayBlock> BuildSpectrumOverlayBlocks(
+        VisualizationPlan visualizationPlan,
+        EvidencePackage evidencePackage
+    )
+    {
+        var overlayBlocks = new List<SpectrumOverlayBlock>();
+
+        foreach (var planBlock in visualizationPlan.Blocks)
+        {
+            if (planBlock.BlockType != "spectrumOverlay")
+            {
+                continue;
+            }
+
+            if (planBlock.SourceEvidenceIds is null || planBlock.SourceEvidenceIds.Count < 2)
+            {
+                continue;
+            }
+
+            var signals = new List<OverlaySignal>();
+
+            foreach (var evidenceId in planBlock.SourceEvidenceIds)
+            {
+                var evidence = evidencePackage.KeyEvidence.FirstOrDefault(
+                    item => item.EvidenceId == evidenceId
+                );
+
+                if (evidence is null)
+                {
+                    continue;
+                }
+
+                if (!evidence.Data.TryGetValue("resultId", out var resultIdRaw))
+                {
+                    continue;
+                }
+
+                if (resultIdRaw is not string resultId || string.IsNullOrWhiteSpace(resultId))
+                {
+                    continue;
+                }
+
+                evidence.Data.TryGetValue("fileId", out var fileIdRaw);
+                evidence.Data.TryGetValue("fileName", out var fileNameRaw);
+
+                signals.Add(new OverlaySignal
+                {
+                    ResultId = resultId,
+                    FileId = fileIdRaw as string ?? evidenceId,
+                    FileName = fileNameRaw as string ?? resultId,
+                    PlotHints = ExpertVisualizationPlanner.BuildPlotHintsFor(evidence),
+                });
+            }
+
+            if (signals.Count < 2)
+            {
+                continue;
+            }
+
+            overlayBlocks.Add(new SpectrumOverlayBlock
+            {
+                Title = "Spectrum Comparison",
+                Signals = signals,
+            });
+        }
+
+        return overlayBlocks;
+    }
+
+    public static IReadOnlyList<InvestigationBlock> BuildInvestigationBlocks(
+        VisualizationPlan visualizationPlan,
+        EvidencePackage evidencePackage
+    )
+    {
+        var investigationBlocks = new List<InvestigationBlock>();
+
+        foreach (var planBlock in visualizationPlan.Blocks)
+        {
+            if (planBlock.BlockType != "investigation")
+            {
+                continue;
+            }
+
+            if (planBlock.SourceEvidenceIds is null || planBlock.SourceEvidenceIds.Count < 2)
+            {
+                continue;
+            }
+
+            var signals = new List<InvestigationSignal>();
+
+            foreach (var evidenceId in planBlock.SourceEvidenceIds)
+            {
+                var evidence = evidencePackage.KeyEvidence.FirstOrDefault(
+                    item => item.EvidenceId == evidenceId
+                );
+
+                if (evidence is null)
+                {
+                    continue;
+                }
+
+                if (!evidence.Data.TryGetValue("resultId", out var resultIdRaw))
+                {
+                    continue;
+                }
+
+                if (resultIdRaw is not string resultId || string.IsNullOrWhiteSpace(resultId))
+                {
+                    continue;
+                }
+
+                var viewType = ExpertVisualizationPlanner.MapViewType(evidence.Type);
+                if (viewType is null)
+                {
+                    continue;
+                }
+
+                evidence.Data.TryGetValue("fileId", out var fileIdRaw);
+                evidence.Data.TryGetValue("fileName", out var fileNameRaw);
+
+                signals.Add(new InvestigationSignal
+                {
+                    ResultId = resultId,
+                    FileId = fileIdRaw as string ?? evidenceId,
+                    FileName = fileNameRaw as string ?? resultId,
+                    ViewType = viewType,
+                    PlotHints = ExpertVisualizationPlanner.BuildPlotHintsFor(evidence),
+                });
+            }
+
+            if (signals.Count < 2)
+            {
+                continue;
+            }
+
+            investigationBlocks.Add(new InvestigationBlock
+            {
+                DiagnosticQuestion = evidencePackage.UserQuestion,
+                Signals = signals,
+            });
+        }
+
+        return investigationBlocks;
+    }
+
     public static IReadOnlyDictionary<string, PlotHints> BuildPlotHintsLookup(
         VisualizationPlan visualizationPlan,
         EvidencePackage evidencePackage

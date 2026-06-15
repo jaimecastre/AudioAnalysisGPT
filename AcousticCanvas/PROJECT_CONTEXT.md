@@ -199,6 +199,9 @@ SignalChannel {
 | Agent response activity status | ✅ Done | Live activity label in assistant bubble: planning → running tools → building results → generating answer → complete/failed |
 | Agent analysis view blocks (Generative UI Phase 2a) | ✅ Done | `analysisView` block — compact card with mini preview + modal opener; spectrum, CPB, sound quality, findings viewers wired |
 | Agent thought container (Generative UI Phase 3) | ✅ Done | Collapsed `<details>` above each assistant answer showing visualization plan decisions — blockType pill + reason per block |
+| Agent expert plot specification (Generative UI Phase 4) | ✅ Done | `PlotHints` from DSP evidence zoom spectrum canvas to ±2-octave focus window; dashed annotation line marks dominant peak |
+| Agent spectrum overlay (Generative UI Phase 5) | ✅ Done | `SpectrumOverlayBlock` merges 2+ spectrum results into single canvas for direct multi-file comparison |
+| Agent investigation card (Generative UI Phase 6) | ✅ Done | `InvestigationBlock` groups mixed DSP types (spectrum + sound quality, etc.) into one diagnostic card with per-signal mini-previews and expand modal |
 | Agent findings investigation | ✅ Done | "Detect findings and issues" suggestion chip → run_findings → FindingsCard with per-finding rows |
 | Agent referenced context panel | ✅ Done | Workspace shows loaded files, active file/selection, analyses used, limitations, and validation warnings |
 | File @mentions in chat | ✅ Done | Autocomplete dropdown |
@@ -1361,12 +1364,25 @@ Agent response composition:
   - `ExpertVisualizationPlanner.cs` produces `VisualizationPlan` with per-block `Reason` fields
   - `InvestigationTrace.VisualizationPlan` (type `VisualizationPlanTrace`) serialized in `AgentAskResult`
   - Frontend: `visualizationPlanTrace` field on `ChatMessage`; `ThoughtContainer` collapsible `<details>` block renders per-block decisions (blockType pill + reason) above the assistant answer — collapsed by default, styled to match existing `analysisSteps` pattern
-- **Phase 4:** Expert Plot Specification
-  - Specify data sources, selected files, channels, regions, axes, units, scales, ranges, overlay strategy, legends, annotations, markers, metadata, default zoom, and fixed vs auto scaling
-- **Phase 5:** Multi-Signal and Multi-File Visualizations
+- **Phase 4:** ✅ Expert Plot Specification
+  - `PlotHints` record in `AgentResponseBlockModels.cs` (`FocusFrequencyHz`, `FrequencyRangeMinHz/MaxHz`, `AnnotationLabel`, `ScaleOverride`)
+  - `ExpertVisualizationPlanner.BuildPlotHintsFor` extracts peak-based ±2-octave hints from spectrum evidence
+  - `AgentResultBuilder.BuildPlotHintsLookup` maps `resultId → PlotHints`; `AgentAskResult.PlotHintsMap` serialized in response
+  - Frontend: `mergeBlocksWithPlotHints` in `useAgentAsk.ts`; `SpectrumCanvas` `annotationFrequencyHz`/`annotationLabel` dashed marker; `AnalysisViewBlock` preview zoomed to focus range
+- **Phase 5:** ✅ Multi-Signal and Multi-File Visualizations (spectrum overlay)
+  - `SpectrumOverlayBlock` + `OverlaySignal` records in `AgentResponseBlockModels.cs`
+  - `ExpertVisualizationPlanner.AddSpectrumOverlayBlockWhenUseful` emits `spectrumOverlay` plan block when 2+ spectrum evidence items are present
+  - `AgentResultBuilder.BuildSpectrumOverlayBlocks` maps evidence → `SpectrumOverlayBlock` with per-signal `resultId`/`fileName`/`PlotHints`
+  - `AgentAskResult.OverlayBlocks` carries overlay blocks separately from LLM blocks; wired in both orchestrator paths
+  - Frontend: `SpectrumOverlayBlockView` fetches all signal results, merges channels into one `SpectrumCanvas`; rendered in `ChatPanel` after LLM blocks
+- **Phase 5 (remaining):** Multi-File Visualizations (non-spectrum)
+  - Before/after comparisons, channel comparisons, CPB overlays, sound-quality side-by-side
   - Spectrum overlays, multi-file chart comparison, before/after comparisons, channel comparisons, measured-vs-predicted comparisons, selected time-region comparisons, and source contribution comparisons
-- **Phase 6:** Multi-Tool Acoustic Investigations
-  - Combine several DSP tools into investigation cards for diagnostic questions such as "Why does this sound annoying?", "Which file is most tonal?", "Which source contributes most?", "What changed after filtering?", "Is this signal clipped?", or "Where does the tone appear?"
+- **Phase 6:** ✅ Multi-Tool Acoustic Investigations
+  - `InvestigationBlock` + `InvestigationSignal` records in `AgentResponseBlockModels.cs`
+  - `ExpertVisualizationPlanner.AddInvestigationBlockWhenUseful` emits `investigation` plan block when 2+ different viewable DSP types are present
+  - `AgentResultBuilder.BuildInvestigationBlocks` resolves signals with correct `viewType`; `AgentAskResult.InvestigationBlocks` wired in both orchestrator paths
+  - Frontend: `InvestigationBlockView` renders per-signal `AnalysisViewBlock` mini-cards in a `SimpleGrid`; expand modal shows full-height cards
 - **Phase 7:** Generated Analysis Workflows
   - Let the Agent generate temporary workflows such as Import files → Statistics → Spectrum overlay → Loudness comparison → Ranking → Report summary
 - **Phase 8:** Exportable Investigation Reports
