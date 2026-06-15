@@ -34,10 +34,20 @@ public sealed class SpectrogramAnalyzerTests
         var channel = BuildSineChannel(0.5, 440.0, 30.0);
 
         var result = SpectrogramAnalyzer.Analyze(
-            [channel], 0.0, 30.0, 256, 0.75, "linear", DefaultGainDb, DefaultRangeDb);
+            [channel],
+            0.0,
+            30.0,
+            256,
+            0.75,
+            "linear",
+            DefaultGainDb,
+            DefaultRangeDb
+        );
 
-        Assert.True(result.Channels[0].FrameCount <= 1000,
-            $"Frame count {result.Channels[0].FrameCount} exceeds the 1000 cap");
+        Assert.True(
+            result.Channels[0].FrameCount <= 1000,
+            $"Frame count {result.Channels[0].FrameCount} exceeds the 1000 cap"
+        );
     }
 
     [Fact]
@@ -69,8 +79,10 @@ public sealed class SpectrogramAnalyzerTests
         var quietMaxByte = MaxByteInSpectrogram(quietResult.Channels[0]);
 
         // Fixed dB SPL range maps loud signals to high bytes and quiet to lower bytes.
-        Assert.True(loudMaxByte > quietMaxByte,
-            $"Loud max byte {loudMaxByte} should exceed quiet max byte {quietMaxByte}");
+        Assert.True(
+            loudMaxByte > quietMaxByte,
+            $"Loud max byte {loudMaxByte} should exceed quiet max byte {quietMaxByte}"
+        );
     }
 
     [Fact]
@@ -93,8 +105,15 @@ public sealed class SpectrogramAnalyzerTests
         var ch2 = BuildSineChannel(0.3, 880.0, 1.0, "ch2", "Right");
 
         var result = SpectrogramAnalyzer.Analyze(
-            [ch1, ch2], 0.0, 1.0, DefaultFftSize, DefaultOverlap,
-            "linear", DefaultGainDb, DefaultRangeDb);
+            [ch1, ch2],
+            0.0,
+            1.0,
+            DefaultFftSize,
+            DefaultOverlap,
+            "linear",
+            DefaultGainDb,
+            DefaultRangeDb
+        );
 
         Assert.Equal(2, result.Channels.Count);
         Assert.Equal("ch1", result.Channels[0].ChannelId);
@@ -133,8 +152,15 @@ public sealed class SpectrogramAnalyzerTests
 
         // Request region beyond signal duration
         var result = SpectrogramAnalyzer.Analyze(
-            [channel], -1.0, 5.0, DefaultFftSize, DefaultOverlap,
-            "linear", DefaultGainDb, DefaultRangeDb);
+            [channel],
+            -1.0,
+            5.0,
+            DefaultFftSize,
+            DefaultOverlap,
+            "linear",
+            DefaultGainDb,
+            DefaultRangeDb
+        );
 
         Assert.Equal(0.0, result.Region.StartSeconds);
         Assert.Equal(1.0, result.Region.EndSeconds, precision: 2);
@@ -145,8 +171,7 @@ public sealed class SpectrogramAnalyzerTests
     {
         var channel = BuildSineChannel(0.5, 440.0, 2.0);
 
-        var result = SpectrogramAnalyzer.Analyze(
-            [channel], 0.5, 1.5, 1024, 0.5, "mel", 15.0, 60.0);
+        var result = SpectrogramAnalyzer.Analyze([channel], 0.5, 1.5, 1024, 0.5, "mel", 15.0, 60.0);
 
         Assert.Equal(1024, result.Parameters.FftSize);
         Assert.Equal("hann", result.Parameters.WindowType);
@@ -162,8 +187,15 @@ public sealed class SpectrogramAnalyzerTests
         var channel = BuildSineChannel(0.5, 440.0, 1.0);
 
         var result = SpectrogramAnalyzer.Analyze(
-            [channel], 0.0, 1.0, DefaultFftSize, DefaultOverlap,
-            "linear", 999.0, 999.0);
+            [channel],
+            0.0,
+            1.0,
+            DefaultFftSize,
+            DefaultOverlap,
+            "linear",
+            999.0,
+            999.0
+        );
 
         // GainDb clamps to [-10, 30], RangeDb clamps to [20, 120]
         Assert.Equal(30.0, result.Parameters.GainDb);
@@ -200,8 +232,15 @@ public sealed class SpectrogramAnalyzerTests
     {
         var durationSeconds = (double)channel.Samples.Length / channel.SampleRate;
         return SpectrogramAnalyzer.Analyze(
-            [channel], 0.0, durationSeconds, DefaultFftSize, DefaultOverlap,
-            "linear", DefaultGainDb, DefaultRangeDb);
+            [channel],
+            0.0,
+            durationSeconds,
+            DefaultFftSize,
+            DefaultOverlap,
+            "linear",
+            DefaultGainDb,
+            DefaultRangeDb
+        );
     }
 
     private static int MaxByteInSpectrogram(ChannelSpectrogramAnalysis channel)
@@ -211,7 +250,8 @@ public sealed class SpectrogramAnalyzerTests
         {
             foreach (var b in frame)
             {
-                if (b > max) max = b;
+                if (b > max)
+                    max = b;
             }
         }
         return max;
@@ -222,14 +262,17 @@ public sealed class SpectrogramAnalyzerTests
         double frequencyHz,
         double durationSeconds,
         string channelId = "ch1",
-        string channelName = "Mono")
+        string channelName = "Mono"
+    )
     {
         var sampleCount = (int)(DefaultSampleRate * durationSeconds);
         var samples = new float[sampleCount];
 
         for (var i = 0; i < sampleCount; i++)
         {
-            samples[i] = (float)(amplitudeFs * Math.Sin(2.0 * Math.PI * frequencyHz * i / DefaultSampleRate));
+            samples[i] = (float)(
+                amplitudeFs * Math.Sin(2.0 * Math.PI * frequencyHz * i / DefaultSampleRate)
+            );
         }
 
         return BuildChannelFromSamples(samples, channelId, channelName);
@@ -238,7 +281,8 @@ public sealed class SpectrogramAnalyzerTests
     private static SignalChannel BuildChannelFromSamples(
         float[] samples,
         string channelId = "ch1",
-        string channelName = "Mono")
+        string channelName = "Mono"
+    )
     {
         return new SignalChannel
         {
@@ -248,8 +292,16 @@ public sealed class SpectrogramAnalyzerTests
             SampleCount = samples.Length,
             Quantity = "digital_amplitude",
             Unit = "FS",
-            DbReference = new DbReference { Value = 1.0, Unit = "FS", DbUnit = "dBFS" },
-            PhysicalMetadata = new SignalPhysicalMetadata { UnitKind = SignalUnitKind.DigitalFullScale },
+            DbReference = new DbReference
+            {
+                Value = 1.0,
+                Unit = "FS",
+                DbUnit = "dBFS",
+            },
+            PhysicalMetadata = new SignalPhysicalMetadata
+            {
+                UnitKind = SignalUnitKind.DigitalFullScale,
+            },
             Samples = samples,
         };
     }

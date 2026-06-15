@@ -51,12 +51,14 @@ public static class MetadataEvidenceExtractor
                 evidenceData["bitDepth"] = bitDepthEl.GetInt32();
             }
 
-            evidenceItems.Add(new EvidenceItem
-            {
-                EvidenceId = evidenceId,
-                Type = "metadata",
-                Data = evidenceData,
-            });
+            evidenceItems.Add(
+                new EvidenceItem
+                {
+                    EvidenceId = evidenceId,
+                    Type = "metadata",
+                    Data = evidenceData,
+                }
+            );
         }
     }
 }

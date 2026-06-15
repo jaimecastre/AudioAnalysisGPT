@@ -20,7 +20,8 @@ public sealed class CpbAnalysisServiceTests
             FftSize: 8192,
             Overlap: 0.5,
             Weighting: "z",
-            Method: "fft_bin_power_sum");
+            Method: "fft_bin_power_sum"
+        );
 
         var result = await service.AnalyzeAsync(query, [channel], CancellationToken.None);
 
@@ -42,10 +43,12 @@ public sealed class CpbAnalysisServiceTests
             FftSize: 8192,
             Overlap: 0.5,
             Weighting: "a",
-            Method: "python_filter_bank");
+            Method: "python_filter_bank"
+        );
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.AnalyzeAsync(query, [channel], CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.AnalyzeAsync(query, [channel], CancellationToken.None)
+        );
 
         Assert.Contains("Python CPB filter-bank sidecar unavailable", exception.Message);
         Assert.Contains("PyOctaveBand", exception.Message);
@@ -62,8 +65,9 @@ public sealed class CpbAnalysisServiceTests
 
         var result = await service.AnalyzeAsync(query, [channel], CancellationToken.None);
 
-        var highestBand = result.Channels[0].Bands
-            .Where(band => band.LevelDb.HasValue)
+        var highestBand = result
+            .Channels[0]
+            .Bands.Where(band => band.LevelDb.HasValue)
             .MaxBy(band => band.LevelDb!.Value);
 
         Assert.NotNull(highestBand);
@@ -99,9 +103,12 @@ public sealed class CpbAnalysisServiceTests
         public Task<CpbAnalysis> AnalyzeAsync(
             RunCpbQuery query,
             IReadOnlyList<SignalChannel> channels,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken
+        )
         {
-            throw new InvalidOperationException("Python CPB filter-bank sidecar unavailable. Install PyOctaveBand and configure the sidecar before selecting python_filter_bank.");
+            throw new InvalidOperationException(
+                "Python CPB filter-bank sidecar unavailable. Install PyOctaveBand and configure the sidecar before selecting python_filter_bank."
+            );
         }
     }
 
@@ -109,11 +116,24 @@ public sealed class CpbAnalysisServiceTests
     {
         var repositoryRoot = FindRepositoryRoot();
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["PythonSidecar:Executable"] = Path.Combine(repositoryRoot, "AcousticCanvas", ".venv", "bin", "python"),
-                ["PythonSidecar:CpbFilterBankScript"] = Path.Combine(repositoryRoot, "AcousticCanvas", "AcousticCanvas.ML", "cpb_filter_bank.py"),
-            })
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["PythonSidecar:Executable"] = Path.Combine(
+                        repositoryRoot,
+                        "AcousticCanvas",
+                        ".venv",
+                        "bin",
+                        "python"
+                    ),
+                    ["PythonSidecar:CpbFilterBankScript"] = Path.Combine(
+                        repositoryRoot,
+                        "AcousticCanvas",
+                        "AcousticCanvas.ML",
+                        "cpb_filter_bank.py"
+                    ),
+                }
+            )
             .Build();
 
         return new PythonCpbFilterBankClient(configuration);
@@ -124,7 +144,11 @@ public sealed class CpbAnalysisServiceTests
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            var projectContextPath = Path.Combine(directory.FullName, "AcousticCanvas", "PROJECT_CONTEXT.md");
+            var projectContextPath = Path.Combine(
+                directory.FullName,
+                "AcousticCanvas",
+                "PROJECT_CONTEXT.md"
+            );
             if (File.Exists(projectContextPath))
             {
                 return directory.FullName;
@@ -133,7 +157,9 @@ public sealed class CpbAnalysisServiceTests
             directory = directory.Parent;
         }
 
-        throw new DirectoryNotFoundException("Could not locate repository root containing AcousticCanvas/PROJECT_CONTEXT.md.");
+        throw new DirectoryNotFoundException(
+            "Could not locate repository root containing AcousticCanvas/PROJECT_CONTEXT.md."
+        );
     }
 
     private static RunCpbQuery BuildPythonFilterBankQuery(string fixturePath, string weighting)
@@ -146,14 +172,18 @@ public sealed class CpbAnalysisServiceTests
             FftSize: 8192,
             Overlap: 0.5,
             Weighting: weighting,
-            Method: "python_filter_bank");
+            Method: "python_filter_bank"
+        );
     }
 
     private static string WriteSineWaveFixture(double frequencyHz, double amplitude)
     {
         const int sampleRate = 48_000;
         const int sampleCount = sampleRate;
-        var filePath = Path.Combine(Path.GetTempPath(), $"acousticcanvas_cpb_{frequencyHz:0}_hz_{Guid.NewGuid():N}.wav");
+        var filePath = Path.Combine(
+            Path.GetTempPath(),
+            $"acousticcanvas_cpb_{frequencyHz:0}_hz_{Guid.NewGuid():N}.wav"
+        );
 
         using var fileStream = File.Create(filePath);
         using var writer = new BinaryWriter(fileStream);
@@ -175,7 +205,8 @@ public sealed class CpbAnalysisServiceTests
 
         for (var sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
         {
-            var sample = amplitude * Math.Sin(2.0 * Math.PI * frequencyHz * sampleIndex / sampleRate);
+            var sample =
+                amplitude * Math.Sin(2.0 * Math.PI * frequencyHz * sampleIndex / sampleRate);
             writer.Write((short)Math.Round(sample * short.MaxValue));
         }
 
@@ -184,7 +215,9 @@ public sealed class CpbAnalysisServiceTests
 
     private static CpbBand FindBand(CpbAnalysis analysis, double centerFrequencyHz)
     {
-        return analysis.Channels[0].Bands.MinBy(band => Math.Abs(band.CenterFrequencyHz - centerFrequencyHz))
+        return analysis
+                .Channels[0]
+                .Bands.MinBy(band => Math.Abs(band.CenterFrequencyHz - centerFrequencyHz))
             ?? throw new InvalidOperationException($"No CPB band near {centerFrequencyHz} Hz.");
     }
 
@@ -196,7 +229,9 @@ public sealed class CpbAnalysisServiceTests
 
         for (var sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
         {
-            samples[sampleIndex] = (float)(0.5 * Math.Sin(2.0 * Math.PI * 1000.0 * sampleIndex / sampleRate));
+            samples[sampleIndex] = (float)(
+                0.5 * Math.Sin(2.0 * Math.PI * 1000.0 * sampleIndex / sampleRate)
+            );
         }
 
         return new SignalChannel

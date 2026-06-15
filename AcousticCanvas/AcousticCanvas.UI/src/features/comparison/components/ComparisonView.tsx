@@ -99,15 +99,15 @@ function LevelMetricsTable({ fileA, fileB, diff, labelA, labelB }: ILevelMetrics
   const rows = [
     {
       label: 'Peak',
-      valueA: `${fileA.peakDb.toFixed(2)} dBFS`,
-      valueB: `${fileB.peakDb.toFixed(2)} dBFS`,
+      valueA: `${fileA.peakDb.toFixed(2)} ${fileA.dbUnit ?? 'dB SPL'}`,
+      valueB: `${fileB.peakDb.toFixed(2)} ${fileB.dbUnit ?? 'dB SPL'}`,
       delta: diff.peakDeltaDb,
       higherLabel: diff.higherPeakFileId === fileA.fileId ? labelA : labelB,
     },
     {
       label: 'RMS',
-      valueA: `${fileA.rmsDb.toFixed(2)} dBFS`,
-      valueB: `${fileB.rmsDb.toFixed(2)} dBFS`,
+      valueA: `${fileA.rmsDb.toFixed(2)} ${fileA.dbUnit ?? 'dB SPL'}`,
+      valueB: `${fileB.rmsDb.toFixed(2)} ${fileB.dbUnit ?? 'dB SPL'}`,
       delta: diff.rmsDeltaDb,
       higherLabel: diff.higherRmsFileId === fileA.fileId ? labelA : labelB,
     },

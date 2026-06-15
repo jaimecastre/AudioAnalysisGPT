@@ -13,7 +13,9 @@ public sealed class AgentBehaviorEvalTests
 
     [Theory]
     [MemberData(nameof(LoadEvalCases))]
-    public void AgentBehaviorEvalCaseMatchesRoutingAndPromptContracts(AgentBehaviorEvalCase evalCase)
+    public void AgentBehaviorEvalCaseMatchesRoutingAndPromptContracts(
+        AgentBehaviorEvalCase evalCase
+    )
     {
         var deterministicPlan = DeterministicFactRouter.TryRoute(evalCase.Question);
         var noToolAnswer = AgentMetaQuestionRouter.TryAnswer(evalCase.Question);
@@ -47,7 +49,8 @@ public sealed class AgentBehaviorEvalTests
             var plannerPrompt = AgentPromptBuilder.BuildPlannerSystemPrompt(
                 AgentToolRegistry.BuildToolListSummaryForPrompt(),
                 ["file-a", "file-b"],
-                ["a.wav", "b.wav"]);
+                ["a.wav", "b.wav"]
+            );
 
             foreach (var expectedText in evalCase.PlannerPromptMustContain)
             {
@@ -56,7 +59,9 @@ public sealed class AgentBehaviorEvalTests
         }
         else
         {
-            throw new InvalidOperationException($"Unknown expected route '{evalCase.ExpectedRoute}'.");
+            throw new InvalidOperationException(
+                $"Unknown expected route '{evalCase.ExpectedRoute}'."
+            );
         }
 
         var finalPrompt = evalCase.FinalAnswerMustContainBlocks
@@ -81,15 +86,22 @@ public sealed class AgentBehaviorEvalTests
                 continue;
             }
 
-            var evalCase = JsonSerializer.Deserialize<AgentBehaviorEvalCase>(line, JsonOptions)
-                ?? throw new InvalidOperationException($"Could not parse eval case at line {lineNumber}.");
+            var evalCase =
+                JsonSerializer.Deserialize<AgentBehaviorEvalCase>(line, JsonOptions)
+                ?? throw new InvalidOperationException(
+                    $"Could not parse eval case at line {lineNumber}."
+                );
             yield return [evalCase];
         }
     }
 
     private static string LocateEvalCaseFile()
     {
-        var candidate = Path.Combine(AppContext.BaseDirectory, "AgentBehavior", "agent_eval_cases.jsonl");
+        var candidate = Path.Combine(
+            AppContext.BaseDirectory,
+            "AgentBehavior",
+            "agent_eval_cases.jsonl"
+        );
         if (File.Exists(candidate))
         {
             return candidate;
@@ -98,13 +110,22 @@ public sealed class AgentBehaviorEvalTests
         var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null)
         {
-            var fallback = Path.Combine(current.FullName, "AgentBehavior", "agent_eval_cases.jsonl");
+            var fallback = Path.Combine(
+                current.FullName,
+                "AgentBehavior",
+                "agent_eval_cases.jsonl"
+            );
             if (File.Exists(fallback))
             {
                 return fallback;
             }
 
-            fallback = Path.Combine(current.FullName, "AcousticCanvas.Tests", "AgentBehavior", "agent_eval_cases.jsonl");
+            fallback = Path.Combine(
+                current.FullName,
+                "AcousticCanvas.Tests",
+                "AgentBehavior",
+                "agent_eval_cases.jsonl"
+            );
             if (File.Exists(fallback))
             {
                 return fallback;

@@ -31,12 +31,14 @@ public static class FindingsEvidenceExtractor
             evidenceData["findings"] = ExtractFindings(findingsArray);
         }
 
-        evidenceItems.Add(new EvidenceItem
-        {
-            EvidenceId = evidenceId,
-            Type = "findings",
-            Data = evidenceData,
-        });
+        evidenceItems.Add(
+            new EvidenceItem
+            {
+                EvidenceId = evidenceId,
+                Type = "findings",
+                Data = evidenceData,
+            }
+        );
     }
 
     private static List<object?> ExtractFindings(JsonElement findingsArray)
@@ -45,40 +47,57 @@ public static class FindingsEvidenceExtractor
 
         foreach (var finding in findingsArray.EnumerateArray())
         {
-            var findingType = finding.TryGetProperty("type", out var typeEl) ? typeEl.GetString() : null;
-            var severity = finding.TryGetProperty("severity", out var sevEl) ? sevEl.GetString() : null;
-            var confidence = finding.TryGetProperty("confidence", out var confEl) ? confEl.GetString() : null;
-            var title = finding.TryGetProperty("title", out var titleEl) ? titleEl.GetString() : null;
-            var description = finding.TryGetProperty("description", out var descEl) ? descEl.GetString() : null;
-            var suggestedNextStep = finding.TryGetProperty("suggestedNextStep", out var nextEl) ? nextEl.GetString() : null;
+            var findingType = finding.TryGetProperty("type", out var typeEl)
+                ? typeEl.GetString()
+                : null;
+            var severity = finding.TryGetProperty("severity", out var sevEl)
+                ? sevEl.GetString()
+                : null;
+            var confidence = finding.TryGetProperty("confidence", out var confEl)
+                ? confEl.GetString()
+                : null;
+            var title = finding.TryGetProperty("title", out var titleEl)
+                ? titleEl.GetString()
+                : null;
+            var description = finding.TryGetProperty("description", out var descEl)
+                ? descEl.GetString()
+                : null;
+            var suggestedNextStep = finding.TryGetProperty("suggestedNextStep", out var nextEl)
+                ? nextEl.GetString()
+                : null;
 
-            double? startSeconds = finding.TryGetProperty("startSeconds", out var startEl)
+            double? startSeconds =
+                finding.TryGetProperty("startSeconds", out var startEl)
                 && startEl.ValueKind != JsonValueKind.Null
                     ? startEl.GetDouble()
                     : null;
 
-            double? endSeconds = finding.TryGetProperty("endSeconds", out var endEl)
+            double? endSeconds =
+                finding.TryGetProperty("endSeconds", out var endEl)
                 && endEl.ValueKind != JsonValueKind.Null
                     ? endEl.GetDouble()
                     : null;
 
-            double? frequencyHz = finding.TryGetProperty("frequencyHz", out var freqEl)
+            double? frequencyHz =
+                finding.TryGetProperty("frequencyHz", out var freqEl)
                 && freqEl.ValueKind != JsonValueKind.Null
                     ? freqEl.GetDouble()
                     : null;
 
-            findingsList.Add(new
-            {
-                type = findingType,
-                severity,
-                confidence,
-                title,
-                description,
-                suggestedNextStep,
-                startSeconds,
-                endSeconds,
-                frequencyHz,
-            });
+            findingsList.Add(
+                new
+                {
+                    type = findingType,
+                    severity,
+                    confidence,
+                    title,
+                    description,
+                    suggestedNextStep,
+                    startSeconds,
+                    endSeconds,
+                    frequencyHz,
+                }
+            );
         }
 
         return findingsList;

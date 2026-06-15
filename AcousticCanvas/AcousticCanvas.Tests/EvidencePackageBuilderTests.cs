@@ -15,7 +15,8 @@ public sealed class EvidencePackageBuilderTests
             "what is the peak level?",
             ["file-1"],
             ["test.wav"],
-            []);
+            []
+        );
 
         Assert.Empty(package.AnalysesRun);
         Assert.Empty(package.KeyEvidence);
@@ -27,10 +28,17 @@ public sealed class EvidencePackageBuilderTests
     public void FailedToolAddsLimitationNotEvidence()
     {
         var failedOutput = ToolOutputBuilder.BuildFailureOutput(
-            "run_basic_metrics", "FILE_NOT_FOUND", "File not found.");
+            "run_basic_metrics",
+            "FILE_NOT_FOUND",
+            "File not found."
+        );
 
         var package = EvidencePackageBuilder.Build(
-            "analyze this", ["file-1"], ["test.wav"], [failedOutput]);
+            "analyze this",
+            ["file-1"],
+            ["test.wav"],
+            [failedOutput]
+        );
 
         Assert.Empty(package.AnalysesRun);
         Assert.Empty(package.KeyEvidence);
@@ -47,7 +55,8 @@ public sealed class EvidencePackageBuilderTests
             "what is the peak?",
             ["file-1"],
             ["test.wav"],
-            [toolOutput]);
+            [toolOutput]
+        );
 
         Assert.Contains("run_basic_metrics", package.AnalysesRun);
         Assert.NotEmpty(package.KeyEvidence);
@@ -63,7 +72,8 @@ public sealed class EvidencePackageBuilderTests
             "is there clipping?",
             ["file-1"],
             ["test.wav"],
-            [toolOutput]);
+            [toolOutput]
+        );
 
         Assert.Contains("run_event_detection", package.AnalysesRun);
         Assert.NotEmpty(package.KeyEvidence);
@@ -76,10 +86,16 @@ public sealed class EvidencePackageBuilderTests
         var toolOutput = BuildBasicMetricsOutput("file-1");
 
         var package = EvidencePackageBuilder.Build(
-            "analyze", ["file-1"], ["test.wav"], [toolOutput]);
+            "analyze",
+            ["file-1"],
+            ["test.wav"],
+            [toolOutput]
+        );
 
-        Assert.Contains(package.Limitations, l =>
-            l.Contains("Analog distortion", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            package.Limitations,
+            l => l.Contains("Analog distortion", StringComparison.OrdinalIgnoreCase)
+        );
     }
 
     [Fact]
@@ -88,10 +104,16 @@ public sealed class EvidencePackageBuilderTests
         var toolOutput = BuildCpbOutput("file-1");
 
         var package = EvidencePackageBuilder.Build(
-            "show cpb", ["file-1"], ["test.wav"], [toolOutput]);
+            "show cpb",
+            ["file-1"],
+            ["test.wav"],
+            [toolOutput]
+        );
 
-        Assert.Contains(package.Limitations, l =>
-            l.Contains("IEC 61260", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(
+            package.Limitations,
+            l => l.Contains("IEC 61260", StringComparison.OrdinalIgnoreCase)
+        );
     }
 
     [Fact]
@@ -104,7 +126,8 @@ public sealed class EvidencePackageBuilderTests
             "full analysis",
             ["file-1"],
             ["test.wav"],
-            [metricsOutput, eventOutput]);
+            [metricsOutput, eventOutput]
+        );
 
         Assert.Equal(2, package.AnalysesRun.Count);
         Assert.True(package.KeyEvidence.Count >= 2);
@@ -115,13 +138,17 @@ public sealed class EvidencePackageBuilderTests
     {
         var successOutput = BuildBasicMetricsOutput("file-1");
         var failedOutput = ToolOutputBuilder.BuildFailureOutput(
-            "run_spectrum", "TIMEOUT", "Timed out.");
+            "run_spectrum",
+            "TIMEOUT",
+            "Timed out."
+        );
 
         var package = EvidencePackageBuilder.Build(
             "analyze",
             ["file-1"],
             ["test.wav"],
-            [successOutput, failedOutput]);
+            [successOutput, failedOutput]
+        );
 
         Assert.Single(package.AnalysesRun);
         Assert.Equal("run_basic_metrics", package.AnalysesRun[0]);
@@ -135,7 +162,8 @@ public sealed class EvidencePackageBuilderTests
             "compare",
             ["file-a", "file-b"],
             ["a.wav", "b.wav"],
-            []);
+            []
+        );
 
         Assert.Equal(2, package.SelectedFileIds.Count);
         Assert.Equal("file-a", package.SelectedFileIds[0]);
@@ -178,7 +206,8 @@ public sealed class EvidencePackageBuilderTests
         return ToolOutputBuilder.BuildSuccessOutput(
             "run_basic_metrics",
             "basic_metrics_abc12345",
-            resultData);
+            resultData
+        );
     }
 
     private static ToolExecutionOutput BuildEventDetectionOutput(string fileId)
@@ -203,7 +232,8 @@ public sealed class EvidencePackageBuilderTests
         return ToolOutputBuilder.BuildSuccessOutput(
             "run_event_detection",
             "events_abc12345",
-            resultData);
+            resultData
+        );
     }
 
     private static ToolExecutionOutput BuildCpbOutput(string fileId)
@@ -220,16 +250,18 @@ public sealed class EvidencePackageBuilderTests
                     {
                         highestBands = new[]
                         {
-                            new { centerFrequencyHz = 1000.0, levelDb = -20.0, label = "1 kHz" },
+                            new
+                            {
+                                centerFrequencyHz = 1000.0,
+                                levelDb = -20.0,
+                                label = "1 kHz",
+                            },
                         },
                     },
                 },
             },
         };
 
-        return ToolOutputBuilder.BuildSuccessOutput(
-            "run_cpb",
-            "cpb_abc12345",
-            resultData);
+        return ToolOutputBuilder.BuildSuccessOutput("run_cpb", "cpb_abc12345", resultData);
     }
 }

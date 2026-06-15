@@ -109,8 +109,16 @@ public static class SpectrogramAnalyzer
             DurationSeconds = clampedEndSeconds - clampedStartSeconds,
         };
 
-        var timeAxisTicks = SpectrogramAxisBuilder.BuildTimeAxisTicks(clampedStartSeconds, clampedEndSeconds, 6);
-        var frequencyAxisTicks = SpectrogramAxisBuilder.BuildFrequencyAxisTicks(sampleRate / 2.0, scale, 6);
+        var timeAxisTicks = SpectrogramAxisBuilder.BuildTimeAxisTicks(
+            clampedStartSeconds,
+            clampedEndSeconds,
+            6
+        );
+        var frequencyAxisTicks = SpectrogramAxisBuilder.BuildFrequencyAxisTicks(
+            sampleRate / 2.0,
+            scale,
+            6
+        );
 
         return new SpectrogramAnalysis
         {
@@ -152,7 +160,9 @@ public static class SpectrogramAnalyzer
                 window,
                 coherentGain
             );
-            frames.Add(SpectrogramAxisBuilder.RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0));
+            frames.Add(
+                SpectrogramAxisBuilder.RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0)
+            );
             blockStart += hopSize;
         }
 
@@ -166,14 +176,17 @@ public static class SpectrogramAnalyzer
                 window,
                 coherentGain
             );
-            frames.Add(SpectrogramAxisBuilder.RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0));
+            frames.Add(
+                SpectrogramAxisBuilder.RemapFrequencyScale(amplitudes, scale, sampleRate / 2.0)
+            );
         }
 
         // All channels use the dB SPL path: Pa or digital with 0 dBFS = 91 dB SPL convention.
         // GetScaleFactor returns 1.0 for PressurePascal and DigitalFullScale.
-        var scaleFactor = channel.PhysicalMetadata != null
-            ? AcousticPressureConverter.GetScaleFactor(channel.PhysicalMetadata)
-            : 1.0;
+        var scaleFactor =
+            channel.PhysicalMetadata != null
+                ? AcousticPressureConverter.GetScaleFactor(channel.PhysicalMetadata)
+                : 1.0;
 
         var frequencyData = new List<byte[]>();
 
@@ -186,11 +199,7 @@ public static class SpectrogramAnalyzer
                 var dbSpl = AcousticPressureConverter.ComputeDbSplFromPeakAmplitude(
                     peakAmplitudePa
                 );
-                frameBytes[k] = AcousticPressureConverter.MapDbSplToByte(
-                    dbSpl,
-                    minDbSpl,
-                    maxDbSpl
-                );
+                frameBytes[k] = AcousticPressureConverter.MapDbSplToByte(dbSpl, minDbSpl, maxDbSpl);
             }
             frequencyData.Add(frameBytes);
         }
@@ -250,7 +259,6 @@ public static class SpectrogramAnalyzer
 
         return amplitudes;
     }
-
 
     private static double[] BuildHannWindow(int size)
     {

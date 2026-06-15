@@ -31,7 +31,8 @@ public static class AgentToolRegistry
             ["run_spectrum"] = new AgentToolDefinition
             {
                 Name = "run_spectrum",
-                Description = "Compute averaged FFT spectrum with tonal peak detection. Supports optional startSeconds and endSeconds to restrict analysis to a time region.",
+                Description =
+                    "Compute averaged FFT spectrum with tonal peak detection. Supports optional startSeconds and endSeconds to restrict analysis to a time region.",
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },

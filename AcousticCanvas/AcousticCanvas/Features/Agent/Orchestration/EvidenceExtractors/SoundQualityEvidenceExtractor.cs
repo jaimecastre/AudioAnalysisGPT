@@ -41,22 +41,49 @@ public static class SoundQualityEvidenceExtractor
                 AddRegionFields(regionElement, evidenceData);
             }
 
-            AddMetricEvidence(fileResult, evidenceData, "loudness", "loudnessSone", "loudnessMethod");
-            AddMetricEvidence(fileResult, evidenceData, "sharpness", "sharpnessAcum", "sharpnessMethod");
-            AddMetricEvidence(fileResult, evidenceData, "roughness", "roughnessAsper", "roughnessMethod");
+            AddMetricEvidence(
+                fileResult,
+                evidenceData,
+                "loudness",
+                "loudnessSone",
+                "loudnessMethod"
+            );
+            AddMetricEvidence(
+                fileResult,
+                evidenceData,
+                "sharpness",
+                "sharpnessAcum",
+                "sharpnessMethod"
+            );
+            AddMetricEvidence(
+                fileResult,
+                evidenceData,
+                "roughness",
+                "roughnessAsper",
+                "roughnessMethod"
+            );
 
-            evidenceItems.Add(new EvidenceItem
-            {
-                EvidenceId = evidenceId,
-                Type = "sound_quality",
-                Data = evidenceData,
-            });
+            evidenceItems.Add(
+                new EvidenceItem
+                {
+                    EvidenceId = evidenceId,
+                    Type = "sound_quality",
+                    Data = evidenceData,
+                }
+            );
         }
 
-        SoundQualityComparisonEvidenceExtractor.TryEmit(resultsArray, evidenceItems, fileIdToNameMap);
+        SoundQualityComparisonEvidenceExtractor.TryEmit(
+            resultsArray,
+            evidenceItems,
+            fileIdToNameMap
+        );
     }
 
-    private static void AddRegionFields(JsonElement regionElement, Dictionary<string, object?> evidenceData)
+    private static void AddRegionFields(
+        JsonElement regionElement,
+        Dictionary<string, object?> evidenceData
+    )
     {
         if (regionElement.TryGetProperty("startSeconds", out var startElement))
         {

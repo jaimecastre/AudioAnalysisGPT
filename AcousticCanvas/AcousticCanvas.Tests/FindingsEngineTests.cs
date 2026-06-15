@@ -10,19 +10,22 @@ public sealed class FindingsEngineTests
     [Fact]
     public void ClippingEventProducesHighSeverityFinding()
     {
-        var eventResults = BuildEventResults("clipping", new AudioEvent
-        {
-            Kind = "clipping",
-            StartSeconds = 1.0,
-            EndSeconds = 1.01,
-            DurationSeconds = 0.01,
-            Description = "Clipping at 1.0s",
-            Metadata = new Dictionary<string, object?>
+        var eventResults = BuildEventResults(
+            "clipping",
+            new AudioEvent
             {
-                ["sampleCount"] = 480,
-                ["peakAmplitude"] = 1.0,
-            },
-        });
+                Kind = "clipping",
+                StartSeconds = 1.0,
+                EndSeconds = 1.01,
+                DurationSeconds = 0.01,
+                Description = "Clipping at 1.0s",
+                Metadata = new Dictionary<string, object?>
+                {
+                    ["sampleCount"] = 480,
+                    ["peakAmplitude"] = 1.0,
+                },
+            }
+        );
 
         var findings = FindingsEngine.GenerateFindings(TestFileId, EmptyLevel(), eventResults);
 
@@ -36,15 +39,18 @@ public sealed class FindingsEngineTests
     [Fact]
     public void ShortSilenceProducesMediumSeverityFinding()
     {
-        var eventResults = BuildEventResults("silence", new AudioEvent
-        {
-            Kind = "silence",
-            StartSeconds = 5.0,
-            EndSeconds = 5.5,
-            DurationSeconds = 0.5,
-            Description = "Silence at 5.0s",
-            Metadata = new Dictionary<string, object?>(),
-        });
+        var eventResults = BuildEventResults(
+            "silence",
+            new AudioEvent
+            {
+                Kind = "silence",
+                StartSeconds = 5.0,
+                EndSeconds = 5.5,
+                DurationSeconds = 0.5,
+                Description = "Silence at 5.0s",
+                Metadata = new Dictionary<string, object?>(),
+            }
+        );
 
         var findings = FindingsEngine.GenerateFindings(TestFileId, EmptyLevel(), eventResults);
 
@@ -57,15 +63,18 @@ public sealed class FindingsEngineTests
     [Fact]
     public void LongSilenceProducesHighSeverityFinding()
     {
-        var eventResults = BuildEventResults("silence", new AudioEvent
-        {
-            Kind = "silence",
-            StartSeconds = 2.0,
-            EndSeconds = 4.0,
-            DurationSeconds = 2.0,
-            Description = "Silence at 2.0s",
-            Metadata = new Dictionary<string, object?>(),
-        });
+        var eventResults = BuildEventResults(
+            "silence",
+            new AudioEvent
+            {
+                Kind = "silence",
+                StartSeconds = 2.0,
+                EndSeconds = 4.0,
+                DurationSeconds = 2.0,
+                Description = "Silence at 2.0s",
+                Metadata = new Dictionary<string, object?>(),
+            }
+        );
 
         var findings = FindingsEngine.GenerateFindings(TestFileId, EmptyLevel(), eventResults);
 
@@ -125,7 +134,12 @@ public sealed class FindingsEngineTests
     {
         var spectrum = BuildSpectrumWithTonalPeak(frequencyHz: 1000.0, prominenceDb: 20.0);
 
-        var findings = FindingsEngine.GenerateFindings(TestFileId, EmptyLevel(), NoEvents(), spectrum);
+        var findings = FindingsEngine.GenerateFindings(
+            TestFileId,
+            EmptyLevel(),
+            NoEvents(),
+            spectrum
+        );
 
         Assert.Single(findings);
         Assert.Equal("tonal_peak", findings[0].Type);
@@ -138,7 +152,12 @@ public sealed class FindingsEngineTests
     {
         var spectrum = BuildSpectrumWithTonalPeak(frequencyHz: 500.0, prominenceDb: 8.0);
 
-        var findings = FindingsEngine.GenerateFindings(TestFileId, EmptyLevel(), NoEvents(), spectrum);
+        var findings = FindingsEngine.GenerateFindings(
+            TestFileId,
+            EmptyLevel(),
+            NoEvents(),
+            spectrum
+        );
 
         Assert.Single(findings);
         Assert.Equal("low", findings[0].Severity);
@@ -157,35 +176,43 @@ public sealed class FindingsEngineTests
     [Fact]
     public void FindingIdsAreSequentialAcrossTypes()
     {
-        var clippingEvents = BuildEventResults("clipping", new AudioEvent
-        {
-            Kind = "clipping",
-            StartSeconds = 0.5,
-            EndSeconds = 0.51,
-            DurationSeconds = 0.01,
-            Description = "Clip",
-            Metadata = new Dictionary<string, object?>(),
-        });
+        var clippingEvents = BuildEventResults(
+            "clipping",
+            new AudioEvent
+            {
+                Kind = "clipping",
+                StartSeconds = 0.5,
+                EndSeconds = 0.51,
+                DurationSeconds = 0.01,
+                Description = "Clip",
+                Metadata = new Dictionary<string, object?>(),
+            }
+        );
 
         var silenceEvents = new List<FindEventsResult>(clippingEvents);
-        silenceEvents.Add(new FindEventsResult
-        {
-            FileId = TestFileId,
-            Kind = "silence",
-            Events = [new AudioEvent
+        silenceEvents.Add(
+            new FindEventsResult
             {
+                FileId = TestFileId,
                 Kind = "silence",
-                StartSeconds = 3.0,
-                EndSeconds = 3.2,
-                DurationSeconds = 0.2,
-                Description = "Silence",
-                Metadata = new Dictionary<string, object?>(),
-            }],
-            EventCount = 1,
-            RegionStartSeconds = 0.0,
-            RegionEndSeconds = 10.0,
-            RanAt = DateTimeOffset.UtcNow,
-        });
+                Events =
+                [
+                    new AudioEvent
+                    {
+                        Kind = "silence",
+                        StartSeconds = 3.0,
+                        EndSeconds = 3.2,
+                        DurationSeconds = 0.2,
+                        Description = "Silence",
+                        Metadata = new Dictionary<string, object?>(),
+                    },
+                ],
+                EventCount = 1,
+                RegionStartSeconds = 0.0,
+                RegionEndSeconds = 10.0,
+                RanAt = DateTimeOffset.UtcNow,
+            }
+        );
 
         var findings = FindingsEngine.GenerateFindings(TestFileId, EmptyLevel(), silenceEvents);
 
@@ -216,7 +243,10 @@ public sealed class FindingsEngineTests
         return [];
     }
 
-    private static IReadOnlyList<FindEventsResult> BuildEventResults(string kind, AudioEvent singleEvent)
+    private static IReadOnlyList<FindEventsResult> BuildEventResults(
+        string kind,
+        AudioEvent singleEvent
+    )
     {
         return
         [
@@ -308,7 +338,10 @@ public sealed class FindingsEngineTests
         };
     }
 
-    private static SpectrumAnalysis BuildSpectrumWithTonalPeak(double frequencyHz, double prominenceDb)
+    private static SpectrumAnalysis BuildSpectrumWithTonalPeak(
+        double frequencyHz,
+        double prominenceDb
+    )
     {
         return new SpectrumAnalysis
         {

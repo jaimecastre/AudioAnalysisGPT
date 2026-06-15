@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -27,5 +26,4 @@
   <ItemGroup>
     <None Include="AgentBehavior\agent_eval_cases.jsonl" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-
 </Project>

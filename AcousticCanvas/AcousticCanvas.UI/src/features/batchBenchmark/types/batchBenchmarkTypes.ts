@@ -35,6 +35,7 @@ export type BatchBenchmarkFileRow = {
   soundQualityUnavailableReason: string | null;
   flagLabels: string[];
   topFindings: BatchBenchmarkFindingSummary[];
+  dbUnit?: string;
 };
 
 export type BatchBenchmarkRanking = {

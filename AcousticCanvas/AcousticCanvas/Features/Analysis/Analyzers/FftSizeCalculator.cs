@@ -35,7 +35,11 @@ public static class FftSizeCalculator
     /// For 44100 Hz / 1000 Hz with cycleMultiplier = 100:
     /// N = 441 * 100 = 44100 → bin spacing = 1 Hz, 1000 Hz lands on bin 1000.
     /// </remarks>
-    public static int ComputeCoherentSize(int sampleRate, double targetFrequencyHz, int cycleMultiplier)
+    public static int ComputeCoherentSize(
+        int sampleRate,
+        double targetFrequencyHz,
+        int cycleMultiplier
+    )
     {
         if (cycleMultiplier < 1)
         {

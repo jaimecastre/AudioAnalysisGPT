@@ -30,7 +30,8 @@ public record BatchBenchmarkFileRow(
     double? RoughnessAsper,
     string? SoundQualityUnavailableReason,
     IReadOnlyList<string> FlagLabels,
-    IReadOnlyList<BatchBenchmarkFindingSummary> TopFindings
+    IReadOnlyList<BatchBenchmarkFindingSummary> TopFindings,
+    string? DbUnit = null
 );
 
 public record BatchBenchmarkFindingSummary(

@@ -1,7 +1,7 @@
 import type { ToolResultRow } from '../store/agentWorkspaceSlice';
 
-function fmtDb(value: unknown): string {
-  return typeof value === 'number' ? `${value.toFixed(2)} dBFS` : String(value);
+function fmtDb(value: unknown, unit: unknown = 'dB SPL'): string {
+  return typeof value === 'number' ? `${value.toFixed(2)} ${unit}` : String(value);
 }
 
 function fmtHz(value: unknown): string {
@@ -43,8 +43,9 @@ export function extractAgentToolRows(toolName: string, raw: unknown): ToolResult
       const metrics = result['metrics'] as Record<string, unknown> | undefined;
       if (!metrics) continue;
       const prefix = results.length > 1 ? `${String(result['fileId']).slice(-4)} ` : '';
-      rows.push({ label: `${prefix}RMS`, value: fmtDb(metrics['rmsDbFs']) });
-      rows.push({ label: `${prefix}peak`, value: fmtDb(metrics['peakDbFs']) });
+      const unit = metrics['dbUnit'] ?? 'dB SPL';
+      rows.push({ label: `${prefix}RMS`, value: fmtDb(metrics['rmsDbFs'], unit) });
+      rows.push({ label: `${prefix}peak`, value: fmtDb(metrics['peakDbFs'], unit) });
       rows.push({ label: `${prefix}crest factor`, value: fmtDb(metrics['crestFactorDb']) });
     }
     return rows.length ? rows : null;

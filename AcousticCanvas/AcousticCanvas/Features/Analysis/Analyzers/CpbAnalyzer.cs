@@ -172,7 +172,10 @@ public static class CpbAnalyzer
         var cpbBands = new List<CpbBand>(bands.Count);
 
         // BS/ISO 7196 "As Signal(s)": A/C weighting only applies to sound-pressure signals.
-        var effectiveWeighting = CpbWeightingCalculator.ResolveEffectiveWeighting(weighting, channelSpectrum.Quantity);
+        var effectiveWeighting = CpbWeightingCalculator.ResolveEffectiveWeighting(
+            weighting,
+            channelSpectrum.Quantity
+        );
 
         foreach (var band in bands)
         {
@@ -260,7 +263,10 @@ public static class CpbAnalyzer
         var cpbBands = new List<CpbBand>(bands.Count);
 
         // BS/ISO 7196 "As Signal(s)": A/C weighting only applies to sound-pressure signals.
-        var effectiveWeighting = CpbWeightingCalculator.ResolveEffectiveWeighting(weighting, channel.Quantity);
+        var effectiveWeighting = CpbWeightingCalculator.ResolveEffectiveWeighting(
+            weighting,
+            channel.Quantity
+        );
 
         foreach (var band in bands)
         {
@@ -421,5 +427,4 @@ public static class CpbAnalyzer
     }
 
     private readonly record struct SpectrumPowerData(double[] FrequenciesHz, double[] Powers);
-
 }

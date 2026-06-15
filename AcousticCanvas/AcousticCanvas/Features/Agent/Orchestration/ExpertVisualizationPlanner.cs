@@ -9,9 +9,10 @@ public static class ExpertVisualizationPlanner
             new()
             {
                 BlockType = "markdown",
-                Reason = evidencePackage.KeyEvidence.Count == 0
-                    ? "Use text to answer a method or context question without inventing measured values."
-                    : "Use text to summarize measured evidence and limitations.",
+                Reason =
+                    evidencePackage.KeyEvidence.Count == 0
+                        ? "Use text to answer a method or context question without inventing measured values."
+                        : "Use text to summarize measured evidence and limitations.",
             },
         };
 
@@ -20,11 +21,7 @@ public static class ExpertVisualizationPlanner
 
         var primaryEvidenceType = DeterminePrimaryEvidenceType(evidencePackage);
 
-        return new VisualizationPlan
-        {
-            PrimaryEvidenceType = primaryEvidenceType,
-            Blocks = blocks,
-        };
+        return new VisualizationPlan { PrimaryEvidenceType = primaryEvidenceType, Blocks = blocks };
     }
 
     private static void AddEvidenceViewBlocks(
@@ -51,7 +48,8 @@ public static class ExpertVisualizationPlanner
                     BlockType = "analysisView",
                     ViewType = viewType,
                     SourceEvidenceId = evidenceItem.EvidenceId,
-                    Reason = $"Show the {viewType} result in the trusted analysis view so the user can inspect measured data and metadata.",
+                    Reason =
+                        $"Show the {viewType} result in the trusted analysis view so the user can inspect measured data and metadata.",
                 }
             );
         }
@@ -96,7 +94,8 @@ public static class ExpertVisualizationPlanner
             {
                 BlockType = "ranking",
                 SourceEvidenceId = rankableEvidence.EvidenceId,
-                Reason = "Compare multiple files with a ranking block before the narrative so differences can be scanned quickly.",
+                Reason =
+                    "Compare multiple files with a ranking block before the narrative so differences can be scanned quickly.",
             }
         );
     }

@@ -28,13 +28,26 @@ public sealed class AgentSpectrogramToolTests
         var prompt = AgentPromptBuilder.BuildPlannerSystemPrompt(
             AgentToolRegistry.BuildToolListSummaryForPrompt(),
             ["file-a", "file-b"],
-            ["a.wav", "b.wav"]);
+            ["a.wav", "b.wav"]
+        );
 
         Assert.Contains("spectrogram-only comparison", prompt, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("run ONLY run_spectrogram", prompt, StringComparison.Ordinal);
-        Assert.Contains("run_event_detection(kind=\"transient\")", prompt, StringComparison.Ordinal);
-        Assert.Contains("energy at a frequency is present \"throughout\"", prompt, StringComparison.Ordinal);
-        Assert.Contains("what causes this band in the spectrogram?", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "run_event_detection(kind=\"transient\")",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "energy at a frequency is present \"throughout\"",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "what causes this band in the spectrogram?",
+            prompt,
+            StringComparison.OrdinalIgnoreCase
+        );
     }
 
     [Fact]
@@ -43,11 +56,16 @@ public sealed class AgentSpectrogramToolTests
         var prompt = AgentPromptBuilder.BuildPlannerSystemPrompt(
             AgentToolRegistry.BuildToolListSummaryForPrompt(),
             ["file-a"],
-            ["a.wav"]);
+            ["a.wav"]
+        );
 
         Assert.Contains("what is a spectrogram?", prompt, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("use no_analysis_needed", prompt, StringComparison.Ordinal);
-        Assert.Contains("what does the spectrogram show for @file.wav?", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "what does the spectrogram show for @file.wav?",
+            prompt,
+            StringComparison.OrdinalIgnoreCase
+        );
         Assert.Contains("needs run_spectrogram", prompt, StringComparison.Ordinal);
     }
 
@@ -56,28 +74,64 @@ public sealed class AgentSpectrogramToolTests
     {
         var prompt = AgentPromptBuilder.BuildFinalAnswerSystemPrompt();
 
-        Assert.Contains("does NOT contain per-frame energy values", prompt, StringComparison.Ordinal);
+        Assert.Contains(
+            "does NOT contain per-frame energy values",
+            prompt,
+            StringComparison.Ordinal
+        );
         Assert.Contains("Do NOT claim visible bursts", prompt, StringComparison.Ordinal);
-        Assert.Contains("Duration and frame count describe time coverage/resolution only", prompt, StringComparison.Ordinal);
-        Assert.Contains("Frequency range is determined by sample rate/Nyquist", prompt, StringComparison.Ordinal);
-        Assert.Contains("use transient/event counts if available", prompt, StringComparison.Ordinal);
+        Assert.Contains(
+            "Duration and frame count describe time coverage/resolution only",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "Frequency range is determined by sample rate/Nyquist",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "use transient/event counts if available",
+            prompt,
+            StringComparison.Ordinal
+        );
         Assert.Contains("do not assume the band exists", prompt, StringComparison.Ordinal);
-        Assert.Contains("it cannot prove it persists throughout time", prompt, StringComparison.Ordinal);
-        Assert.Contains("No psychoacoustic metrics were computed", prompt, StringComparison.Ordinal);
+        Assert.Contains(
+            "it cannot prove it persists throughout time",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "No psychoacoustic metrics were computed",
+            prompt,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
     public async Task ToolExecutionServiceRunsFullFileSpectrogram()
     {
         var fileId = Guid.NewGuid().ToString("N")[..12];
-        var storagePath = Path.Combine(Path.GetTempPath(), $"acousticcanvas_agent_spectrogram_{Guid.NewGuid():N}");
+        var storagePath = Path.Combine(
+            Path.GetTempPath(),
+            $"acousticcanvas_agent_spectrogram_{Guid.NewGuid():N}"
+        );
         Directory.CreateDirectory(storagePath);
-        await File.WriteAllBytesAsync(Path.Combine(storagePath, $"{fileId}_agent_spectrogram.wav"), BuildSineWaveBytes());
+        await File.WriteAllBytesAsync(
+            Path.Combine(storagePath, $"{fileId}_agent_spectrogram.wav"),
+            BuildSineWaveBytes()
+        );
 
         var audioFileRepository = BuildAudioFileRepository(storagePath);
-        var soundQualityService = new SoundQualityAnalysisService(new FakeSoundQualityClient(), new SoundQualityCacheStore());
+        var soundQualityService = new SoundQualityAnalysisService(
+            new FakeSoundQualityClient(),
+            new SoundQualityCacheStore()
+        );
         var importers = new List<ISignalFileImporter> { new WavSignalFileImporter() };
-        var signalAnalysisService = new SignalAnalysisService(importers, new SignalFileCacheStore());
+        var signalAnalysisService = new SignalAnalysisService(
+            importers,
+            new SignalFileCacheStore()
+        );
         var analysisResultCache = new AnalysisResultCache();
         var toolExecutionService = new ToolExecutionService(
             audioFileRepository,
@@ -85,22 +139,22 @@ public sealed class AgentSpectrogramToolTests
             soundQualityService,
             importers,
             new SpectrogramCacheStore(),
-            analysisResultCache);
+            analysisResultCache
+        );
 
         var toolOutput = await toolExecutionService.ExecuteToolAsync(
             new PlannerToolRequest
             {
                 Name = "run_spectrogram",
-                Arguments = new Dictionary<string, object?>
-                {
-                    ["fileIds"] = new[] { fileId },
-                },
+                Arguments = new Dictionary<string, object?> { ["fileIds"] = new[] { fileId } },
             },
-            CancellationToken.None);
+            CancellationToken.None
+        );
 
         Assert.True(
             toolOutput.Status == "completed",
-            $"Expected completed status, got '{toolOutput.Status}': {toolOutput.ErrorCode} {toolOutput.ErrorMessage}");
+            $"Expected completed status, got '{toolOutput.Status}': {toolOutput.ErrorCode} {toolOutput.ErrorMessage}"
+        );
         Assert.Equal("run_spectrogram", toolOutput.ToolName);
         Assert.NotNull(toolOutput.ResultData);
 
@@ -138,7 +192,12 @@ public sealed class AgentSpectrogramToolTests
                     new
                     {
                         fileId = "file123456789",
-                        region = new { startSeconds = 0.0, endSeconds = 1.0, durationSeconds = 1.0 },
+                        region = new
+                        {
+                            startSeconds = 0.0,
+                            endSeconds = 1.0,
+                            durationSeconds = 1.0,
+                        },
                         parameters = new
                         {
                             fftSize = 2048,
@@ -164,10 +223,14 @@ public sealed class AgentSpectrogramToolTests
             userQuestion: "Show me the spectrogram.",
             selectedFileIds: ["file123456789"],
             selectedFileNames: ["test_file.wav"],
-            toolOutputs: [toolOutput]);
+            toolOutputs: [toolOutput]
+        );
 
         Assert.Contains("run_spectrogram", evidencePackage.AnalysesRun);
-        var evidence = Assert.Single(evidencePackage.KeyEvidence, item => item.Type == "spectrogram");
+        var evidence = Assert.Single(
+            evidencePackage.KeyEvidence,
+            item => item.Type == "spectrogram"
+        );
         Assert.Equal("ev_spectrogram_file1234", evidence.EvidenceId);
         Assert.Equal("test_file.wav", evidence.Data["fileName"]);
         Assert.Equal(2048, evidence.Data["fftSize"]);
@@ -177,7 +240,11 @@ public sealed class AgentSpectrogramToolTests
         Assert.Equal(24000.0, evidence.Data["nyquistHz"]);
         Assert.Equal("spectrogram_abcdef12", evidence.Data["dataRef"]);
         Assert.Equal("spectrogram_0123456789abcdef0123456789abcdef", evidence.Data["resultId"]);
-        Assert.DoesNotContain(evidencePackage.Limitations, limitation => limitation.Contains("No psychoacoustic metrics", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(
+            evidencePackage.Limitations,
+            limitation =>
+                limitation.Contains("No psychoacoustic metrics", StringComparison.OrdinalIgnoreCase)
+        );
     }
 
     private static byte[] BuildSineWaveBytes()
@@ -213,16 +280,26 @@ public sealed class AgentSpectrogramToolTests
 
     private static AudioFileRepository BuildAudioFileRepository(string storagePath)
     {
-        var repository = (AudioFileRepository)RuntimeHelpers.GetUninitializedObject(typeof(AudioFileRepository));
-        var storagePathField = typeof(AudioFileRepository).GetField("_storagePath", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            ?? throw new InvalidOperationException("Could not locate AudioFileRepository storage path field.");
+        var repository = (AudioFileRepository)
+            RuntimeHelpers.GetUninitializedObject(typeof(AudioFileRepository));
+        var storagePathField =
+            typeof(AudioFileRepository).GetField(
+                "_storagePath",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic
+            )
+            ?? throw new InvalidOperationException(
+                "Could not locate AudioFileRepository storage path field."
+            );
         storagePathField.SetValue(repository, storagePath);
         return repository;
     }
 
     private sealed class FakeSoundQualityClient : ISoundQualityClient
     {
-        public Task<SoundQualityAnalysis> AnalyzeAsync(RunSoundQualityQuery query, CancellationToken cancellationToken)
+        public Task<SoundQualityAnalysis> AnalyzeAsync(
+            RunSoundQualityQuery query,
+            CancellationToken cancellationToken
+        )
         {
             throw new NotSupportedException("Sound quality is not used by spectrogram tests.");
         }

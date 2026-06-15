@@ -1,0 +1,203 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Overall Assessment ─────────────────────────────────────────────────── */
+.assessment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0, 184, 169, 0.04);
+}
+
+.assessmentLabel {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.assessmentBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.assessmentBadge.good {
+  background: rgba(0, 184, 169, 0.14);
+  color: #008c77;
+  border: 1px solid rgba(0, 184, 169, 0.35);
+}
+
+.assessmentBadge.fair {
+  background: rgba(245, 166, 35, 0.12);
+  color: #b87400;
+  border: 1px solid rgba(245, 166, 35, 0.35);
+}
+
+.assessmentBadge.poor {
+  background: rgba(224, 82, 82, 0.1);
+  color: #b52b2b;
+  border: 1px solid rgba(224, 82, 82, 0.3);
+}
+
+/* ── Sections ───────────────────────────────────────────────────────────── */
+.section {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 7px;
+
+  &::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--accent);
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+}
+
+/* ── Bordered text rows (Findings / Recommendations) ───────────────────── */
+.finding {
+  padding: 4px 8px;
+  border-left: 2px solid var(--accent);
+  background: rgba(0, 184, 169, 0.04);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+
+  & + & {
+    margin-top: 4px;
+  }
+}
+
+.recommendation {
+  padding: 4px 8px;
+  border-left: 2px solid rgba(74, 144, 226, 0.55);
+  background: rgba(74, 144, 226, 0.04);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+
+  & + & {
+    margin-top: 4px;
+  }
+}
+
+/* ── Metric rows ────────────────────────────────────────────────────────── */
+.metricRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+
+  & + & {
+    border-top: 1px solid var(--border);
+  }
+}
+
+.metricName {
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+}
+
+.metricRight {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.metricValue {
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.metricUnit {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  color: var(--text-muted);
+  min-width: 30px;
+}
+
+.metricBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  min-width: 38px;
+  justify-content: center;
+}
+
+.metricBadge.good {
+  background: rgba(0, 184, 169, 0.12);
+  color: #008c77;
+}
+
+.metricBadge.fair {
+  background: rgba(245, 166, 35, 0.12);
+  color: #b87400;
+}
+
+.metricBadge.poor {
+  background: rgba(224, 82, 82, 0.1);
+  color: #b52b2b;
+}
+
+.metricBadge.good {
+  background: rgba(0, 184, 169, 0.1);
+  color: #00917a;
+}
+
+.metricBadge.fair {
+  background: rgba(245, 166, 35, 0.1);
+  color: #c07e00;
+}
+
+.metricBadge.poor {
+  background: rgba(224, 82, 82, 0.1);
+  color: #c0392b;
+}

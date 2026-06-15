@@ -14,16 +14,16 @@ public class AgentResponseBlockSerializationTests
     [Fact]
     public void MarkdownBlock_Serializes_And_Deserializes_Correctly()
     {
-        var block = new MarkdownBlock
-        {
-            Content = "Test markdown content with **bold** text."
-        };
+        var block = new MarkdownBlock { Content = "Test markdown content with **bold** text." };
 
         var json = JsonSerializer.Serialize(block, JsonOptions);
         var document = JsonDocument.Parse(json);
 
         Assert.Equal("markdown", document.RootElement.GetProperty("blockType").GetString());
-        Assert.Equal("Test markdown content with **bold** text.", document.RootElement.GetProperty("content").GetString());
+        Assert.Equal(
+            "Test markdown content with **bold** text.",
+            document.RootElement.GetProperty("content").GetString()
+        );
     }
 
     [Fact]
@@ -34,10 +34,25 @@ public class AgentResponseBlockSerializationTests
             Title = "Level Metrics",
             Rows =
             [
-                new StatisticRow { Label = "Peak", Value = "-3.2", Unit = "dBFS" },
-                new StatisticRow { Label = "RMS", Value = "-15.1", Unit = "dBFS" },
-                new StatisticRow { Label = "Crest Factor", Value = "11.9", Unit = "dB" }
-            ]
+                new StatisticRow
+                {
+                    Label = "Peak",
+                    Value = "-3.2",
+                    Unit = "dBFS",
+                },
+                new StatisticRow
+                {
+                    Label = "RMS",
+                    Value = "-15.1",
+                    Unit = "dBFS",
+                },
+                new StatisticRow
+                {
+                    Label = "Crest Factor",
+                    Value = "11.9",
+                    Unit = "dB",
+                },
+            ],
         };
 
         var json = JsonSerializer.Serialize(block, JsonOptions);
@@ -64,8 +79,8 @@ public class AgentResponseBlockSerializationTests
                 SourceTool = "run_spectrum",
                 FftSize = 8192,
                 WindowType = "Hann",
-                Scaling = "amplitude"
-            }
+                Scaling = "amplitude",
+            },
         };
 
         var json = JsonSerializer.Serialize(block, JsonOptions);
@@ -91,9 +106,25 @@ public class AgentResponseBlockSerializationTests
             MetricName = "loudness",
             RankedItems =
             [
-                new RankedItem { Rank = 1, FileId = "file_A", FileName = "product_A.wav", Score = 12.5, ScoreLabel = "Loudness", ScoreUnit = "sone" },
-                new RankedItem { Rank = 2, FileId = "file_B", FileName = "product_B.wav", Score = 8.3, ScoreLabel = "Loudness", ScoreUnit = "sone" }
-            ]
+                new RankedItem
+                {
+                    Rank = 1,
+                    FileId = "file_A",
+                    FileName = "product_A.wav",
+                    Score = 12.5,
+                    ScoreLabel = "Loudness",
+                    ScoreUnit = "sone",
+                },
+                new RankedItem
+                {
+                    Rank = 2,
+                    FileId = "file_B",
+                    FileName = "product_B.wav",
+                    Score = 8.3,
+                    ScoreLabel = "Loudness",
+                    ScoreUnit = "sone",
+                },
+            ],
         };
 
         var json = JsonSerializer.Serialize(block, JsonOptions);
@@ -114,9 +145,19 @@ public class AgentResponseBlockSerializationTests
         {
             Actions =
             [
-                new SuggestedAction { Label = "Check for clipping", ActionType = "run_tool", ToolName = "run_event_detection" },
-                new SuggestedAction { Label = "Compare with reference", ActionType = "run_tool", ToolName = "run_basic_metrics" }
-            ]
+                new SuggestedAction
+                {
+                    Label = "Check for clipping",
+                    ActionType = "run_tool",
+                    ToolName = "run_event_detection",
+                },
+                new SuggestedAction
+                {
+                    Label = "Compare with reference",
+                    ActionType = "run_tool",
+                    ToolName = "run_basic_metrics",
+                },
+            ],
         };
 
         var json = JsonSerializer.Serialize(block, JsonOptions);
@@ -187,7 +228,7 @@ public class AgentResponseBlockSerializationTests
             Confidence = "low",
             Limitations = [],
             SuggestedNextSteps = [],
-            Blocks = null
+            Blocks = null,
         };
 
         var json = JsonSerializer.Serialize(response, JsonOptions);

@@ -36,12 +36,14 @@ public static class EventDetectionEvidenceExtractor
             evidenceData["firstEvents"] = ExtractFirstClippingEvents(eventsArray);
         }
 
-        evidenceItems.Add(new EvidenceItem
-        {
-            EvidenceId = evidenceId,
-            Type = "event_detection",
-            Data = evidenceData,
-        });
+        evidenceItems.Add(
+            new EvidenceItem
+            {
+                EvidenceId = evidenceId,
+                Type = "event_detection",
+                Data = evidenceData,
+            }
+        );
     }
 
     private static List<object?> ExtractFirstClippingEvents(JsonElement eventsArray)
@@ -56,11 +58,24 @@ public static class EventDetectionEvidenceExtractor
                 break;
             }
 
-            var startSeconds = audioEvent.TryGetProperty("startSeconds", out var startEl) ? startEl.GetDouble() : 0.0;
-            var endSeconds = audioEvent.TryGetProperty("endSeconds", out var endEl) ? endEl.GetDouble() : 0.0;
-            var description = audioEvent.TryGetProperty("description", out var descEl) ? descEl.GetString() : "";
+            var startSeconds = audioEvent.TryGetProperty("startSeconds", out var startEl)
+                ? startEl.GetDouble()
+                : 0.0;
+            var endSeconds = audioEvent.TryGetProperty("endSeconds", out var endEl)
+                ? endEl.GetDouble()
+                : 0.0;
+            var description = audioEvent.TryGetProperty("description", out var descEl)
+                ? descEl.GetString()
+                : "";
 
-            firstFewEvents.Add(new { startSeconds, endSeconds, description });
+            firstFewEvents.Add(
+                new
+                {
+                    startSeconds,
+                    endSeconds,
+                    description,
+                }
+            );
             eventIndex++;
         }
 

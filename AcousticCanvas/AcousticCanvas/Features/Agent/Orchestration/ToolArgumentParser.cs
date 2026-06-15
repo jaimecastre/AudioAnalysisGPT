@@ -92,9 +92,11 @@ public static class ToolArgumentParser
             return null;
         }
 
-        if (rawValue is JsonElement jsonElement
+        if (
+            rawValue is JsonElement jsonElement
             && jsonElement.ValueKind == JsonValueKind.Number
-            && jsonElement.TryGetInt32(out var intValue))
+            && jsonElement.TryGetInt32(out var intValue)
+        )
         {
             return intValue;
         }
@@ -109,9 +111,11 @@ public static class ToolArgumentParser
             return null;
         }
 
-        if (rawValue is JsonElement jsonElement
+        if (
+            rawValue is JsonElement jsonElement
             && jsonElement.ValueKind == JsonValueKind.Number
-            && jsonElement.TryGetDouble(out var doubleValue))
+            && jsonElement.TryGetDouble(out var doubleValue)
+        )
         {
             return doubleValue;
         }
@@ -122,7 +126,12 @@ public static class ToolArgumentParser
     private static List<string> SplitCommaSeparatedIds(string commaSeparated)
     {
         var result = new List<string>();
-        foreach (var part in commaSeparated.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        foreach (
+            var part in commaSeparated.Split(
+                ',',
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries
+            )
+        )
         {
             if (!string.IsNullOrWhiteSpace(part))
             {

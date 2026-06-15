@@ -13,9 +13,13 @@ public sealed class AgentPlannerPromptTests
             ["file-a"],
             [
                 new AgentConversationTurn("user", "and create a graph just for the important area"),
-                new AgentConversationTurn("assistant", "What specific important area are you referring to for the graph?"),
+                new AgentConversationTurn(
+                    "assistant",
+                    "What specific important area are you referring to for the graph?"
+                ),
                 new AgentConversationTurn("user", "around 1000hz"),
-            ]);
+            ]
+        );
 
         Assert.Contains("Recent conversation:", userMessage);
         Assert.Contains("user: around 1000hz", userMessage);
@@ -29,7 +33,8 @@ public sealed class AgentPlannerPromptTests
         var prompt = AgentPromptBuilder.BuildPlannerSystemPrompt(
             AgentToolRegistry.BuildToolListSummaryForPrompt(),
             ["file-a"],
-            ["1000Hz_0.1.wav"]);
+            ["1000Hz_0.1.wav"]
+        );
 
         Assert.Contains("Recent conversation", prompt);
         Assert.Contains("around 1000 hz", prompt, StringComparison.OrdinalIgnoreCase);

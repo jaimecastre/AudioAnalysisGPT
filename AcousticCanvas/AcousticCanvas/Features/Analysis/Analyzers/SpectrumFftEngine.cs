@@ -1,6 +1,6 @@
-using MathNet.Numerics.IntegralTransforms;
 using System.Numerics;
 using AcousticCanvas.Features.Analysis.Domain;
+using MathNet.Numerics.IntegralTransforms;
 
 namespace AcousticCanvas.Features.Analysis.Analyzers;
 
@@ -127,7 +127,7 @@ public static class SpectrumFftEngine
         {
             SpectrumWindowType.Rectangular => BuildRectangularWindow(size),
             SpectrumWindowType.Hann => BuildPeriodicHannWindow(size),
-            _ => BuildPeriodicHannWindow(size)
+            _ => BuildPeriodicHannWindow(size),
         };
     }
 

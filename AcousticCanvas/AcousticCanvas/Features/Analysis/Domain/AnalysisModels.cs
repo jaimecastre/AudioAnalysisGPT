@@ -3,7 +3,7 @@ namespace AcousticCanvas.Features.Analysis.Domain;
 public enum SpectrumWindowType
 {
     Rectangular,
-    Hann
+    Hann,
 }
 
 public sealed class FileInfoAnalysis

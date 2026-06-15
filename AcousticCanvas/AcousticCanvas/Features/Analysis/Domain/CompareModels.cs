@@ -81,6 +81,9 @@ public sealed class CompareFileSummary
 
     // Explicit reason when psychoacoustic metrics are unavailable for this file.
     public string? SoundQualityUnavailableReason { get; init; }
+
+    // Unit string for dB level values (e.g. "dB SPL").
+    public string? DbUnit { get; init; }
 }
 
 public sealed class PairwiseDiff

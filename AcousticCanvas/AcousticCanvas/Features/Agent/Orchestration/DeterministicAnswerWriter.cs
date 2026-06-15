@@ -153,7 +153,7 @@ public static class DeterministicAnswerWriter
         {
             return null;
         }
-        return $"{label}: {value.Value.ToString("0.00", CultureInfo.InvariantCulture)} dBFS.";
+        return $"{label}: {value.Value.ToString("0.00", CultureInfo.InvariantCulture)} dB SPL.";
     }
 
     private static string? FormatCrest(Dictionary<string, object?> data)

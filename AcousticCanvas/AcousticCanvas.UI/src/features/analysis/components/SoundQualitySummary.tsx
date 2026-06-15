@@ -1,7 +1,8 @@
 import type { JSX } from 'react';
-import { Badge, Box, Group, Loader, Stack, Text } from '@mantine/core';
+import { Group, Loader, Text } from '@mantine/core';
 import { IconCheck, IconAlertTriangle, IconX } from '@tabler/icons-react';
 import type { SoundQualitySummaryResult } from '../hooks/useSoundQualitySummary';
+import styles from './SoundQualitySummary.module.scss';
 
 interface ISoundQualitySummaryProps {
   summary: SoundQualitySummaryResult | null;
@@ -9,86 +10,91 @@ interface ISoundQualitySummaryProps {
   error: string | null;
 }
 
+function assessmentClass(assessment: string): string {
+  if (assessment === 'Good') return styles.good;
+  if (assessment === 'Fair') return styles.fair;
+  return styles.poor;
+}
+
 export const SoundQualitySummary = ({ summary, isLoading, error }: ISoundQualitySummaryProps): JSX.Element => {
   if (isLoading) {
     return (
-      <Box p="xs">
-        <Group justify="center">
+      <div className={styles.section}>
+        <Group justify="center" gap={6}>
           <Loader size="xs" color="teal" />
-          <Text size="xs" c="dimmed">Loading sound quality summary...</Text>
+          <Text size="xs" c="dimmed">Loading summary...</Text>
         </Group>
-      </Box>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Box p="xs">
+      <div className={styles.section}>
         <Text size="xs" c="red">{error}</Text>
-      </Box>
+      </div>
     );
   }
 
   if (!summary) {
     return (
-      <Box p="xs">
-        <Text size="xs" c="dimmed">No sound quality summary available</Text>
-      </Box>
+      <div className={styles.section}>
+        <Text size="xs" c="dimmed">No summary available</Text>
+      </div>
     );
   }
 
-  const assessmentColor = summary.overallAssessment === 'Good' ? 'teal' : summary.overallAssessment === 'Fair' ? 'yellow' : 'red';
-  const assessmentIcon = summary.overallAssessment === 'Good' ? <IconCheck size={16} /> : summary.overallAssessment === 'Fair' ? <IconAlertTriangle size={16} /> : <IconX size={16} />;
+  const assessmentIcon = summary.overallAssessment === 'Good'
+    ? <IconCheck size={11} />
+    : summary.overallAssessment === 'Fair'
+      ? <IconAlertTriangle size={11} />
+      : <IconX size={11} />;
 
   return (
-    <Stack gap="xs" p="xs">
-      <Group justify="space-between" align="center">
-        <Text size="xs" fw={600} c="dimmed">Overall Assessment</Text>
-        <Badge size="sm" color={assessmentColor} variant="light" leftSection={assessmentIcon}>
+    <div className={styles.root}>
+      <div className={styles.assessment}>
+        <span className={styles.assessmentLabel}>Overall Assessment</span>
+        <span className={`${styles.assessmentBadge} ${assessmentClass(summary.overallAssessment)}`}>
+          {assessmentIcon}
           {summary.overallAssessment}
-        </Badge>
-      </Group>
+        </span>
+      </div>
 
-      <Box>
-        <Text size="xs" fw={600} c="dimmed" mb={2}>Key Findings</Text>
-        <Stack gap={2}>
+      {summary.keyFindings.length > 0 && (
+        <div className={styles.section}>
+          <div className={styles.sectionHeading}>Key Findings</div>
           {summary.keyFindings.map((finding, index) => (
-            <Text key={index} size="xs" c="dimmed" style={{ paddingLeft: '6px', borderLeft: '2px solid var(--mantine-color-teal-4)' }}>
-              {finding}
-            </Text>
+            <div key={index} className={styles.finding}>{finding}</div>
           ))}
-        </Stack>
-      </Box>
+        </div>
+      )}
 
-      <Box>
-        <Text size="xs" fw={600} c="dimmed" mb={2}>Top Metrics</Text>
-        <Stack gap={2}>
+      {summary.topMetrics.length > 0 && (
+        <div className={styles.section}>
+          <div className={styles.sectionHeading}>Top Metrics</div>
           {summary.topMetrics.map((metric) => (
-            <Group key={metric.name} justify="space-between" align="center">
-              <Text size="xs" c="dimmed">{metric.name}</Text>
-              <Group gap={4}>
-                <Text size="xs" fw={500} ff="var(--font-mono)">
-                  {metric.value.toFixed(2)} {metric.unit}
-                </Text>
-                <Badge size="xs" color={metric.assessment === 'Good' ? 'teal' : metric.assessment === 'Fair' ? 'yellow' : 'red'} variant="light">
+            <div key={metric.name} className={styles.metricRow}>
+              <span className={styles.metricName}>{metric.name}</span>
+              <div className={styles.metricRight}>
+                <span className={styles.metricValue}>{metric.value.toFixed(2)}</span>
+                <span className={styles.metricUnit}>{metric.unit}</span>
+                <span className={`${styles.metricBadge} ${assessmentClass(metric.assessment)}`}>
                   {metric.assessment}
-                </Badge>
-              </Group>
-            </Group>
+                </span>
+              </div>
+            </div>
           ))}
-        </Stack>
-      </Box>
+        </div>
+      )}
 
-      <Box>
-        <Text size="xs" fw={600} c="dimmed" mb={2}>Recommendations</Text>
-        <Stack gap={2}>
+      {summary.recommendations.length > 0 && (
+        <div className={styles.section}>
+          <div className={styles.sectionHeading}>Recommendations</div>
           {summary.recommendations.map((recommendation, index) => (
-            <Text key={index} size="xs" c="dimmed" style={{ paddingLeft: '6px', borderLeft: '2px solid var(--mantine-color-blue-4)' }}>
-              {recommendation}
-            </Text>
+            <div key={index} className={styles.recommendation}>{recommendation}</div>
           ))}
-        </Stack>
-      </Box>
-    </Stack>
+        </div>
+      )}
+    </div>
   );
 };

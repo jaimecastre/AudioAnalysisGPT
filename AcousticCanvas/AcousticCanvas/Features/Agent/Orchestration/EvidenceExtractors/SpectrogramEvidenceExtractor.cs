@@ -56,16 +56,21 @@ public static class SpectrogramEvidenceExtractor
                 evidenceData["resultId"] = resultIdElement.GetString();
             }
 
-            evidenceItems.Add(new EvidenceItem
-            {
-                EvidenceId = evidenceId,
-                Type = "spectrogram",
-                Data = evidenceData,
-            });
+            evidenceItems.Add(
+                new EvidenceItem
+                {
+                    EvidenceId = evidenceId,
+                    Type = "spectrogram",
+                    Data = evidenceData,
+                }
+            );
         }
     }
 
-    private static void AddRegionFields(JsonElement regionElement, Dictionary<string, object?> evidenceData)
+    private static void AddRegionFields(
+        JsonElement regionElement,
+        Dictionary<string, object?> evidenceData
+    )
     {
         if (regionElement.TryGetProperty("startSeconds", out var startElement))
         {
@@ -83,7 +88,10 @@ public static class SpectrogramEvidenceExtractor
         }
     }
 
-    private static void AddParameterFields(JsonElement parametersElement, Dictionary<string, object?> evidenceData)
+    private static void AddParameterFields(
+        JsonElement parametersElement,
+        Dictionary<string, object?> evidenceData
+    )
     {
         if (parametersElement.TryGetProperty("fftSize", out var fftSizeElement))
         {
@@ -111,7 +119,10 @@ public static class SpectrogramEvidenceExtractor
         }
     }
 
-    private static void AddSummaryFields(JsonElement summaryElement, Dictionary<string, object?> evidenceData)
+    private static void AddSummaryFields(
+        JsonElement summaryElement,
+        Dictionary<string, object?> evidenceData
+    )
     {
         if (summaryElement.TryGetProperty("frameCount", out var frameCountElement))
         {

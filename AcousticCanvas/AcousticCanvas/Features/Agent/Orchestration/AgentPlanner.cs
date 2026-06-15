@@ -1,5 +1,5 @@
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 using AcousticCanvas.Features.Agent.Commands;
 using AcousticCanvas.Features.Agent.Domain;
 using AcousticCanvas.Features.Agent.Services;
@@ -29,7 +29,11 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
             selectedFileNames
         );
 
-        var userMessageContent = BuildPlannerUserMessage(userQuestion, selectedFileIds, conversationContext);
+        var userMessageContent = BuildPlannerUserMessage(
+            userQuestion,
+            selectedFileIds,
+            conversationContext
+        );
 
         var plannerRequest = new ChatCompletionRequest
         {
@@ -145,9 +149,10 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
 
             return new FinalAnswerResponse
             {
-                Answer = extractedAnswer.Length > 0
-                    ? extractedAnswer
-                    : "Analysis complete. Please review the evidence package for details.",
+                Answer =
+                    extractedAnswer.Length > 0
+                        ? extractedAnswer
+                        : "Analysis complete. Please review the evidence package for details.",
                 EvidenceReferences = [],
                 Confidence = "low",
                 Limitations = [$"Agent response could not be parsed: {parseError?.Message}"],

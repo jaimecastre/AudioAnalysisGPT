@@ -77,16 +77,18 @@ public static class TonalPeakDetector
             var interpolatedPeakHz =
                 QuadraticInterpolateFrequencyHz(magnitudes, frequenciesHz, i) ?? frequenciesHz[i];
 
-            candidates.Add(new TonalPeak
-            {
-                FrequencyHz = Math.Round(interpolatedPeakHz, 3),
-                MagnitudeDb = Math.Round(dbValues[i], 3),
-                LocalFloorDb = Math.Round(localFloor.Value, 3),
-                ProminenceDb = Math.Round(prominenceDb, 3),
-                BandwidthHz = Math.Round(bandwidthHz, 3),
-                Confidence = confidence,
-                Method = TonalPeakMethod,
-            });
+            candidates.Add(
+                new TonalPeak
+                {
+                    FrequencyHz = Math.Round(interpolatedPeakHz, 3),
+                    MagnitudeDb = Math.Round(dbValues[i], 3),
+                    LocalFloorDb = Math.Round(localFloor.Value, 3),
+                    ProminenceDb = Math.Round(prominenceDb, 3),
+                    BandwidthHz = Math.Round(bandwidthHz, 3),
+                    Confidence = confidence,
+                    Method = TonalPeakMethod,
+                }
+            );
         }
 
         return candidates

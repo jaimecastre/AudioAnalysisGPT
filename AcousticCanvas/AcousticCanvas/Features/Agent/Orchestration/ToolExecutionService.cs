@@ -90,7 +90,11 @@ public sealed class ToolExecutionService(
                 ),
             };
 
-            return ToolOutputBuilder.BuildSuccessOutputWithTiming(result, startedAtUtc, DateTime.UtcNow);
+            return ToolOutputBuilder.BuildSuccessOutputWithTiming(
+                result,
+                startedAtUtc,
+                DateTime.UtcNow
+            );
         }
         catch (FileNotFoundException ex)
         {
@@ -211,7 +215,11 @@ public sealed class ToolExecutionService(
                 var signalFile = signalAnalysisService.ImportFile(filePath);
                 var effectiveStart = startSeconds ?? 0.0;
                 var effectiveEnd = endSeconds ?? signalFile.FileInfo.DurationSeconds;
-                levelAnalysis = LevelAnalyzer.Analyze(signalFile.Channels, effectiveStart, effectiveEnd);
+                levelAnalysis = LevelAnalyzer.Analyze(
+                    signalFile.Channels,
+                    effectiveStart,
+                    effectiveEnd
+                );
             }
             else
             {
@@ -240,6 +248,7 @@ public sealed class ToolExecutionService(
                         peakDbFs = primaryChannel.PeakDb,
                         crestFactorDb = primaryChannel.CrestFactorDb,
                         dcOffsetLinear = primaryChannel.DcOffset,
+                        dbUnit = primaryChannel.DbUnit,
                     },
                 }
             );
@@ -338,7 +347,8 @@ public sealed class ToolExecutionService(
         }
 
         var fftSize = ToolArgumentParser.ExtractIntArgument(arguments, "fftSize") ?? DefaultFftSize;
-        var overlap = ToolArgumentParser.ExtractDoubleArgument(arguments, "overlap") ?? DefaultOverlap;
+        var overlap =
+            ToolArgumentParser.ExtractDoubleArgument(arguments, "overlap") ?? DefaultOverlap;
         var requestedStart = ToolArgumentParser.ExtractDoubleArgument(arguments, "startSeconds");
         var requestedEnd = ToolArgumentParser.ExtractDoubleArgument(arguments, "endSeconds");
 
@@ -355,7 +365,8 @@ public sealed class ToolExecutionService(
             }
 
             var durationSeconds = GetFileDurationSeconds(filePath);
-            var effectiveEndSeconds = durationSeconds > 0 ? durationSeconds : DefaultSpectrumEndFallback;
+            var effectiveEndSeconds =
+                durationSeconds > 0 ? durationSeconds : DefaultSpectrumEndFallback;
 
             var queryStart = requestedStart ?? DefaultSpectrumStartSeconds;
             var queryEnd = requestedEnd ?? effectiveEndSeconds;
@@ -423,11 +434,7 @@ public sealed class ToolExecutionService(
 
         var resultData = new { results = spectrumResults, storedResultIds };
         var primaryResultId = storedResultIds.FirstOrDefault() ?? $"spectrum_{Guid.NewGuid():N}";
-        return ToolOutputBuilder.BuildSuccessOutput(
-            "run_spectrum",
-            primaryResultId,
-            resultData
-        );
+        return ToolOutputBuilder.BuildSuccessOutput("run_spectrum", primaryResultId, resultData);
     }
 
     private async Task<ToolExecutionOutput> ExecuteRunCpbAsync(
@@ -445,7 +452,8 @@ public sealed class ToolExecutionService(
             );
         }
 
-        var bandMode = ToolArgumentParser.ExtractStringArgument(arguments, "bandType") ?? DefaultCpbBandMode;
+        var bandMode =
+            ToolArgumentParser.ExtractStringArgument(arguments, "bandType") ?? DefaultCpbBandMode;
         var weighting = ToolArgumentParser.ExtractStringArgument(arguments, "weighting") ?? "z";
 
         var cpbResults = new List<object>();
@@ -859,5 +867,4 @@ public sealed class ToolExecutionService(
             return 0.0;
         }
     }
-
 }

@@ -54,9 +54,9 @@ describe('createToolResultArtifactDrafts', () => {
     expect(drafts[0]).toMatchObject({
       toolName: 'run_basic_metrics',
       rows: [
-        { label: 'RMS', value: '-18.25 dBFS' },
-        { label: 'peak', value: '-3.50 dBFS' },
-        { label: 'crest factor', value: '14.75 dBFS' },
+        { label: 'RMS', value: '-18.25 dB SPL' },
+        { label: 'peak', value: '-3.50 dB SPL' },
+        { label: 'crest factor', value: '14.75 dB SPL' },
       ],
     });
   });
@@ -87,7 +87,7 @@ describe('createToolResultArtifactDrafts', () => {
       fileId: 'file-a',
       rows: [
         { label: 'peak frequency', value: '257 Hz' },
-        { label: 'max magnitude', value: '-12.50 dBFS' },
+        { label: 'max magnitude', value: '-12.50 dB SPL' },
       ],
     });
     expect(drafts[1]).toMatchObject({
@@ -95,7 +95,7 @@ describe('createToolResultArtifactDrafts', () => {
       fileId: 'file-b',
       rows: [
         { label: 'peak frequency', value: '86 Hz' },
-        { label: 'max magnitude', value: '-18.25 dBFS' },
+        { label: 'max magnitude', value: '-18.25 dB SPL' },
       ],
     });
   });
@@ -133,7 +133,7 @@ describe('createToolResultArtifactDrafts', () => {
       rows: [
         { label: 'band mode', value: 'third_octave' },
         { label: 'weighting', value: 'Z' },
-        { label: '1k', value: '-12.50 dBFS' },
+        { label: '1k', value: '-12.50 dB SPL' },
       ],
     });
     expect(drafts[1]).toMatchObject({
@@ -142,7 +142,7 @@ describe('createToolResultArtifactDrafts', () => {
       rows: [
         { label: 'band mode', value: 'octave' },
         { label: 'weighting', value: 'A' },
-        { label: '500', value: '-18.25 dBFS' },
+        { label: '500', value: '-18.25 dB SPL' },
       ],
     });
   });

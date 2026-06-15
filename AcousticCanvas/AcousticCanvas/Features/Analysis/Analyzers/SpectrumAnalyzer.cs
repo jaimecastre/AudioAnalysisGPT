@@ -21,7 +21,12 @@ public static class SpectrumAnalyzer
         foreach (var channel in channels)
         {
             var channelResult = AnalyzeChannel(
-                channel, startSeconds, endSeconds, fftSize, overlap, windowType
+                channel,
+                startSeconds,
+                endSeconds,
+                fftSize,
+                overlap,
+                windowType
             );
             channelResults.Add(channelResult);
         }
@@ -29,7 +34,13 @@ public static class SpectrumAnalyzer
         // Use block count from first channel (all channels share the same time region and sample rate).
         var blockCount =
             channelResults.Count > 0
-                ? SpectrumFftEngine.GetBlockCount(channels[0].SampleRate, startSeconds, endSeconds, fftSize, overlap)
+                ? SpectrumFftEngine.GetBlockCount(
+                    channels[0].SampleRate,
+                    startSeconds,
+                    endSeconds,
+                    fftSize,
+                    overlap
+                )
                 : 0;
 
         var parameters = new SpectrumParameters
@@ -89,9 +100,10 @@ public static class SpectrumAnalyzer
 
         // All channels use the acoustic pressure path: Pa or digital with 0 dBFS = 91 dB SPL.
         // GetScaleFactor returns 1.0 for both PressurePascal and DigitalFullScale.
-        var scaleFactor = channel.PhysicalMetadata != null
-            ? AcousticPressureConverter.GetScaleFactor(channel.PhysicalMetadata)
-            : 1.0;
+        var scaleFactor =
+            channel.PhysicalMetadata != null
+                ? AcousticPressureConverter.GetScaleFactor(channel.PhysicalMetadata)
+                : 1.0;
         SpectrumFftEngine.ApplyAcousticPressureDbInPlace(
             spectrumData.Magnitudes,
             spectrumData.MagnitudesDb,

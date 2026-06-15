@@ -10,7 +10,7 @@ import {
 
 describe('benchmarkFormatting', () => {
   it('formats benchmark metrics with acoustic units', () => {
-    expect(formatDbFs(-12.345)).toBe('-12.3 dBFS');
+    expect(formatDbFs(-12.345)).toBe('-12.3 dB SPL');
     expect(formatFrequencyHz(1200)).toBe('1.20 kHz');
     expect(formatUnitValue(1.23456, 'acum')).toBe('1.235 acum');
     expect(formatTonalPeak(buildRow({ strongestTonalPeakFrequencyHz: 499.9, strongestTonalPeakProminenceDb: 12.34 })))

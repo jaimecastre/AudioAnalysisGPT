@@ -9,8 +9,12 @@ public static class BatchBenchmarkStatistics
 
     private static readonly string[] MetricKeys =
     [
-        "rmsDb", "peakDb", "sharpnessAcum", "roughnessAsper",
-        "findingCount", "strongestTonalPeakProminenceDb",
+        "rmsDb",
+        "peakDb",
+        "sharpnessAcum",
+        "roughnessAsper",
+        "findingCount",
+        "strongestTonalPeakProminenceDb",
     ];
 
     public static IReadOnlyList<BatchBenchmarkRanking> BuildRankings(
@@ -32,12 +36,14 @@ public static class BatchBenchmarkStatistics
                 .Select(item => item.Row.FileId)
                 .ToArray();
 
-            rankings.Add(new BatchBenchmarkRanking(
-                Metric: metricKey,
-                Label: GetMetricLabel(metricKey),
-                Direction: "descending",
-                FileIds: rankedRows
-            ));
+            rankings.Add(
+                new BatchBenchmarkRanking(
+                    Metric: metricKey,
+                    Label: GetMetricLabel(metricKey),
+                    Direction: "descending",
+                    FileIds: rankedRows
+                )
+            );
         }
 
         return rankings;
@@ -88,11 +94,29 @@ public static class BatchBenchmarkStatistics
                 var value = item.Value!.Value;
                 if (value < lowerFence)
                 {
-                    outliers.Add(BuildOutlier(item.Row.FileId, metricKey, "low", value, lowerFence, upperFence));
+                    outliers.Add(
+                        BuildOutlier(
+                            item.Row.FileId,
+                            metricKey,
+                            "low",
+                            value,
+                            lowerFence,
+                            upperFence
+                        )
+                    );
                 }
                 else if (value > upperFence)
                 {
-                    outliers.Add(BuildOutlier(item.Row.FileId, metricKey, "high", value, lowerFence, upperFence));
+                    outliers.Add(
+                        BuildOutlier(
+                            item.Row.FileId,
+                            metricKey,
+                            "high",
+                            value,
+                            lowerFence,
+                            upperFence
+                        )
+                    );
                 }
             }
         }
@@ -121,10 +145,12 @@ public static class BatchBenchmarkStatistics
                 );
             }
 
-            updatedRows.Add(row with
-            {
-                FlagLabels = labels.Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
-            });
+            updatedRows.Add(
+                row with
+                {
+                    FlagLabels = labels.Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
+                }
+            );
         }
 
         return updatedRows;
@@ -142,7 +168,9 @@ public static class BatchBenchmarkStatistics
 
         if (fileCount < MinimumOutlierSampleCount)
         {
-            limitations.Add("Statistical outlier flags require at least 4 files; rankings are still shown.");
+            limitations.Add(
+                "Statistical outlier flags require at least 4 files; rankings are still shown."
+            );
         }
 
         foreach (var row in rows)

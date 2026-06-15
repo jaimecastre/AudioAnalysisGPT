@@ -21,13 +21,26 @@ public sealed class AgentSpectrumToolTests
         var prompt = AgentPromptBuilder.BuildPlannerSystemPrompt(
             AgentToolRegistry.BuildToolListSummaryForPrompt(),
             ["file-a", "file-b"],
-            ["a.wav", "b.wav"]);
+            ["a.wav", "b.wav"]
+        );
 
         Assert.Contains("what is the peak frequency", prompt, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("use the minimum tools needed", prompt, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("harshness or spectral questions", prompt, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("run_spectrum + run_cpb + run_sound_quality_metrics", prompt, StringComparison.Ordinal);
-        Assert.Contains("Add run_spectrum only when the user also asks for frequency peaks", prompt, StringComparison.Ordinal);
+        Assert.Contains(
+            "harshness or spectral questions",
+            prompt,
+            StringComparison.OrdinalIgnoreCase
+        );
+        Assert.Contains(
+            "run_spectrum + run_cpb + run_sound_quality_metrics",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "Add run_spectrum only when the user also asks for frequency peaks",
+            prompt,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
@@ -35,11 +48,27 @@ public sealed class AgentSpectrumToolTests
     {
         var prompt = AgentPromptBuilder.BuildFinalAnswerSystemPrompt();
 
-        Assert.Contains("peakFrequencyHz is just the single loudest FFT bin", prompt, StringComparison.Ordinal);
-        Assert.Contains("Do NOT cite peakFrequencyHz as a harshness proxy", prompt, StringComparison.Ordinal);
+        Assert.Contains(
+            "peakFrequencyHz is just the single loudest FFT bin",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "Do NOT cite peakFrequencyHz as a harshness proxy",
+            prompt,
+            StringComparison.Ordinal
+        );
         Assert.Contains("If a metric was NOT measured", prompt, StringComparison.Ordinal);
-        Assert.Contains("Do NOT invent specific gain corrections", prompt, StringComparison.Ordinal);
-        Assert.Contains("Spectrum can indicate whether energy exists at that frequency overall", prompt, StringComparison.Ordinal);
+        Assert.Contains(
+            "Do NOT invent specific gain corrections",
+            prompt,
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "Spectrum can indicate whether energy exists at that frequency overall",
+            prompt,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
@@ -82,7 +111,8 @@ public sealed class AgentSpectrumToolTests
             userQuestion: "What is the peak frequency?",
             selectedFileIds: ["file123456789"],
             selectedFileNames: ["test_file.wav"],
-            toolOutputs: [toolOutput]);
+            toolOutputs: [toolOutput]
+        );
 
         Assert.Contains("run_spectrum", evidencePackage.AnalysesRun);
         var evidence = Assert.Single(evidencePackage.KeyEvidence, item => item.Type == "spectrum");
@@ -134,11 +164,15 @@ public sealed class AgentSpectrumToolTests
             userQuestion: "Compare the spectra.",
             selectedFileIds: ["fileA123456", "fileB123456"],
             selectedFileNames: ["a.wav", "b.wav"],
-            toolOutputs: [toolOutput]);
+            toolOutputs: [toolOutput]
+        );
 
         Assert.Contains("run_spectrum", evidencePackage.AnalysesRun);
         Assert.Equal(2, evidencePackage.KeyEvidence.Count(item => item.Type == "spectrum"));
-        var comparison = Assert.Single(evidencePackage.KeyEvidence, item => item.Type == "spectrum_comparison");
+        var comparison = Assert.Single(
+            evidencePackage.KeyEvidence,
+            item => item.Type == "spectrum_comparison"
+        );
         Assert.Equal("a.wav", comparison.Data["fileNameA"]);
         Assert.Equal("b.wav", comparison.Data["fileNameB"]);
         Assert.Equal(257.0, comparison.Data["peakFrequencyAHz"]);

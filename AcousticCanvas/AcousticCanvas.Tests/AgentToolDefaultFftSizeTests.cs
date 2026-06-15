@@ -18,7 +18,10 @@ public sealed class AgentToolDefaultFftSizeTests
         FastEndpointsModuleInitializer.Initialize();
 
         var fileId = Guid.NewGuid().ToString("N")[..12];
-        var storagePath = Path.Combine(Path.GetTempPath(), $"acousticcanvas_agent_fft_defaults_{Guid.NewGuid():N}");
+        var storagePath = Path.Combine(
+            Path.GetTempPath(),
+            $"acousticcanvas_agent_fft_defaults_{Guid.NewGuid():N}"
+        );
         Directory.CreateDirectory(storagePath);
         var filePath = Path.Combine(storagePath, $"{fileId}_agent_fft_default.wav");
         await File.WriteAllBytesAsync(filePath, BuildSineWaveBytes());
@@ -36,7 +39,11 @@ public sealed class AgentToolDefaultFftSizeTests
                 FftSize: 44100,
                 Overlap: 0.5
             );
-            var task = (Task)handler.GetType().GetMethod("ExecuteAsync")!.Invoke(handler, new object[] { query, CancellationToken.None })!;
+            var task = (Task)
+                handler
+                    .GetType()
+                    .GetMethod("ExecuteAsync")!
+                    .Invoke(handler, new object[] { query, CancellationToken.None })!;
             await task;
             var result = task.GetType().GetProperty("Result")!.GetValue(task)!;
             var resultType = result.GetType();
@@ -61,7 +68,11 @@ public sealed class AgentToolDefaultFftSizeTests
                 Weighting: "z",
                 Method: "fft_bin_power_sum"
             );
-            var task = (Task)handler.GetType().GetMethod("ExecuteAsync")!.Invoke(handler, new object[] { query, CancellationToken.None })!;
+            var task = (Task)
+                handler
+                    .GetType()
+                    .GetMethod("ExecuteAsync")!
+                    .Invoke(handler, new object[] { query, CancellationToken.None })!;
             await task;
             var result = task.GetType().GetProperty("Result")!.GetValue(task)!;
             var resultType = result.GetType();
@@ -86,7 +97,11 @@ public sealed class AgentToolDefaultFftSizeTests
                 GainDb: 20.0,
                 RangeDb: 80.0
             );
-            var task = (Task)handler.GetType().GetMethod("ExecuteAsync")!.Invoke(handler, new object[] { query, CancellationToken.None })!;
+            var task = (Task)
+                handler
+                    .GetType()
+                    .GetMethod("ExecuteAsync")!
+                    .Invoke(handler, new object[] { query, CancellationToken.None })!;
             await task;
             var result = task.GetType().GetProperty("Result")!.GetValue(task)!;
             var resultType = result.GetType();
@@ -138,9 +153,15 @@ public sealed class AgentToolDefaultFftSizeTests
 
     private sealed class FakeCpbFilterBankClient : ICpbFilterBankClient
     {
-        public Task<CpbAnalysis> AnalyzeAsync(RunCpbQuery query, IReadOnlyList<SignalChannel> channels, CancellationToken cancellationToken)
+        public Task<CpbAnalysis> AnalyzeAsync(
+            RunCpbQuery query,
+            IReadOnlyList<SignalChannel> channels,
+            CancellationToken cancellationToken
+        )
         {
-            throw new NotSupportedException("Python CPB filter bank is not used by FFT default tests.");
+            throw new NotSupportedException(
+                "Python CPB filter bank is not used by FFT default tests."
+            );
         }
     }
 }

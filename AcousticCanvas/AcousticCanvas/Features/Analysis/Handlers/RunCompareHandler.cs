@@ -50,8 +50,14 @@ public class RunCompareHandler(
             {
                 var a = summaries[i];
                 var b = summaries[j];
-                var spectrumDelta = CompareResultBuilder.BuildSpectrumDelta(a.SpectrumCurve, b.SpectrumCurve);
-                var bandEnergyDeltas = CompareResultBuilder.BuildBandEnergyDeltas(a.BandEnergies, b.BandEnergies);
+                var spectrumDelta = CompareResultBuilder.BuildSpectrumDelta(
+                    a.SpectrumCurve,
+                    b.SpectrumCurve
+                );
+                var bandEnergyDeltas = CompareResultBuilder.BuildBandEnergyDeltas(
+                    a.BandEnergies,
+                    b.BandEnergies
+                );
                 var cpbBandDeltas = CompareResultBuilder.BuildCpbBandDeltas(a.CpbBands, b.CpbBands);
                 var (soundQualityDelta, soundQualityUnavailableReason) =
                     CompareSoundQualityBuilder.BuildDeltaAndUnavailableReason(a, b);
@@ -132,7 +138,12 @@ public class RunCompareHandler(
         var spectrumCurve = CompareResultBuilder.BuildSpectrumCurve(firstSpectrumChannel);
         var bandEnergies = CompareResultBuilder.ComputeBandEnergies(firstSpectrumChannel);
         var sampleRate = signalFile.Channels.Count > 0 ? signalFile.Channels[0].SampleRate : 0;
-        var cpbBands = CompareResultBuilder.ComputeCpbBands(spectrumAnalysis, resolvedStart, resolvedEnd, sampleRate);
+        var cpbBands = CompareResultBuilder.ComputeCpbBands(
+            spectrumAnalysis,
+            resolvedStart,
+            resolvedEnd,
+            sampleRate
+        );
 
         CompareSoundQuality? soundQuality = null;
         string? soundQualityUnavailableReason = null;
@@ -180,7 +191,7 @@ public class RunCompareHandler(
             CpbBands = cpbBands,
             SoundQuality = soundQuality,
             SoundQualityUnavailableReason = soundQualityUnavailableReason,
+            DbUnit = firstLevelChannel?.DbUnit,
         };
     }
-
 }

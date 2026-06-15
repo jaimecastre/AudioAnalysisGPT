@@ -20,12 +20,12 @@ export type BenchmarkSortState = {
   direction: BenchmarkSortDirection;
 };
 
-export function formatDbFs(value: number | null | undefined): string {
+export function formatDbFs(value: number | null | undefined, unit = 'dB SPL'): string {
   if (value === null || value === undefined || !Number.isFinite(value)) {
     return '—';
   }
 
-  return `${value.toFixed(1)} dBFS`;
+  return `${value.toFixed(1)} ${unit}`;
 }
 
 export function formatDb(value: number | null | undefined): string {

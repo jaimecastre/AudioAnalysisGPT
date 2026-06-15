@@ -13,15 +13,20 @@ public sealed class CompareSoundQualityBuilderTests
             loudness: 12.2,
             sharpness: 1.15,
             roughness: 0.0421,
-            unavailableReason: null);
+            unavailableReason: null
+        );
         var b = BuildSummary(
             fileId: "file_b",
             loudness: 10.7,
             sharpness: 1.31,
             roughness: 0.0380,
-            unavailableReason: null);
+            unavailableReason: null
+        );
 
-        var (delta, unavailableReason) = CompareSoundQualityBuilder.BuildDeltaAndUnavailableReason(a, b);
+        var (delta, unavailableReason) = CompareSoundQualityBuilder.BuildDeltaAndUnavailableReason(
+            a,
+            b
+        );
 
         Assert.NotNull(delta);
         Assert.Null(unavailableReason);
@@ -42,15 +47,20 @@ public sealed class CompareSoundQualityBuilderTests
             loudness: 12.2,
             sharpness: 1.15,
             roughness: 0.0421,
-            unavailableReason: null);
+            unavailableReason: null
+        );
         var b = BuildSummary(
             fileId: "file_b",
             loudness: null,
             sharpness: null,
             roughness: null,
-            unavailableReason: "Sound quality metrics unavailable for file_b.");
+            unavailableReason: "Sound quality metrics unavailable for file_b."
+        );
 
-        var (delta, unavailableReason) = CompareSoundQualityBuilder.BuildDeltaAndUnavailableReason(a, b);
+        var (delta, unavailableReason) = CompareSoundQualityBuilder.BuildDeltaAndUnavailableReason(
+            a,
+            b
+        );
 
         Assert.Null(delta);
         Assert.Equal("Sound quality metrics unavailable for file_b.", unavailableReason);
@@ -61,7 +71,8 @@ public sealed class CompareSoundQualityBuilderTests
         double? loudness,
         double? sharpness,
         double? roughness,
-        string? unavailableReason)
+        string? unavailableReason
+    )
     {
         CompareSoundQuality? soundQuality = null;
 
@@ -102,7 +113,7 @@ public sealed class CompareSoundQualityBuilderTests
                     LowHz = 800,
                     HighHz = 2500,
                     EnergyDb = -20.4,
-                }
+                },
             ],
             CpbBands =
             [
@@ -115,7 +126,7 @@ public sealed class CompareSoundQualityBuilderTests
                     LevelDb = -21.3,
                     Weighting = "z",
                     WeightingMethod = "z_weighting_flat",
-                }
+                },
             ],
             SoundQuality = soundQuality,
             SoundQualityUnavailableReason = unavailableReason,

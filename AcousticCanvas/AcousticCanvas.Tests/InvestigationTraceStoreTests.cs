@@ -10,7 +10,7 @@ public sealed class InvestigationTraceStoreTests
     {
         var store = new InvestigationTraceStore();
         var conversationId = "conv_test123";
-        
+
         var trace = new InvestigationTrace(
             Question: "What is the peak level?",
             ConversationId: conversationId,
@@ -19,12 +19,13 @@ public sealed class InvestigationTraceStoreTests
             ToolExecutions: [],
             FinalAnswer: "The peak level is -3.2 dBFS.",
             Confidence: "high",
-            TimestampUtc: DateTime.UtcNow);
+            TimestampUtc: DateTime.UtcNow
+        );
 
         store.Store(trace);
-        
+
         var retrieved = store.GetLatest(conversationId);
-        
+
         Assert.NotNull(retrieved);
         Assert.Equal(conversationId, retrieved!.ConversationId);
         Assert.Equal("What is the peak level?", retrieved.Question);
@@ -36,7 +37,7 @@ public sealed class InvestigationTraceStoreTests
     {
         var store = new InvestigationTraceStore();
         var conversationId = "conv_multi123";
-        
+
         var trace1 = new InvestigationTrace(
             Question: "First question",
             ConversationId: conversationId,
@@ -45,7 +46,8 @@ public sealed class InvestigationTraceStoreTests
             ToolExecutions: [],
             FinalAnswer: "First answer",
             Confidence: "medium",
-            TimestampUtc: DateTime.UtcNow.AddMinutes(-5));
+            TimestampUtc: DateTime.UtcNow.AddMinutes(-5)
+        );
 
         var trace2 = new InvestigationTrace(
             Question: "Second question",
@@ -55,13 +57,14 @@ public sealed class InvestigationTraceStoreTests
             ToolExecutions: [],
             FinalAnswer: "Second answer",
             Confidence: "high",
-            TimestampUtc: DateTime.UtcNow);
+            TimestampUtc: DateTime.UtcNow
+        );
 
         store.Store(trace1);
         store.Store(trace2);
-        
+
         var allTraces = store.GetByConversationId(conversationId);
-        
+
         Assert.Equal(2, allTraces.Count);
         Assert.Equal("First question", allTraces[0].Question);
         Assert.Equal("Second question", allTraces[1].Question);
@@ -72,7 +75,7 @@ public sealed class InvestigationTraceStoreTests
     {
         var store = new InvestigationTraceStore();
         var conversationId = "conv_latest123";
-        
+
         var trace1 = new InvestigationTrace(
             Question: "Old question",
             ConversationId: conversationId,
@@ -81,7 +84,8 @@ public sealed class InvestigationTraceStoreTests
             ToolExecutions: [],
             FinalAnswer: "Old answer",
             Confidence: "medium",
-            TimestampUtc: DateTime.UtcNow.AddMinutes(-10));
+            TimestampUtc: DateTime.UtcNow.AddMinutes(-10)
+        );
 
         var trace2 = new InvestigationTrace(
             Question: "New question",
@@ -91,13 +95,14 @@ public sealed class InvestigationTraceStoreTests
             ToolExecutions: [],
             FinalAnswer: "New answer",
             Confidence: "high",
-            TimestampUtc: DateTime.UtcNow);
+            TimestampUtc: DateTime.UtcNow
+        );
 
         store.Store(trace1);
         store.Store(trace2);
-        
+
         var latest = store.GetLatest(conversationId);
-        
+
         Assert.NotNull(latest);
         Assert.Equal("New question", latest!.Question);
     }
@@ -106,9 +111,9 @@ public sealed class InvestigationTraceStoreTests
     public void GetByConversationIdReturnsEmptyListForUnknownConversation()
     {
         var store = new InvestigationTraceStore();
-        
+
         var traces = store.GetByConversationId("conv_unknown");
-        
+
         Assert.Empty(traces);
     }
 
@@ -116,9 +121,9 @@ public sealed class InvestigationTraceStoreTests
     public void GetLatestReturnsNullForUnknownConversation()
     {
         var store = new InvestigationTraceStore();
-        
+
         var trace = store.GetLatest("conv_unknown");
-        
+
         Assert.Null(trace);
     }
 
@@ -127,7 +132,8 @@ public sealed class InvestigationTraceStoreTests
     {
         var plannedTool = new PlannedToolTrace(
             Name: "run_spectrum",
-            Arguments: new Dictionary<string, object?> { ["fileIds"] = new[] { "file1" } });
+            Arguments: new Dictionary<string, object?> { ["fileIds"] = new[] { "file1" } }
+        );
 
         var trace = new InvestigationTrace(
             Question: "What is the spectrum?",
@@ -137,7 +143,8 @@ public sealed class InvestigationTraceStoreTests
             ToolExecutions: [],
             FinalAnswer: "The spectrum shows a peak at 1 kHz.",
             Confidence: "high",
-            TimestampUtc: DateTime.UtcNow);
+            TimestampUtc: DateTime.UtcNow
+        );
 
         Assert.Single(trace.PlannedTools);
         Assert.Equal("run_spectrum", trace.PlannedTools[0].Name);
@@ -151,7 +158,8 @@ public sealed class InvestigationTraceStoreTests
             Status: "completed",
             StartedAtUtc: DateTime.UtcNow.AddSeconds(-1),
             FinishedAtUtc: DateTime.UtcNow,
-            ErrorMessage: null);
+            ErrorMessage: null
+        );
 
         var trace = new InvestigationTrace(
             Question: "What is the spectrum?",
@@ -161,7 +169,8 @@ public sealed class InvestigationTraceStoreTests
             ToolExecutions: new[] { toolExecution },
             FinalAnswer: "The spectrum shows a peak at 1 kHz.",
             Confidence: "high",
-            TimestampUtc: DateTime.UtcNow);
+            TimestampUtc: DateTime.UtcNow
+        );
 
         Assert.Single(trace.ToolExecutions);
         Assert.Equal("run_spectrum", trace.ToolExecutions[0].Name);
@@ -176,7 +185,8 @@ public sealed class InvestigationTraceStoreTests
             Status: "failed",
             StartedAtUtc: DateTime.UtcNow.AddSeconds(-1),
             FinishedAtUtc: DateTime.UtcNow,
-            ErrorMessage: "File not found");
+            ErrorMessage: "File not found"
+        );
 
         var trace = new InvestigationTrace(
             Question: "What is the spectrum?",
@@ -186,7 +196,8 @@ public sealed class InvestigationTraceStoreTests
             ToolExecutions: new[] { toolExecution },
             FinalAnswer: "Could not analyze spectrum.",
             Confidence: "low",
-            TimestampUtc: DateTime.UtcNow);
+            TimestampUtc: DateTime.UtcNow
+        );
 
         Assert.Single(trace.ToolExecutions);
         Assert.Equal("failed", trace.ToolExecutions[0].Status);

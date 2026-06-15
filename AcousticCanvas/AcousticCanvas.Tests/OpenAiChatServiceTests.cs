@@ -30,8 +30,9 @@ public sealed class OpenAiChatServiceTests
             Messages = [new ChatMessage { Role = "user", Content = "hello" }],
         };
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.CompleteAsync(request, CancellationToken.None));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CompleteAsync(request, CancellationToken.None)
+        );
 
         Assert.Contains("not configured", exception.Message);
         Assert.Contains("OPENAI_API_KEY", exception.Message);

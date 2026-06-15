@@ -64,12 +64,14 @@ public static class SpectrumEvidenceExtractor
                 evidenceData["resultId"] = resultId;
             }
 
-            evidenceItems.Add(new EvidenceItem
-            {
-                EvidenceId = evidenceId,
-                Type = "spectrum",
-                Data = evidenceData,
-            });
+            evidenceItems.Add(
+                new EvidenceItem
+                {
+                    EvidenceId = evidenceId,
+                    Type = "spectrum",
+                    Data = evidenceData,
+                }
+            );
         }
 
         SpectrumComparisonEvidenceExtractor.TryEmit(resultsArray, evidenceItems, fileIdToNameMap);
@@ -81,12 +83,26 @@ public static class SpectrumEvidenceExtractor
 
         foreach (var peak in peaksArray.EnumerateArray())
         {
-            var freqHz = peak.TryGetProperty("frequencyHz", out var freqEl) ? freqEl.GetDouble() : 0.0;
+            var freqHz = peak.TryGetProperty("frequencyHz", out var freqEl)
+                ? freqEl.GetDouble()
+                : 0.0;
             var magDb = peak.TryGetProperty("magnitudeDb", out var magEl) ? magEl.GetDouble() : 0.0;
-            var prominence = peak.TryGetProperty("prominenceDb", out var promEl) ? promEl.GetDouble() : 0.0;
-            var confidence = peak.TryGetProperty("confidence", out var confEl) ? confEl.GetString() : "";
+            var prominence = peak.TryGetProperty("prominenceDb", out var promEl)
+                ? promEl.GetDouble()
+                : 0.0;
+            var confidence = peak.TryGetProperty("confidence", out var confEl)
+                ? confEl.GetString()
+                : "";
 
-            peaksList.Add(new { frequencyHz = freqHz, magnitudeDb = magDb, prominenceDb = prominence, confidence });
+            peaksList.Add(
+                new
+                {
+                    frequencyHz = freqHz,
+                    magnitudeDb = magDb,
+                    prominenceDb = prominence,
+                    confidence,
+                }
+            );
         }
 
         return peaksList;

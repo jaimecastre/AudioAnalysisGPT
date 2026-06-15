@@ -23,8 +23,10 @@ public sealed class SpectrumAnalyzerTests
         Assert.NotNull(result.Channels[0].PeakFrequencyHz);
         var binSpacingHz = (double)DefaultSampleRate / fftSize;
         var frequencyError = Math.Abs(result.Channels[0].PeakFrequencyHz!.Value - targetHz);
-        Assert.True(frequencyError < binSpacingHz,
-            $"Peak frequency {result.Channels[0].PeakFrequencyHz} should be within one bin ({binSpacingHz} Hz) of {targetHz} Hz");
+        Assert.True(
+            frequencyError < binSpacingHz,
+            $"Peak frequency {result.Channels[0].PeakFrequencyHz} should be within one bin ({binSpacingHz} Hz) of {targetHz} Hz"
+        );
     }
 
     [Fact]
@@ -48,8 +50,10 @@ public sealed class SpectrumAnalyzerTests
 
         Assert.NotEmpty(result.Channels[0].TonalPeaks);
         var strongestPeak = result.Channels[0].TonalPeaks[0];
-        Assert.True(strongestPeak.ProminenceDb > 6.0,
-            $"Expected prominence > 6 dB but got {strongestPeak.ProminenceDb}");
+        Assert.True(
+            strongestPeak.ProminenceDb > 6.0,
+            $"Expected prominence > 6 dB but got {strongestPeak.ProminenceDb}"
+        );
         Assert.InRange(strongestPeak.FrequencyHz, 990.0, 1010.0);
     }
 
@@ -84,8 +88,10 @@ public sealed class SpectrumAnalyzerTests
         // Analyze only the sine second half
         var sineResult = SpectrumAnalyzer.Analyze([channel], 1.0, 2.0, 2048, 0.5);
 
-        Assert.True(sineResult.Channels[0].MaxMagnitude > silentResult.Channels[0].MaxMagnitude! * 10,
-            "Sine region should have much higher magnitude than silent region");
+        Assert.True(
+            sineResult.Channels[0].MaxMagnitude > silentResult.Channels[0].MaxMagnitude! * 10,
+            "Sine region should have much higher magnitude than silent region"
+        );
     }
 
     [Fact]
@@ -130,13 +136,25 @@ public sealed class SpectrumAnalyzerTests
     {
         var channel = BuildDigitalSineChannel(0.5, 1000.0, DefaultSampleRate, 1.0);
 
-        var hannResult = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 4096, 0.5, SpectrumWindowType.Hann);
-        var rectResult = SpectrumAnalyzer.Analyze([channel], 0.0, 1.0, 4096, 0.5, SpectrumWindowType.Rectangular);
+        var hannResult = SpectrumAnalyzer.Analyze(
+            [channel],
+            0.0,
+            1.0,
+            4096,
+            0.5,
+            SpectrumWindowType.Hann
+        );
+        var rectResult = SpectrumAnalyzer.Analyze(
+            [channel],
+            0.0,
+            1.0,
+            4096,
+            0.5,
+            SpectrumWindowType.Rectangular
+        );
 
         // Peak magnitudes should differ due to windowing gain correction
-        Assert.NotEqual(
-            hannResult.Channels[0].MaxMagnitude,
-            rectResult.Channels[0].MaxMagnitude);
+        Assert.NotEqual(hannResult.Channels[0].MaxMagnitude, rectResult.Channels[0].MaxMagnitude);
     }
 
     // =================================================================
@@ -149,7 +167,8 @@ public sealed class SpectrumAnalyzerTests
         int sampleRate,
         double durationSeconds,
         string channelId = "ch1",
-        string channelName = "Mono")
+        string channelName = "Mono"
+    )
     {
         var samples = BuildSineSamples(amplitudeFs, frequencyHz, sampleRate, durationSeconds);
 
@@ -160,7 +179,8 @@ public sealed class SpectrumAnalyzerTests
         float[] samples,
         int sampleRate,
         string channelId = "ch1",
-        string channelName = "Mono")
+        string channelName = "Mono"
+    )
     {
         return new SignalChannel
         {
@@ -170,8 +190,16 @@ public sealed class SpectrumAnalyzerTests
             SampleCount = samples.Length,
             Quantity = "digital_amplitude",
             Unit = "FS",
-            DbReference = new DbReference { Value = 1.0, Unit = "FS", DbUnit = "dBFS" },
-            PhysicalMetadata = new SignalPhysicalMetadata { UnitKind = SignalUnitKind.DigitalFullScale },
+            DbReference = new DbReference
+            {
+                Value = 1.0,
+                Unit = "FS",
+                DbUnit = "dBFS",
+            },
+            PhysicalMetadata = new SignalPhysicalMetadata
+            {
+                UnitKind = SignalUnitKind.DigitalFullScale,
+            },
             Samples = samples,
         };
     }
@@ -180,14 +208,17 @@ public sealed class SpectrumAnalyzerTests
         double amplitude,
         double frequencyHz,
         int sampleRate,
-        double durationSeconds)
+        double durationSeconds
+    )
     {
         var sampleCount = (int)(sampleRate * durationSeconds);
         var samples = new float[sampleCount];
 
         for (var i = 0; i < sampleCount; i++)
         {
-            samples[i] = (float)(amplitude * Math.Sin(2.0 * Math.PI * frequencyHz * i / sampleRate));
+            samples[i] = (float)(
+                amplitude * Math.Sin(2.0 * Math.PI * frequencyHz * i / sampleRate)
+            );
         }
 
         return samples;
