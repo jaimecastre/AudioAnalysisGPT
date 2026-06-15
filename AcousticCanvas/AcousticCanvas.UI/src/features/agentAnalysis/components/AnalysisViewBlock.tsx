@@ -21,7 +21,7 @@ import {
   IconExternalLink,
   IconChartBar,
 } from '@tabler/icons-react';
-import type { AnalysisViewBlock as AnalysisViewBlockType, CompactSummary } from '../services/agentAskService';
+import type { AnalysisViewBlock as AnalysisViewBlockType, CompactSummary, PlotHints } from '../services/agentAskService';
 import { useAnalysisResult } from '../../analysis/hooks/useAnalysisResult';
 import { SpectrumViewer } from '../../analysis/components/viewers/SpectrumViewer';
 import { SpectrogramViewer } from '../../analysis/components/viewers/SpectrogramViewer';
@@ -56,10 +56,12 @@ function CompactAnalysisPreview({
   viewType,
   summary,
   resultId,
+  plotHints,
 }: {
   viewType: AnalysisViewBlockType['viewType'];
   summary: CompactSummary;
   resultId: string;
+  plotHints?: PlotHints | null;
 }): JSX.Element | null {
   const { result, isLoading, error } = useAnalysisResult(resultId);
 
@@ -96,7 +98,13 @@ function CompactAnalysisPreview({
     return (
       <div data-preview-type="spectrum" style={previewFrameStyle}>
         <div style={{ height: 160, width: '100%' }}>
-          <SpectrumCanvas channels={channels} />
+          <SpectrumCanvas
+            channels={channels}
+            minFrequencyHz={plotHints?.frequencyRangeMinHz}
+            maxFrequencyHz={plotHints?.frequencyRangeMaxHz}
+            annotationFrequencyHz={plotHints?.focusFrequencyHz}
+            annotationLabel={plotHints?.annotationLabel}
+          />
         </div>
       </div>
     );
@@ -296,7 +304,7 @@ export function AnalysisViewBlock({ block }: IAnalysisViewBlockProps): JSX.Eleme
         )}
 
         {/* Mini Chart Preview */}
-        <CompactAnalysisPreview viewType={block.viewType} summary={summary} resultId={block.resultId} />
+        <CompactAnalysisPreview viewType={block.viewType} summary={summary} resultId={block.resultId} plotHints={block.plotHints} />
 
         {/* Mini Hint */}
         <Text size="xs" c="dimmed" mt="sm" style={{ textAlign: 'center' }}>

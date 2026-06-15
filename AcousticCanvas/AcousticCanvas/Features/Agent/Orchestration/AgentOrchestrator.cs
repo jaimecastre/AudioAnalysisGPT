@@ -176,6 +176,11 @@ public sealed class AgentOrchestrator(
 
         investigationTraceStore.Store(investigationTrace);
 
+        var plotHintsLookup = AgentResultBuilder.BuildPlotHintsLookup(
+            visualizationPlan,
+            evidencePackage
+        );
+
         return new AgentAskResult(
             ConversationId: conversationId,
             Answer: answerWithEmbeddedTokens,
@@ -194,7 +199,8 @@ public sealed class AgentOrchestrator(
             PlannedTools: plannedToolNames,
             PlannerReason: plannerReason,
             InvestigationTrace: investigationTrace,
-            Blocks: finalAnswer.Blocks
+            Blocks: finalAnswer.Blocks,
+            PlotHintsMap: plotHintsLookup.Count > 0 ? plotHintsLookup : null
         );
     }
 
@@ -249,6 +255,11 @@ public sealed class AgentOrchestrator(
 
         investigationTraceStore.Store(investigationTrace);
 
+        var deterministicPlotHintsLookup = AgentResultBuilder.BuildPlotHintsLookup(
+            visualizationPlan,
+            evidencePackage
+        );
+
         return new AgentAskResult(
             ConversationId: conversationId,
             Answer: answerWithEmbeddedTokens,
@@ -264,7 +275,8 @@ public sealed class AgentOrchestrator(
             PlannedTools: [deterministicPlan.ToolName],
             PlannerReason: null,
             InvestigationTrace: investigationTrace,
-            Blocks: finalAnswer.Blocks
+            Blocks: finalAnswer.Blocks,
+            PlotHintsMap: deterministicPlotHintsLookup.Count > 0 ? deterministicPlotHintsLookup : null
         );
     }
 

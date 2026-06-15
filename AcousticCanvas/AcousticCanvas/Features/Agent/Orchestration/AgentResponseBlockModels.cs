@@ -121,6 +121,45 @@ public sealed record AnalysisViewBlock : AgentResponseBlock
     /// Optional: Preview data for inline mini-chart (e.g., spectrum preview)
     /// </summary>
     public AnalysisPreview? Preview { get; init; }
+
+    /// <summary>
+    /// Optional: Agent-specified hints to focus the viewer on the most relevant region
+    /// </summary>
+    public PlotHints? PlotHints { get; init; }
+}
+
+// ─── Phase 4: Plot Hints ──────────────────────────────────────────────────
+
+/// <summary>
+/// Deterministic viewer hints populated from DSP evidence — never from the LLM.
+/// Used to focus spectrum/CPB viewers on the most relevant frequency region.
+/// </summary>
+public sealed record PlotHints
+{
+    /// <summary>
+    /// Frequency (Hz) to highlight as the primary point of interest (e.g., dominant peak)
+    /// </summary>
+    public double? FocusFrequencyHz { get; init; }
+
+    /// <summary>
+    /// Lower bound (Hz) of the frequency window to display
+    /// </summary>
+    public double? FrequencyRangeMinHz { get; init; }
+
+    /// <summary>
+    /// Upper bound (Hz) of the frequency window to display
+    /// </summary>
+    public double? FrequencyRangeMaxHz { get; init; }
+
+    /// <summary>
+    /// Human-readable annotation label for the focus frequency (e.g., "peak at 1.2 kHz")
+    /// </summary>
+    public string? AnnotationLabel { get; init; }
+
+    /// <summary>
+    /// Scale override for frequency axis: "log" or "linear". Null means use viewer default.
+    /// </summary>
+    public string? ScaleOverride { get; init; }
 }
 
 /// <summary>

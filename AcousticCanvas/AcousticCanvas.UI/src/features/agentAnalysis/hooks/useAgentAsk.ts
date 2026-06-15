@@ -12,7 +12,7 @@ import {
   planBubbleRemoved,
 } from '../store/chatSlice';
 import type { ToolStep } from '../store/chatSlice';
-import type { AgentAskResponse, AgentConversationTurn } from '../services/agentAskService';
+import type { AgentAskResponse, AgentConversationTurn, AgentResponseBlock, PlotHints } from '../services/agentAskService';
 import { callAgentAskEndpoint } from '../services/agentAskService';
 import {
   agentAskStarted,
@@ -27,6 +27,28 @@ import { chatSelectedModelSelector } from '../store/chatSlice';
 import { findingsArtifactAdded, toolResultArtifactAdded } from '../store/agentWorkspaceSlice';
 import type { FindingItem } from '../store/agentWorkspaceSlice';
 import { createToolResultArtifactDrafts } from '../utils/agentToolArtifacts';
+
+function mergeBlocksWithPlotHints(
+  blocks: AgentResponseBlock[] | undefined,
+  plotHintsMap: Record<string, PlotHints> | null | undefined,
+): AgentResponseBlock[] | undefined {
+  if (!blocks || !plotHintsMap) {
+    return blocks;
+  }
+
+  return blocks.map((block) => {
+    if (block.blockType !== 'analysisView') {
+      return block;
+    }
+
+    const hints = plotHintsMap[block.resultId];
+    if (!hints) {
+      return block;
+    }
+
+    return { ...block, plotHints: hints };
+  });
+}
 
 const TOOL_TITLES: Record<string, string> = {
   get_metadata: 'Metadata',
@@ -169,7 +191,8 @@ export function useAgentAsk() {
         validationWarning: agentResponse.validationWarning,
         plannedTools: agentResponse.plannedTools,
         plannerReason: agentResponse.plannerReason,
-        blocks: agentResponse.blocks,
+        blocks: mergeBlocksWithPlotHints(agentResponse.blocks, agentResponse.plotHintsMap),
+        visualizationPlanTrace: agentResponse.investigationTrace?.visualizationPlan ?? null,
       }));
       dispatch(agentThinkingFinished());
     } catch (err) {

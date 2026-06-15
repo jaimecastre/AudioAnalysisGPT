@@ -507,6 +507,107 @@ button.evidenceCitationPill {
   color: var(--text-muted);
 }
 
+// ─── Thought container (visualization plan trace) ────────
+
+.thoughtContainer {
+  margin-bottom: 10px;
+  border: 1px solid rgba(128, 128, 128, 0.1);
+  border-radius: 8px;
+  background: rgba(128, 128, 128, 0.03);
+  overflow: hidden;
+
+  &[open] .thoughtSummary::before {
+    content: '▾ ';
+  }
+}
+
+.thoughtSummary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  outline: none;
+  list-style: none;
+  -webkit-user-select: none;
+  user-select: none;
+
+  &::before {
+    content: '▸ ';
+    font-size: 0.6rem;
+    color: var(--text-muted);
+  }
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &:hover {
+    background: rgba(128, 128, 128, 0.05);
+  }
+
+  span:first-of-type {
+    font-size: 0.65rem;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+  }
+}
+
+.thoughtIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.thoughtCount {
+  font-size: 0.63rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+
+.thoughtDecisionList {
+  margin: 0;
+  padding: 4px 10px 8px 10px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-top: 1px solid rgba(128, 128, 128, 0.08);
+}
+
+.thoughtDecision {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.thoughtBlockType {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(0, 184, 169, 0.7);
+  background: rgba(0, 184, 169, 0.06);
+  border: 1px solid rgba(0, 184, 169, 0.12);
+  border-radius: 4px;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.thoughtReason {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  opacity: 0.75;
+  line-height: 1.5;
+}
+
 // ─── Analysis steps collapsible ──────────────────────────
 
 .analysisSteps {

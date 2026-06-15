@@ -115,6 +115,7 @@ public sealed class InvestigationTraceSerializationTests
         Assert.Contains("\"visualizationPlan\"", json);
         Assert.Contains("\"primaryEvidenceType\":\"spectrum\"", json);
         Assert.Contains("\"blockType\":\"analysisView\"", json);
+        Assert.Contains("\"reason\":\"Show the measured spectrum result.\"", json);
         Assert.Contains("\"viewType\":\"spectrum\"", json);
         Assert.Contains("\"sourceEvidenceId\":\"ev_spectrum_file1\"", json);
     }

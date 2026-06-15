@@ -261,6 +261,100 @@ describe('chatSlice', () => {
     expect(failedState.messages[0]?.activityLabel).toBe('failed');
   });
 
+  it('stores visualizationPlanTrace on a new assistant message', () => {
+    const vizPlan = {
+      primaryEvidenceType: 'spectrum',
+      blocks: [
+        { blockType: 'markdown', reason: 'Summarise measured evidence.', viewType: null, sourceEvidenceId: null },
+        { blockType: 'analysisView', reason: 'Show spectrum result.', viewType: 'spectrum', sourceEvidenceId: 'ev_spectrum_file1' },
+      ],
+    };
+
+    const state = chatReducer(undefined, assistantMessageReceived({
+      id: 'assistant-1',
+      content: 'Spectrum analysis complete.',
+      timestamp: '2026-06-15T00:00:05.000Z',
+      visualizationPlanTrace: vizPlan,
+    }));
+
+    expect(state.messages[0]).toMatchObject({
+      id: 'assistant-1',
+      role: 'assistant',
+      status: 'completed',
+      visualizationPlanTrace: {
+        primaryEvidenceType: 'spectrum',
+        blocks: expect.arrayContaining([
+          expect.objectContaining({ blockType: 'analysisView', viewType: 'spectrum' }),
+        ]),
+      },
+    });
+  });
+
+  it('updates visualizationPlanTrace in-place on a pending assistant message', () => {
+    const vizPlan = {
+      primaryEvidenceType: 'cpb',
+      blocks: [
+        { blockType: 'markdown', reason: 'Summarise.', viewType: null, sourceEvidenceId: null },
+        { blockType: 'analysisView', reason: 'Show CPB.', viewType: 'cpb', sourceEvidenceId: 'ev_cpb_file1' },
+      ],
+    };
+
+    const pendingState = chatReducer(undefined, assistantResponseStarted({
+      id: 'assistant-1',
+      timestamp: '2026-06-15T00:00:01.000Z',
+    }));
+
+    const completedState = chatReducer(pendingState, assistantMessageReceived({
+      id: 'assistant-1',
+      content: 'CPB complete.',
+      timestamp: '2026-06-15T00:00:05.000Z',
+      visualizationPlanTrace: vizPlan,
+    }));
+
+    expect(completedState.messages).toHaveLength(1);
+    expect(completedState.messages[0]?.visualizationPlanTrace?.primaryEvidenceType).toBe('cpb');
+    const analysisBlock = completedState.messages[0]?.visualizationPlanTrace?.blocks.find(
+      (b) => b.blockType === 'analysisView',
+    );
+    expect(analysisBlock?.viewType).toBe('cpb');
+    expect(analysisBlock?.reason).toBeTruthy();
+  });
+
+  it('stores null visualizationPlanTrace when not provided by the agent response', () => {
+    const state = chatReducer(undefined, assistantMessageReceived({
+      id: 'assistant-1',
+      content: 'What is a spectrogram? A spectrogram plots frequency over time.',
+      timestamp: '2026-06-15T00:00:05.000Z',
+      visualizationPlanTrace: null,
+    }));
+
+    expect(state.messages[0]?.visualizationPlanTrace).toBeNull();
+  });
+
+  it('stores the full block reason text on each visualization plan block', () => {
+    const vizPlan = {
+      primaryEvidenceType: 'sound_quality',
+      blocks: [
+        { blockType: 'markdown', reason: 'Use text to summarize measured evidence and limitations.', viewType: null, sourceEvidenceId: null },
+        { blockType: 'ranking', reason: 'Compare multiple files with a ranking block before the narrative so differences can be scanned quickly.', viewType: null, sourceEvidenceId: 'ev_sq_fileA' },
+        { blockType: 'analysisView', reason: 'Show the soundQuality result in the trusted analysis view so the user can inspect measured data and metadata.', viewType: 'soundQuality', sourceEvidenceId: 'ev_sq_fileA' },
+      ],
+    };
+
+    const state = chatReducer(undefined, assistantMessageReceived({
+      id: 'assistant-1',
+      content: 'Sound quality compared.',
+      timestamp: '2026-06-15T00:00:05.000Z',
+      visualizationPlanTrace: vizPlan,
+    }));
+
+    const blocks = state.messages[0]?.visualizationPlanTrace?.blocks ?? [];
+    expect(blocks).toHaveLength(3);
+    for (const block of blocks) {
+      expect(block.reason.length).toBeGreaterThan(0);
+    }
+  });
+
   it('planBubbleRemoved removes a no-tool planning bubble without removing the assistant response', () => {
     const withAssistant = chatReducer(undefined, assistantResponseStarted({
       id: 'assistant-1',

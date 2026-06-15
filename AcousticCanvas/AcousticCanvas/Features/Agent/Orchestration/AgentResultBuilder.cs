@@ -89,8 +89,7 @@ public static class AgentResultBuilder
 
         for (int i = 0; i < finalAnswer.Blocks.Count; i++)
         {
-            var element = finalAnswer.Blocks[i];
-            var block = ParseBlock(element);
+            var block = ParseBlock(finalAnswer.Blocks[i]);
             if (block is not null)
             {
                 blocks.Add(block);
@@ -98,6 +97,45 @@ public static class AgentResultBuilder
         }
 
         return blocks.Count > 0 ? blocks : null;
+    }
+
+    public static IReadOnlyDictionary<string, PlotHints> BuildPlotHintsLookup(
+        VisualizationPlan visualizationPlan,
+        EvidencePackage evidencePackage
+    )
+    {
+        var lookup = new Dictionary<string, PlotHints>();
+
+        foreach (var planBlock in visualizationPlan.Blocks)
+        {
+            if (planBlock.PlotHints is null || planBlock.SourceEvidenceId is null)
+            {
+                continue;
+            }
+
+            var matchingEvidence = evidencePackage.KeyEvidence.FirstOrDefault(
+                item => item.EvidenceId == planBlock.SourceEvidenceId
+            );
+
+            if (matchingEvidence is null)
+            {
+                continue;
+            }
+
+            if (!matchingEvidence.Data.TryGetValue("resultId", out var resultIdRaw))
+            {
+                continue;
+            }
+
+            if (resultIdRaw is not string resultId || string.IsNullOrWhiteSpace(resultId))
+            {
+                continue;
+            }
+
+            lookup[resultId] = planBlock.PlotHints;
+        }
+
+        return lookup;
     }
 
     private static AgentResponseBlock? ParseBlock(JsonElement element)

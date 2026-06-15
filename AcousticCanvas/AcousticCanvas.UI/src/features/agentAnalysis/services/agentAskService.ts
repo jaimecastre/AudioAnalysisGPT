@@ -97,6 +97,15 @@ export type AnalysisPreview = {
   magnitudesDb?: number[];
 };
 
+// Phase 4: Plot hints — deterministic viewer focus hints from DSP evidence
+export type PlotHints = {
+  focusFrequencyHz?: number | null;
+  frequencyRangeMinHz?: number | null;
+  frequencyRangeMaxHz?: number | null;
+  annotationLabel?: string | null;
+  scaleOverride?: 'log' | 'linear' | null;
+};
+
 export type AnalysisViewBlock = {
   blockType: 'analysisView';
   viewType: 'spectrum' | 'spectrogram' | 'cpb' | 'soundQuality' | 'findings';
@@ -106,6 +115,7 @@ export type AnalysisViewBlock = {
   summary: CompactSummary;
   title?: string;
   preview?: AnalysisPreview;
+  plotHints?: PlotHints | null;
 };
 
 export type AgentResponseBlock =
@@ -115,6 +125,30 @@ export type AgentResponseBlock =
   | RankingBlock
   | SuggestedActionsBlock
   | AnalysisViewBlock;
+
+export type VisualizationPlanBlockTrace = {
+  blockType: string;
+  reason: string;
+  viewType: string | null;
+  sourceEvidenceId: string | null;
+};
+
+export type VisualizationPlanTrace = {
+  primaryEvidenceType: string;
+  blocks: VisualizationPlanBlockTrace[];
+};
+
+export type InvestigationTrace = {
+  question: string;
+  conversationId: string;
+  path: string;
+  plannedTools: { name: string; arguments: Record<string, unknown> }[];
+  toolExecutions: { name: string; status: string; startedAtUtc: string | null; finishedAtUtc: string | null; errorMessage: string | null }[];
+  finalAnswer: string;
+  confidence: string;
+  timestampUtc: string;
+  visualizationPlan: VisualizationPlanTrace | null;
+};
 
 export type AgentAskResponse = {
   conversationId: string;
@@ -129,6 +163,8 @@ export type AgentAskResponse = {
   plannedTools: string[];
   plannerReason: string | null;
   blocks?: AgentResponseBlock[];
+  investigationTrace?: InvestigationTrace | null;
+  plotHintsMap?: Record<string, PlotHints> | null;
 };
 
 export type AgentConversationTurn = {

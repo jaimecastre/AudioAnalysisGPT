@@ -18,7 +18,8 @@ public record AgentAskResult(
     IReadOnlyList<string> PlannedTools,
     string? PlannerReason,
     InvestigationTrace? InvestigationTrace,
-    List<JsonElement>? Blocks
+    List<JsonElement>? Blocks,
+    IReadOnlyDictionary<string, PlotHints>? PlotHintsMap = null
 );
 
 public record AgentEvidenceItem(

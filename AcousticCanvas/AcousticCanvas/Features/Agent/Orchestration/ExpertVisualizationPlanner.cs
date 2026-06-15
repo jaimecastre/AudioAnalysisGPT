@@ -42,6 +42,8 @@ public static class ExpertVisualizationPlanner
                 continue;
             }
 
+            var plotHints = BuildPlotHintsForEvidence(evidenceItem);
+
             blocks.Add(
                 new VisualizationPlanBlock
                 {
@@ -50,6 +52,7 @@ public static class ExpertVisualizationPlanner
                     SourceEvidenceId = evidenceItem.EvidenceId,
                     Reason =
                         $"Show the {viewType} result in the trusted analysis view so the user can inspect measured data and metadata.",
+                    PlotHints = plotHints,
                 }
             );
         }
@@ -142,6 +145,46 @@ public static class ExpertVisualizationPlanner
 
         return resultId is string resultIdString && !string.IsNullOrWhiteSpace(resultIdString);
     }
+
+    private static PlotHints? BuildPlotHintsForEvidence(EvidenceItem evidenceItem)
+    {
+        if (evidenceItem.Type != "spectrum")
+        {
+            return null;
+        }
+
+        if (!evidenceItem.Data.TryGetValue("peakFrequencyHz", out var peakFreqRaw))
+        {
+            return null;
+        }
+
+        if (peakFreqRaw is not double peakFrequencyHz || peakFrequencyHz <= 0)
+        {
+            return null;
+        }
+
+        var rangeMinHz = peakFrequencyHz / 4.0;
+        var rangeMaxHz = peakFrequencyHz * 4.0;
+        var annotationLabel = FormatFrequencyAnnotation(peakFrequencyHz);
+
+        return new PlotHints
+        {
+            FocusFrequencyHz = peakFrequencyHz,
+            FrequencyRangeMinHz = rangeMinHz,
+            FrequencyRangeMaxHz = rangeMaxHz,
+            AnnotationLabel = annotationLabel,
+        };
+    }
+
+    private static string FormatFrequencyAnnotation(double frequencyHz)
+    {
+        if (frequencyHz >= 1000.0)
+        {
+            return $"peak at {frequencyHz / 1000.0:0.##} kHz";
+        }
+
+        return $"peak at {frequencyHz:0.#} Hz";
+    }
 }
 
 public sealed record VisualizationPlan
@@ -156,4 +199,5 @@ public sealed record VisualizationPlanBlock
     public required string Reason { get; init; }
     public string? ViewType { get; init; }
     public string? SourceEvidenceId { get; init; }
+    public PlotHints? PlotHints { get; init; }
 }

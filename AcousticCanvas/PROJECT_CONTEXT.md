@@ -198,6 +198,7 @@ SignalChannel {
 | Agent visual response blocks (Generative UI Phase 1) | ✅ Done | Markdown, Statistics, Spectrum chart, Ranking, SuggestedActions blocks rendered inline in chat |
 | Agent response activity status | ✅ Done | Live activity label in assistant bubble: planning → running tools → building results → generating answer → complete/failed |
 | Agent analysis view blocks (Generative UI Phase 2a) | ✅ Done | `analysisView` block — compact card with mini preview + modal opener; spectrum, CPB, sound quality, findings viewers wired |
+| Agent thought container (Generative UI Phase 3) | ✅ Done | Collapsed `<details>` above each assistant answer showing visualization plan decisions — blockType pill + reason per block |
 | Agent findings investigation | ✅ Done | "Detect findings and issues" suggestion chip → run_findings → FindingsCard with per-finding rows |
 | Agent referenced context panel | ✅ Done | Workspace shows loaded files, active file/selection, analyses used, limitations, and validation warnings |
 | File @mentions in chat | ✅ Done | Autocomplete dropdown |
@@ -1354,9 +1355,12 @@ Agent response composition:
   - Consistent UI between Manual and Agent modes
   - Backend: Agent triggers analysis → stores result → returns view reference
   - Frontend: Mini-view component wraps existing Manual mode components
-- **Phase 3:** Expert Visualization Planner
+- **Phase 3:** ✅ Expert Visualization Planner
   - Decide text/statistics/spectrum/spectrogram/waveform/ranking/table/investigation-card response shape
   - Add traceability explaining why each tool and visual block was selected
+  - `ExpertVisualizationPlanner.cs` produces `VisualizationPlan` with per-block `Reason` fields
+  - `InvestigationTrace.VisualizationPlan` (type `VisualizationPlanTrace`) serialized in `AgentAskResult`
+  - Frontend: `visualizationPlanTrace` field on `ChatMessage`; `ThoughtContainer` collapsible `<details>` block renders per-block decisions (blockType pill + reason) above the assistant answer — collapsed by default, styled to match existing `analysisSteps` pattern
 - **Phase 4:** Expert Plot Specification
   - Specify data sources, selected files, channels, regions, axes, units, scales, ranges, overlay strategy, legends, annotations, markers, metadata, default zoom, and fixed vs auto scaling
 - **Phase 5:** Multi-Signal and Multi-File Visualizations

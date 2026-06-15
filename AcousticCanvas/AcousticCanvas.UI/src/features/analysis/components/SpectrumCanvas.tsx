@@ -33,6 +33,9 @@ interface ISpectrumCanvasProps {
   onHoverFrequency?: (frequencyHz: number | null) => void;
   minFrequencyHz?: number | null;
   maxFrequencyHz?: number | null;
+  // Agent-supplied annotation marker — dashed vertical line at this frequency.
+  annotationFrequencyHz?: number | null;
+  annotationLabel?: string | null;
 }
 
 const MARGIN = { top: 12, right: 16, bottom: 44, left: 52 };
@@ -77,12 +80,16 @@ function floorTo(value: number, step: number): number {
   return Math.floor(value / step) * step;
 }
 
+const ANNOTATION_COLOR = 'rgba(0, 184, 169, 0.75)';
+
 function drawSpectrum(
   canvas: HTMLCanvasElement,
   channels: ISpectrumChannel[],
   linkedFrequencyHz: number | null,
   minFrequencyHz: number | null,
   maxFrequencyHz: number | null,
+  annotationFrequencyHz: number | null,
+  annotationLabel: string | null,
 ): void {
   const dpr = window.devicePixelRatio || 1;
   const width = canvas.clientWidth;
@@ -238,6 +245,27 @@ function drawSpectrum(
     ctx.restore();
   }
 
+  // Agent annotation marker — dashed teal vertical line at the focus frequency.
+  if (annotationFrequencyHz !== null && annotationFrequencyHz >= xMin && annotationFrequencyHz <= xMaxDisplay) {
+    const xPixel = toX(annotationFrequencyHz);
+    ctx.save();
+    ctx.strokeStyle = ANNOTATION_COLOR;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(xPixel, MARGIN.top);
+    ctx.lineTo(xPixel, MARGIN.top + plotHeight);
+    ctx.stroke();
+    if (annotationLabel) {
+      ctx.fillStyle = ANNOTATION_COLOR;
+      ctx.font = '9px ui-monospace, SFMono-Regular, Menlo, monospace';
+      ctx.textAlign = 'center';
+      ctx.setLineDash([]);
+      ctx.fillText(annotationLabel, xPixel, MARGIN.top - 2);
+    }
+    ctx.restore();
+  }
+
   // Legend (multi-channel).
   if (channels.length > 1) {
     const legendX = MARGIN.left + plotWidth - 10;
@@ -271,15 +299,17 @@ export const SpectrumCanvas = ({
   onHoverFrequency,
   minFrequencyHz = null,
   maxFrequencyHz = null,
+  annotationFrequencyHz = null,
+  annotationLabel = null,
 }: ISpectrumCanvasProps): JSX.Element => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [tooltip, setTooltip] = useState<ITooltipState | null>(null);
 
   const draw = useCallback(() => {
     if (canvasRef.current) {
-      drawSpectrum(canvasRef.current, channels, linkedFrequencyHz, minFrequencyHz, maxFrequencyHz);
+      drawSpectrum(canvasRef.current, channels, linkedFrequencyHz, minFrequencyHz, maxFrequencyHz, annotationFrequencyHz, annotationLabel);
     }
-  }, [channels, linkedFrequencyHz, minFrequencyHz, maxFrequencyHz]);
+  }, [channels, linkedFrequencyHz, minFrequencyHz, maxFrequencyHz, annotationFrequencyHz, annotationLabel]);
 
   useEffect(() => {
     draw();

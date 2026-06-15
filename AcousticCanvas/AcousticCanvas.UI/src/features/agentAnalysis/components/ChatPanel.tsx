@@ -4,7 +4,7 @@ import {
   IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX,
   IconAlignBoxLeftMiddle, IconPaperclip, IconFileMusic, IconFileText,
   IconPlayerStop, IconUser, IconWaveSquare, IconChartBar, IconFileSearch,
-  IconVolume,
+  IconVolume, IconBrain,
 } from '@tabler/icons-react';
 import type { ToolStep } from '../store/chatSlice';
 import type { ChatMessage } from '../store/chatSlice';
@@ -43,6 +43,43 @@ function UserMessage({ message }: { message: ChatMessage }): JSX.Element {
   );
 }
 
+const BLOCK_TYPE_LABELS: Record<string, string> = {
+  markdown: 'text',
+  statistics: 'stats',
+  spectrumChart: 'spectrum',
+  ranking: 'ranking',
+  suggestedActions: 'next steps',
+  analysisView: 'analysis view',
+};
+
+function ThoughtContainer({ message }: { message: ChatMessage }): JSX.Element | null {
+  const vizPlan = message.visualizationPlanTrace;
+  if (!vizPlan || vizPlan.blocks.length === 0) return null;
+
+  const decisionCount = vizPlan.blocks.length;
+  const summaryLabel = `${decisionCount} ${decisionCount === 1 ? 'decision' : 'decisions'}`;
+
+  return (
+    <details className={styles.thoughtContainer}>
+      <summary className={styles.thoughtSummary}>
+        <IconBrain size={11} className={styles.thoughtIcon} />
+        <span>Thought process</span>
+        <span className={styles.thoughtCount}>{summaryLabel}</span>
+      </summary>
+      <ol className={styles.thoughtDecisionList}>
+        {vizPlan.blocks.map((block, index) => (
+          <li key={index} className={styles.thoughtDecision}>
+            <span className={styles.thoughtBlockType}>
+              {BLOCK_TYPE_LABELS[block.blockType] ?? block.blockType}
+            </span>
+            <span className={styles.thoughtReason}>{block.reason}</span>
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
 function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
   const parsedText = message.content;
   const isThinkingMessage = message.status === 'thinking';
@@ -59,6 +96,7 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
           <AgentActivityIndicator activityLabel={message.activityLabel ?? 'planning'} />
         ) : (
           <>
+            <ThoughtContainer message={message} />
             <div className={styles.markdownBody}>
               <ReactMarkdown>{parsedText}</ReactMarkdown>
             </div>

@@ -1,7 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import { DEFAULT_MODEL_ID } from '../utils/agentModels';
-import type { AgentResponseBlock } from '../services/agentAskService';
+import type { AgentResponseBlock, VisualizationPlanTrace } from '../services/agentAskService';
 
 export type ChatRole = 'user' | 'assistant' | 'tool_call' | 'plan';
 
@@ -39,6 +39,7 @@ export type ChatMessage = {
   planStatus?: 'planning' | 'done';
   blocks?: AgentResponseBlock[];
   activityLabel?: AgentActivityLabel;
+  visualizationPlanTrace?: VisualizationPlanTrace | null;
 };
 
 interface IChatState {
@@ -77,6 +78,7 @@ const chatSlice = createSlice({
       plannedTools?: string[];
       plannerReason?: string | null;
       blocks?: AgentResponseBlock[];
+      visualizationPlanTrace?: VisualizationPlanTrace | null;
     }>) => {
       const existingMessage = state.messages.find((message) => message.id === action.payload.id);
       if (existingMessage && existingMessage.role === 'assistant') {
@@ -91,6 +93,7 @@ const chatSlice = createSlice({
         existingMessage.plannedTools = action.payload.plannedTools;
         existingMessage.plannerReason = action.payload.plannerReason;
         existingMessage.blocks = action.payload.blocks;
+        existingMessage.visualizationPlanTrace = action.payload.visualizationPlanTrace;
       } else {
         state.messages.push({
           id: action.payload.id,
@@ -105,6 +108,7 @@ const chatSlice = createSlice({
           plannedTools: action.payload.plannedTools,
           plannerReason: action.payload.plannerReason,
           blocks: action.payload.blocks,
+          visualizationPlanTrace: action.payload.visualizationPlanTrace,
         });
       }
       state.isThinking = false;
