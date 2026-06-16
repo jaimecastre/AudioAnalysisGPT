@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
 import { ActionIcon, Progress, Tooltip } from '@mantine/core';
-import { IconChevronDown, IconChevronRight, IconRobot, IconRotateClockwise2, IconX, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronRight, IconFileText, IconRobot, IconRotateClockwise2, IconX, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
 import { agentPromptPrefillSet, setActiveMode } from '../../navigation/store/navigationSlice';
 import type { BatchBenchmarkFileRow, BatchBenchmarkResult } from '../types/batchBenchmarkTypes';
@@ -18,6 +18,7 @@ import {
 } from '../utils/benchmarkFormatting';
 import { BenchmarkRankingsCard } from './BenchmarkRankingsCard';
 import { BenchmarkOutliersCard } from './BenchmarkOutliersCard';
+import { useBenchmarkReport } from '../hooks/useBenchmarkReport';
 import styles from './BatchBenchmarkPanel.module.scss';
 
 interface IBatchBenchmarkPanelProps {
@@ -64,6 +65,7 @@ export const BatchBenchmarkPanel = ({
     direction: 'descending',
   });
   const [isTableVisible, setIsTableVisible] = useState(true);
+  const { generateReport, isLoading: isReportLoading } = useBenchmarkReport();
 
   const sortedRows = useMemo(() => {
     return sortBenchmarkRows(result?.files ?? [], sortState);
@@ -100,6 +102,12 @@ export const BatchBenchmarkPanel = ({
   function handleExplainBenchmark(): void {
     dispatch(agentPromptPrefillSet('Explain this batch benchmark. Which files need attention, what measured metrics drive the ranking, and what follow-up analysis should I run?'));
     dispatch(setActiveMode('agent'));
+  }
+
+  function handleGenerateReport(): void {
+    if (result) {
+      void generateReport(result);
+    }
   }
 
   return (
@@ -148,6 +156,15 @@ export const BatchBenchmarkPanel = ({
           >
             <IconRobot size={14} />
             Explain benchmark
+          </button>
+          <button
+            type="button"
+            className={styles.explainButton}
+            onClick={handleGenerateReport}
+            disabled={!result || status === 'loading' || isReportLoading}
+          >
+            <IconFileText size={14} />
+            {isReportLoading ? 'Generating...' : 'Generate report'}
           </button>
           <ActionIcon
             variant="subtle"

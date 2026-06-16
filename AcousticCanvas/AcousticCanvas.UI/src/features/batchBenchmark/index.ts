@@ -8,6 +8,7 @@ export {
 export {
   useBatchBenchmark,
   useBenchmarkSelection,
+  useBenchmarkReport,
 } from './hooks';
 
 // Types

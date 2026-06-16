@@ -128,24 +128,38 @@ public static class AudioEventFinders
             windowSamples = endSample - startSample;
         }
 
-        var bestRms = 0.0;
+        if (windowSamples <= 0 || endSample <= startSample)
+        {
+            return [];
+        }
+
+        // Sliding window optimization: O(n) instead of O(n×m)
+        // Compute initial window sum
+        var sumSquares = 0.0;
+        for (int j = startSample; j < startSample + windowSamples && j < endSample; j++)
+        {
+            var s = (double)samples[j];
+            sumSquares += s * s;
+        }
+
+        var bestSumSquares = sumSquares;
         var bestStart = startSample;
 
-        for (int i = startSample; i <= endSample - windowSamples; i++)
+        // Slide window: subtract outgoing sample, add incoming sample
+        for (int i = startSample + 1; i <= endSample - windowSamples; i++)
         {
-            var sumSquares = 0.0;
-            for (int j = i; j < i + windowSamples; j++)
+            var outgoing = (double)samples[i - 1];
+            var incoming = (double)samples[i + windowSamples - 1];
+            sumSquares = sumSquares - (outgoing * outgoing) + (incoming * incoming);
+
+            if (sumSquares > bestSumSquares)
             {
-                sumSquares += (double)samples[j] * samples[j];
-            }
-            var rms = Math.Sqrt(sumSquares / windowSamples);
-            if (rms > bestRms)
-            {
-                bestRms = rms;
+                bestSumSquares = sumSquares;
                 bestStart = i;
             }
         }
 
+        var bestRms = Math.Sqrt(bestSumSquares / windowSamples);
         var startSec = regionOffsetSeconds + (bestStart - startSample) / (double)sampleRate;
         var endSec =
             regionOffsetSeconds + (bestStart + windowSamples - startSample) / (double)sampleRate;

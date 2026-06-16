@@ -209,7 +209,7 @@ SignalChannel {
 | Resizable panels | ✅ Done | Drag handles, collapsible |
 | Keyboard shortcuts | ✅ Done | Arrow seek, space play/pause |
 | Guided investigation prompt | ✅ Done | Post-upload CTA tiles (Findings / Spectrum / Sound quality) + sidebar active-state badges |
-| Report generation UI | 🟡 Partial | Artifact type exists, no renderer |
+| Report generation UI | ✅ Done | AI-generated batch benchmark reports with `useBenchmarkReport` hook — rankings, outliers, findings interpreted by agent and displayed in workspace |
 | Task progress panel | 🟡 Placeholder | Empty state only |
 | Calibration UI | 🟡 Referenced in types | Not implemented |
 | CPB / octave band visualization | ✅ Done | Collapsible CPB panel with octave / 1⁄3 octave modes |
