@@ -1,0 +1,37 @@
+.summaryContainer {
+  background: var(--mantine-color-body);
+  border: 1px solid var(--mantine-color-gray-3);
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--mantine-color-gray-4);
+  }
+}
+
+.warningIcon {
+  color: var(--mantine-color-orange-6);
+}
+
+.successIcon {
+  color: var(--mantine-color-green-6);
+}
+
+.metric {
+  padding: 4px 8px;
+  background: var(--mantine-color-gray-0);
+  border-radius: var(--mantine-radius-sm);
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--mantine-color-gray-1);
+  }
+}
+
+.metricIcon {
+  color: var(--mantine-color-gray-5);
+}
+
+.suggestions {
+  background: var(--mantine-color-blue-0);
+  border: 1px solid var(--mantine-color-blue-2);
+}

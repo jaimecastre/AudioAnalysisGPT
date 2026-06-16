@@ -30,6 +30,8 @@ import { FileListPanel } from './FileListPanel';
 import { ActiveSignalCard } from './ActiveSignalCard';
 import { ChatPanel } from '../../agentAnalysis/components/ChatPanel';
 import { analysisResultSelector, analysisStatusSelector, analysisErrorSelector } from '../../analysis/store/analysisSlice';
+import { spectrumResultSelector } from '../../analysis/store/spectrumSlice';
+import { findingsResultSelector as findingsSelector } from '../../findings/store/findingsSlice';
 import { useManualPlayback } from '../../shell/hooks/useManualPlayback';
 import { useToolPanels } from '../../shell/hooks/useToolPanels';
 import { useResizablePanel } from '../../shell/hooks/useResizablePanel';
@@ -45,6 +47,9 @@ export const ManualWorkspace = (): JSX.Element => {
   const analysisResult = useAppSelector(analysisResultSelector);
   const analysisStatus = useAppSelector(analysisStatusSelector);
   const analysisError = useAppSelector(analysisErrorSelector);
+  const spectrumResult = useAppSelector(spectrumResultSelector);
+  const findingsResult = useAppSelector(findingsSelector);
+  const findings = findingsResult?.findings ?? [];
 
   const { isUploading, uploadFiles } = useAudioUpload();
   const { panelWidth: leftPanelWidth, handleDragHandleMouseDown } = useResizablePanel(220);
@@ -438,6 +443,9 @@ export const ManualWorkspace = (): JSX.Element => {
                         !isBenchmarkPanelOpen &&
                         manualCompareResult === null
                       }
+                      analysisResult={analysisResult}
+                      spectrumResult={spectrumResult}
+                      findings={findings}
                       onPromptOpenFindings={handleOpenFindingsPanel}
                       onPromptAddSpectrum={handleAddSpectrumPanelForActiveFile}
                       onPromptAddSoundQuality={handleAddSoundQualityPanelForActiveFile}

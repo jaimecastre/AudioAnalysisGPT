@@ -12,6 +12,9 @@ import { SpectrumPanel } from '../../analysis/components/SpectrumPanel';
 import { CpbPanel } from '../../analysis/components/CpbPanel';
 import { SoundQualityPanel } from '../../analysis/components/SoundQualityPanel';
 import type { CompareResult } from '../../agent/types/agentToolTypes';
+import type { AnalysisResult } from '../../analysis/types/analysisTypes';
+import type { SpectrumPointsResponse } from '../../analysis/types/spectrumTypes';
+import { KeyFindingsSummary } from './KeyFindingsSummary';
 import type { BatchBenchmarkResult } from '../../batchBenchmark';
 import type { AudioFile } from '../../../store/projectState';
 import type { WaveformSelection } from '../../waveform/store/waveformSelectionSlice';
@@ -57,6 +60,9 @@ interface IActiveSignalCardProps {
   onToolPanelToggleSpan: (panelId: string) => void;
   onToolPanelClose: (panelId: string) => void;
   onSeek: (timeSeconds: number) => void;
+  analysisResult: AnalysisResult | null;
+  spectrumResult: SpectrumPointsResponse | null;
+  findings: Array<{ findingId: string; findingType: string; severity: 'low' | 'medium' | 'high'; title: string; description: string }>;
 }
 
 export function ActiveSignalCard({
@@ -85,6 +91,9 @@ export function ActiveSignalCard({
   onCloseBenchmarkPanel,
   onCloseFindingsPanel,
   showInvestigationPrompt,
+  analysisResult,
+  spectrumResult,
+  findings,
   onPromptOpenFindings,
   onPromptAddSpectrum,
   onPromptAddSoundQuality,
@@ -109,6 +118,16 @@ export function ActiveSignalCard({
           displayRef={waveSurferRef}
         />
       </div>
+
+      <KeyFindingsSummary
+        activeFile={file}
+        analysisResult={analysisResult}
+        spectrumResult={spectrumResult}
+        findings={findings}
+        onViewFindings={onPromptOpenFindings}
+        onAnalyzeLoudestRegion={onPromptOpenFindings}
+        onInspectSpectrum={onPromptAddSpectrum}
+      />
 
       <div className={styles.analysisGrid}>
       {showInvestigationPrompt && (

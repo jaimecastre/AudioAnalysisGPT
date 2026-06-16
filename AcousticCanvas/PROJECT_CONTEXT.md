@@ -2274,10 +2274,12 @@ The product is directionally strong: it feels like a technical acoustic investig
 
 ### Important UX Tasks
 
-3. **Manual analysis layout hierarchy**
+3. **Manual analysis layout hierarchy** 🟡 In Progress
    - Problem: Panels can feel scattered across a large canvas and relationships between findings, spectrum, spectrogram, CPB, and sound quality are not always obvious.
    - Why it matters: Users need to scan and compare results quickly.
    - Target pattern: Keep the responsive grid, but strengthen hierarchy with a primary result area, key findings, and consistent secondary panels.
+   - **Phase 1 Complete:** `KeyFindingsSummary` component created - shows issue count, key metrics (RMS/Peak/Freq), severity badges, and context-aware CTAs based on findings
+   - **Next:** Integrate KeyFindingsSummary into ActiveSignalCard above secondary panels
    - Acceptance criteria:
      - The default manual workspace has an obvious first reading path.
      - Panel headers, controls, and results use consistent sizing and spacing.

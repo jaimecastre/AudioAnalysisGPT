@@ -198,14 +198,6 @@ export const BatchBenchmarkPanel = ({
         <div className={styles.errorStrip}>{error}</div>
       )}
 
-      {result && result.limitations.length > 0 && (
-        <div className={styles.limitationsStrip}>
-          {result.limitations.map((limitation) => (
-            <span key={limitation} className={styles.limitationChip}>{limitation}</span>
-          ))}
-        </div>
-      )}
-
       <div className={styles.contentGrid}>
         {isTableVisible && (
           <div className={styles.tableSection}>
