@@ -34,7 +34,12 @@ builder.Services.AddSingleton<RunSpectrogramHandler>();
 builder.Services.AddSingleton<ICpbFilterBankClient, PythonCpbFilterBankClient>();
 builder.Services.AddSingleton<CpbAnalysisService>();
 builder.Services.AddSingleton<RunCpbHandler>();
-builder.Services.AddSingleton<ISoundQualityClient, PythonSoundQualityClient>();
+builder.Services.AddSingleton<PythonSoundQualityPool>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    return new PythonSoundQualityPool(config, poolSize: 2);
+});
+builder.Services.AddSingleton<ISoundQualityClient>(sp => sp.GetRequiredService<PythonSoundQualityPool>());
 builder.Services.AddSingleton<SoundQualityCacheStore>();
 builder.Services.AddSingleton<SoundQualityAnalysisService>();
 builder.Services.AddSingleton<RunSoundQualityHandler>();
@@ -76,8 +81,19 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "AcousticCanvas", Version = "v1" });
 });
 
+// Initialize Python process pool
 var app = builder.Build();
-
+var pool = app.Services.GetRequiredService<PythonSoundQualityPool>();
+try
+{
+    await pool.InitializeAsync();
+    Console.WriteLine("Python sound quality process pool initialized (2 workers).");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Warning: Failed to initialize Python sound quality pool: {ex.Message}");
+    Console.WriteLine("Sound quality analysis will use fallback single-process mode.");
+}
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
