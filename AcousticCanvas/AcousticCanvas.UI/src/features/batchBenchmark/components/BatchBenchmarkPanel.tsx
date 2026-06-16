@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
 import { ActionIcon, Progress, Tooltip } from '@mantine/core';
-import { IconChevronDown, IconChevronRight, IconRobot, IconRotateClockwise2, IconX } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronRight, IconRobot, IconRotateClockwise2, IconX, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
 import { agentPromptPrefillSet, setActiveMode } from '../../navigation/store/navigationSlice';
 import type { BatchBenchmarkFileRow, BatchBenchmarkResult } from '../types/batchBenchmarkTypes';
@@ -16,6 +16,8 @@ import {
   formatUnitValue,
   sortBenchmarkRows,
 } from '../utils/benchmarkFormatting';
+import { BenchmarkRankingsCard } from './BenchmarkRankingsCard';
+import { BenchmarkOutliersCard } from './BenchmarkOutliersCard';
 import styles from './BatchBenchmarkPanel.module.scss';
 
 interface IBatchBenchmarkPanelProps {
@@ -61,6 +63,7 @@ export const BatchBenchmarkPanel = ({
     key: 'attention',
     direction: 'descending',
   });
+  const [isTableVisible, setIsTableVisible] = useState(true);
 
   const sortedRows = useMemo(() => {
     return sortBenchmarkRows(result?.files ?? [], sortState);
@@ -107,6 +110,27 @@ export const BatchBenchmarkPanel = ({
           <p className={styles.subtitle}>Rank loaded files by measured acoustic facts</p>
         </div>
         <div className={styles.headerActions}>
+          {result && (
+            <Tooltip
+              label={isTableVisible ? 'Hide data table' : 'Show data table'}
+              withArrow
+              position="bottom"
+            >
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                onClick={() => setIsTableVisible(!isTableVisible)}
+                aria-label={isTableVisible ? 'Hide table' : 'Show table'}
+              >
+                {isTableVisible ? (
+                  <IconLayoutSidebarLeftCollapse size={16} />
+                ) : (
+                  <IconLayoutSidebarLeftExpand size={16} />
+                )}
+              </ActionIcon>
+            </Tooltip>
+          )}
           <button
             type="button"
             className={styles.explainButton}
@@ -165,44 +189,57 @@ export const BatchBenchmarkPanel = ({
         </div>
       )}
 
-      <div className={styles.tableScroller}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th className={styles.expandHeader} aria-label="Expand row" />
-              {HEADERS.map((header) => (
-                <th
-                  key={header.key}
-                  className={`${header.numeric ? styles.numericHeader : ''} ${header.key === 'fileName' ? styles.fileHeader : ''}`}
-                >
-                  <Tooltip label={header.tooltip} withArrow position="top">
-                    <button
-                      type="button"
-                      className={styles.sortButton}
-                      onClick={() => handleSort(header.key)}
-                    >
-                      <span>{header.label}</span>
-                      <span className={styles.sortIndicator}>
-                        {sortState.key === header.key ? (sortState.direction === 'ascending' ? '↑' : '↓') : ''}
-                      </span>
-                    </button>
-                  </Tooltip>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {status === 'loading' && !result && <SkeletonRows />}
-            {sortedRows.map((row) => (
-              <BenchmarkRow
-                key={row.fileId}
-                row={row}
-                isExpanded={expandedFileIds.has(row.fileId)}
-                onToggleExpanded={handleToggleExpanded}
-              />
-            ))}
-          </tbody>
-        </table>
+      <div className={styles.contentGrid}>
+        {isTableVisible && (
+          <div className={styles.tableSection}>
+            <div className={styles.tableScroller}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th className={styles.expandHeader} aria-label="Expand row" />
+                    {HEADERS.map((header) => (
+                      <th
+                        key={header.key}
+                        className={`${header.numeric ? styles.numericHeader : ''} ${header.key === 'fileName' ? styles.fileHeader : ''}`}
+                      >
+                        <Tooltip label={header.tooltip} withArrow position="top">
+                          <button
+                            type="button"
+                            className={styles.sortButton}
+                            onClick={() => handleSort(header.key)}
+                          >
+                            <span>{header.label}</span>
+                            <span className={styles.sortIndicator}>
+                              {sortState.key === header.key ? (sortState.direction === 'ascending' ? '↑' : '↓') : ''}
+                            </span>
+                          </button>
+                        </Tooltip>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {status === 'loading' && !result && <SkeletonRows />}
+                  {sortedRows.map((row) => (
+                    <BenchmarkRow
+                      key={row.fileId}
+                      row={row}
+                      isExpanded={expandedFileIds.has(row.fileId)}
+                      onToggleExpanded={handleToggleExpanded}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {result && (
+          <div className={styles.cardsSection}>
+            <BenchmarkRankingsCard rankings={result.rankings} files={result.files} />
+            <BenchmarkOutliersCard outliers={result.outliers} files={result.files} />
+          </div>
+        )}
       </div>
     </section>
   );

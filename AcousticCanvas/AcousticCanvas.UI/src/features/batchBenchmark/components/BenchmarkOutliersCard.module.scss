@@ -1,0 +1,215 @@
+.card {
+  background: var(--mantine-color-body);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: var(--mantine-radius-md);
+  padding: 12px;
+}
+
+.card.hasOutliers {
+  border-left: 3px solid var(--mantine-color-yellow-5);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.headerIcon {
+  color: var(--mantine-color-gray-5);
+}
+
+.headerIconAlert {
+  color: var(--mantine-color-yellow-6);
+}
+
+.headerTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+}
+
+.headerBadge {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mantine-color-yellow-7);
+  background: var(--mantine-color-yellow-0);
+  padding: 2px 8px;
+  border-radius: var(--mantine-radius-sm);
+}
+
+.expandButton {
+  margin-left: auto;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 24px;
+  color: var(--mantine-color-green-6);
+}
+
+.emptyText {
+  font-size: 13px;
+  color: var(--mantine-color-gray-6);
+  margin: 0;
+}
+
+.emptyHint {
+  font-size: 11px;
+  color: var(--mantine-color-gray-5);
+  margin: 0;
+}
+
+.outlierGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.outlierGroup {
+  background: var(--mantine-color-yellow-0);
+  border: 1px solid var(--mantine-color-yellow-2);
+  border-radius: var(--mantine-radius-sm);
+  padding: 10px;
+}
+
+.outlierGroupHeader {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mantine-color-yellow-8);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.outlierList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.outlierItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--mantine-color-body);
+  border-radius: var(--mantine-radius-xs);
+}
+
+.outlierMain {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.directionBadge {
+  font-size: 11px;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--mantine-radius-xs);
+  flex-shrink: 0;
+}
+
+.directionBadge.high {
+  background: var(--mantine-color-red-1);
+  color: var(--mantine-color-red-7);
+}
+
+.directionBadge.low {
+  background: var(--mantine-color-blue-1);
+  color: var(--mantine-color-blue-7);
+}
+
+.fileName {
+  flex: 1;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metricValue {
+  font-size: 11px;
+  font-family: var(--mantine-font-family-monospace);
+  color: var(--mantine-color-gray-7);
+  font-weight: 500;
+}
+
+.outlierContext {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 26px;
+  font-size: 10px;
+  color: var(--mantine-color-gray-6);
+}
+
+.fenceInfo {
+  font-family: var(--mantine-font-family-monospace);
+}
+
+.percentDiff {
+  color: var(--mantine-color-yellow-7);
+  font-weight: 500;
+}
+
+.explanation {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  padding-top: 10px;
+}
+
+.explanationToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--mantine-color-gray-6);
+  text-align: left;
+}
+
+.explanationToggle:hover {
+  color: var(--mantine-color-gray-7);
+}
+
+.expandIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mantine-color-gray-5);
+  flex-shrink: 0;
+}
+
+.explanationText {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--mantine-color-gray-6);
+  margin: 8px 0 0 18px;
+  padding: 8px;
+  background: var(--mantine-color-gray-0);
+  border-radius: var(--mantine-radius-sm);
+}

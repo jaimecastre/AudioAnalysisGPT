@@ -214,7 +214,7 @@ SignalChannel {
 | Calibration UI | 🟡 Referenced in types | Not implemented |
 | CPB / octave band visualization | ✅ Done | Collapsible CPB panel with octave / 1⁄3 octave modes |
 | Sound quality metrics display | ✅ First slice done | Manual panel for MoSQITo stationary loudness + DIN sharpness |
-| Batch comparison table | ✅ Done | Ranking, outliers, file rows |
+| Batch comparison table | ✅ Done | Ranking, outliers, file rows, side-by-side layout with RankingsCard and OutliersCard visualization |
 | Findings panel | ✅ Done | Severity-coded cards, tonal peak findings, evidence chips, suggested next step, time range |
 | UI brand name | ✅ Done | Header logo shows **SoundLens** (internal codebase remains AcousticCanvas) |
 

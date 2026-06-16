@@ -6,7 +6,7 @@ namespace AcousticCanvas.Features.Analysis.Handlers;
 public class RunBatchBenchmarkHandler
     : CommandHandler<RunBatchBenchmarkCommand, BatchBenchmarkResult>
 {
-    private const int MaxConcurrentFindingsPipelines = 8;
+    private const int MaxConcurrentFindingsPipelines = 16;
 
     private readonly SemaphoreSlim _findingsSemaphore = new(MaxConcurrentFindingsPipelines, MaxConcurrentFindingsPipelines);
 

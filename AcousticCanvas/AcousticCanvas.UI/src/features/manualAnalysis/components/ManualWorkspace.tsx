@@ -15,20 +15,16 @@ import { callCompareTool } from '../../agent/services/compareToolService';
 import type { CompareResult } from '../../agent/types/agentToolTypes';
 import { CompareFilePickerModal } from '../../comparison/components/CompareFilePickerModal';
 import { clampCompareSelection } from '../../comparison/utils/compareSelection';
-import { BenchmarkFilePickerModal } from '../../batchBenchmark/components/BenchmarkFilePickerModal';
-import { callBatchBenchmarkTool } from '../../batchBenchmark/services/batchBenchmarkService';
-import { canRunBenchmarkWithSelection } from '../../batchBenchmark/utils/benchmarkSelection';
 import {
-  benchmarkStarted,
-  benchmarkCompleted,
-  benchmarkFailed,
-  benchmarkProgressUpdated,
+  BenchmarkFilePickerModal,
+  canRunBenchmarkWithSelection,
   benchmarkPanelClosed,
   benchmarkResultSelector,
   benchmarkStatusSelector,
   benchmarkErrorSelector,
   benchmarkIsPanelOpenSelector,
-} from '../../batchBenchmark/store/batchBenchmarkSlice';
+  useBatchBenchmark,
+} from '../../batchBenchmark';
 import { RightSidebar } from './RightSidebar';
 import { FileListPanel } from './FileListPanel';
 import { ActiveSignalCard } from './ActiveSignalCard';
@@ -96,6 +92,7 @@ export const ManualWorkspace = (): JSX.Element => {
   const manualBenchmarkError = useAppSelector(benchmarkErrorSelector);
   const isBenchmarkPanelOpen = useAppSelector(benchmarkIsPanelOpenSelector);
   const [isFindingsPanelOpen, setIsFindingsPanelOpen] = useState(false);
+  const { runBenchmark } = useBatchBenchmark();
 
   const getInitialCompareSelection = useCallback((): Set<string> => {
     const availableIds = new Set(files.map((file) => file.id));
@@ -307,20 +304,11 @@ export const ManualWorkspace = (): JSX.Element => {
     setLastBenchmarkSelectedIds(new Set(fileIds));
     setIsBenchmarkModalOpen(false);
 
-    dispatch(benchmarkStarted());
-    try {
-      const result = await callBatchBenchmarkTool(
-        {
-          fileIds,
-          startSeconds: activeSelection?.startSeconds ?? null,
-          endSeconds: activeSelection?.endSeconds ?? null,
-        },
-        (event) => dispatch(benchmarkProgressUpdated(event)),
-      );
-      dispatch(benchmarkCompleted(result));
-    } catch (error) {
-      dispatch(benchmarkFailed(error instanceof Error ? error.message : 'Benchmark failed'));
-    }
+    await runBenchmark({
+      fileIds,
+      startSeconds: activeSelection?.startSeconds ?? null,
+      endSeconds: activeSelection?.endSeconds ?? null,
+    });
   };
 
   const handleCloseBenchmarkPanel = (): void => {

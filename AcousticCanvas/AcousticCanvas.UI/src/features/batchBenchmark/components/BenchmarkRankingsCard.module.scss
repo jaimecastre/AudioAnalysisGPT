@@ -1,0 +1,131 @@
+.card {
+  background: var(--mantine-color-body);
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: var(--mantine-radius-md);
+  padding: 12px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.headerIcon {
+  color: var(--mantine-color-yellow-6);
+}
+
+.headerTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+}
+
+.headerCount {
+  font-size: 12px;
+  color: var(--mantine-color-gray-6);
+  background: var(--mantine-color-gray-1);
+  padding: 2px 8px;
+  border-radius: var(--mantine-radius-sm);
+}
+
+.expandAllButton {
+  margin-left: auto;
+}
+
+.rankingsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rankingCard {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-sm);
+  overflow: hidden;
+}
+
+.rankingCard.concernRanking {
+  border-left: 3px solid var(--mantine-color-orange-5);
+}
+
+.rankingHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mantine-color-text);
+  transition: background-color 0.15s ease;
+}
+
+.rankingHeader:hover {
+  background: var(--mantine-color-gray-1);
+}
+
+.expandIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mantine-color-gray-6);
+  flex-shrink: 0;
+}
+
+.rankingTitle {
+  flex: 1;
+}
+
+.concernIndicator {
+  font-size: 10px;
+  color: var(--mantine-color-gray-5);
+}
+
+.concernIndicator.isConcern {
+  color: var(--mantine-color-orange-5);
+}
+
+.rankingList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 10px 10px 32px;
+}
+
+.rankingItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.rankBadge {
+  font-size: 14px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.fileName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--mantine-color-text);
+}
+
+.metricValue {
+  color: var(--mantine-color-gray-6);
+  font-family: var(--mantine-font-family-monospace);
+  font-size: 11px;
+  flex-shrink: 0;
+}

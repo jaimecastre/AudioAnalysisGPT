@@ -13,7 +13,7 @@ public class RunCompareHandler(
 {
     private const int DefaultFftSize = 44100;
     private const double DefaultOverlap = 0.5;
-    private const int MaxConcurrentFileSummaries = 8;
+    private const int MaxConcurrentFileSummaries = 16;
 
     private readonly SemaphoreSlim _summarySemaphore = new(MaxConcurrentFileSummaries, MaxConcurrentFileSummaries);
 
