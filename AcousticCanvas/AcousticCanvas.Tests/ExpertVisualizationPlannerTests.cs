@@ -434,7 +434,7 @@ public sealed class ExpertVisualizationPlannerTests
         );
 
         var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
-        var overlays = AgentResultBuilder.BuildSpectrumOverlayBlocks(plan, evidencePackage);
+        var overlays = AgentVisualizationBlockBuilder.BuildSpectrumOverlayBlocks(plan, evidencePackage);
 
         Assert.Single(overlays);
         Assert.Equal("Spectrum Comparison", overlays[0].Title);
@@ -558,7 +558,7 @@ public sealed class ExpertVisualizationPlannerTests
         );
 
         var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
-        var investigations = AgentResultBuilder.BuildInvestigationBlocks(plan, evidencePackage);
+        var investigations = AgentVisualizationBlockBuilder.BuildInvestigationBlocks(plan, evidencePackage);
 
         Assert.Single(investigations);
         Assert.Equal(2, investigations[0].Signals.Count);
@@ -845,7 +845,7 @@ public sealed class ExpertVisualizationPlannerTests
         );
 
         var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
-        var blocks = AgentResultBuilder.BuildSoundQualityComparisonBlocks(plan, evidencePackage);
+        var blocks = AgentVisualizationBlockBuilder.BuildSoundQualityComparisonBlocks(plan, evidencePackage);
 
         Assert.Single(blocks);
         Assert.Equal("Sound Quality Comparison", blocks[0].Title);

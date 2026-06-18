@@ -308,15 +308,15 @@ public sealed class AgentOrchestrator(
             visualizationPlan,
             evidencePackage
         );
-        var overlayBlocks = AgentResultBuilder.BuildSpectrumOverlayBlocks(
+        var overlayBlocks = AgentVisualizationBlockBuilder.BuildSpectrumOverlayBlocks(
             visualizationPlan,
             evidencePackage
         );
-        var investigationBlocks = AgentResultBuilder.BuildInvestigationBlocks(
+        var investigationBlocks = AgentVisualizationBlockBuilder.BuildInvestigationBlocks(
             visualizationPlan,
             evidencePackage
         );
-        var soundQualityComparisonBlocks = AgentResultBuilder.BuildSoundQualityComparisonBlocks(
+        var soundQualityComparisonBlocks = AgentVisualizationBlockBuilder.BuildSoundQualityComparisonBlocks(
             visualizationPlan,
             evidencePackage
         );

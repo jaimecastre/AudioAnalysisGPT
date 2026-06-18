@@ -141,8 +141,8 @@ public static class AgentResultBuilder
                 coveredEvidenceIds.Add(evidenceId);
 
                 if (
-                    TryFindEvidence(evidencePackage, evidenceId, out var evidence)
-                    && TryGetResultId(evidence, out var resultId)
+                    AgentEvidenceLookup.TryFindEvidence(evidencePackage, evidenceId, out var evidence)
+                    && AgentEvidenceLookup.TryGetResultId(evidence, out var resultId)
                 )
                 {
                     coveredResultIds.Add(resultId);
@@ -206,197 +206,6 @@ public static class AgentResultBuilder
             && coveredResultIds.Contains(resultId);
     }
 
-    public static IReadOnlyList<SpectrumOverlayBlock> BuildSpectrumOverlayBlocks(
-        VisualizationPlan visualizationPlan,
-        EvidencePackage evidencePackage
-    )
-    {
-        var overlayBlocks = new List<SpectrumOverlayBlock>();
-
-        foreach (var planBlock in visualizationPlan.Blocks)
-        {
-            if (planBlock.BlockType != VisualizationBlockTypes.SpectrumOverlay)
-            {
-                continue;
-            }
-
-            if (planBlock.SourceEvidenceIds is null || planBlock.SourceEvidenceIds.Count < 2)
-            {
-                continue;
-            }
-
-            var signals = new List<OverlaySignal>();
-
-            foreach (var evidenceId in planBlock.SourceEvidenceIds)
-            {
-                if (
-                    !TryFindEvidence(evidencePackage, evidenceId, out var evidence)
-                    || !TryGetResultId(evidence, out var resultId)
-                )
-                {
-                    continue;
-                }
-
-                var fileIdentity = GetEvidenceFileIdentity(evidence, evidenceId, resultId);
-
-                signals.Add(new OverlaySignal
-                {
-                    ResultId = resultId,
-                    FileId = fileIdentity.FileId,
-                    FileName = fileIdentity.FileName,
-                    PlotHints = ExpertVisualizationPlanner.BuildPlotHintsFor(evidence),
-                });
-            }
-
-            if (signals.Count < 2)
-            {
-                continue;
-            }
-
-            overlayBlocks.Add(new SpectrumOverlayBlock
-            {
-                Title = "Spectrum Comparison",
-                Signals = signals,
-            });
-        }
-
-        return overlayBlocks;
-    }
-
-    public static IReadOnlyList<SoundQualityComparisonBlock> BuildSoundQualityComparisonBlocks(
-        VisualizationPlan visualizationPlan,
-        EvidencePackage evidencePackage
-    )
-    {
-        var comparisonBlocks = new List<SoundQualityComparisonBlock>();
-
-        foreach (var planBlock in visualizationPlan.Blocks)
-        {
-            if (planBlock.BlockType != VisualizationBlockTypes.SoundQualityComparison)
-            {
-                continue;
-            }
-
-            if (planBlock.SourceEvidenceIds is null || planBlock.SourceEvidenceIds.Count < 2)
-            {
-                continue;
-            }
-
-            var signals = new List<SoundQualitySignal>();
-
-            foreach (var evidenceId in planBlock.SourceEvidenceIds)
-            {
-                if (!TryFindEvidence(evidencePackage, evidenceId, out var evidence))
-                {
-                    continue;
-                }
-
-                if (!evidence.Data.TryGetValue("loudnessSone", out var loudnessRaw) || loudnessRaw is not double loudnessSone)
-                {
-                    continue;
-                }
-
-                if (!evidence.Data.TryGetValue("sharpnessAcum", out var sharpnessRaw) || sharpnessRaw is not double sharpnessAcum)
-                {
-                    continue;
-                }
-
-                if (!evidence.Data.TryGetValue("roughnessAsper", out var roughnessRaw) || roughnessRaw is not double roughnessAsper)
-                {
-                    continue;
-                }
-
-                var fileIdentity = GetEvidenceFileIdentity(evidence, evidenceId, evidenceId);
-
-                signals.Add(new SoundQualitySignal
-                {
-                    FileId = fileIdentity.FileId,
-                    FileName = fileIdentity.FileName,
-                    LoudnessSone = loudnessSone,
-                    SharpnessAcum = sharpnessAcum,
-                    RoughnessAsper = roughnessAsper,
-                });
-            }
-
-            if (signals.Count < 2)
-            {
-                continue;
-            }
-
-            comparisonBlocks.Add(new SoundQualityComparisonBlock
-            {
-                Title = "Sound Quality Comparison",
-                Signals = signals,
-            });
-        }
-
-        return comparisonBlocks;
-    }
-
-    public static IReadOnlyList<InvestigationBlock> BuildInvestigationBlocks(
-        VisualizationPlan visualizationPlan,
-        EvidencePackage evidencePackage
-    )
-    {
-        var investigationBlocks = new List<InvestigationBlock>();
-
-        foreach (var planBlock in visualizationPlan.Blocks)
-        {
-            if (planBlock.BlockType != VisualizationBlockTypes.Investigation)
-            {
-                continue;
-            }
-
-            if (planBlock.SourceEvidenceIds is null || planBlock.SourceEvidenceIds.Count < 2)
-            {
-                continue;
-            }
-
-            var signals = new List<InvestigationSignal>();
-
-            foreach (var evidenceId in planBlock.SourceEvidenceIds)
-            {
-                if (
-                    !TryFindEvidence(evidencePackage, evidenceId, out var evidence)
-                    || !TryGetResultId(evidence, out var resultId)
-                )
-                {
-                    continue;
-                }
-
-                var viewType = ExpertVisualizationPlanner.MapViewType(evidence.Type);
-                if (viewType is null)
-                {
-                    continue;
-                }
-
-                var fileIdentity = GetEvidenceFileIdentity(evidence, evidenceId, resultId);
-
-                signals.Add(new InvestigationSignal
-                {
-                    ResultId = resultId,
-                    FileId = fileIdentity.FileId,
-                    FileName = fileIdentity.FileName,
-                    ViewType = viewType,
-                    PlotHints = ExpertVisualizationPlanner.BuildPlotHintsFor(evidence),
-                });
-            }
-
-            if (signals.Count < 2)
-            {
-                continue;
-            }
-
-            investigationBlocks.Add(new InvestigationBlock
-            {
-                DiagnosticQuestion = evidencePackage.UserQuestion,
-                Signals = signals,
-            });
-        }
-
-        return investigationBlocks;
-    }
-
     public static IReadOnlyDictionary<string, PlotHints> BuildPlotHintsLookup(
         VisualizationPlan visualizationPlan,
         EvidencePackage evidencePackage
@@ -412,8 +221,8 @@ public static class AgentResultBuilder
             }
 
             if (
-                !TryFindEvidence(evidencePackage, planBlock.SourceEvidenceId, out var evidence)
-                || !TryGetResultId(evidence, out var resultId)
+                !AgentEvidenceLookup.TryFindEvidence(evidencePackage, planBlock.SourceEvidenceId, out var evidence)
+                || !AgentEvidenceLookup.TryGetResultId(evidence, out var resultId)
             )
             {
                 continue;
@@ -424,58 +233,6 @@ public static class AgentResultBuilder
 
         return lookup;
     }
-
-    private static bool TryFindEvidence(
-        EvidencePackage evidencePackage,
-        string evidenceId,
-        out EvidenceItem evidence
-    )
-    {
-        foreach (var item in evidencePackage.KeyEvidence)
-        {
-            if (string.Equals(item.EvidenceId, evidenceId, StringComparison.OrdinalIgnoreCase))
-            {
-                evidence = item;
-                return true;
-            }
-        }
-
-        evidence = null!;
-        return false;
-    }
-
-    private static bool TryGetResultId(EvidenceItem evidence, out string resultId)
-    {
-        if (
-            evidence.Data.TryGetValue("resultId", out var resultIdRaw)
-            && resultIdRaw is string resultIdString
-            && !string.IsNullOrWhiteSpace(resultIdString)
-        )
-        {
-            resultId = resultIdString;
-            return true;
-        }
-
-        resultId = string.Empty;
-        return false;
-    }
-
-    private static EvidenceFileIdentity GetEvidenceFileIdentity(
-        EvidenceItem evidence,
-        string fallbackFileId,
-        string fallbackFileName
-    )
-    {
-        evidence.Data.TryGetValue("fileId", out var fileIdRaw);
-        evidence.Data.TryGetValue("fileName", out var fileNameRaw);
-
-        return new EvidenceFileIdentity(
-            FileId: fileIdRaw as string ?? fallbackFileId,
-            FileName: fileNameRaw as string ?? fallbackFileName
-        );
-    }
-
-    private sealed record EvidenceFileIdentity(string FileId, string FileName);
 
     public static IReadOnlyList<AgentToolExecutionRecord> BuildToolExecutionRecords(
         List<ToolExecutionOutput> toolOutputs
