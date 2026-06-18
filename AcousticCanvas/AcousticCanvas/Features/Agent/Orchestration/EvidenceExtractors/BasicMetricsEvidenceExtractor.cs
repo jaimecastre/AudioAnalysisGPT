@@ -34,7 +34,7 @@ public static class BasicMetricsEvidenceExtractor
             {
                 ["fileId"] = fileId,
                 ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
-                ["type"] = "basic_metrics",
+                ["type"] = EvidenceTypes.BasicMetrics,
             };
 
             if (metricsElement.TryGetProperty("rmsDbFs", out var rmsElement))
@@ -66,7 +66,7 @@ public static class BasicMetricsEvidenceExtractor
                 new EvidenceItem
                 {
                     EvidenceId = evidenceId,
-                    Type = "basic_metrics",
+                    Type = EvidenceTypes.BasicMetrics,
                     Data = evidenceData,
                 }
             );

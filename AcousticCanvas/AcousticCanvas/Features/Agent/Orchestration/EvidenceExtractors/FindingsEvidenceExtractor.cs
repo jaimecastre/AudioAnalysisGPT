@@ -22,7 +22,7 @@ public static class FindingsEvidenceExtractor
         {
             ["fileId"] = fileId,
             ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
-            ["type"] = "findings",
+            ["type"] = EvidenceTypes.Findings,
             ["findingCount"] = findingCount,
         };
 
@@ -35,7 +35,7 @@ public static class FindingsEvidenceExtractor
             new EvidenceItem
             {
                 EvidenceId = evidenceId,
-                Type = "findings",
+                Type = EvidenceTypes.Findings,
                 Data = evidenceData,
             }
         );

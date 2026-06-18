@@ -76,35 +76,35 @@ public static class EvidencePackageBuilder
             return evidenceItems;
         }
 
-        if (toolOutput.ToolName == "run_basic_metrics")
+        if (toolOutput.ToolName == AgentToolNames.RunBasicMetrics)
         {
             BasicMetricsEvidenceExtractor.Extract(parsedData, evidenceItems, fileIdToNameMap);
         }
-        else if (toolOutput.ToolName == "run_event_detection")
+        else if (toolOutput.ToolName == AgentToolNames.RunEventDetection)
         {
             EventDetectionEvidenceExtractor.Extract(parsedData, evidenceItems, fileIdToNameMap);
         }
-        else if (toolOutput.ToolName == "run_spectrum")
+        else if (toolOutput.ToolName == AgentToolNames.RunSpectrum)
         {
             SpectrumEvidenceExtractor.Extract(parsedData, evidenceItems, fileIdToNameMap);
         }
-        else if (toolOutput.ToolName == "run_spectrogram")
+        else if (toolOutput.ToolName == AgentToolNames.RunSpectrogram)
         {
             SpectrogramEvidenceExtractor.Extract(parsedData, evidenceItems, fileIdToNameMap);
         }
-        else if (toolOutput.ToolName == "run_cpb")
+        else if (toolOutput.ToolName == AgentToolNames.RunCpb)
         {
             CpbEvidenceExtractor.Extract(parsedData, evidenceItems, fileIdToNameMap);
         }
-        else if (toolOutput.ToolName == "run_sound_quality_metrics")
+        else if (toolOutput.ToolName == AgentToolNames.RunSoundQualityMetrics)
         {
             SoundQualityEvidenceExtractor.Extract(parsedData, evidenceItems, fileIdToNameMap);
         }
-        else if (toolOutput.ToolName == "run_findings")
+        else if (toolOutput.ToolName == AgentToolNames.RunFindings)
         {
             FindingsEvidenceExtractor.Extract(parsedData, evidenceItems, fileIdToNameMap);
         }
-        else if (toolOutput.ToolName == "get_metadata")
+        else if (toolOutput.ToolName == AgentToolNames.GetMetadata)
         {
             MetadataEvidenceExtractor.Extract(parsedData, evidenceItems, fileIdToNameMap);
         }
@@ -115,7 +115,8 @@ public static class EvidencePackageBuilder
     private static void AddStandardLimitations(List<string> limitations, List<string> analysesRun)
     {
         if (
-            analysesRun.Contains("run_basic_metrics") || analysesRun.Contains("run_event_detection")
+            analysesRun.Contains(AgentToolNames.RunBasicMetrics)
+            || analysesRun.Contains(AgentToolNames.RunEventDetection)
         )
         {
             limitations.Add(
@@ -123,7 +124,7 @@ public static class EvidencePackageBuilder
             );
         }
 
-        if (analysesRun.Contains("run_cpb"))
+        if (analysesRun.Contains(AgentToolNames.RunCpb))
         {
             // TODO: Current CPB uses FFT-bin power summation. Not IEC 61260 compliant.
             limitations.Add(

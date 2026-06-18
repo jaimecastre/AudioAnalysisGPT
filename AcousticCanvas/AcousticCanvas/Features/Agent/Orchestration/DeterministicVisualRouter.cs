@@ -85,7 +85,7 @@ public static class DeterministicVisualRouter
         {
             return new DeterministicVisualPlan
             {
-                ToolNames = ["run_spectrum"],
+                ToolNames = [AgentToolNames.RunSpectrum],
                 Reason = "Spectrum comparison request routed to FFT spectrum analysis.",
             };
         }
@@ -99,12 +99,12 @@ public static class DeterministicVisualRouter
             {
                 ToolNames =
                 [
-                    "get_metadata",
-                    "run_basic_metrics",
-                    "run_spectrum",
-                    "run_cpb",
-                    "run_sound_quality_metrics",
-                    "run_event_detection",
+                    AgentToolNames.GetMetadata,
+                    AgentToolNames.RunBasicMetrics,
+                    AgentToolNames.RunSpectrum,
+                    AgentToolNames.RunCpb,
+                    AgentToolNames.RunSoundQualityMetrics,
+                    AgentToolNames.RunEventDetection,
                 ],
                 Reason = "Broad file comparison routed to the full comparison evidence suite.",
             };
@@ -117,7 +117,7 @@ public static class DeterministicVisualRouter
 
         return new DeterministicVisualPlan
         {
-            ToolNames = ["run_spectrum", "run_spectrogram"],
+            ToolNames = [AgentToolNames.RunSpectrum, AgentToolNames.RunSpectrogram],
             Reason = "Generic graph request routed to visual analysis tools.",
         };
     }

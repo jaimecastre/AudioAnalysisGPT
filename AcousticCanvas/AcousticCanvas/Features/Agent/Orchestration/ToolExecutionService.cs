@@ -52,32 +52,32 @@ public sealed class ToolExecutionService(
         {
             ToolExecutionOutput result = toolName switch
             {
-                "get_metadata" => await ExecuteGetMetadataAsync(
+                AgentToolNames.GetMetadata => await ExecuteGetMetadataAsync(
                     toolRequest.Arguments,
                     cancellationToken
                 ),
-                "run_basic_metrics" => await ExecuteRunBasicMetricsAsync(
+                AgentToolNames.RunBasicMetrics => await ExecuteRunBasicMetricsAsync(
                     toolRequest.Arguments,
                     cancellationToken
                 ),
-                "run_event_detection" => await ExecuteRunEventDetectionAsync(
+                AgentToolNames.RunEventDetection => await ExecuteRunEventDetectionAsync(
                     toolRequest.Arguments,
                     cancellationToken
                 ),
-                "run_spectrum" => await ExecuteRunSpectrumAsync(
+                AgentToolNames.RunSpectrum => await ExecuteRunSpectrumAsync(
                     toolRequest.Arguments,
                     cancellationToken
                 ),
-                "run_spectrogram" => await ExecuteRunSpectrogramAsync(
+                AgentToolNames.RunSpectrogram => await ExecuteRunSpectrogramAsync(
                     toolRequest.Arguments,
                     cancellationToken
                 ),
-                "run_cpb" => await ExecuteRunCpbAsync(toolRequest.Arguments, cancellationToken),
-                "run_sound_quality_metrics" => await ExecuteRunSoundQualityMetricsAsync(
+                AgentToolNames.RunCpb => await ExecuteRunCpbAsync(toolRequest.Arguments, cancellationToken),
+                AgentToolNames.RunSoundQualityMetrics => await ExecuteRunSoundQualityMetricsAsync(
                     toolRequest.Arguments,
                     cancellationToken
                 ),
-                "run_findings" => await ExecuteRunFindingsAsync(
+                AgentToolNames.RunFindings => await ExecuteRunFindingsAsync(
                     toolRequest.Arguments,
                     cancellationToken
                 ),
@@ -137,7 +137,7 @@ public sealed class ToolExecutionService(
         if (fileIds.Count == 0)
         {
             return ToolOutputBuilder.BuildFailureOutput(
-                "get_metadata",
+                AgentToolNames.GetMetadata,
                 "MISSING_FILE_IDS",
                 "fileIds argument is required and must not be empty."
             );
@@ -173,7 +173,7 @@ public sealed class ToolExecutionService(
 
         var resultData = new { results = metadataResults };
         return ToolOutputBuilder.BuildSuccessOutput(
-            "get_metadata",
+            AgentToolNames.GetMetadata,
             "metadata_" + Guid.NewGuid().ToString("N")[..8],
             resultData
         );
@@ -188,7 +188,7 @@ public sealed class ToolExecutionService(
         if (fileIds.Count == 0)
         {
             return ToolOutputBuilder.BuildFailureOutput(
-                "run_basic_metrics",
+                AgentToolNames.RunBasicMetrics,
                 "MISSING_FILE_IDS",
                 "fileIds argument is required and must not be empty."
             );
@@ -256,7 +256,7 @@ public sealed class ToolExecutionService(
 
         var resultData = new { results = metricsResults };
         return ToolOutputBuilder.BuildSuccessOutput(
-            "run_basic_metrics",
+            AgentToolNames.RunBasicMetrics,
             "basic_metrics_" + Guid.NewGuid().ToString("N")[..8],
             resultData
         );
@@ -271,7 +271,7 @@ public sealed class ToolExecutionService(
         if (string.IsNullOrEmpty(fileId))
         {
             return ToolOutputBuilder.BuildFailureOutput(
-                "run_event_detection",
+                AgentToolNames.RunEventDetection,
                 "MISSING_FILE_ID",
                 "fileId argument is required."
             );
@@ -283,7 +283,7 @@ public sealed class ToolExecutionService(
         if (!kindIsValid)
         {
             return ToolOutputBuilder.BuildFailureOutput(
-                "run_event_detection",
+                AgentToolNames.RunEventDetection,
                 "INVALID_KIND",
                 $"kind '{kind}' is not valid. Supported: {string.Join(", ", validKinds)}."
             );
@@ -293,7 +293,7 @@ public sealed class ToolExecutionService(
         if (string.IsNullOrEmpty(filePath))
         {
             return ToolOutputBuilder.BuildFailureOutput(
-                "run_event_detection",
+                AgentToolNames.RunEventDetection,
                 "FILE_NOT_FOUND",
                 $"File '{fileId}' not found in storage."
             );
@@ -325,7 +325,7 @@ public sealed class ToolExecutionService(
         };
 
         return ToolOutputBuilder.BuildSuccessOutput(
-            "run_event_detection",
+            AgentToolNames.RunEventDetection,
             "events_" + Guid.NewGuid().ToString("N")[..8],
             resultData
         );
@@ -340,7 +340,7 @@ public sealed class ToolExecutionService(
         if (fileIds.Count == 0)
         {
             return ToolOutputBuilder.BuildFailureOutput(
-                "run_spectrum",
+                AgentToolNames.RunSpectrum,
                 "MISSING_FILE_IDS",
                 "fileIds argument is required and must not be empty."
             );
@@ -434,7 +434,7 @@ public sealed class ToolExecutionService(
 
         var resultData = new { results = spectrumResults, storedResultIds };
         var primaryResultId = storedResultIds.FirstOrDefault() ?? $"spectrum_{Guid.NewGuid():N}";
-        return ToolOutputBuilder.BuildSuccessOutput("run_spectrum", primaryResultId, resultData);
+        return ToolOutputBuilder.BuildSuccessOutput(AgentToolNames.RunSpectrum, primaryResultId, resultData);
     }
 
     private async Task<ToolExecutionOutput> ExecuteRunCpbAsync(
@@ -446,7 +446,7 @@ public sealed class ToolExecutionService(
         if (fileIds.Count == 0)
         {
             return ToolOutputBuilder.BuildFailureOutput(
-                "run_cpb",
+                AgentToolNames.RunCpb,
                 "MISSING_FILE_IDS",
                 "fileIds argument is required and must not be empty."
             );
@@ -529,7 +529,7 @@ public sealed class ToolExecutionService(
 
         var resultData = new { results = cpbResults };
         return ToolOutputBuilder.BuildSuccessOutput(
-            "run_cpb",
+            AgentToolNames.RunCpb,
             "cpb_" + Guid.NewGuid().ToString("N")[..8],
             resultData
         );
@@ -545,7 +545,7 @@ public sealed class ToolExecutionService(
         {
             return Task.FromResult(
                 ToolOutputBuilder.BuildFailureOutput(
-                    "run_spectrogram",
+                    AgentToolNames.RunSpectrogram,
                     "MISSING_FILE_IDS",
                     "fileIds argument is required and must not be empty."
                 )
@@ -625,7 +625,7 @@ public sealed class ToolExecutionService(
         var resultData = new { results = spectrogramResults };
         return Task.FromResult(
             ToolOutputBuilder.BuildSuccessOutput(
-                "run_spectrogram",
+                AgentToolNames.RunSpectrogram,
                 "spectrogram_" + Guid.NewGuid().ToString("N")[..8],
                 resultData
             )
@@ -713,7 +713,7 @@ public sealed class ToolExecutionService(
         if (fileIds.Count == 0)
         {
             return ToolOutputBuilder.BuildFailureOutput(
-                "run_sound_quality_metrics",
+                AgentToolNames.RunSoundQualityMetrics,
                 "MISSING_FILE_IDS",
                 "fileIds argument is required and must not be empty."
             );
@@ -781,7 +781,7 @@ public sealed class ToolExecutionService(
 
         var resultData = new { results = soundQualityResults };
         return ToolOutputBuilder.BuildSuccessOutput(
-            "run_sound_quality_metrics",
+            AgentToolNames.RunSoundQualityMetrics,
             "sound_quality_" + Guid.NewGuid().ToString("N")[..8],
             resultData
         );
@@ -796,7 +796,7 @@ public sealed class ToolExecutionService(
         if (string.IsNullOrEmpty(fileId))
         {
             return ToolOutputBuilder.BuildFailureOutput(
-                "run_findings",
+                AgentToolNames.RunFindings,
                 "MISSING_FILE_ID",
                 "fileId argument is required."
             );
@@ -806,7 +806,7 @@ public sealed class ToolExecutionService(
         if (string.IsNullOrEmpty(filePath))
         {
             return ToolOutputBuilder.BuildFailureOutput(
-                "run_findings",
+                AgentToolNames.RunFindings,
                 "FILE_NOT_FOUND",
                 $"File '{fileId}' not found in storage."
             );
@@ -839,7 +839,7 @@ public sealed class ToolExecutionService(
         };
 
         return ToolOutputBuilder.BuildSuccessOutput(
-            "run_findings",
+            AgentToolNames.RunFindings,
             "findings_" + Guid.NewGuid().ToString("N")[..8],
             resultData
         );

@@ -89,7 +89,7 @@ public static class AgentResultBuilder
 
         for (int i = 0; i < finalAnswer.Blocks.Count; i++)
         {
-            var block = ParseBlock(finalAnswer.Blocks[i]);
+            var block = AgentResponseBlockParser.Parse(finalAnswer.Blocks[i]);
             if (block is not null)
             {
                 blocks.Add(block);
@@ -116,12 +116,17 @@ public static class AgentResultBuilder
 
         foreach (var planBlock in visualizationPlan.Blocks)
         {
-            if (planBlock.BlockType is not ("spectrumOverlay" or "soundQualityComparison"))
+            if (
+                planBlock.BlockType is not (
+                    VisualizationBlockTypes.SpectrumOverlay
+                    or VisualizationBlockTypes.SoundQualityComparison
+                )
+            )
             {
                 continue;
             }
 
-            if (planBlock.BlockType == "spectrumOverlay")
+            if (planBlock.BlockType == VisualizationBlockTypes.SpectrumOverlay)
             {
                 hasSpectrumOverlay = true;
             }
@@ -177,12 +182,12 @@ public static class AgentResultBuilder
         }
 
         var blockType = blockTypeElement.GetString();
-        if (blockType == "spectrumChart" && hasSpectrumOverlay)
+        if (blockType == VisualizationBlockTypes.SpectrumChart && hasSpectrumOverlay)
         {
             return true;
         }
 
-        if (blockType != "analysisView")
+        if (blockType != VisualizationBlockTypes.AnalysisView)
         {
             return false;
         }
@@ -210,7 +215,7 @@ public static class AgentResultBuilder
 
         foreach (var planBlock in visualizationPlan.Blocks)
         {
-            if (planBlock.BlockType != "spectrumOverlay")
+            if (planBlock.BlockType != VisualizationBlockTypes.SpectrumOverlay)
             {
                 continue;
             }
@@ -267,7 +272,7 @@ public static class AgentResultBuilder
 
         foreach (var planBlock in visualizationPlan.Blocks)
         {
-            if (planBlock.BlockType != "soundQualityComparison")
+            if (planBlock.BlockType != VisualizationBlockTypes.SoundQualityComparison)
             {
                 continue;
             }
@@ -337,7 +342,7 @@ public static class AgentResultBuilder
 
         foreach (var planBlock in visualizationPlan.Blocks)
         {
-            if (planBlock.BlockType != "investigation")
+            if (planBlock.BlockType != VisualizationBlockTypes.Investigation)
             {
                 continue;
             }
@@ -471,297 +476,6 @@ public static class AgentResultBuilder
     }
 
     private sealed record EvidenceFileIdentity(string FileId, string FileName);
-
-    private static AgentResponseBlock? ParseBlock(JsonElement element)
-    {
-        if (!element.TryGetProperty("blockType", out var blockTypeElement))
-        {
-            return null;
-        }
-
-        var blockType = blockTypeElement.GetString();
-
-        return blockType switch
-        {
-            "markdown" => ParseMarkdownBlock(element),
-            "statistics" => ParseStatisticsBlock(element),
-            "spectrumChart" => ParseSpectrumChartBlock(element),
-            "ranking" => ParseRankingBlock(element),
-            "suggestedActions" => ParseSuggestedActionsBlock(element),
-            "analysisView" => ParseAnalysisViewBlock(element),
-            _ => null,
-        };
-    }
-
-    private static MarkdownBlock? ParseMarkdownBlock(JsonElement element)
-    {
-        if (!element.TryGetProperty("content", out var contentElement))
-            return null;
-
-        return new MarkdownBlock { Content = contentElement.GetString() ?? string.Empty };
-    }
-
-    private static StatisticsBlock? ParseStatisticsBlock(JsonElement element)
-    {
-        if (!element.TryGetProperty("title", out var titleElement))
-            return null;
-        if (!element.TryGetProperty("rows", out var rowsElement))
-            return null;
-
-        var rows = new List<StatisticRow>();
-        foreach (var row in rowsElement.EnumerateArray())
-        {
-            var label = row.TryGetProperty("label", out var labelEl)
-                ? labelEl.GetString() ?? ""
-                : "";
-            var value = row.TryGetProperty("value", out var valueEl)
-                ? valueEl.GetString() ?? ""
-                : "";
-            var unit = row.TryGetProperty("unit", out var unitEl) ? unitEl.GetString() : null;
-            rows.Add(
-                new StatisticRow
-                {
-                    Label = label,
-                    Value = value,
-                    Unit = unit,
-                }
-            );
-        }
-
-        return new StatisticsBlock
-        {
-            Title = titleElement.GetString() ?? string.Empty,
-            Rows = rows,
-        };
-    }
-
-    private static SpectrumChartBlock? ParseSpectrumChartBlock(JsonElement element)
-    {
-        if (
-            !element.TryGetProperty("fileId", out var fileIdEl)
-            || !element.TryGetProperty("fileName", out var fileNameEl)
-            || !element.TryGetProperty("frequenciesHz", out var freqEl)
-            || !element.TryGetProperty("magnitudesDb", out var magEl)
-        )
-        {
-            return null;
-        }
-
-        var frequencies = freqEl.EnumerateArray().Select(f => f.GetDouble()).ToList();
-        var magnitudes = magEl.EnumerateArray().Select(m => m.GetDouble()).ToList();
-        var peakFreq = element.TryGetProperty("peakFrequencyHz", out var peakEl)
-            ? peakEl.GetDouble()
-            : (double?)null;
-
-        var metadata = new ChartMetadata();
-        if (element.TryGetProperty("metadata", out var metaEl))
-        {
-            if (metaEl.TryGetProperty("sourceTool", out var srcEl))
-                metadata = metadata with { SourceTool = srcEl.GetString() };
-            if (metaEl.TryGetProperty("fftSize", out var fftEl))
-                metadata = metadata with { FftSize = fftEl.GetInt32() };
-            if (metaEl.TryGetProperty("windowType", out var winEl))
-                metadata = metadata with { WindowType = winEl.GetString() };
-            if (metaEl.TryGetProperty("scaling", out var scaleEl))
-                metadata = metadata with { Scaling = scaleEl.GetString() };
-        }
-
-        return new SpectrumChartBlock
-        {
-            FileId = fileIdEl.GetString() ?? string.Empty,
-            FileName = fileNameEl.GetString() ?? string.Empty,
-            FrequenciesHz = frequencies,
-            MagnitudesDb = magnitudes,
-            PeakFrequencyHz = peakFreq,
-            Metadata = metadata,
-        };
-    }
-
-    private static RankingBlock? ParseRankingBlock(JsonElement element)
-    {
-        if (
-            !element.TryGetProperty("title", out var titleEl)
-            || !element.TryGetProperty("metricName", out var metricEl)
-            || !element.TryGetProperty("rankedItems", out var itemsEl)
-        )
-        {
-            return null;
-        }
-
-        var items = new List<RankedItem>();
-        foreach (var item in itemsEl.EnumerateArray())
-        {
-            if (
-                !item.TryGetProperty("rank", out var rankEl)
-                || !item.TryGetProperty("fileId", out var fileIdEl)
-                || !item.TryGetProperty("fileName", out var fileNameEl)
-                || !item.TryGetProperty("score", out var scoreEl)
-                || !item.TryGetProperty("scoreLabel", out var scoreLabelEl)
-            )
-            {
-                continue;
-            }
-
-            items.Add(
-                new RankedItem
-                {
-                    Rank = rankEl.GetInt32(),
-                    FileId = fileIdEl.GetString() ?? string.Empty,
-                    FileName = fileNameEl.GetString() ?? string.Empty,
-                    Score = scoreEl.GetDouble(),
-                    ScoreLabel = scoreLabelEl.GetString() ?? string.Empty,
-                    ScoreUnit = item.TryGetProperty("scoreUnit", out var unitEl)
-                        ? unitEl.GetString()
-                        : null,
-                }
-            );
-        }
-
-        return new RankingBlock
-        {
-            Title = titleEl.GetString() ?? string.Empty,
-            MetricName = metricEl.GetString() ?? string.Empty,
-            RankedItems = items,
-        };
-    }
-
-    private static SuggestedActionsBlock? ParseSuggestedActionsBlock(JsonElement element)
-    {
-        if (!element.TryGetProperty("actions", out var actionsEl))
-            return null;
-
-        var actions = new List<SuggestedAction>();
-        foreach (var action in actionsEl.EnumerateArray())
-        {
-            if (
-                !action.TryGetProperty("label", out var labelEl)
-                || !action.TryGetProperty("actionType", out var typeEl)
-            )
-            {
-                continue;
-            }
-
-            actions.Add(
-                new SuggestedAction
-                {
-                    Label = labelEl.GetString() ?? string.Empty,
-                    ActionType = typeEl.GetString() ?? string.Empty,
-                    ToolName = action.TryGetProperty("toolName", out var toolEl)
-                        ? toolEl.GetString()
-                        : null,
-                    PromptText = action.TryGetProperty("promptText", out var promptEl)
-                        ? promptEl.GetString()
-                        : null,
-                }
-            );
-        }
-
-        return new SuggestedActionsBlock { Actions = actions };
-    }
-
-    private static AnalysisViewBlock? ParseAnalysisViewBlock(JsonElement element)
-    {
-        if (
-            !element.TryGetProperty("viewType", out var viewTypeEl)
-            || !element.TryGetProperty("resultId", out var resultIdEl)
-            || !element.TryGetProperty("fileId", out var fileIdEl)
-            || !element.TryGetProperty("fileName", out var fileNameEl)
-            || !element.TryGetProperty("summary", out var summaryEl)
-        )
-        {
-            return null;
-        }
-
-        var resultId = resultIdEl.GetString() ?? string.Empty;
-        if (!System.Text.RegularExpressions.Regex.IsMatch(resultId, @"^[a-z]+_[0-9a-f]{32}$"))
-        {
-            return null;
-        }
-
-        var summary = ParseCompactSummary(summaryEl);
-        var preview = element.TryGetProperty("preview", out var previewEl)
-            ? ParseAnalysisPreview(previewEl)
-            : null;
-
-        return new AnalysisViewBlock
-        {
-            ViewType = viewTypeEl.GetString() ?? string.Empty,
-            ResultId = resultId,
-            FileId = fileIdEl.GetString() ?? string.Empty,
-            FileName = fileNameEl.GetString() ?? string.Empty,
-            Summary = summary,
-            Title = element.TryGetProperty("title", out var titleEl) ? titleEl.GetString() : null,
-            Preview = preview,
-        };
-    }
-
-    private static AnalysisPreview? ParseAnalysisPreview(JsonElement element)
-    {
-        double[]? frequenciesHz = null;
-        double[]? magnitudesDb = null;
-
-        if (
-            element.TryGetProperty("frequenciesHz", out var freqEl)
-            && freqEl.ValueKind == JsonValueKind.Array
-        )
-        {
-            frequenciesHz = freqEl.EnumerateArray().Select(e => e.GetDouble()).ToArray();
-        }
-
-        if (
-            element.TryGetProperty("magnitudesDb", out var magEl)
-            && magEl.ValueKind == JsonValueKind.Array
-        )
-        {
-            magnitudesDb = magEl.EnumerateArray().Select(e => e.GetDouble()).ToArray();
-        }
-
-        if (frequenciesHz == null || magnitudesDb == null)
-            return null;
-
-        return new AnalysisPreview { FrequenciesHz = frequenciesHz, MagnitudesDb = magnitudesDb };
-    }
-
-    private static CompactSummary ParseCompactSummary(JsonElement element)
-    {
-        var summary = new CompactSummary();
-
-        if (element.TryGetProperty("primaryMetric", out var primaryEl))
-            summary = summary with { PrimaryMetric = primaryEl.GetString() };
-
-        if (element.TryGetProperty("statusText", out var statusTextEl))
-            summary = summary with { StatusText = statusTextEl.GetString() };
-
-        if (element.TryGetProperty("statusIndicator", out var indicatorEl))
-            summary = summary with { StatusIndicator = indicatorEl.GetString() };
-
-        if (element.TryGetProperty("secondaryMetrics", out var metricsEl))
-        {
-            var metrics = new List<MetricItem>();
-            foreach (var metric in metricsEl.EnumerateArray())
-            {
-                if (
-                    metric.TryGetProperty("label", out var labelEl)
-                    && metric.TryGetProperty("value", out var valueEl)
-                )
-                {
-                    metrics.Add(
-                        new MetricItem
-                        {
-                            Label = labelEl.GetString() ?? string.Empty,
-                            Value = valueEl.GetString() ?? string.Empty,
-                            Unit = metric.TryGetProperty("unit", out var unitEl)
-                                ? unitEl.GetString()
-                                : null,
-                        }
-                    );
-                }
-            }
-            summary = summary with { SecondaryMetrics = metrics };
-        }
-
-        return summary;
-    }
 
     public static IReadOnlyList<AgentToolExecutionRecord> BuildToolExecutionRecords(
         List<ToolExecutionOutput> toolOutputs

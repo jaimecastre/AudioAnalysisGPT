@@ -28,7 +28,7 @@ public static class SpectrogramEvidenceExtractor
             {
                 ["fileId"] = fileId,
                 ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
-                ["type"] = "spectrogram",
+                ["type"] = EvidenceTypes.Spectrogram,
             };
 
             if (fileResult.TryGetProperty("region", out var regionElement))
@@ -60,7 +60,7 @@ public static class SpectrogramEvidenceExtractor
                 new EvidenceItem
                 {
                     EvidenceId = evidenceId,
-                    Type = "spectrogram",
+                    Type = EvidenceTypes.Spectrogram,
                     Data = evidenceData,
                 }
             );

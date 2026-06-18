@@ -8,7 +8,7 @@ public static class ExpertVisualizationPlanner
         {
             new()
             {
-                BlockType = "markdown",
+                BlockType = VisualizationBlockTypes.Markdown,
                 Reason =
                     evidencePackage.KeyEvidence.Count == 0
                         ? "Use text to answer a method or context question without inventing measured values."
@@ -56,7 +56,7 @@ public static class ExpertVisualizationPlanner
             blocks.Add(
                 new VisualizationPlanBlock
                 {
-                    BlockType = "analysisView",
+                    BlockType = VisualizationBlockTypes.AnalysisView,
                     ViewType = viewType,
                     SourceEvidenceId = evidenceItem.EvidenceId,
                     Reason =
@@ -75,7 +75,12 @@ public static class ExpertVisualizationPlanner
 
         foreach (var block in blocks)
         {
-            if (block.BlockType is not ("spectrumOverlay" or "soundQualityComparison"))
+            if (
+                block.BlockType is not (
+                    VisualizationBlockTypes.SpectrumOverlay
+                    or VisualizationBlockTypes.SoundQualityComparison
+                )
+            )
             {
                 continue;
             }
@@ -118,7 +123,7 @@ public static class ExpertVisualizationPlanner
         blocks.Add(
             new VisualizationPlanBlock
             {
-                BlockType = "investigation",
+                BlockType = VisualizationBlockTypes.Investigation,
                 SourceEvidenceId = sourceIds[0],
                 SourceEvidenceIds = sourceIds,
                 Reason =
@@ -133,7 +138,7 @@ public static class ExpertVisualizationPlanner
     )
     {
         var soundQualityItems = evidencePackage.KeyEvidence
-            .Where(item => item.Type == "sound_quality")
+            .Where(item => item.Type == EvidenceTypes.SoundQuality)
             .ToList();
 
         if (soundQualityItems.Count < 2)
@@ -146,7 +151,7 @@ public static class ExpertVisualizationPlanner
         blocks.Add(
             new VisualizationPlanBlock
             {
-                BlockType = "soundQualityComparison",
+                BlockType = VisualizationBlockTypes.SoundQualityComparison,
                 SourceEvidenceId = sourceIds[0],
                 SourceEvidenceIds = sourceIds,
                 Reason =
@@ -161,7 +166,7 @@ public static class ExpertVisualizationPlanner
     )
     {
         var spectrumItems = evidencePackage.KeyEvidence
-            .Where(item => item.Type == "spectrum" && HasResultId(item))
+            .Where(item => item.Type == EvidenceTypes.Spectrum && HasResultId(item))
             .ToList();
 
         if (spectrumItems.Count < 2)
@@ -174,7 +179,7 @@ public static class ExpertVisualizationPlanner
         blocks.Add(
             new VisualizationPlanBlock
             {
-                BlockType = "spectrumOverlay",
+                BlockType = VisualizationBlockTypes.SpectrumOverlay,
                 SourceEvidenceId = sourceIds[0],
                 SourceEvidenceIds = sourceIds,
                 Reason =
@@ -210,7 +215,10 @@ public static class ExpertVisualizationPlanner
         }
 
         var rankableEvidence = evidencePackage.KeyEvidence.FirstOrDefault(item =>
-            item.Type is "sound_quality" or "basic_metrics" or "findings"
+            item.Type
+                is EvidenceTypes.SoundQuality
+                    or EvidenceTypes.BasicMetrics
+                    or EvidenceTypes.Findings
         );
         if (rankableEvidence is null)
         {
@@ -220,7 +228,7 @@ public static class ExpertVisualizationPlanner
         blocks.Add(
             new VisualizationPlanBlock
             {
-                BlockType = "ranking",
+                BlockType = VisualizationBlockTypes.Ranking,
                 SourceEvidenceId = rankableEvidence.EvidenceId,
                 Reason =
                     "Compare multiple files with a ranking block before the narrative so differences can be scanned quickly.",
@@ -235,14 +243,14 @@ public static class ExpertVisualizationPlanner
             return "method_or_context_answer";
         }
 
-        if (evidencePackage.KeyEvidence.Any(item => item.Type == "sound_quality"))
+        if (evidencePackage.KeyEvidence.Any(item => item.Type == EvidenceTypes.SoundQuality))
         {
-            return "sound_quality";
+            return EvidenceTypes.SoundQuality;
         }
 
-        if (evidencePackage.KeyEvidence.Any(item => item.Type == "findings"))
+        if (evidencePackage.KeyEvidence.Any(item => item.Type == EvidenceTypes.Findings))
         {
-            return "findings";
+            return EvidenceTypes.Findings;
         }
 
         return evidencePackage.KeyEvidence[0].Type;
@@ -254,11 +262,11 @@ public static class ExpertVisualizationPlanner
     {
         return evidenceType switch
         {
-            "spectrum" => "spectrum",
-            "spectrogram" => "spectrogram",
-            "cpb" => "cpb",
-            "sound_quality" => "soundQuality",
-            "findings" => "findings",
+            EvidenceTypes.Spectrum => EvidenceTypes.Spectrum,
+            EvidenceTypes.Spectrogram => EvidenceTypes.Spectrogram,
+            EvidenceTypes.Cpb => EvidenceTypes.Cpb,
+            EvidenceTypes.SoundQuality => "soundQuality",
+            EvidenceTypes.Findings => EvidenceTypes.Findings,
             _ => null,
         };
     }
@@ -275,7 +283,7 @@ public static class ExpertVisualizationPlanner
 
     public static PlotHints? BuildPlotHintsFor(EvidenceItem evidenceItem)
     {
-        if (evidenceItem.Type != "spectrum")
+        if (evidenceItem.Type != EvidenceTypes.Spectrum)
         {
             return null;
         }

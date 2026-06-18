@@ -28,7 +28,7 @@ public static class SoundQualityEvidenceExtractor
             {
                 ["fileId"] = fileId,
                 ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
-                ["type"] = "sound_quality",
+                ["type"] = EvidenceTypes.SoundQuality,
             };
 
             if (fileResult.TryGetProperty("method", out var methodElement))
@@ -67,7 +67,7 @@ public static class SoundQualityEvidenceExtractor
                 new EvidenceItem
                 {
                     EvidenceId = evidenceId,
-                    Type = "sound_quality",
+                    Type = EvidenceTypes.SoundQuality,
                     Data = evidenceData,
                 }
             );

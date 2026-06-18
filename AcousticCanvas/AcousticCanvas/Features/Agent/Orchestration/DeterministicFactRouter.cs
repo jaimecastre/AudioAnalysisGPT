@@ -93,7 +93,7 @@ public static class DeterministicFactRouter
         {
             return new DeterministicFactPlan
             {
-                ToolName = "run_basic_metrics",
+                ToolName = AgentToolNames.RunBasicMetrics,
                 RequestedFields = basicMetricFields,
             };
         }
@@ -102,7 +102,7 @@ public static class DeterministicFactRouter
         {
             return new DeterministicFactPlan
             {
-                ToolName = "get_metadata",
+                ToolName = AgentToolNames.GetMetadata,
                 RequestedFields = metadataFields,
             };
         }

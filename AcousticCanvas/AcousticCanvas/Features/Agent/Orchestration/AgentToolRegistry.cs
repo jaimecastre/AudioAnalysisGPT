@@ -15,18 +15,18 @@ public static class AgentToolRegistry
     private static readonly IReadOnlyDictionary<string, AgentToolDefinition> AllowedTools =
         new Dictionary<string, AgentToolDefinition>
         {
-            ["get_metadata"] = new AgentToolDefinition
+            [AgentToolNames.GetMetadata] = new AgentToolDefinition
             {
-                Name = "get_metadata",
+                Name = AgentToolNames.GetMetadata,
                 Description = "Return file metadata: duration, sample rate, channels, bit depth.",
                 PromptDescription = "Return file metadata: duration, sample rate, channels, bit depth.",
                 ArgumentsPrompt = "{ \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
                 MaxFileCount = 10,
                 MaxFileDurationSeconds = double.MaxValue,
             },
-            ["run_basic_metrics"] = new AgentToolDefinition
+            [AgentToolNames.RunBasicMetrics] = new AgentToolDefinition
             {
-                Name = "run_basic_metrics",
+                Name = AgentToolNames.RunBasicMetrics,
                 Description =
                     "Compute peak level, RMS level, crest factor, DC offset, and digital clipping detection. Supports optional startSeconds and endSeconds to restrict analysis to a time region.",
                 PromptDescription =
@@ -36,9 +36,9 @@ public static class AgentToolRegistry
                 MaxFileCount = 10,
                 MaxFileDurationSeconds = 300.0,
             },
-            ["run_spectrum"] = new AgentToolDefinition
+            [AgentToolNames.RunSpectrum] = new AgentToolDefinition
             {
-                Name = "run_spectrum",
+                Name = AgentToolNames.RunSpectrum,
                 Description =
                     "Compute averaged FFT spectrum with tonal peak detection. Supports optional startSeconds and endSeconds to restrict analysis to a time region.",
                 PromptDescription = "Compute averaged FFT spectrum with tonal peak detection.",
@@ -47,18 +47,18 @@ public static class AgentToolRegistry
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
-            ["run_spectrogram"] = new AgentToolDefinition
+            [AgentToolNames.RunSpectrogram] = new AgentToolDefinition
             {
-                Name = "run_spectrogram",
+                Name = AgentToolNames.RunSpectrogram,
                 Description = "Compute full-file spectrogram time-frequency summary.",
                 PromptDescription = "Compute full-file spectrogram time-frequency summary.",
                 ArgumentsPrompt = "{ \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
-            ["run_cpb"] = new AgentToolDefinition
+            [AgentToolNames.RunCpb] = new AgentToolDefinition
             {
-                Name = "run_cpb",
+                Name = AgentToolNames.RunCpb,
                 Description =
                     "Compute octave or 1/3-octave constant-percentage-bandwidth band levels.",
                 PromptDescription = "Compute octave or 1/3-octave band levels.",
@@ -66,9 +66,9 @@ public static class AgentToolRegistry
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
-            ["run_sound_quality_metrics"] = new AgentToolDefinition
+            [AgentToolNames.RunSoundQualityMetrics] = new AgentToolDefinition
             {
-                Name = "run_sound_quality_metrics",
+                Name = AgentToolNames.RunSoundQualityMetrics,
                 Description =
                     "Compute MoSQITo psychoacoustic loudness, sharpness, and roughness metrics.",
                 PromptDescription =
@@ -77,9 +77,9 @@ public static class AgentToolRegistry
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
-            ["run_event_detection"] = new AgentToolDefinition
+            [AgentToolNames.RunEventDetection] = new AgentToolDefinition
             {
-                Name = "run_event_detection",
+                Name = AgentToolNames.RunEventDetection,
                 Description =
                     "Detect audio events: clipping, silence gaps, loudest region, or transient onsets.",
                 PromptDescription = "Detect audio events: clipping, silence, loudest, transient.",
@@ -87,9 +87,9 @@ public static class AgentToolRegistry
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
-            ["run_findings"] = new AgentToolDefinition
+            [AgentToolNames.RunFindings] = new AgentToolDefinition
             {
-                Name = "run_findings",
+                Name = AgentToolNames.RunFindings,
                 Description =
                     "Run the full findings pipeline for a single file: detects clipping, silence gaps, high crest factor, DC offset, and tonal peaks. Returns a structured list of findings with severity, confidence, evidence, and suggested next steps.",
                 PromptDescription =

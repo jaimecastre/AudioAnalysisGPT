@@ -28,7 +28,7 @@ public static class MetadataEvidenceExtractor
             {
                 ["fileId"] = fileId,
                 ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
-                ["type"] = "metadata",
+                ["type"] = EvidenceTypes.Metadata,
             };
 
             if (fileResult.TryGetProperty("durationSeconds", out var durationEl))
@@ -55,7 +55,7 @@ public static class MetadataEvidenceExtractor
                 new EvidenceItem
                 {
                     EvidenceId = evidenceId,
-                    Type = "metadata",
+                    Type = EvidenceTypes.Metadata,
                     Data = evidenceData,
                 }
             );

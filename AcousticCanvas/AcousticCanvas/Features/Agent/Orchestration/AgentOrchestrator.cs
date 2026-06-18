@@ -207,7 +207,7 @@ public sealed class AgentOrchestrator(
         var toolRequests = new List<PlannerToolRequest>();
         foreach (var toolName in visualPlan.ToolNames)
         {
-            if (toolName == "run_event_detection")
+            if (toolName == AgentToolNames.RunEventDetection)
             {
                 foreach (var fileId in selectedFileIds)
                 {

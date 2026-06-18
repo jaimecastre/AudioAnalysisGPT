@@ -34,7 +34,7 @@ public static class SpectrumEvidenceExtractor
             {
                 ["fileId"] = fileId,
                 ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
-                ["type"] = "spectrum",
+                ["type"] = EvidenceTypes.Spectrum,
             };
 
             if (summaryElement.TryGetProperty("peakFrequencyHz", out var peakFreqEl))
@@ -68,7 +68,7 @@ public static class SpectrumEvidenceExtractor
                 new EvidenceItem
                 {
                     EvidenceId = evidenceId,
-                    Type = "spectrum",
+                    Type = EvidenceTypes.Spectrum,
                     Data = evidenceData,
                 }
             );

@@ -7,7 +7,7 @@ public abstract record AgentResponseBlock
 
 public sealed record MarkdownBlock : AgentResponseBlock
 {
-    public override string BlockType => "markdown";
+    public override string BlockType => VisualizationBlockTypes.Markdown;
     public required string Content { get; init; }
 }
 
@@ -20,7 +20,7 @@ public sealed record StatisticRow
 
 public sealed record StatisticsBlock : AgentResponseBlock
 {
-    public override string BlockType => "statistics";
+    public override string BlockType => VisualizationBlockTypes.Statistics;
     public required string Title { get; init; }
     public required IReadOnlyList<StatisticRow> Rows { get; init; }
 }
@@ -40,7 +40,7 @@ public sealed record ChartMetadata
 
 public sealed record SpectrumChartBlock : AgentResponseBlock
 {
-    public override string BlockType => "spectrumChart";
+    public override string BlockType => VisualizationBlockTypes.SpectrumChart;
     public required string FileId { get; init; }
     public required string FileName { get; init; }
     public required IReadOnlyList<double> FrequenciesHz { get; init; }
@@ -61,7 +61,7 @@ public sealed record RankedItem
 
 public sealed record RankingBlock : AgentResponseBlock
 {
-    public override string BlockType => "ranking";
+    public override string BlockType => VisualizationBlockTypes.Ranking;
     public required string Title { get; init; }
     public required string MetricName { get; init; }
     public required IReadOnlyList<RankedItem> RankedItems { get; init; }
@@ -77,7 +77,7 @@ public sealed record SuggestedAction
 
 public sealed record SuggestedActionsBlock : AgentResponseBlock
 {
-    public override string BlockType => "suggestedActions";
+    public override string BlockType => VisualizationBlockTypes.SuggestedActions;
     public required IReadOnlyList<SuggestedAction> Actions { get; init; }
 }
 
@@ -85,7 +85,7 @@ public sealed record SuggestedActionsBlock : AgentResponseBlock
 
 public sealed record AnalysisViewBlock : AgentResponseBlock
 {
-    public override string BlockType => "analysisView";
+    public override string BlockType => VisualizationBlockTypes.AnalysisView;
 
     /// <summary>
     /// Type of analysis view: spectrum, spectrogram, cpb, soundQuality, findings
@@ -181,7 +181,7 @@ public sealed record OverlaySignal
 /// </summary>
 public sealed record SpectrumOverlayBlock : AgentResponseBlock
 {
-    public override string BlockType => "spectrumOverlay";
+    public override string BlockType => VisualizationBlockTypes.SpectrumOverlay;
 
     /// <summary>Title shown above the overlay chart</summary>
     public required string Title { get; init; }
@@ -213,7 +213,7 @@ public sealed record InvestigationSignal
 /// </summary>
 public sealed record InvestigationBlock : AgentResponseBlock
 {
-    public override string BlockType => "investigation";
+    public override string BlockType => VisualizationBlockTypes.Investigation;
 
     /// <summary>Short diagnostic question this investigation answers</summary>
     public required string DiagnosticQuestion { get; init; }
@@ -243,7 +243,7 @@ public sealed record SoundQualitySignal
 /// </summary>
 public sealed record SoundQualityComparisonBlock : AgentResponseBlock
 {
-    public override string BlockType => "soundQualityComparison";
+    public override string BlockType => VisualizationBlockTypes.SoundQualityComparison;
 
     /// <summary>Title shown above the comparison card</summary>
     public required string Title { get; init; }

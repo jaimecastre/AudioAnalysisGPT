@@ -34,7 +34,7 @@ public static class CpbEvidenceExtractor
             {
                 ["fileId"] = fileId,
                 ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
-                ["type"] = "cpb",
+                ["type"] = EvidenceTypes.Cpb,
             };
 
             if (fileResult.TryGetProperty("bandMode", out var bandModeEl))
@@ -61,7 +61,7 @@ public static class CpbEvidenceExtractor
                 new EvidenceItem
                 {
                     EvidenceId = evidenceId,
-                    Type = "cpb",
+                    Type = EvidenceTypes.Cpb,
                     Data = evidenceData,
                 }
             );

@@ -25,7 +25,7 @@ public static class EventDetectionEvidenceExtractor
         {
             ["fileId"] = fileId,
             ["fileName"] = fileIdToNameMap.GetValueOrDefault(fileId, fileId),
-            ["type"] = "event_detection",
+            ["type"] = EvidenceTypes.EventDetection,
             ["kind"] = kind,
             ["eventCount"] = eventCount,
             ["eventsDetected"] = eventCount > 0,
@@ -40,7 +40,7 @@ public static class EventDetectionEvidenceExtractor
             new EvidenceItem
             {
                 EvidenceId = evidenceId,
-                Type = "event_detection",
+                Type = EvidenceTypes.EventDetection,
                 Data = evidenceData,
             }
         );

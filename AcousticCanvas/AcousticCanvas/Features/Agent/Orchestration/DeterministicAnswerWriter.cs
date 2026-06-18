@@ -13,7 +13,10 @@ public static class DeterministicAnswerWriter
         EvidencePackage evidencePackage
     )
     {
-        var evidenceType = plan.ToolName == "run_basic_metrics" ? "basic_metrics" : "metadata";
+        var evidenceType =
+            plan.ToolName == AgentToolNames.RunBasicMetrics
+                ? EvidenceTypes.BasicMetrics
+                : EvidenceTypes.Metadata;
 
         var matchingItems = new List<EvidenceItem>();
         foreach (var evidenceItem in evidencePackage.KeyEvidence)
