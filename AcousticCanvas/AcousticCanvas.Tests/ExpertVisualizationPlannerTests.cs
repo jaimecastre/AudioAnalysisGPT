@@ -637,6 +637,135 @@ public sealed class ExpertVisualizationPlannerTests
         Assert.Empty(lookup);
     }
 
+    [Fact]
+    public void TwoSoundQualityEvidenceItemsProduceSoundQualityComparisonPlanBlock()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Compare the sound quality of both files.",
+            selectedFileIds: ["fileA", "fileB"],
+            analysesRun: ["run_sound_quality_metrics"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_fileA",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "fileA",
+                        ["fileName"] = "a.wav",
+                        ["loudnessSone"] = 20.0,
+                        ["sharpnessAcum"] = 1.5,
+                        ["roughnessAsper"] = 0.02,
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_fileB",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "fileB",
+                        ["fileName"] = "b.wav",
+                        ["loudnessSone"] = 15.0,
+                        ["sharpnessAcum"] = 1.7,
+                        ["roughnessAsper"] = 0.03,
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        var comparisonBlock = plan.Blocks.FirstOrDefault(b => b.BlockType == "soundQualityComparison");
+        Assert.NotNull(comparisonBlock);
+        Assert.NotNull(comparisonBlock.SourceEvidenceIds);
+        Assert.Equal(2, comparisonBlock.SourceEvidenceIds.Count);
+        Assert.Contains("ev_sq_fileA", comparisonBlock.SourceEvidenceIds);
+        Assert.Contains("ev_sq_fileB", comparisonBlock.SourceEvidenceIds);
+    }
+
+    [Fact]
+    public void SingleSoundQualityEvidenceItemDoesNotProduceSoundQualityComparisonPlanBlock()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "What is the loudness of this file?",
+            analysesRun: ["run_sound_quality_metrics"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_file1",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "a.wav",
+                        ["loudnessSone"] = 20.0,
+                        ["sharpnessAcum"] = 1.5,
+                        ["roughnessAsper"] = 0.02,
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        Assert.DoesNotContain(plan.Blocks, b => b.BlockType == "soundQualityComparison");
+    }
+
+    [Fact]
+    public void BuildSoundQualityComparisonBlocksEmbedsMectricValues()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Compare sound quality.",
+            selectedFileIds: ["fileA", "fileB"],
+            analysesRun: ["run_sound_quality_metrics"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_fileA",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "fileA",
+                        ["fileName"] = "a.wav",
+                        ["loudnessSone"] = 20.0,
+                        ["sharpnessAcum"] = 1.5,
+                        ["roughnessAsper"] = 0.02,
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_fileB",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "fileB",
+                        ["fileName"] = "b.wav",
+                        ["loudnessSone"] = 15.0,
+                        ["sharpnessAcum"] = 1.7,
+                        ["roughnessAsper"] = 0.03,
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+        var blocks = AgentResultBuilder.BuildSoundQualityComparisonBlocks(plan, evidencePackage);
+
+        Assert.Single(blocks);
+        Assert.Equal("Sound Quality Comparison", blocks[0].Title);
+        Assert.Equal(2, blocks[0].Signals.Count);
+        Assert.Equal("a.wav", blocks[0].Signals[0].FileName);
+        Assert.Equal(20.0, blocks[0].Signals[0].LoudnessSone);
+        Assert.Equal(1.5, blocks[0].Signals[0].SharpnessAcum);
+        Assert.Equal(0.02, blocks[0].Signals[0].RoughnessAsper);
+        Assert.Equal("b.wav", blocks[0].Signals[1].FileName);
+        Assert.Equal(15.0, blocks[0].Signals[1].LoudnessSone);
+    }
+
     private static EvidencePackage BuildEvidencePackage(
         string question,
         IReadOnlyList<string>? selectedFileIds = null,

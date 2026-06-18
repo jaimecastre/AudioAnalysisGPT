@@ -16,6 +16,7 @@ public static class ExpertVisualizationPlanner
             },
         };
 
+        AddSoundQualityComparisonBlockWhenUseful(evidencePackage, blocks);
         AddSpectrumOverlayBlockWhenUseful(evidencePackage, blocks);
         AddInvestigationBlockWhenUseful(evidencePackage, blocks);
         AddEvidenceViewBlocks(evidencePackage, blocks);
@@ -89,6 +90,34 @@ public static class ExpertVisualizationPlanner
                 SourceEvidenceIds = sourceIds,
                 Reason =
                     $"Group {distinctViewTypes.Count} different analysis types ({string.Join(", ", distinctViewTypes)}) into one investigation card so the diagnostic picture is immediately clear.",
+            }
+        );
+    }
+
+    private static void AddSoundQualityComparisonBlockWhenUseful(
+        EvidencePackage evidencePackage,
+        List<VisualizationPlanBlock> blocks
+    )
+    {
+        var soundQualityItems = evidencePackage.KeyEvidence
+            .Where(item => item.Type == "sound_quality")
+            .ToList();
+
+        if (soundQualityItems.Count < 2)
+        {
+            return;
+        }
+
+        var sourceIds = soundQualityItems.Select(item => item.EvidenceId).ToList();
+
+        blocks.Add(
+            new VisualizationPlanBlock
+            {
+                BlockType = "soundQualityComparison",
+                SourceEvidenceId = sourceIds[0],
+                SourceEvidenceIds = sourceIds,
+                Reason =
+                    $"Show loudness, sharpness, and roughness bars for {soundQualityItems.Count} files side-by-side so perceptual differences are immediately visible.",
             }
         );
     }

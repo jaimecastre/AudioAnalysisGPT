@@ -13,6 +13,7 @@ import { AgentActivityIndicator } from './AgentActivityIndicator';
 import { AgentResponseBlockRenderer } from './AgentResponseBlockRenderer';
 import { SpectrumOverlayBlockView } from './SpectrumOverlayBlockView';
 import { InvestigationBlockView } from './InvestigationBlockView';
+import { SoundQualityComparisonBlockView } from './SoundQualityComparisonBlockView';
 import { ATTACH_ACCEPT } from '../utils/chatAttachments';
 import { AgentAnswerPanel } from './AgentAnswerPanel';
 import type { MentionCandidate } from '../hooks/useChatInput';
@@ -89,6 +90,7 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
   const hasBlocks = message.blocks && message.blocks.length > 0;
   const hasOverlayBlocks = message.overlayBlocks && message.overlayBlocks.length > 0;
   const hasInvestigationBlocks = message.investigationBlocks && message.investigationBlocks.length > 0;
+  const hasSoundQualityComparisonBlocks = (message.soundQualityComparisonBlocks?.length ?? 0) > 0;
 
   return (
     <div className={`${styles.messageWrapper} ${styles.assistant}`}>
@@ -112,6 +114,9 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
             ))}
             {hasInvestigationBlocks && message.investigationBlocks?.map((invBlock, index) => (
               <InvestigationBlockView key={index} block={invBlock} />
+            ))}
+            {hasSoundQualityComparisonBlocks && message.soundQualityComparisonBlocks?.map((sqBlock, index) => (
+              <SoundQualityComparisonBlockView key={index} block={sqBlock} />
             ))}
             {message.toolSteps && message.toolSteps.length > 0 && (
               <AnalysisSteps steps={message.toolSteps} confidence={message.confidence} />

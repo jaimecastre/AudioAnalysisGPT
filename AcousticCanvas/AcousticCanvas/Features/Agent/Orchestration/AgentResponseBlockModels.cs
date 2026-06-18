@@ -222,6 +222,36 @@ public sealed record InvestigationBlock : AgentResponseBlock
     public required IReadOnlyList<InvestigationSignal> Signals { get; init; }
 }
 
+// ─── Phase 5 (remaining): Sound Quality Comparison Block ──────────────────
+
+/// <summary>
+/// One file entry in a sound-quality side-by-side comparison.
+/// Metric values are embedded directly — no result store fetch needed.
+/// </summary>
+public sealed record SoundQualitySignal
+{
+    public required string FileId { get; init; }
+    public required string FileName { get; init; }
+    public required double LoudnessSone { get; init; }
+    public required double SharpnessAcum { get; init; }
+    public required double RoughnessAsper { get; init; }
+}
+
+/// <summary>
+/// Deterministic multi-file sound-quality comparison block — built by ExpertVisualizationPlanner,
+/// never by the LLM. Renders loudness / sharpness / roughness bars per file side-by-side.
+/// </summary>
+public sealed record SoundQualityComparisonBlock : AgentResponseBlock
+{
+    public override string BlockType => "soundQualityComparison";
+
+    /// <summary>Title shown above the comparison card</summary>
+    public required string Title { get; init; }
+
+    /// <summary>Ordered list of files to compare</summary>
+    public required IReadOnlyList<SoundQualitySignal> Signals { get; init; }
+}
+
 /// <summary>
 /// Preview data for inline mini-chart in AnalysisViewBlock
 /// </summary>

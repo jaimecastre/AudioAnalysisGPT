@@ -1,7 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import { DEFAULT_MODEL_ID } from '../utils/agentModels';
-import type { AgentResponseBlock, InvestigationBlock, SpectrumOverlayBlock, VisualizationPlanTrace } from '../services/agentAskService';
+import type { AgentResponseBlock, InvestigationBlock, SoundQualityComparisonBlock, SpectrumOverlayBlock, VisualizationPlanTrace } from '../services/agentAskService';
 
 export type ChatRole = 'user' | 'assistant' | 'tool_call' | 'plan';
 
@@ -40,6 +40,7 @@ export type ChatMessage = {
   blocks?: AgentResponseBlock[];
   overlayBlocks?: SpectrumOverlayBlock[] | null;
   investigationBlocks?: InvestigationBlock[] | null;
+  soundQualityComparisonBlocks?: SoundQualityComparisonBlock[] | null;
   activityLabel?: AgentActivityLabel;
   visualizationPlanTrace?: VisualizationPlanTrace | null;
 };
@@ -82,6 +83,7 @@ const chatSlice = createSlice({
       blocks?: AgentResponseBlock[];
       overlayBlocks?: SpectrumOverlayBlock[] | null;
       investigationBlocks?: InvestigationBlock[] | null;
+      soundQualityComparisonBlocks?: SoundQualityComparisonBlock[] | null;
       visualizationPlanTrace?: VisualizationPlanTrace | null;
     }>) => {
       const existingMessage = state.messages.find((message) => message.id === action.payload.id);
@@ -99,6 +101,7 @@ const chatSlice = createSlice({
         existingMessage.blocks = action.payload.blocks;
         existingMessage.overlayBlocks = action.payload.overlayBlocks;
         existingMessage.investigationBlocks = action.payload.investigationBlocks;
+        existingMessage.soundQualityComparisonBlocks = action.payload.soundQualityComparisonBlocks;
         existingMessage.visualizationPlanTrace = action.payload.visualizationPlanTrace;
       } else {
         state.messages.push({
@@ -116,6 +119,7 @@ const chatSlice = createSlice({
           blocks: action.payload.blocks,
           overlayBlocks: action.payload.overlayBlocks,
           investigationBlocks: action.payload.investigationBlocks,
+          soundQualityComparisonBlocks: action.payload.soundQualityComparisonBlocks,
           visualizationPlanTrace: action.payload.visualizationPlanTrace,
         });
       }

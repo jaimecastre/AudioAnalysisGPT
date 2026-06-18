@@ -21,7 +21,8 @@ public record AgentAskResult(
     List<JsonElement>? Blocks,
     IReadOnlyDictionary<string, PlotHints>? PlotHintsMap = null,
     IReadOnlyList<SpectrumOverlayBlock>? OverlayBlocks = null,
-    IReadOnlyList<InvestigationBlock>? InvestigationBlocks = null
+    IReadOnlyList<InvestigationBlock>? InvestigationBlocks = null,
+    IReadOnlyList<SoundQualityComparisonBlock>? SoundQualityComparisonBlocks = null
 );
 
 public record AgentEvidenceItem(

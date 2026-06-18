@@ -168,6 +168,81 @@ public static class AgentResultBuilder
         return overlayBlocks;
     }
 
+    public static IReadOnlyList<SoundQualityComparisonBlock> BuildSoundQualityComparisonBlocks(
+        VisualizationPlan visualizationPlan,
+        EvidencePackage evidencePackage
+    )
+    {
+        var comparisonBlocks = new List<SoundQualityComparisonBlock>();
+
+        foreach (var planBlock in visualizationPlan.Blocks)
+        {
+            if (planBlock.BlockType != "soundQualityComparison")
+            {
+                continue;
+            }
+
+            if (planBlock.SourceEvidenceIds is null || planBlock.SourceEvidenceIds.Count < 2)
+            {
+                continue;
+            }
+
+            var signals = new List<SoundQualitySignal>();
+
+            foreach (var evidenceId in planBlock.SourceEvidenceIds)
+            {
+                var evidence = evidencePackage.KeyEvidence.FirstOrDefault(
+                    item => item.EvidenceId == evidenceId
+                );
+
+                if (evidence is null)
+                {
+                    continue;
+                }
+
+                if (!evidence.Data.TryGetValue("loudnessSone", out var loudnessRaw) || loudnessRaw is not double loudnessSone)
+                {
+                    continue;
+                }
+
+                if (!evidence.Data.TryGetValue("sharpnessAcum", out var sharpnessRaw) || sharpnessRaw is not double sharpnessAcum)
+                {
+                    continue;
+                }
+
+                if (!evidence.Data.TryGetValue("roughnessAsper", out var roughnessRaw) || roughnessRaw is not double roughnessAsper)
+                {
+                    continue;
+                }
+
+                evidence.Data.TryGetValue("fileId", out var fileIdRaw);
+                evidence.Data.TryGetValue("fileName", out var fileNameRaw);
+
+                signals.Add(new SoundQualitySignal
+                {
+                    FileId = fileIdRaw as string ?? evidenceId,
+                    FileName = fileNameRaw as string ?? evidenceId,
+                    LoudnessSone = loudnessSone,
+                    SharpnessAcum = sharpnessAcum,
+                    RoughnessAsper = roughnessAsper,
+                });
+            }
+
+            if (signals.Count < 2)
+            {
+                continue;
+            }
+
+            comparisonBlocks.Add(new SoundQualityComparisonBlock
+            {
+                Title = "Sound Quality Comparison",
+                Signals = signals,
+            });
+        }
+
+        return comparisonBlocks;
+    }
+
     public static IReadOnlyList<InvestigationBlock> BuildInvestigationBlocks(
         VisualizationPlan visualizationPlan,
         EvidencePackage evidencePackage

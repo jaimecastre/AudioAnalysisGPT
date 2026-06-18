@@ -65,6 +65,153 @@ LLM explains.
 
 ---
 
+## 1.2 AI Copilot Pattern for Acoustic Engineering Workflows
+
+AcousticGPT follows the same high-level pattern emerging in advanced engineering software: an AI layer that wraps a trustworthy deterministic analysis engine, interprets user intent, creates an investigation plan, executes approved tools, checks result quality, explains the evidence, and returns engineering-ready findings. The user drives the investigation; the AI handles the expert setup and interpretation work.
+
+### Expert-tool copilot model
+
+The defining architecture for the product:
+
+- **Deterministic analysis engine** remains the source of numerical truth.
+- **AI interprets** user intent and acoustic question.
+- **AI creates** a structured investigation plan.
+- **Backend tools execute** the actual analysis.
+- **Results are quality-checked**, traced, and explained.
+- **User receives** evidence-based engineering conclusions, not unsupported AI opinions.
+
+The AI should never invent measurements. It should only interpret evidence from:
+
+- uploaded audio files and file metadata,
+- deterministic DSP outputs (level, spectrum, spectrogram, CPB, events),
+- sound-quality metrics,
+- detected events and findings,
+- benchmark comparisons,
+- validated project context.
+
+This is the principle already established in Section 6 as Principle 1 (Evidence Before Explanation) and Principle 2 (Controlled Autonomy). The copilot pattern label makes it easier to communicate the product direction and keep development decisions consistent.
+
+### COMSOL Copilot analogy
+
+COMSOL's AI Copilot is a useful product-pattern reference — not for the physics domain, but for the architecture and workflow:
+
+**COMSOL pattern:**
+- User describes an engineering simulation goal.
+- AI helps set up geometry, materials, boundary conditions, mesh, solver, and postprocessing settings.
+- The simulation is still executed by COMSOL's deterministic physics engine.
+- Results are reviewed, refined, and reported by the engineer.
+
+**AcousticGPT equivalent:**
+- User describes an acoustic or product-sound investigation question.
+- AI helps set up the acoustic investigation: metadata checks, calibration assumptions, FFT/spectrum, CPB/octave bands, sound-quality metrics, event detection, peak detection, benchmark comparison, and report generation.
+- The acoustic evidence is still produced by deterministic backend DSP tools.
+- Results are reviewed, refined, and reported by the acoustic engineer.
+
+The relevant parallel is **the architecture and workflow, not the physics domain**. AcousticGPT does not need FEM, meshing, geometry modeling, or multiphysics simulation. What it shares with COMSOL's copilot pattern is: AI as an expert setup assistant that drives deterministic tools — and is not a replacement for those tools.
+
+### Strategic positioning statement
+
+> **AcousticGPT is an AI copilot for acoustic investigation and product-sound analysis. It wraps deterministic DSP and sound-quality tools with an agent that plans analyses, runs them, checks signal quality, explains evidence, and produces engineering-ready findings.**
+
+### Investigation workflow model
+
+The target end-to-end flow for every user question:
+
+```text
+User question
+  → intent detection
+  → investigation plan
+  → evidence needed
+  → approved tool selection
+  → deterministic DSP execution
+  → evidence package
+  → findings and hypotheses
+  → answer / report with traceability
+  → optional next suggested actions
+```
+
+This flow maps directly onto the existing backend architecture:
+
+```
+AgentPlanner
+  → AgentToolRegistry
+  → ToolExecutionService
+  → EvidencePackageBuilder
+  → AgentResponseValidator
+  → grounded answer + workspace artifacts + investigation trace
+```
+
+The future agent architecture in Section 11 specifies how each step evolves toward an explicit intent classifier, evidence planner, hypothesis ranker, and full investigation trace.
+
+### Automated analysis setup (planned capability)
+
+A key future differentiator is that the agent should help choose analysis settings based on the investigation question and the signal properties — not leave all parameters to the user:
+
+| Setting | Agent responsibility |
+|---------|---------------------|
+| FFT size | Choose based on required frequency resolution and signal length |
+| Window type | Choose based on signal character (stationary vs transient) |
+| Overlap | Choose based on time-resolution requirements |
+| Averaging method | Choose based on stationarity and noise floor |
+| Frequency range | Focus on the investigation-relevant range |
+| Calibration assumption | Acknowledge dBFS vs dB SPL status and state limitations |
+| CPB/octave settings | Choose octave or 1⁄3 octave based on question resolution need |
+| Sound-quality metrics | Choose metrics most relevant to the acoustic question |
+| Comparison method | Choose by similarity type (spectral, psychoacoustic, level-based) |
+
+These choices must be **visible and traceable in the UI** — they are part of the investigation record, not hidden decisions.
+
+**Current state:** Analysis parameters are user-controlled in the Manual Analysis workspace and are included as metadata in all agent tool responses. The agent does not yet propose parameter choices dynamically; that is a Milestone 5 capability.
+
+### Analysis quality checks (planned capability)
+
+Before trusting any analysis result, the agent should verify whether the requested analysis is valid for the given signal:
+
+| Check | Condition | Agent response |
+|-------|-----------|---------------|
+| Signal clipping | ≥0.99 FS samples detected | Warn; clipping affects spectral and SQ accuracy |
+| Signal too short | Duration < minimum for requested analysis | Warn and suggest alternative region or abort |
+| Calibration missing | No calibration metadata | Label all results as relative dBFS; suppress absolute SPL claims |
+| Sample rate insufficient | Sample rate < 2× requested analysis frequency | Warn about Nyquist limitation |
+| Frequency resolution | FFT size too small for requested resolution | Suggest larger FFT or longer time region |
+| File count for comparison | Fewer than 2 files loaded for comparison | Ask user to load a second file |
+| Evidence vs assumption | Any claim not backed by a tool output | Flag explicitly as inferred or assumed |
+
+**Current state:** Clipping detection is implemented in `EventDetectionService` and the `FindingsEngine`. Calibration state is tracked in the signal domain model (`SignalChannel.CalibrationInfo`). Sample rate is returned in metadata. The agent prompt already instructs the agent to acknowledge calibration limitations. An explicit pre-analysis quality gate as a first-class backend component is a Milestone 5 capability.
+
+### Human review and action safety
+
+The agent can propose analysis plans and suggested actions, but actions with irreversible or external consequences require user confirmation. This is already specified in Section 11.6 with four safety levels. Summary:
+
+| Level | Action type | Policy |
+|-------|-------------|--------|
+| 1 | Read-only analysis tools | Automatic |
+| 2 | View/navigation actions | Automatic; visible to user |
+| 3 | Temporary preview actions | Automatic; non-persisted |
+| 4 | Destructive or external actions | Require explicit confirmation |
+
+Examples of Level 4 actions: deleting files, overwriting reports, exporting externally, uploading audio to a third-party service, applying permanent audio processing, or changing project calibration.
+
+### UI implications
+
+The UI should expose the investigation process, not just the conclusion. Users should be able to inspect:
+
+- investigation plan (which tools were selected and why),
+- analyses run (tool list with parameters used),
+- evidence cards (structured per-tool results),
+- plots and metrics,
+- detected findings (severity, type, evidence, suggested next step),
+- confidence and limitations,
+- report-ready conclusions.
+
+Users should be able to ask "why do you say that?" and see the exact evidence behind the answer. The evidence citation system (evidence pills, referenced context panel, workspace artifacts, `ThoughtContainer`) already implements the first slice of this. The `InvestigationTrace` system and future "How I analyzed this" panel are the next steps.
+
+### Scope note
+
+The COMSOL analogy is an architectural and product pattern reference only. AcousticGPT does not require FEM, meshing, geometry modeling, multiphysics simulation, CAD interfaces, or any COMSOL-specific feature. The relevant inspiration is strictly: **AI copilot that plans and drives deterministic analysis tools, makes setup choices visible and traceable, and returns engineering-ready results with full evidence traceability**.
+
+---
+
 # 2. Current State of the Application (Last updated: 2026-06-14)
 
 ## Stack
@@ -202,6 +349,7 @@ SignalChannel {
 | Agent expert plot specification (Generative UI Phase 4) | ✅ Done | `PlotHints` from DSP evidence zoom spectrum canvas to ±2-octave focus window; dashed annotation line marks dominant peak |
 | Agent spectrum overlay (Generative UI Phase 5) | ✅ Done | `SpectrumOverlayBlock` merges 2+ spectrum results into single canvas for direct multi-file comparison |
 | Agent investigation card (Generative UI Phase 6) | ✅ Done | `InvestigationBlock` groups mixed DSP types (spectrum + sound quality, etc.) into one diagnostic card with per-signal mini-previews and expand modal |
+| Agent sound quality comparison block (Generative UI Phase 5 remaining) | ✅ Done | `SoundQualityComparisonBlock` shows loudness/sharpness/roughness bars for ≥2 files side-by-side inline in chat; orange file badges; expand modal |
 | Agent findings investigation | ✅ Done | "Detect findings and issues" suggestion chip → run_findings → FindingsCard with per-finding rows |
 | Agent referenced context panel | ✅ Done | Workspace shows loaded files, active file/selection, analyses used, limitations, and validation warnings |
 | File @mentions in chat | ✅ Done | Autocomplete dropdown |
@@ -1376,8 +1524,9 @@ Agent response composition:
   - `AgentAskResult.OverlayBlocks` carries overlay blocks separately from LLM blocks; wired in both orchestrator paths
   - Frontend: `SpectrumOverlayBlockView` fetches all signal results, merges channels into one `SpectrumCanvas`; rendered in `ChatPanel` after LLM blocks
 - **Phase 5 (remaining):** Multi-File Visualizations (non-spectrum)
-  - Before/after comparisons, channel comparisons, CPB overlays, sound-quality side-by-side
-  - Spectrum overlays, multi-file chart comparison, before/after comparisons, channel comparisons, measured-vs-predicted comparisons, selected time-region comparisons, and source contribution comparisons
+  - ✅ Sound-quality side-by-side: `SoundQualityComparisonBlock` + `SoundQualitySignal` records; `ExpertVisualizationPlanner.AddSoundQualityComparisonBlockWhenUseful` emits block when ≥2 SQ evidence items; `AgentResultBuilder.BuildSoundQualityComparisonBlocks` wired in both orchestrator paths; `SoundQualityComparisonBlockView` renders per-file loudness/sharpness/roughness bars with expand modal; orange file badges distinguish from spectrum (blue)
+  - Before/after comparisons, channel comparisons, CPB overlays
+  - Measured-vs-predicted comparisons, selected time-region comparisons, and source contribution comparisons
 - **Phase 6:** ✅ Multi-Tool Acoustic Investigations
   - `InvestigationBlock` + `InvestigationSignal` records in `AgentResponseBlockModels.cs`
   - `ExpertVisualizationPlanner.AddInvestigationBlockWhenUseful` emits `investigation` plan block when 2+ different viewable DSP types are present

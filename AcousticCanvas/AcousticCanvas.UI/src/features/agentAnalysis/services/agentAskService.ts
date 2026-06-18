@@ -118,6 +118,21 @@ export type AnalysisViewBlock = {
   plotHints?: PlotHints | null;
 };
 
+// Phase 5 (remaining): Sound Quality side-by-side comparison
+export type SoundQualitySignal = {
+  fileId: string;
+  fileName: string;
+  loudnessSone: number;
+  sharpnessAcum: number;
+  roughnessAsper: number;
+};
+
+export type SoundQualityComparisonBlock = {
+  blockType: 'soundQualityComparison';
+  title: string;
+  signals: SoundQualitySignal[];
+};
+
 // Phase 5: Spectrum overlay — multi-file comparison in one chart
 export type OverlaySignal = {
   resultId: string;
@@ -156,7 +171,8 @@ export type AgentResponseBlock =
   | SuggestedActionsBlock
   | AnalysisViewBlock
   | SpectrumOverlayBlock
-  | InvestigationBlock;
+  | InvestigationBlock
+  | SoundQualityComparisonBlock;
 
 export type VisualizationPlanBlockTrace = {
   blockType: string;
@@ -199,6 +215,7 @@ export type AgentAskResponse = {
   plotHintsMap?: Record<string, PlotHints> | null;
   overlayBlocks?: SpectrumOverlayBlock[] | null;
   investigationBlocks?: InvestigationBlock[] | null;
+  soundQualityComparisonBlocks?: SoundQualityComparisonBlock[] | null;
 };
 
 export type AgentConversationTurn = {

@@ -188,6 +188,10 @@ public sealed class AgentOrchestrator(
             visualizationPlan,
             evidencePackage
         );
+        var soundQualityComparisonBlocks = AgentResultBuilder.BuildSoundQualityComparisonBlocks(
+            visualizationPlan,
+            evidencePackage
+        );
 
         return new AgentAskResult(
             ConversationId: conversationId,
@@ -210,7 +214,8 @@ public sealed class AgentOrchestrator(
             Blocks: finalAnswer.Blocks,
             PlotHintsMap: plotHintsLookup.Count > 0 ? plotHintsLookup : null,
             OverlayBlocks: overlayBlocks.Count > 0 ? overlayBlocks : null,
-            InvestigationBlocks: investigationBlocks.Count > 0 ? investigationBlocks : null
+            InvestigationBlocks: investigationBlocks.Count > 0 ? investigationBlocks : null,
+            SoundQualityComparisonBlocks: soundQualityComparisonBlocks.Count > 0 ? soundQualityComparisonBlocks : null
         );
     }
 
@@ -277,6 +282,10 @@ public sealed class AgentOrchestrator(
             visualizationPlan,
             evidencePackage
         );
+        var deterministicSoundQualityComparisonBlocks = AgentResultBuilder.BuildSoundQualityComparisonBlocks(
+            visualizationPlan,
+            evidencePackage
+        );
 
         return new AgentAskResult(
             ConversationId: conversationId,
@@ -296,7 +305,8 @@ public sealed class AgentOrchestrator(
             Blocks: finalAnswer.Blocks,
             PlotHintsMap: deterministicPlotHintsLookup.Count > 0 ? deterministicPlotHintsLookup : null,
             OverlayBlocks: deterministicOverlayBlocks.Count > 0 ? deterministicOverlayBlocks : null,
-            InvestigationBlocks: deterministicInvestigationBlocks.Count > 0 ? deterministicInvestigationBlocks : null
+            InvestigationBlocks: deterministicInvestigationBlocks.Count > 0 ? deterministicInvestigationBlocks : null,
+            SoundQualityComparisonBlocks: deterministicSoundQualityComparisonBlocks.Count > 0 ? deterministicSoundQualityComparisonBlocks : null
         );
     }
 
