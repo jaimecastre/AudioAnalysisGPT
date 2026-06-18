@@ -13,6 +13,7 @@ import type {
   AgentArtifactReport,
 } from '../store/agentWorkspaceSlice';
 import { setActiveMode } from '../../navigation/store/navigationSlice';
+import { InvestigationTimeline } from '../../investigationHistory';
 import { useWorkspaceContext } from '../hooks/useWorkspaceContext';
 import { useArtifactFeed, useArtifactExpanded } from '../hooks/useArtifactFeed';
 import { useRawDataDrawer } from '../hooks/useRawDataDrawer';
@@ -377,6 +378,7 @@ export function AgentWorkspacePanel(): JSX.Element {
           </div>
         ))}
       </div>
+      <InvestigationTimeline />
     </div>
   );
 }

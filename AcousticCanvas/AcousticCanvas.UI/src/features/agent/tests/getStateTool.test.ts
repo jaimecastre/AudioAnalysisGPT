@@ -82,6 +82,7 @@ const emptyState: RootState = {
     status: 'idle',
     error: null,
     showPanel: false,
+    savedFindings: [],
   },
   agentAsk: {
     status: 'idle',
@@ -94,6 +95,12 @@ const emptyState: RootState = {
     error: null,
     isPanelOpen: false,
     showModal: false,
+    progress: null,
+  },
+  investigationHistory: {
+    records: [],
+    focusedRecordId: null,
+    backendRuntimeId: null,
   },
 };
 

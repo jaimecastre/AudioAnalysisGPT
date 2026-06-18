@@ -4,7 +4,7 @@ import {
   IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX,
   IconAlignBoxLeftMiddle, IconPaperclip, IconFileMusic, IconFileText,
   IconPlayerStop, IconUser, IconWaveSquare, IconChartBar, IconFileSearch,
-  IconVolume, IconBrain,
+  IconVolume, IconBrain, IconHistory,
 } from '@tabler/icons-react';
 import type { ToolStep } from '../store/chatSlice';
 import type { ChatMessage } from '../store/chatSlice';
@@ -18,6 +18,8 @@ import { ATTACH_ACCEPT } from '../utils/chatAttachments';
 import { AgentAnswerPanel } from './AgentAnswerPanel';
 import type { MentionCandidate } from '../hooks/useChatInput';
 import { useChatPanel, useSelectionChip } from '../hooks/useChatPanel';
+import { useAppDispatch } from '../../../store/reduxHooks';
+import { recordFocused } from '../../investigationHistory/store/investigationHistorySlice';
 import styles from './ChatPanel.module.scss';
 
 const SUGGESTION_PROMPTS: { text: string; icon: typeof IconWaveSquare }[] = [
@@ -84,6 +86,7 @@ function ThoughtContainer({ message }: { message: ChatMessage }): JSX.Element | 
 }
 
 function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
+  const dispatch = useAppDispatch();
   const parsedText = message.content;
   const isThinkingMessage = message.status === 'thinking';
   const isFailedMessage = message.status === 'failed';
@@ -91,6 +94,15 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
   const hasOverlayBlocks = message.overlayBlocks && message.overlayBlocks.length > 0;
   const hasInvestigationBlocks = message.investigationBlocks && message.investigationBlocks.length > 0;
   const hasSoundQualityComparisonBlocks = (message.soundQualityComparisonBlocks?.length ?? 0) > 0;
+  const hasTraceLink = message.status === 'completed' && !!message.investigationRecordId;
+
+  const handleTraceClick = (): void => {
+    if (!message.investigationRecordId) {
+      return;
+    }
+
+    dispatch(recordFocused(message.investigationRecordId));
+  };
 
   return (
     <div className={`${styles.messageWrapper} ${styles.assistant}`}>
@@ -120,6 +132,17 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
             ))}
             {message.toolSteps && message.toolSteps.length > 0 && (
               <AnalysisSteps steps={message.toolSteps} confidence={message.confidence} />
+            )}
+            {hasTraceLink && (
+              <button
+                type="button"
+                className={styles.traceLinkButton}
+                onClick={handleTraceClick}
+                title="Show investigation trace"
+              >
+                <IconHistory size={11} />
+                trace
+              </button>
             )}
           </>
         )}

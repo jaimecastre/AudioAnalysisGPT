@@ -43,6 +43,7 @@ export type ChatMessage = {
   soundQualityComparisonBlocks?: SoundQualityComparisonBlock[] | null;
   activityLabel?: AgentActivityLabel;
   visualizationPlanTrace?: VisualizationPlanTrace | null;
+  investigationRecordId?: string | null;
 };
 
 interface IChatState {
@@ -85,6 +86,7 @@ const chatSlice = createSlice({
       investigationBlocks?: InvestigationBlock[] | null;
       soundQualityComparisonBlocks?: SoundQualityComparisonBlock[] | null;
       visualizationPlanTrace?: VisualizationPlanTrace | null;
+      investigationRecordId?: string | null;
     }>) => {
       const existingMessage = state.messages.find((message) => message.id === action.payload.id);
       if (existingMessage && existingMessage.role === 'assistant') {
@@ -103,6 +105,7 @@ const chatSlice = createSlice({
         existingMessage.investigationBlocks = action.payload.investigationBlocks;
         existingMessage.soundQualityComparisonBlocks = action.payload.soundQualityComparisonBlocks;
         existingMessage.visualizationPlanTrace = action.payload.visualizationPlanTrace;
+        existingMessage.investigationRecordId = action.payload.investigationRecordId;
       } else {
         state.messages.push({
           id: action.payload.id,
@@ -121,6 +124,7 @@ const chatSlice = createSlice({
           investigationBlocks: action.payload.investigationBlocks,
           soundQualityComparisonBlocks: action.payload.soundQualityComparisonBlocks,
           visualizationPlanTrace: action.payload.visualizationPlanTrace,
+          investigationRecordId: action.payload.investigationRecordId,
         });
       }
       state.isThinking = false;

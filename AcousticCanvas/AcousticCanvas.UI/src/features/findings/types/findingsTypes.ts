@@ -18,6 +18,11 @@ export type Finding = {
   generatedAt: string;
 };
 
+export type SavedFinding = Finding & {
+  fileName: string;
+  savedAt: string;
+};
+
 export type FindingsResult = {
   fileId: string;
   findings: Finding[];

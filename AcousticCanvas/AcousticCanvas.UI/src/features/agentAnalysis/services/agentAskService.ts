@@ -200,6 +200,7 @@ export type InvestigationTrace = {
 
 export type AgentAskResponse = {
   conversationId: string;
+  backendRuntimeId?: string;
   answer: string;
   evidencePackageId: string;
   confidence: 'high' | 'medium' | 'low';

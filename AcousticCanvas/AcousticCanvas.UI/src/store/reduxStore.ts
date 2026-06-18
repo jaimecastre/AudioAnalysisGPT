@@ -10,9 +10,12 @@ import analysisCursorReducer from '../features/analysis/store/analysisCursorSlic
 import { analysisResultsReducer } from '../features/analysis/store/analysisResultsSlice';
 import chatReducer from '../features/agentAnalysis/store/chatSlice';
 import agentWorkspaceReducer from '../features/agentAnalysis/store/agentWorkspaceSlice';
-import findingsReducer from '../features/findings/store/findingsSlice';
+import findingsReducer, { SAVED_FINDINGS_STORAGE_KEY } from '../features/findings/store/findingsSlice';
 import agentAskReducer from '../features/agentAnalysis/store/agentAskSlice';
 import batchBenchmarkReducer from '../features/batchBenchmark/store/batchBenchmarkSlice';
+import investigationHistoryReducer from '../features/investigationHistory/store/investigationHistorySlice';
+
+const LEGACY_INVESTIGATION_HISTORY_STORAGE_KEY = 'acousticcanvas.investigationHistory';
 
 export const store = configureStore({
   reducer: {
@@ -30,7 +33,36 @@ export const store = configureStore({
     findings: findingsReducer,
     agentAsk: agentAskReducer,
     batchBenchmark: batchBenchmarkReducer,
+    investigationHistory: investigationHistoryReducer,
   },
+});
+
+let previousSavedFindings = store.getState().findings.savedFindings;
+
+if (typeof localStorage !== 'undefined') {
+  try {
+    localStorage.removeItem(LEGACY_INVESTIGATION_HISTORY_STORAGE_KEY);
+  } catch {
+    // Ignore storage cleanup failures; timeline records are intentionally session-only now.
+  }
+}
+
+store.subscribe(() => {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  const currentState = store.getState();
+  const currentSavedFindings = currentState.findings.savedFindings;
+
+  if (currentSavedFindings !== previousSavedFindings) {
+    previousSavedFindings = currentSavedFindings;
+    try {
+      localStorage.setItem(SAVED_FINDINGS_STORAGE_KEY, JSON.stringify(currentSavedFindings));
+    } catch {
+      // Persistence is best-effort; Redux state remains the source of truth for the current session.
+    }
+  }
 });
 
 export type RootState = ReturnType<typeof store.getState>;

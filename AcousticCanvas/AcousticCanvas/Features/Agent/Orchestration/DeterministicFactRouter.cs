@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace AcousticCanvas.Features.Agent.Orchestration;
 
 // A deterministic-fact plan tells the orchestrator which backend tool to run and
@@ -65,17 +63,17 @@ public static class DeterministicFactRouter
             return null;
         }
 
-        if (ContainsAnyPhrase(normalized, InterpretivePhrases))
+        if (PhraseMatcher.ContainsAnySubstring(normalized, InterpretivePhrases))
         {
             return null;
         }
 
-        if (ContainsAnyPhrase(normalized, ComparisonPhrases))
+        if (PhraseMatcher.ContainsAnySubstring(normalized, ComparisonPhrases))
         {
             return null;
         }
 
-        if (ContainsAnyPhrase(normalized, SpectralPhrases))
+        if (PhraseMatcher.ContainsAnySubstring(normalized, SpectralPhrases))
         {
             return null;
         }
@@ -116,17 +114,17 @@ public static class DeterministicFactRouter
     {
         var fields = new List<string>();
 
-        if (ContainsWord(normalized, "peak"))
+        if (PhraseMatcher.ContainsWord(normalized, "peak"))
         {
             fields.Add("peak");
         }
 
-        if (ContainsWord(normalized, "rms"))
+        if (PhraseMatcher.ContainsWord(normalized, "rms"))
         {
             fields.Add("rms");
         }
 
-        if (ContainsWord(normalized, "crest"))
+        if (PhraseMatcher.ContainsWord(normalized, "crest"))
         {
             fields.Add("crest");
         }
@@ -141,7 +139,7 @@ public static class DeterministicFactRouter
 
     private static List<string> DetectMetadataFields(string normalized)
     {
-        var wantsFullSummary = ContainsAnyPhrase(normalized, FullMetadataPhrases);
+        var wantsFullSummary = PhraseMatcher.ContainsAnySubstring(normalized, FullMetadataPhrases);
         if (wantsFullSummary)
         {
             return ["fileName", "duration", "sampleRate", "channels", "bitDepth"];
@@ -149,14 +147,14 @@ public static class DeterministicFactRouter
 
         var fields = new List<string>();
 
-        if (ContainsWord(normalized, "filename") || normalized.Contains("file name"))
+        if (PhraseMatcher.ContainsWord(normalized, "filename") || normalized.Contains("file name"))
         {
             fields.Add("fileName");
         }
 
         if (
-            ContainsWord(normalized, "duration")
-            || ContainsWord(normalized, "length")
+            PhraseMatcher.ContainsWord(normalized, "duration")
+            || PhraseMatcher.ContainsWord(normalized, "length")
             || normalized.Contains("how long")
         )
         {
@@ -173,10 +171,10 @@ public static class DeterministicFactRouter
         }
 
         if (
-            ContainsWord(normalized, "channel")
-            || ContainsWord(normalized, "channels")
-            || ContainsWord(normalized, "mono")
-            || ContainsWord(normalized, "stereo")
+            PhraseMatcher.ContainsWord(normalized, "channel")
+            || PhraseMatcher.ContainsWord(normalized, "channels")
+            || PhraseMatcher.ContainsWord(normalized, "mono")
+            || PhraseMatcher.ContainsWord(normalized, "stereo")
         )
         {
             fields.Add("channels");
@@ -192,23 +190,5 @@ public static class DeterministicFactRouter
         }
 
         return fields;
-    }
-
-    private static bool ContainsAnyPhrase(string text, string[] phrases)
-    {
-        foreach (var phrase in phrases)
-        {
-            if (text.Contains(phrase))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static bool ContainsWord(string text, string word)
-    {
-        var pattern = $"\\b{Regex.Escape(word)}\\b";
-        return Regex.IsMatch(text, pattern);
     }
 }

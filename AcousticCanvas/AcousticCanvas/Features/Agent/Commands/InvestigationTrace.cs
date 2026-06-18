@@ -7,6 +7,7 @@ public enum InvestigationPath
 {
     LlmPlanned,
     DeterministicFact,
+    DeterministicVisual,
     MetaQuestion,
     NoFiles,
 }

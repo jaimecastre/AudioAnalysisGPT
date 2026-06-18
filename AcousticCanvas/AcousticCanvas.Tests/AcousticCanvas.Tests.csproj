@@ -25,5 +25,6 @@
 
   <ItemGroup>
     <None Include="AgentBehavior\agent_eval_cases.jsonl" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="AgentEvaluation\agent_answer_eval_cases.jsonl" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

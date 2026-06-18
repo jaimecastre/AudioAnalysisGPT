@@ -18,6 +18,7 @@ import { KeyFindingsSummary } from './KeyFindingsSummary';
 import type { BatchBenchmarkResult } from '../../batchBenchmark';
 import type { AudioFile } from '../../../store/projectState';
 import type { WaveformSelection } from '../../waveform/store/waveformSelectionSlice';
+import type { Finding } from '../../findings/types/findingsTypes';
 import styles from './ActiveSignalCard.module.scss';
 
 interface IToolPanel {
@@ -62,7 +63,7 @@ interface IActiveSignalCardProps {
   onSeek: (timeSeconds: number) => void;
   analysisResult: AnalysisResult | null;
   spectrumResult: SpectrumPointsResponse | null;
-  findings: Array<{ findingId: string; findingType: string; severity: 'low' | 'medium' | 'high'; title: string; description: string }>;
+  findings: Finding[];
 }
 
 export function ActiveSignalCard({

@@ -9,7 +9,8 @@ type FindingSeverity = 'low' | 'medium' | 'high';
 
 interface Finding {
   findingId: string;
-  findingType: string;
+  findingType?: string;
+  type?: string;
   severity: FindingSeverity;
   title: string;
   description: string;
@@ -42,16 +43,17 @@ export function KeyFindingsSummary({
   const mediumSeverityCount = findings.filter((f) => f.severity === 'medium').length;
   const totalIssues = findings.length;
 
-  const hasClipping = findings.some((f) => f.findingType === 'clipping');
-  const hasTonalPeak = findings.some((f) => f.findingType === 'tonal_peak');
-  const hasSilence = findings.some((f) => f.findingType === 'silence');
+  const getFindingType = (finding: Finding): string => finding.findingType ?? finding.type ?? '';
+  const hasClipping = findings.some((f) => getFindingType(f) === 'clipping');
+  const hasTonalPeak = findings.some((f) => getFindingType(f) === 'tonal_peak');
+  const hasSilence = findings.some((f) => getFindingType(f) === 'silence');
 
   const rmsDb = analysisResult?.level?.channels[0]?.rmsDb;
   const peakDb = analysisResult?.level?.channels[0]?.peakDb;
   const crestFactorDb = analysisResult?.level?.channels[0]?.crestFactorDb;
   const peakFrequencyHz = spectrumResult?.channels[0]?.peakFrequencyHz;
 
-  const hasHighCrestFactor = crestFactorDb && crestFactorDb > 15;
+  const hasHighCrestFactor = crestFactorDb !== null && crestFactorDb !== undefined && crestFactorDb > 15;
 
   const issueSummary = totalIssues > 0
     ? `${totalIssues} issue${totalIssues !== 1 ? 's' : ''} found`
@@ -97,7 +99,7 @@ export function KeyFindingsSummary({
             </Group>
 
             {/* Key metrics */}
-            {rmsDb !== undefined && (
+            {rmsDb !== null && rmsDb !== undefined && (
               <Tooltip label="RMS level (average loudness)">
                 <Group gap={4} align="center" className={styles.metric}>
                   <IconVolume size={16} className={styles.metricIcon} />
@@ -111,7 +113,7 @@ export function KeyFindingsSummary({
               </Tooltip>
             )}
 
-            {peakDb !== undefined && (
+            {peakDb !== null && peakDb !== undefined && (
               <Tooltip label="Peak level (maximum amplitude)">
                 <Group gap={4} align="center" className={styles.metric}>
                   <IconChartBar size={16} className={styles.metricIcon} />
@@ -125,7 +127,7 @@ export function KeyFindingsSummary({
               </Tooltip>
             )}
 
-            {peakFrequencyHz !== undefined && (
+            {peakFrequencyHz !== null && peakFrequencyHz !== undefined && (
               <Tooltip label="Dominant frequency">
                 <Group gap={4} align="center" className={styles.metric}>
                   <IconWaveSine size={16} className={styles.metricIcon} />
@@ -153,7 +155,7 @@ export function KeyFindingsSummary({
                 View Findings
               </Button>
             )}
-            {rmsDb !== undefined && (
+            {rmsDb !== null && rmsDb !== undefined && (
               <Button
                 size="xs"
                 variant="light"

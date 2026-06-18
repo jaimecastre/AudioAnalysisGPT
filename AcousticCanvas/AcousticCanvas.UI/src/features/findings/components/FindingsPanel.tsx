@@ -1,7 +1,17 @@
 import type { JSX, KeyboardEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { Loader, Modal, Text } from '@mantine/core';
-import { IconAlertTriangle, IconAlertCircle, IconInfoCircle, IconX, IconBulb, IconChevronRight } from '@tabler/icons-react';
+import {
+  IconAlertTriangle,
+  IconAlertCircle,
+  IconInfoCircle,
+  IconX,
+  IconBulb,
+  IconChevronRight,
+  IconBookmark,
+  IconBookmarkFilled,
+  IconChevronDown,
+} from '@tabler/icons-react';
 import { useAppSelector, useAppDispatch } from '../../../store/reduxHooks';
 import {
   runFindingsAnalysis,
@@ -9,9 +19,13 @@ import {
   findingsStatusSelector,
   findingsErrorSelector,
   findingsClear,
+  findingPinned,
+  findingUnpinned,
+  savedFindingsSelector,
 } from '../store/findingsSlice';
-import type { Finding, FindingSeverity } from '../types/findingsTypes';
+import type { Finding, FindingSeverity, SavedFinding } from '../types/findingsTypes';
 import { agentPromptPrefillSet, setActiveMode } from '../../navigation/store/navigationSlice';
+import { projectFilesSelector } from '../../project/store/projectSlice';
 import styles from './FindingsPanel.module.scss';
 
 interface IFindingsPanelProps {
@@ -84,7 +98,17 @@ function formatTimestamp(value: string): string {
   });
 }
 
-function FindingCard({ finding, onOpen }: { finding: Finding; onOpen: (finding: Finding) => void }): JSX.Element {
+function FindingCard({
+  finding,
+  isPinned,
+  onOpen,
+  onPin,
+}: {
+  finding: Finding;
+  isPinned: boolean;
+  onOpen: (finding: Finding) => void;
+  onPin: (finding: Finding) => void;
+}): JSX.Element {
   const evidenceEntries = Object.entries(finding.evidence);
   const previewEvidence = evidenceEntries.slice(0, 3);
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
@@ -111,6 +135,18 @@ function FindingCard({ finding, onOpen }: { finding: Finding; onOpen: (finding: 
         <div className={styles.findingCardBadges}>
           <SeverityBadge severity={finding.severity} />
           <ConfidenceBadge confidence={finding.confidence} />
+          <button
+            type="button"
+            className={`${styles.findingPinButton} ${isPinned ? styles.findingPinButtonActive : ''}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPin(finding);
+            }}
+            aria-label={isPinned ? 'Finding already saved' : `Save finding ${finding.title}`}
+            title={isPinned ? 'Saved' : 'Save finding'}
+          >
+            {isPinned ? <IconBookmarkFilled size={13} /> : <IconBookmark size={13} />}
+          </button>
           <IconChevronRight size={13} className={styles.findingCardOpenIcon} />
         </div>
       </div>
@@ -128,6 +164,65 @@ function FindingCard({ finding, onOpen }: { finding: Finding; onOpen: (finding: 
         </div>
       )}
     </div>
+  );
+}
+
+function SavedFindingsSection({
+  savedFindings,
+  onOpen,
+  onUnpin,
+}: {
+  savedFindings: SavedFinding[];
+  onOpen: (finding: Finding) => void;
+  onUnpin: (findingId: string) => void;
+}): JSX.Element {
+  const [isOpen, setIsOpen] = useState(savedFindings.length > 0);
+
+  return (
+    <section className={styles.savedFindingsSection}>
+      <button
+        type="button"
+        className={styles.savedFindingsHeader}
+        onClick={() => setIsOpen((current) => !current)}
+        aria-expanded={isOpen}
+      >
+        {isOpen ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}
+        <span className={styles.savedFindingsTitle}>Saved Findings</span>
+        <span className={styles.savedFindingsCount}>{savedFindings.length}</span>
+      </button>
+
+      {isOpen && (
+        <div className={styles.savedFindingsList}>
+          {savedFindings.length === 0 ? (
+            <p className={styles.savedFindingsEmpty}>Pinned findings will stay here after refresh.</p>
+          ) : (
+            savedFindings.map((finding) => (
+              <div key={finding.findingId} className={styles.savedFindingRow}>
+                <button
+                  type="button"
+                  className={styles.savedFindingMain}
+                  onClick={() => onOpen(finding)}
+                >
+                  <span className={styles.savedFindingTitle}>{finding.title}</span>
+                  <span className={styles.savedFindingMeta}>
+                    {finding.fileName} · {formatTimestamp(finding.savedAt)}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.savedFindingUnpinButton}
+                  onClick={() => onUnpin(finding.findingId)}
+                  aria-label={`Unpin ${finding.title}`}
+                  title="Unpin finding"
+                >
+                  <IconX size={11} />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -211,6 +306,8 @@ export const FindingsPanel = ({ fileId, onClose }: IFindingsPanelProps): JSX.Ele
   const findingsResult = useAppSelector(findingsResultSelector);
   const findingsStatus = useAppSelector(findingsStatusSelector);
   const findingsError = useAppSelector(findingsErrorSelector);
+  const savedFindings = useAppSelector(savedFindingsSelector);
+  const projectFiles = useAppSelector(projectFilesSelector);
   const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null);
   const [lastSeenFileId, setLastSeenFileId] = useState(fileId);
 
@@ -232,6 +329,16 @@ export const FindingsPanel = ({ fileId, onClose }: IFindingsPanelProps): JSX.Ele
   const hasResult = findingsStatus === 'complete' && findingsResult !== null;
   const hasNoFindings = hasResult && findingsResult!.findingCount === 0;
   const hasFindings = hasResult && findingsResult!.findingCount > 0;
+  const currentFileName = projectFiles.find((file) => file.id === fileId)?.name ?? fileId ?? 'Unknown file';
+  const savedFindingIds = new Set(savedFindings.map((finding) => finding.findingId));
+
+  const handlePinFinding = (finding: Finding): void => {
+    if (savedFindingIds.has(finding.findingId)) {
+      return;
+    }
+
+    dispatch(findingPinned({ finding, fileName: currentFileName }));
+  };
 
   return (
     <div className={styles.findingsPanel}>
@@ -289,10 +396,22 @@ export const FindingsPanel = ({ fileId, onClose }: IFindingsPanelProps): JSX.Ele
         {hasFindings && (
           <div className={styles.findingsList}>
             {findingsResult!.findings.map((finding) => (
-              <FindingCard key={finding.findingId} finding={finding} onOpen={setSelectedFinding} />
+              <FindingCard
+                key={finding.findingId}
+                finding={finding}
+                isPinned={savedFindingIds.has(finding.findingId)}
+                onOpen={setSelectedFinding}
+                onPin={handlePinFinding}
+              />
             ))}
           </div>
         )}
+
+        <SavedFindingsSection
+          savedFindings={savedFindings}
+          onOpen={setSelectedFinding}
+          onUnpin={(findingId) => dispatch(findingUnpinned(findingId))}
+        />
       </div>
 
       <FindingDetailDialog

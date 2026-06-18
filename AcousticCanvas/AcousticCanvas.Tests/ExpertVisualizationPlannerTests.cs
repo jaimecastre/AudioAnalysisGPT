@@ -331,6 +331,49 @@ public sealed class ExpertVisualizationPlannerTests
     }
 
     [Fact]
+    public void SpectrumOverlaySuppressesIndividualSpectrumAnalysisViews()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Compare the two spectra.",
+            selectedFileIds: ["file1", "file2"],
+            analysesRun: ["run_spectrum"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_file1",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "a.wav",
+                        ["resultId"] = "spectrum_aaa",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_file2",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file2",
+                        ["fileName"] = "b.wav",
+                        ["resultId"] = "spectrum_bbb",
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        Assert.Single(plan.Blocks, block => block.BlockType == "spectrumOverlay");
+        Assert.DoesNotContain(
+            plan.Blocks,
+            block => block.BlockType == "analysisView" && block.ViewType == "spectrum"
+        );
+    }
+
+    [Fact]
     public void SingleSpectrumEvidenceItemDoesNotProduceSpectrumOverlayPlanBlock()
     {
         var evidencePackage = BuildEvidencePackage(
@@ -683,6 +726,55 @@ public sealed class ExpertVisualizationPlannerTests
         Assert.Equal(2, comparisonBlock.SourceEvidenceIds.Count);
         Assert.Contains("ev_sq_fileA", comparisonBlock.SourceEvidenceIds);
         Assert.Contains("ev_sq_fileB", comparisonBlock.SourceEvidenceIds);
+    }
+
+    [Fact]
+    public void SoundQualityComparisonSuppressesIndividualSoundQualityAnalysisViews()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Compare the sound quality of both files.",
+            selectedFileIds: ["fileA", "fileB"],
+            analysesRun: ["run_sound_quality_metrics"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_fileA",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "fileA",
+                        ["fileName"] = "a.wav",
+                        ["loudnessSone"] = 20.0,
+                        ["sharpnessAcum"] = 1.5,
+                        ["roughnessAsper"] = 0.02,
+                        ["resultId"] = "sound_quality_a",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_fileB",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "fileB",
+                        ["fileName"] = "b.wav",
+                        ["loudnessSone"] = 15.0,
+                        ["sharpnessAcum"] = 1.7,
+                        ["roughnessAsper"] = 0.03,
+                        ["resultId"] = "sound_quality_b",
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        Assert.Single(plan.Blocks, block => block.BlockType == "soundQualityComparison");
+        Assert.DoesNotContain(
+            plan.Blocks,
+            block => block.BlockType == "analysisView" && block.ViewType == "soundQuality"
+        );
     }
 
     [Fact]

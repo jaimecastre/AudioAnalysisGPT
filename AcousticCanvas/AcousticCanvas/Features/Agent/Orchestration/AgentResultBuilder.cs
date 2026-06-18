@@ -99,6 +99,108 @@ public static class AgentResultBuilder
         return blocks.Count > 0 ? blocks : null;
     }
 
+    public static List<JsonElement>? SuppressBlocksCoveredByCombinedVisuals(
+        List<JsonElement>? finalAnswerBlocks,
+        VisualizationPlan visualizationPlan,
+        EvidencePackage evidencePackage
+    )
+    {
+        if (finalAnswerBlocks is null || finalAnswerBlocks.Count == 0)
+        {
+            return finalAnswerBlocks;
+        }
+
+        var coveredEvidenceIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var coveredResultIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var hasSpectrumOverlay = false;
+
+        foreach (var planBlock in visualizationPlan.Blocks)
+        {
+            if (planBlock.BlockType is not ("spectrumOverlay" or "soundQualityComparison"))
+            {
+                continue;
+            }
+
+            if (planBlock.BlockType == "spectrumOverlay")
+            {
+                hasSpectrumOverlay = true;
+            }
+
+            if (planBlock.SourceEvidenceIds is null)
+            {
+                continue;
+            }
+
+            foreach (var evidenceId in planBlock.SourceEvidenceIds)
+            {
+                coveredEvidenceIds.Add(evidenceId);
+
+                if (
+                    TryFindEvidence(evidencePackage, evidenceId, out var evidence)
+                    && TryGetResultId(evidence, out var resultId)
+                )
+                {
+                    coveredResultIds.Add(resultId);
+                }
+            }
+        }
+
+        if (coveredEvidenceIds.Count == 0 && coveredResultIds.Count == 0 && !hasSpectrumOverlay)
+        {
+            return finalAnswerBlocks;
+        }
+
+        var filteredBlocks = new List<JsonElement>();
+        foreach (var block in finalAnswerBlocks)
+        {
+            if (ShouldSuppressBlockCoveredByCombinedVisual(block, coveredEvidenceIds, coveredResultIds, hasSpectrumOverlay))
+            {
+                continue;
+            }
+
+            filteredBlocks.Add(block);
+        }
+
+        return filteredBlocks.Count > 0 ? filteredBlocks : null;
+    }
+
+    private static bool ShouldSuppressBlockCoveredByCombinedVisual(
+        JsonElement block,
+        HashSet<string> coveredEvidenceIds,
+        HashSet<string> coveredResultIds,
+        bool hasSpectrumOverlay
+    )
+    {
+        if (!block.TryGetProperty("blockType", out var blockTypeElement))
+        {
+            return false;
+        }
+
+        var blockType = blockTypeElement.GetString();
+        if (blockType == "spectrumChart" && hasSpectrumOverlay)
+        {
+            return true;
+        }
+
+        if (blockType != "analysisView")
+        {
+            return false;
+        }
+
+        if (
+            block.TryGetProperty("sourceEvidenceId", out var sourceEvidenceIdElement)
+            && sourceEvidenceIdElement.GetString() is { Length: > 0 } sourceEvidenceId
+            && coveredEvidenceIds.Contains(sourceEvidenceId)
+        )
+        {
+            return true;
+        }
+
+        return block.TryGetProperty("resultId", out var resultIdElement)
+            && resultIdElement.GetString() is { Length: > 0 } resultId
+            && coveredResultIds.Contains(resultId);
+    }
+
     public static IReadOnlyList<SpectrumOverlayBlock> BuildSpectrumOverlayBlocks(
         VisualizationPlan visualizationPlan,
         EvidencePackage evidencePackage
@@ -122,33 +224,21 @@ public static class AgentResultBuilder
 
             foreach (var evidenceId in planBlock.SourceEvidenceIds)
             {
-                var evidence = evidencePackage.KeyEvidence.FirstOrDefault(
-                    item => item.EvidenceId == evidenceId
-                );
-
-                if (evidence is null)
+                if (
+                    !TryFindEvidence(evidencePackage, evidenceId, out var evidence)
+                    || !TryGetResultId(evidence, out var resultId)
+                )
                 {
                     continue;
                 }
 
-                if (!evidence.Data.TryGetValue("resultId", out var resultIdRaw))
-                {
-                    continue;
-                }
-
-                if (resultIdRaw is not string resultId || string.IsNullOrWhiteSpace(resultId))
-                {
-                    continue;
-                }
-
-                evidence.Data.TryGetValue("fileId", out var fileIdRaw);
-                evidence.Data.TryGetValue("fileName", out var fileNameRaw);
+                var fileIdentity = GetEvidenceFileIdentity(evidence, evidenceId, resultId);
 
                 signals.Add(new OverlaySignal
                 {
                     ResultId = resultId,
-                    FileId = fileIdRaw as string ?? evidenceId,
-                    FileName = fileNameRaw as string ?? resultId,
+                    FileId = fileIdentity.FileId,
+                    FileName = fileIdentity.FileName,
                     PlotHints = ExpertVisualizationPlanner.BuildPlotHintsFor(evidence),
                 });
             }
@@ -191,11 +281,7 @@ public static class AgentResultBuilder
 
             foreach (var evidenceId in planBlock.SourceEvidenceIds)
             {
-                var evidence = evidencePackage.KeyEvidence.FirstOrDefault(
-                    item => item.EvidenceId == evidenceId
-                );
-
-                if (evidence is null)
+                if (!TryFindEvidence(evidencePackage, evidenceId, out var evidence))
                 {
                     continue;
                 }
@@ -215,13 +301,12 @@ public static class AgentResultBuilder
                     continue;
                 }
 
-                evidence.Data.TryGetValue("fileId", out var fileIdRaw);
-                evidence.Data.TryGetValue("fileName", out var fileNameRaw);
+                var fileIdentity = GetEvidenceFileIdentity(evidence, evidenceId, evidenceId);
 
                 signals.Add(new SoundQualitySignal
                 {
-                    FileId = fileIdRaw as string ?? evidenceId,
-                    FileName = fileNameRaw as string ?? evidenceId,
+                    FileId = fileIdentity.FileId,
+                    FileName = fileIdentity.FileName,
                     LoudnessSone = loudnessSone,
                     SharpnessAcum = sharpnessAcum,
                     RoughnessAsper = roughnessAsper,
@@ -266,21 +351,10 @@ public static class AgentResultBuilder
 
             foreach (var evidenceId in planBlock.SourceEvidenceIds)
             {
-                var evidence = evidencePackage.KeyEvidence.FirstOrDefault(
-                    item => item.EvidenceId == evidenceId
-                );
-
-                if (evidence is null)
-                {
-                    continue;
-                }
-
-                if (!evidence.Data.TryGetValue("resultId", out var resultIdRaw))
-                {
-                    continue;
-                }
-
-                if (resultIdRaw is not string resultId || string.IsNullOrWhiteSpace(resultId))
+                if (
+                    !TryFindEvidence(evidencePackage, evidenceId, out var evidence)
+                    || !TryGetResultId(evidence, out var resultId)
+                )
                 {
                     continue;
                 }
@@ -291,14 +365,13 @@ public static class AgentResultBuilder
                     continue;
                 }
 
-                evidence.Data.TryGetValue("fileId", out var fileIdRaw);
-                evidence.Data.TryGetValue("fileName", out var fileNameRaw);
+                var fileIdentity = GetEvidenceFileIdentity(evidence, evidenceId, resultId);
 
                 signals.Add(new InvestigationSignal
                 {
                     ResultId = resultId,
-                    FileId = fileIdRaw as string ?? evidenceId,
-                    FileName = fileNameRaw as string ?? resultId,
+                    FileId = fileIdentity.FileId,
+                    FileName = fileIdentity.FileName,
                     ViewType = viewType,
                     PlotHints = ExpertVisualizationPlanner.BuildPlotHintsFor(evidence),
                 });
@@ -333,21 +406,10 @@ public static class AgentResultBuilder
                 continue;
             }
 
-            var matchingEvidence = evidencePackage.KeyEvidence.FirstOrDefault(
-                item => item.EvidenceId == planBlock.SourceEvidenceId
-            );
-
-            if (matchingEvidence is null)
-            {
-                continue;
-            }
-
-            if (!matchingEvidence.Data.TryGetValue("resultId", out var resultIdRaw))
-            {
-                continue;
-            }
-
-            if (resultIdRaw is not string resultId || string.IsNullOrWhiteSpace(resultId))
+            if (
+                !TryFindEvidence(evidencePackage, planBlock.SourceEvidenceId, out var evidence)
+                || !TryGetResultId(evidence, out var resultId)
+            )
             {
                 continue;
             }
@@ -357,6 +419,58 @@ public static class AgentResultBuilder
 
         return lookup;
     }
+
+    private static bool TryFindEvidence(
+        EvidencePackage evidencePackage,
+        string evidenceId,
+        out EvidenceItem evidence
+    )
+    {
+        foreach (var item in evidencePackage.KeyEvidence)
+        {
+            if (string.Equals(item.EvidenceId, evidenceId, StringComparison.OrdinalIgnoreCase))
+            {
+                evidence = item;
+                return true;
+            }
+        }
+
+        evidence = null!;
+        return false;
+    }
+
+    private static bool TryGetResultId(EvidenceItem evidence, out string resultId)
+    {
+        if (
+            evidence.Data.TryGetValue("resultId", out var resultIdRaw)
+            && resultIdRaw is string resultIdString
+            && !string.IsNullOrWhiteSpace(resultIdString)
+        )
+        {
+            resultId = resultIdString;
+            return true;
+        }
+
+        resultId = string.Empty;
+        return false;
+    }
+
+    private static EvidenceFileIdentity GetEvidenceFileIdentity(
+        EvidenceItem evidence,
+        string fallbackFileId,
+        string fallbackFileName
+    )
+    {
+        evidence.Data.TryGetValue("fileId", out var fileIdRaw);
+        evidence.Data.TryGetValue("fileName", out var fileNameRaw);
+
+        return new EvidenceFileIdentity(
+            FileId: fileIdRaw as string ?? fallbackFileId,
+            FileName: fileNameRaw as string ?? fallbackFileName
+        );
+    }
+
+    private sealed record EvidenceFileIdentity(string FileId, string FileName);
 
     private static AgentResponseBlock? ParseBlock(JsonElement element)
     {

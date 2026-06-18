@@ -320,4 +320,145 @@ public class AgentResponseBlockSerializationTests
         Assert.Equal(3, chartBlock.FrequenciesHz.Count);
         Assert.Equal(200.0, chartBlock.PeakFrequencyHz);
     }
+
+    [Fact]
+    public void SuppressBlocksCoveredByCombinedVisuals_RemovesSpectrumAnalysisViewsCoveredByOverlay()
+    {
+        var blocks = new List<JsonElement>
+        {
+            JsonSerializer.SerializeToElement(
+                new
+                {
+                    blockType = "analysisView",
+                    viewType = "spectrum",
+                    resultId = "spectrum_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    fileId = "file-1",
+                    fileName = "a.wav",
+                    title = "Spectrum Analysis",
+                    summary = new { statusText = "Complete", statusIndicator = "success" },
+                },
+                JsonOptions
+            ),
+            JsonSerializer.SerializeToElement(
+                new { blockType = "markdown", content = "Keep this text." },
+                JsonOptions
+            ),
+        };
+        var evidencePackage = BuildSpectrumOverlayEvidencePackage();
+        var visualizationPlan = BuildSpectrumOverlayVisualizationPlan();
+
+        var filteredBlocks = AgentResultBuilder.SuppressBlocksCoveredByCombinedVisuals(
+            blocks,
+            visualizationPlan,
+            evidencePackage
+        );
+
+        Assert.NotNull(filteredBlocks);
+        var block = Assert.Single(filteredBlocks!);
+        Assert.Equal("markdown", block.GetProperty("blockType").GetString());
+    }
+
+    [Fact]
+    public void SuppressBlocksCoveredByCombinedVisuals_RemovesSpectrumChartsWhenOverlayExists()
+    {
+        var blocks = new List<JsonElement>
+        {
+            JsonSerializer.SerializeToElement(
+                new
+                {
+                    blockType = "spectrumChart",
+                    fileId = "file-1",
+                    fileName = "a.wav",
+                    frequenciesHz = new[] { 100.0, 200.0 },
+                    magnitudesDb = new[] { 50.0, 45.0 },
+                },
+                JsonOptions
+            ),
+            JsonSerializer.SerializeToElement(
+                new
+                {
+                    blockType = "analysisView",
+                    viewType = "cpb",
+                    resultId = "cpb_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    fileId = "file-1",
+                    fileName = "a.wav",
+                    summary = new { statusText = "Complete", statusIndicator = "success" },
+                },
+                JsonOptions
+            ),
+        };
+        var evidencePackage = BuildSpectrumOverlayEvidencePackage();
+        var visualizationPlan = BuildSpectrumOverlayVisualizationPlan();
+
+        var filteredBlocks = AgentResultBuilder.SuppressBlocksCoveredByCombinedVisuals(
+            blocks,
+            visualizationPlan,
+            evidencePackage
+        );
+
+        Assert.NotNull(filteredBlocks);
+        var block = Assert.Single(filteredBlocks!);
+        Assert.Equal("analysisView", block.GetProperty("blockType").GetString());
+        Assert.Equal("cpb", block.GetProperty("viewType").GetString());
+    }
+
+    private static EvidencePackage BuildSpectrumOverlayEvidencePackage()
+    {
+        return new EvidencePackage
+        {
+            EvidencePackageId = "pkg-1",
+            UserQuestion = "compare the spectrum of the different files",
+            SelectedFileIds = ["file-1", "file-2"],
+            AnalysesRun = ["run_spectrum"],
+            KeyEvidence =
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_file1",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file-1",
+                        ["fileName"] = "a.wav",
+                        ["resultId"] = "spectrum_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_file2",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file-2",
+                        ["fileName"] = "b.wav",
+                        ["resultId"] = "spectrum_cccccccccccccccccccccccccccccccc",
+                    },
+                },
+            ],
+            Limitations = [],
+        };
+    }
+
+    private static VisualizationPlan BuildSpectrumOverlayVisualizationPlan()
+    {
+        return new VisualizationPlan
+        {
+            PrimaryEvidenceType = "spectrum",
+            Blocks =
+            [
+                new VisualizationPlanBlock
+                {
+                    BlockType = "markdown",
+                    Reason = "Summarize measured evidence.",
+                },
+                new VisualizationPlanBlock
+                {
+                    BlockType = "spectrumOverlay",
+                    SourceEvidenceId = "ev_spectrum_file1",
+                    SourceEvidenceIds = ["ev_spectrum_file1", "ev_spectrum_file2"],
+                    Reason = "Overlay spectrum results.",
+                },
+            ],
+        };
+    }
 }

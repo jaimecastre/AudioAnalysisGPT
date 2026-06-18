@@ -27,6 +27,11 @@ import { chatSelectedModelSelector } from '../store/chatSlice';
 import { findingsArtifactAdded, toolResultArtifactAdded } from '../store/agentWorkspaceSlice';
 import type { FindingItem } from '../store/agentWorkspaceSlice';
 import { createToolResultArtifactDrafts } from '../utils/agentToolArtifacts';
+import {
+  backendRuntimeObserved,
+  recordAdded,
+} from '../../investigationHistory/store/investigationHistorySlice';
+import { shouldCreateInvestigationRecord } from '../../investigationHistory/utils/investigationRecordDraft';
 
 function mergeBlocksWithPlotHints(
   blocks: AgentResponseBlock[] | undefined,
@@ -48,6 +53,15 @@ function mergeBlocksWithPlotHints(
 
     return { ...block, plotHints: hints };
   });
+}
+
+function summarizeAnswer(answer: string): string {
+  const trimmedAnswer = answer.trim();
+  if (trimmedAnswer.length <= 520) {
+    return trimmedAnswer;
+  }
+
+  return `${trimmedAnswer.slice(0, 517)}...`;
 }
 
 const TOOL_TITLES: Record<string, string> = {
@@ -121,7 +135,27 @@ export function useAgentAsk() {
       );
 
       dispatch(agentAskSucceeded(agentResponse));
+      dispatch(backendRuntimeObserved(agentResponse.backendRuntimeId));
       dispatch(assistantActivityUpdated({ id: assistantMessageId, activityLabel: 'building_results' }));
+
+      const investigationRecordId = shouldCreateInvestigationRecord(agentResponse)
+        ? crypto.randomUUID()
+        : null;
+      if (investigationRecordId !== null) {
+        dispatch(recordAdded({
+          id: investigationRecordId,
+          question,
+          timestamp: agentResponse.investigationTrace?.timestampUtc ?? new Date().toISOString(),
+          toolsRun: agentResponse.toolExecutions
+            .filter((execution) => execution.status === 'completed')
+            .map((execution) => execution.toolName),
+          confidence: agentResponse.confidence,
+          answer: summarizeAnswer(agentResponse.answer),
+          traceId: agentResponse.investigationTrace?.conversationId ?? agentResponse.conversationId,
+          limitations: agentResponse.limitations,
+          plannedTools: agentResponse.plannedTools,
+        }));
+      }
 
       if (agentResponse.plannedTools?.length) {
         dispatch(planBubbleReceived({
@@ -196,6 +230,7 @@ export function useAgentAsk() {
         investigationBlocks: agentResponse.investigationBlocks ?? null,
         soundQualityComparisonBlocks: agentResponse.soundQualityComparisonBlocks ?? null,
         visualizationPlanTrace: agentResponse.investigationTrace?.visualizationPlan ?? null,
+        investigationRecordId,
       }));
       dispatch(agentThinkingFinished());
     } catch (err) {

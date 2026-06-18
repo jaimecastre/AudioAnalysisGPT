@@ -19,7 +19,7 @@ public static class ExpertVisualizationPlanner
         AddSoundQualityComparisonBlockWhenUseful(evidencePackage, blocks);
         AddSpectrumOverlayBlockWhenUseful(evidencePackage, blocks);
         AddInvestigationBlockWhenUseful(evidencePackage, blocks);
-        AddEvidenceViewBlocks(evidencePackage, blocks);
+        AddEvidenceViewBlocks(evidencePackage, blocks, BuildCoveredComparisonEvidenceIds(blocks));
         AddRankingBlockWhenUseful(evidencePackage, blocks);
 
         var primaryEvidenceType = DeterminePrimaryEvidenceType(evidencePackage);
@@ -29,11 +29,17 @@ public static class ExpertVisualizationPlanner
 
     private static void AddEvidenceViewBlocks(
         EvidencePackage evidencePackage,
-        List<VisualizationPlanBlock> blocks
+        List<VisualizationPlanBlock> blocks,
+        HashSet<string> coveredComparisonEvidenceIds
     )
     {
         foreach (var evidenceItem in evidencePackage.KeyEvidence)
         {
+            if (coveredComparisonEvidenceIds.Contains(evidenceItem.EvidenceId))
+            {
+                continue;
+            }
+
             var viewType = MapEvidenceTypeToViewType(evidenceItem.Type);
             if (viewType is null)
             {
@@ -59,6 +65,33 @@ public static class ExpertVisualizationPlanner
                 }
             );
         }
+    }
+
+    private static HashSet<string> BuildCoveredComparisonEvidenceIds(
+        IReadOnlyList<VisualizationPlanBlock> blocks
+    )
+    {
+        var coveredEvidenceIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var block in blocks)
+        {
+            if (block.BlockType is not ("spectrumOverlay" or "soundQualityComparison"))
+            {
+                continue;
+            }
+
+            if (block.SourceEvidenceIds is null)
+            {
+                continue;
+            }
+
+            foreach (var sourceEvidenceId in block.SourceEvidenceIds)
+            {
+                coveredEvidenceIds.Add(sourceEvidenceId);
+            }
+        }
+
+        return coveredEvidenceIds;
     }
 
     private static void AddInvestigationBlockWhenUseful(

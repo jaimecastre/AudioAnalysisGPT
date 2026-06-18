@@ -81,6 +81,17 @@ public sealed class AgentOrchestrator(
             );
         }
 
+        var deterministicVisualPlan = DeterministicVisualRouter.TryRoute(command.Question);
+        if (deterministicVisualPlan is not null && command.SelectedFileIds.Count > 0)
+        {
+            return await AnswerDeterministicVisualRequestAsync(
+                conversationId,
+                command,
+                deterministicVisualPlan,
+                cancellationToken
+            );
+        }
+
         // Step 1: Resolve file names for the selected file IDs.
         var selectedFileNames = ResolveFileNames(command.SelectedFileIds);
 
@@ -119,24 +130,13 @@ public sealed class AgentOrchestrator(
         var validatedToolRequests = FilterToAllowedTools(requestedTools);
 
         // Step 5: Execute all allowed tools.
-        var toolExecutionOutputs = new List<ToolExecutionOutput>();
-        foreach (var toolRequest in validatedToolRequests)
-        {
-            var toolOutput = await toolExecutionService.ExecuteToolAsync(
-                toolRequest,
-                cancellationToken
-            );
-            toolExecutionOutputs.Add(toolOutput);
-        }
+        var toolExecutionOutputs = await ExecuteToolRequestsAsync(
+            validatedToolRequests,
+            cancellationToken
+        );
 
         // Step 6: Build the evidence package from tool outputs.
-        var evidencePackage = EvidencePackageBuilder.Build(
-            command.Question,
-            command.SelectedFileIds,
-            selectedFileNames,
-            toolExecutionOutputs
-        );
-        var visualizationPlan = ExpertVisualizationPlanner.Plan(evidencePackage);
+        var evidencePackage = BuildEvidencePackage(command, toolExecutionOutputs);
 
         // Step 7: Generate the final grounded answer from the evidence package.
         var finalAnswer = await agentPlanner.GenerateFinalAnswerAsync(
@@ -149,27 +149,155 @@ public sealed class AgentOrchestrator(
         // Step 8: Validate the final answer.
         var validationResult = AgentResponseValidator.Validate(finalAnswer, evidencePackage);
 
-        // Step 9: Build and return the result.
-        var toolExecutionRecords = AgentResultBuilder.BuildToolExecutionRecords(
-            toolExecutionOutputs
+        return BuildEvidenceBackedAgentAskResult(
+            conversationId,
+            InvestigationPath.LlmPlanned,
+            evidencePackage,
+            finalAnswer,
+            validatedToolRequests,
+            toolExecutionOutputs,
+            plannedToolNames,
+            plannerReason,
+            validationResult.HasWarning,
+            mergeEvidenceLimitations: true
         );
-        var toolResultsData = AgentResultBuilder.BuildToolResultsData(toolExecutionOutputs);
-        var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(
-            finalAnswer.Answer,
-            finalAnswer.EvidenceReferences,
-            evidencePackage
+    }
+
+    private async Task<AgentAskResult> AnswerDeterministicVisualRequestAsync(
+        string conversationId,
+        AgentAskCommand command,
+        DeterministicVisualPlan visualPlan,
+        CancellationToken cancellationToken
+    )
+    {
+        var toolRequests = BuildDeterministicVisualToolRequests(visualPlan, command.SelectedFileIds);
+        var toolExecutionOutputs = await ExecuteToolRequestsAsync(
+            toolRequests,
+            cancellationToken
+        );
+        var evidencePackage = BuildEvidencePackage(command, toolExecutionOutputs);
+
+        var finalAnswer = await agentPlanner.GenerateFinalAnswerAsync(
+            command.Question,
+            evidencePackage,
+            cancellationToken,
+            command.ModelOverride
         );
 
-        var plannedToolTraces = AgentResultBuilder.BuildPlannedToolTraces(validatedToolRequests);
+        var validationResult = AgentResponseValidator.Validate(finalAnswer, evidencePackage);
+        return BuildEvidenceBackedAgentAskResult(
+            conversationId,
+            InvestigationPath.DeterministicVisual,
+            evidencePackage,
+            finalAnswer,
+            toolRequests,
+            toolExecutionOutputs,
+            visualPlan.ToolNames,
+            visualPlan.Reason,
+            validationResult.HasWarning,
+            mergeEvidenceLimitations: true
+        );
+    }
+
+    private static List<PlannerToolRequest> BuildDeterministicVisualToolRequests(
+        DeterministicVisualPlan visualPlan,
+        IReadOnlyList<string> selectedFileIds
+    )
+    {
+        var toolRequests = new List<PlannerToolRequest>();
+        foreach (var toolName in visualPlan.ToolNames)
+        {
+            if (toolName == "run_event_detection")
+            {
+                foreach (var fileId in selectedFileIds)
+                {
+                    toolRequests.Add(
+                        new PlannerToolRequest
+                        {
+                            Name = toolName,
+                            Arguments = new Dictionary<string, object?>
+                            {
+                                ["fileId"] = fileId,
+                                ["kind"] = "clipping",
+                            },
+                        }
+                    );
+                }
+
+                continue;
+            }
+
+            toolRequests.Add(
+                new PlannerToolRequest
+                {
+                    Name = toolName,
+                    Arguments = new Dictionary<string, object?> { ["fileIds"] = selectedFileIds },
+                }
+            );
+        }
+
+        return toolRequests;
+    }
+
+    private async Task<AgentAskResult> AnswerDeterministicFactAsync(
+        string conversationId,
+        AgentAskCommand command,
+        DeterministicFactPlan deterministicPlan,
+        CancellationToken cancellationToken
+    )
+    {
+        var toolRequest = new PlannerToolRequest
+        {
+            Name = deterministicPlan.ToolName,
+            Arguments = new Dictionary<string, object?> { ["fileIds"] = command.SelectedFileIds },
+        };
+
+        var toolExecutionOutputs = await ExecuteToolRequestsAsync([toolRequest], cancellationToken);
+        var evidencePackage = BuildEvidencePackage(command, toolExecutionOutputs);
+        var finalAnswer = DeterministicAnswerWriter.Write(deterministicPlan, evidencePackage);
+
+        return BuildEvidenceBackedAgentAskResult(
+            conversationId,
+            InvestigationPath.DeterministicFact,
+            evidencePackage,
+            finalAnswer,
+            [],
+            toolExecutionOutputs,
+            [deterministicPlan.ToolName],
+            plannerReason: null,
+            validationWarning: false,
+            mergeEvidenceLimitations: false
+        );
+    }
+
+    private AgentAskResult BuildEvidenceBackedAgentAskResult(
+        string conversationId,
+        InvestigationPath investigationPath,
+        EvidencePackage evidencePackage,
+        FinalAnswerResponse finalAnswer,
+        List<PlannerToolRequest> plannedToolTraceRequests,
+        List<ToolExecutionOutput> toolExecutionOutputs,
+        IReadOnlyList<string> plannedToolNames,
+        string? plannerReason,
+        bool validationWarning,
+        bool mergeEvidenceLimitations
+    )
+    {
+        var visualizationPlan = ExpertVisualizationPlanner.Plan(evidencePackage);
+        var toolExecutionRecords = AgentResultBuilder.BuildToolExecutionRecords(toolExecutionOutputs);
+        var toolResultsData = AgentResultBuilder.BuildToolResultsData(toolExecutionOutputs);
+        var answer = finalAnswer.Answer;
+
+        var plannedToolTraces = AgentResultBuilder.BuildPlannedToolTraces(plannedToolTraceRequests);
         var toolExecutionTraces = AgentResultBuilder.BuildToolExecutionTraces(toolExecutionOutputs);
 
         var investigationTrace = AgentResultBuilder.BuildInvestigationTrace(
             conversationId,
-            command.Question,
-            InvestigationPath.LlmPlanned,
+            evidencePackage.UserQuestion,
+            investigationPath,
             plannedToolTraces,
             toolExecutionTraces,
-            answerWithEmbeddedTokens,
+            answer,
             finalAnswer.Confidence,
             visualizationPlan
         );
@@ -192,26 +320,33 @@ public sealed class AgentOrchestrator(
             visualizationPlan,
             evidencePackage
         );
+        var responseBlocks = AgentResultBuilder.SuppressBlocksCoveredByCombinedVisuals(
+            finalAnswer.Blocks,
+            visualizationPlan,
+            evidencePackage
+        );
 
         return new AgentAskResult(
             ConversationId: conversationId,
-            Answer: answerWithEmbeddedTokens,
+            Answer: answer,
             EvidencePackageId: evidencePackage.EvidencePackageId,
             EvidenceReferences: finalAnswer.EvidenceReferences,
             EvidenceItems: AgentResultBuilder.BuildEvidenceItems(evidencePackage),
             Confidence: finalAnswer.Confidence,
-            Limitations: AgentResultBuilder.MergeAndDeduplicate(
-                finalAnswer.Limitations,
-                evidencePackage.Limitations
-            ),
+            Limitations: mergeEvidenceLimitations
+                ? AgentResultBuilder.MergeAndDeduplicate(
+                    finalAnswer.Limitations,
+                    evidencePackage.Limitations
+                )
+                : finalAnswer.Limitations,
             SuggestedNextSteps: finalAnswer.SuggestedNextSteps,
             ToolExecutions: toolExecutionRecords,
-            ValidationWarning: validationResult.HasWarning,
+            ValidationWarning: validationWarning,
             ToolResultsData: toolResultsData,
             PlannedTools: plannedToolNames,
             PlannerReason: plannerReason,
             InvestigationTrace: investigationTrace,
-            Blocks: finalAnswer.Blocks,
+            Blocks: responseBlocks,
             PlotHintsMap: plotHintsLookup.Count > 0 ? plotHintsLookup : null,
             OverlayBlocks: overlayBlocks.Count > 0 ? overlayBlocks : null,
             InvestigationBlocks: investigationBlocks.Count > 0 ? investigationBlocks : null,
@@ -219,94 +354,35 @@ public sealed class AgentOrchestrator(
         );
     }
 
-    private async Task<AgentAskResult> AnswerDeterministicFactAsync(
-        string conversationId,
-        AgentAskCommand command,
-        DeterministicFactPlan deterministicPlan,
+    private async Task<List<ToolExecutionOutput>> ExecuteToolRequestsAsync(
+        List<PlannerToolRequest> toolRequests,
         CancellationToken cancellationToken
     )
     {
-        var toolRequest = new PlannerToolRequest
+        var toolExecutionOutputs = new List<ToolExecutionOutput>();
+        foreach (var toolRequest in toolRequests)
         {
-            Name = deterministicPlan.ToolName,
-            Arguments = new Dictionary<string, object?> { ["fileIds"] = command.SelectedFileIds },
-        };
+            var toolOutput = await toolExecutionService.ExecuteToolAsync(
+                toolRequest,
+                cancellationToken
+            );
+            toolExecutionOutputs.Add(toolOutput);
+        }
 
-        var toolOutput = await toolExecutionService.ExecuteToolAsync(
-            toolRequest,
-            cancellationToken
-        );
+        return toolExecutionOutputs;
+    }
 
+    private EvidencePackage BuildEvidencePackage(
+        AgentAskCommand command,
+        List<ToolExecutionOutput> toolExecutionOutputs
+    )
+    {
         var selectedFileNames = ResolveFileNames(command.SelectedFileIds);
-        var evidencePackage = EvidencePackageBuilder.Build(
+        return EvidencePackageBuilder.Build(
             command.Question,
             command.SelectedFileIds,
             selectedFileNames,
-            [toolOutput]
-        );
-        var visualizationPlan = ExpertVisualizationPlanner.Plan(evidencePackage);
-
-        var finalAnswer = DeterministicAnswerWriter.Write(deterministicPlan, evidencePackage);
-        var toolExecutionRecords = AgentResultBuilder.BuildToolExecutionRecords([toolOutput]);
-        var toolResultsData = AgentResultBuilder.BuildToolResultsData([toolOutput]);
-        var answerWithEmbeddedTokens = EmbedEvidenceTokensInAnswer(
-            finalAnswer.Answer,
-            finalAnswer.EvidenceReferences,
-            evidencePackage
-        );
-
-        var toolExecutionTraces = AgentResultBuilder.BuildToolExecutionTraces([toolOutput]);
-
-        var investigationTrace = AgentResultBuilder.BuildInvestigationTrace(
-            conversationId,
-            command.Question,
-            InvestigationPath.DeterministicFact,
-            [],
-            toolExecutionTraces,
-            answerWithEmbeddedTokens,
-            finalAnswer.Confidence,
-            visualizationPlan
-        );
-
-        investigationTraceStore.Store(investigationTrace);
-
-        var deterministicPlotHintsLookup = AgentResultBuilder.BuildPlotHintsLookup(
-            visualizationPlan,
-            evidencePackage
-        );
-        var deterministicOverlayBlocks = AgentResultBuilder.BuildSpectrumOverlayBlocks(
-            visualizationPlan,
-            evidencePackage
-        );
-        var deterministicInvestigationBlocks = AgentResultBuilder.BuildInvestigationBlocks(
-            visualizationPlan,
-            evidencePackage
-        );
-        var deterministicSoundQualityComparisonBlocks = AgentResultBuilder.BuildSoundQualityComparisonBlocks(
-            visualizationPlan,
-            evidencePackage
-        );
-
-        return new AgentAskResult(
-            ConversationId: conversationId,
-            Answer: answerWithEmbeddedTokens,
-            EvidencePackageId: evidencePackage.EvidencePackageId,
-            EvidenceReferences: finalAnswer.EvidenceReferences,
-            EvidenceItems: AgentResultBuilder.BuildEvidenceItems(evidencePackage),
-            Confidence: finalAnswer.Confidence,
-            Limitations: finalAnswer.Limitations,
-            SuggestedNextSteps: finalAnswer.SuggestedNextSteps,
-            ToolExecutions: toolExecutionRecords,
-            ValidationWarning: false,
-            ToolResultsData: toolResultsData,
-            PlannedTools: [deterministicPlan.ToolName],
-            PlannerReason: null,
-            InvestigationTrace: investigationTrace,
-            Blocks: finalAnswer.Blocks,
-            PlotHintsMap: deterministicPlotHintsLookup.Count > 0 ? deterministicPlotHintsLookup : null,
-            OverlayBlocks: deterministicOverlayBlocks.Count > 0 ? deterministicOverlayBlocks : null,
-            InvestigationBlocks: deterministicInvestigationBlocks.Count > 0 ? deterministicInvestigationBlocks : null,
-            SoundQualityComparisonBlocks: deterministicSoundQualityComparisonBlocks.Count > 0 ? deterministicSoundQualityComparisonBlocks : null
+            toolExecutionOutputs
         );
     }
 
@@ -351,58 +427,6 @@ public sealed class AgentOrchestrator(
         }
 
         return allowedTools;
-    }
-
-    private static string EmbedEvidenceTokensInAnswer(
-        string answer,
-        IReadOnlyList<string> evidenceReferences,
-        EvidencePackage evidencePackage
-    )
-    {
-        if (evidenceReferences.Count == 0)
-        {
-            return answer;
-        }
-
-        var tokenStrings = new List<string>();
-
-        foreach (var referenceId in evidenceReferences)
-        {
-            var matchingEvidenceItem = evidencePackage.KeyEvidence.FirstOrDefault(item =>
-                item.EvidenceId == referenceId
-            );
-
-            if (matchingEvidenceItem is null)
-            {
-                continue;
-            }
-
-            var frontendType = MapBackendTypeToFrontendType(matchingEvidenceItem.Type);
-            var shortId = referenceId.Length > 8 ? referenceId[^8..] : referenceId;
-            tokenStrings.Add($"[{frontendType}:{shortId}]");
-        }
-
-        if (tokenStrings.Count == 0)
-        {
-            return answer;
-        }
-
-        return answer;
-    }
-
-    private static string MapBackendTypeToFrontendType(string backendType)
-    {
-        return backendType switch
-        {
-            "basic_metrics" => "analysis_result",
-            "event_detection" => "find_result",
-            "spectrum" => "analysis_result",
-            "spectrogram" => "analysis_result",
-            "cpb" => "analysis_result",
-            "sound_quality" => "analysis_result",
-            "metadata" => "analysis_result",
-            _ => "analysis_result",
-        };
     }
 
     private static bool AppearsToBeAudioAnalysisQuestion(string question)

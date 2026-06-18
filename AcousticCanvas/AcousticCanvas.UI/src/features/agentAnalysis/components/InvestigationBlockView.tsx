@@ -24,9 +24,9 @@ function buildAnalysisViewBlock(signal: InvestigationSignal) {
     resultId: signal.resultId,
     fileId: signal.fileId,
     fileName: signal.fileName,
-    summary: { primaryMetric: null, secondaryMetrics: null, statusText: null, statusIndicator: null },
+    summary: {},
     title: `${signal.viewType} — ${signal.fileName}`,
-    preview: null,
+    preview: undefined,
     plotHints: signal.plotHints ?? null,
   };
 }

@@ -3,6 +3,11 @@ using AcousticCanvas.Features.Agent.Orchestration;
 
 namespace AcousticCanvas.Features.Agent.Commands;
 
+public static class BackendRuntimeIdentity
+{
+    public static string Id { get; } = "runtime_" + Guid.NewGuid().ToString("N")[..12];
+}
+
 public record AgentAskResult(
     string ConversationId,
     string Answer,
@@ -23,7 +28,10 @@ public record AgentAskResult(
     IReadOnlyList<SpectrumOverlayBlock>? OverlayBlocks = null,
     IReadOnlyList<InvestigationBlock>? InvestigationBlocks = null,
     IReadOnlyList<SoundQualityComparisonBlock>? SoundQualityComparisonBlocks = null
-);
+)
+{
+    public string BackendRuntimeId { get; init; } = BackendRuntimeIdentity.Id;
+}
 
 public record AgentEvidenceItem(
     string EvidenceId,
