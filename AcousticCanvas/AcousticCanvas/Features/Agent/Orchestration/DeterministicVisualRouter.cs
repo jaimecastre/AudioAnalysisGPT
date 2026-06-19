@@ -121,5 +121,4 @@ public static class DeterministicVisualRouter
             Reason = "Generic graph request routed to visual analysis tools.",
         };
     }
-
 }

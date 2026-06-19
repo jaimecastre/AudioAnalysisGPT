@@ -72,7 +72,10 @@ public sealed class ToolExecutionService(
                     toolRequest.Arguments,
                     cancellationToken
                 ),
-                AgentToolNames.RunCpb => await ExecuteRunCpbAsync(toolRequest.Arguments, cancellationToken),
+                AgentToolNames.RunCpb => await ExecuteRunCpbAsync(
+                    toolRequest.Arguments,
+                    cancellationToken
+                ),
                 AgentToolNames.RunSoundQualityMetrics => await ExecuteRunSoundQualityMetricsAsync(
                     toolRequest.Arguments,
                     cancellationToken
@@ -434,7 +437,11 @@ public sealed class ToolExecutionService(
 
         var resultData = new { results = spectrumResults, storedResultIds };
         var primaryResultId = storedResultIds.FirstOrDefault() ?? $"spectrum_{Guid.NewGuid():N}";
-        return ToolOutputBuilder.BuildSuccessOutput(AgentToolNames.RunSpectrum, primaryResultId, resultData);
+        return ToolOutputBuilder.BuildSuccessOutput(
+            AgentToolNames.RunSpectrum,
+            primaryResultId,
+            resultData
+        );
     }
 
     private async Task<ToolExecutionOutput> ExecuteRunCpbAsync(

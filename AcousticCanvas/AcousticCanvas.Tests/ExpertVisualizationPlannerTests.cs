@@ -143,8 +143,10 @@ public sealed class ExpertVisualizationPlannerTests
 
         foreach (var block in plan.Blocks)
         {
-            Assert.False(string.IsNullOrWhiteSpace(block.Reason),
-                $"Block '{block.BlockType}' has no reason.");
+            Assert.False(
+                string.IsNullOrWhiteSpace(block.Reason),
+                $"Block '{block.BlockType}' has no reason."
+            );
         }
     }
 
@@ -215,7 +217,11 @@ public sealed class ExpertVisualizationPlannerTests
                 {
                     EvidenceId = "ev_spectrum_fileA",
                     Type = "spectrum",
-                    Data = new Dictionary<string, object?> { ["fileId"] = "fileA", ["resultId"] = "sp_a" },
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "fileA",
+                        ["resultId"] = "sp_a",
+                    },
                 },
             ]
         );
@@ -261,8 +267,9 @@ public sealed class ExpertVisualizationPlannerTests
 
         Assert.NotNull(trace.VisualizationPlan);
         Assert.True(trace.VisualizationPlan!.Blocks.Count > 0);
-        Assert.All(trace.VisualizationPlan.Blocks, block =>
-            Assert.False(string.IsNullOrWhiteSpace(block.Reason))
+        Assert.All(
+            trace.VisualizationPlan.Blocks,
+            block => Assert.False(string.IsNullOrWhiteSpace(block.Reason))
         );
         var analysisViewBlock = Assert.Single(
             trace.VisualizationPlan.Blocks,
@@ -434,7 +441,10 @@ public sealed class ExpertVisualizationPlannerTests
         );
 
         var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
-        var overlays = AgentVisualizationBlockBuilder.BuildSpectrumOverlayBlocks(plan, evidencePackage);
+        var overlays = AgentVisualizationBlockBuilder.BuildSpectrumOverlayBlocks(
+            plan,
+            evidencePackage
+        );
 
         Assert.Single(overlays);
         Assert.Equal("Spectrum Comparison", overlays[0].Title);
@@ -558,7 +568,10 @@ public sealed class ExpertVisualizationPlannerTests
         );
 
         var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
-        var investigations = AgentVisualizationBlockBuilder.BuildInvestigationBlocks(plan, evidencePackage);
+        var investigations = AgentVisualizationBlockBuilder.BuildInvestigationBlocks(
+            plan,
+            evidencePackage
+        );
 
         Assert.Single(investigations);
         Assert.Equal(2, investigations[0].Signals.Count);
@@ -720,7 +733,9 @@ public sealed class ExpertVisualizationPlannerTests
 
         var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
 
-        var comparisonBlock = plan.Blocks.FirstOrDefault(b => b.BlockType == "soundQualityComparison");
+        var comparisonBlock = plan.Blocks.FirstOrDefault(b =>
+            b.BlockType == "soundQualityComparison"
+        );
         Assert.NotNull(comparisonBlock);
         Assert.NotNull(comparisonBlock.SourceEvidenceIds);
         Assert.Equal(2, comparisonBlock.SourceEvidenceIds.Count);
@@ -845,7 +860,10 @@ public sealed class ExpertVisualizationPlannerTests
         );
 
         var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
-        var blocks = AgentVisualizationBlockBuilder.BuildSoundQualityComparisonBlocks(plan, evidencePackage);
+        var blocks = AgentVisualizationBlockBuilder.BuildSoundQualityComparisonBlocks(
+            plan,
+            evidencePackage
+        );
 
         Assert.Single(blocks);
         Assert.Equal("Sound Quality Comparison", blocks[0].Title);

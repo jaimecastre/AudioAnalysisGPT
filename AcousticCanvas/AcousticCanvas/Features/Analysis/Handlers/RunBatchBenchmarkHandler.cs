@@ -8,7 +8,10 @@ public class RunBatchBenchmarkHandler
 {
     private const int MaxConcurrentFindingsPipelines = 16;
 
-    private readonly SemaphoreSlim _findingsSemaphore = new(MaxConcurrentFindingsPipelines, MaxConcurrentFindingsPipelines);
+    private readonly SemaphoreSlim _findingsSemaphore = new(
+        MaxConcurrentFindingsPipelines,
+        MaxConcurrentFindingsPipelines
+    );
 
     public override async Task<BatchBenchmarkResult> ExecuteAsync(
         RunBatchBenchmarkCommand command,

@@ -167,10 +167,7 @@ public sealed class AgentAnswerEvaluatorTests
                 {
                     EvidenceId = "ev_spectrum_file1",
                     Type = "spectrum",
-                    Data = new Dictionary<string, object?>
-                    {
-                        ["peakFrequencyHz"] = 1000.0,
-                    },
+                    Data = new Dictionary<string, object?> { ["peakFrequencyHz"] = 1000.0 },
                 }
             ),
             FinalAnswer = new FinalAnswerResponse
@@ -200,10 +197,7 @@ public sealed class AgentAnswerEvaluatorTests
                 {
                     EvidenceId = "ev_spectrum_file1",
                     Type = "spectrum",
-                    Data = new Dictionary<string, object?>
-                    {
-                        ["peakFrequencyHz"] = 1000.0,
-                    },
+                    Data = new Dictionary<string, object?> { ["peakFrequencyHz"] = 1000.0 },
                 }
             ),
             FinalAnswer = new FinalAnswerResponse
@@ -234,10 +228,7 @@ public sealed class AgentAnswerEvaluatorTests
                 {
                     EvidenceId = "ev_sound_quality_file1",
                     Type = "sound_quality",
-                    Data = new Dictionary<string, object?>
-                    {
-                        ["loudnessSone"] = 10.0,
-                    },
+                    Data = new Dictionary<string, object?> { ["loudnessSone"] = 10.0 },
                 }
             ),
             FinalAnswer = new FinalAnswerResponse
@@ -255,9 +246,7 @@ public sealed class AgentAnswerEvaluatorTests
         Assert.Contains(result.Failures, failure => failure.Contains("LUFS"));
     }
 
-    private static EvidencePackage BuildEvidencePackage(
-        params EvidenceItem[] evidenceItems
-    )
+    private static EvidencePackage BuildEvidencePackage(params EvidenceItem[] evidenceItems)
     {
         return BuildEvidencePackage(evidenceItems, []);
     }
