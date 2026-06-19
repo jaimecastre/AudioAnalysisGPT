@@ -19,6 +19,7 @@ import type { BatchBenchmarkResult } from '../../batchBenchmark';
 import type { AudioFile } from '../../../store/projectState';
 import type { WaveformSelection } from '../../waveform/store/waveformSelectionSlice';
 import type { Finding } from '../../findings/types/findingsTypes';
+import type { FindingsStatus } from '../../findings/store/findingsSlice';
 import styles from './ActiveSignalCard.module.scss';
 
 interface IToolPanel {
@@ -64,6 +65,7 @@ interface IActiveSignalCardProps {
   analysisResult: AnalysisResult | null;
   spectrumResult: SpectrumPointsResponse | null;
   findings: Finding[];
+  findingsStatus: FindingsStatus;
 }
 
 export function ActiveSignalCard({
@@ -95,6 +97,7 @@ export function ActiveSignalCard({
   analysisResult,
   spectrumResult,
   findings,
+  findingsStatus,
   onPromptOpenFindings,
   onPromptAddSpectrum,
   onPromptAddSoundQuality,
@@ -125,6 +128,7 @@ export function ActiveSignalCard({
         analysisResult={analysisResult}
         spectrumResult={spectrumResult}
         findings={findings}
+        findingsStatus={findingsStatus}
         onViewFindings={onPromptOpenFindings}
         onAnalyzeLoudestRegion={onPromptOpenFindings}
         onInspectSpectrum={onPromptAddSpectrum}

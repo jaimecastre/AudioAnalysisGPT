@@ -98,10 +98,7 @@ public static class AgentAnswerEvaluator
         }
     }
 
-    private static void CheckEvidenceReferences(
-        AgentAnswerEvalCase evalCase,
-        List<string> failures
-    )
+    private static void CheckEvidenceReferences(AgentAnswerEvalCase evalCase, List<string> failures)
     {
         var availableEvidenceIds = new HashSet<string>(
             evalCase.EvidencePackage.KeyEvidence.Select(item => item.EvidenceId),
@@ -120,7 +117,9 @@ public static class AgentAnswerEvaluator
         {
             if (!evalCase.FinalAnswer.EvidenceReferences.Contains(expectedEvidenceRef))
             {
-                failures.Add($"Answer did not reference expected evidence ID '{expectedEvidenceRef}'.");
+                failures.Add(
+                    $"Answer did not reference expected evidence ID '{expectedEvidenceRef}'."
+                );
             }
         }
     }
@@ -169,7 +168,9 @@ public static class AgentAnswerEvaluator
         {
             if (!AnswerOrLimitationsContain(evalCase.FinalAnswer, answer, evidenceLimitation))
             {
-                failures.Add($"Answer did not propagate evidence limitation '{evidenceLimitation}'.");
+                failures.Add(
+                    $"Answer did not propagate evidence limitation '{evidenceLimitation}'."
+                );
             }
         }
     }
@@ -242,7 +243,7 @@ public static class AgentAnswerEvaluator
 
         return finalAnswer.Limitations.Any(limitation =>
             ContainsIgnoreCase(limitation, expectedText)
-                || ContainsIgnoreCase(expectedText, limitation)
+            || ContainsIgnoreCase(expectedText, limitation)
         );
     }
 
@@ -260,7 +261,10 @@ public static class AgentAnswerEvaluator
         {
             var value = double.Parse(match.Groups["value"].Value, CultureInfo.InvariantCulture);
             var unit = NormalizeUnit(match.Groups["unit"].Value);
-            if (unit == "Hz" && match.Groups["unit"].Value.Equals("kHz", StringComparison.OrdinalIgnoreCase))
+            if (
+                unit == "Hz"
+                && match.Groups["unit"].Value.Equals("kHz", StringComparison.OrdinalIgnoreCase)
+            )
             {
                 value *= 1000.0;
             }

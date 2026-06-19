@@ -49,22 +49,72 @@ public class RunFindingsHandler(SignalAnalysisService analysisService)
         var sampleRate = channel.SampleRate;
         var sampleCount = allSamples.Length;
 
-        var clippingEvents = Task.Run(() => AudioEventFinders.FindClippingEvents(
-            allSamples, 0, sampleCount, sampleRate, 0.0), ct);
-        var silenceEvents = Task.Run(() => AudioEventFinders.FindSilenceEvents(
-            allSamples, 0, sampleCount, sampleRate, 0.0), ct);
-        var loudestEvents = Task.Run(() => AudioEventFinders.FindLoudestRegion(
-            allSamples, 0, sampleCount, sampleRate, 0.0), ct);
-        var transientEvents = Task.Run(() => AudioEventFinders.FindTransientEvents(
-            allSamples, 0, sampleCount, sampleRate, 0.0), ct);
+        var clippingEvents = Task.Run(
+            () => AudioEventFinders.FindClippingEvents(allSamples, 0, sampleCount, sampleRate, 0.0),
+            ct
+        );
+        var silenceEvents = Task.Run(
+            () => AudioEventFinders.FindSilenceEvents(allSamples, 0, sampleCount, sampleRate, 0.0),
+            ct
+        );
+        var loudestEvents = Task.Run(
+            () => AudioEventFinders.FindLoudestRegion(allSamples, 0, sampleCount, sampleRate, 0.0),
+            ct
+        );
+        var transientEvents = Task.Run(
+            () =>
+                AudioEventFinders.FindTransientEvents(allSamples, 0, sampleCount, sampleRate, 0.0),
+            ct
+        );
 
-        var allEvents = await Task.WhenAll(clippingEvents, silenceEvents, loudestEvents, transientEvents);
+        var allEvents = await Task.WhenAll(
+            clippingEvents,
+            silenceEvents,
+            loudestEvents,
+            transientEvents
+        );
         var allEventResults = new[]
         {
-            new FindEventsResult { FileId = command.FilePath, Kind = "clipping", Events = allEvents[0], EventCount = allEvents[0].Count, RegionStartSeconds = 0.0, RegionEndSeconds = durationSeconds, RanAt = DateTimeOffset.UtcNow },
-            new FindEventsResult { FileId = command.FilePath, Kind = "silence", Events = allEvents[1], EventCount = allEvents[1].Count, RegionStartSeconds = 0.0, RegionEndSeconds = durationSeconds, RanAt = DateTimeOffset.UtcNow },
-            new FindEventsResult { FileId = command.FilePath, Kind = "loudest", Events = allEvents[2], EventCount = allEvents[2].Count, RegionStartSeconds = 0.0, RegionEndSeconds = durationSeconds, RanAt = DateTimeOffset.UtcNow },
-            new FindEventsResult { FileId = command.FilePath, Kind = "transient", Events = allEvents[3], EventCount = allEvents[3].Count, RegionStartSeconds = 0.0, RegionEndSeconds = durationSeconds, RanAt = DateTimeOffset.UtcNow },
+            new FindEventsResult
+            {
+                FileId = command.FilePath,
+                Kind = "clipping",
+                Events = allEvents[0],
+                EventCount = allEvents[0].Count,
+                RegionStartSeconds = 0.0,
+                RegionEndSeconds = durationSeconds,
+                RanAt = DateTimeOffset.UtcNow,
+            },
+            new FindEventsResult
+            {
+                FileId = command.FilePath,
+                Kind = "silence",
+                Events = allEvents[1],
+                EventCount = allEvents[1].Count,
+                RegionStartSeconds = 0.0,
+                RegionEndSeconds = durationSeconds,
+                RanAt = DateTimeOffset.UtcNow,
+            },
+            new FindEventsResult
+            {
+                FileId = command.FilePath,
+                Kind = "loudest",
+                Events = allEvents[2],
+                EventCount = allEvents[2].Count,
+                RegionStartSeconds = 0.0,
+                RegionEndSeconds = durationSeconds,
+                RanAt = DateTimeOffset.UtcNow,
+            },
+            new FindEventsResult
+            {
+                FileId = command.FilePath,
+                Kind = "transient",
+                Events = allEvents[3],
+                EventCount = allEvents[3].Count,
+                RegionStartSeconds = 0.0,
+                RegionEndSeconds = durationSeconds,
+                RanAt = DateTimeOffset.UtcNow,
+            },
         };
 
         var spectrumAnalysis = SpectrumAnalyzer.Analyze(

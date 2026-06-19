@@ -186,20 +186,20 @@ export const SpectrumPanel = ({
           </Badge>
           {isRunning && <Loader size="xs" color="teal" />}
         </Group>
-        <Group gap={2}>
-          {visibleChannels.length > 0 && (
-            <button
-              type="button"
-              className={styles.askAgentButton}
-              onClick={() => {
-                dispatch(agentPromptPrefillSet('Explain the spectrum analysis for the loaded file. What are the dominant frequencies and any notable tonal peaks or spectral content of interest?'));
-                dispatch(setActiveMode('agent'));
-              }}
-              title="Ask agent about this spectrum"
-            >
-              Explain this spectrum →
-            </button>
-          )}
+        {visibleChannels.length > 0 && (
+          <button
+            type="button"
+            className={styles.askAgentButton}
+            onClick={() => {
+              dispatch(agentPromptPrefillSet('Explain the spectrum analysis for the loaded file. What are the dominant frequencies and any notable tonal peaks or spectral content of interest?'));
+              dispatch(setActiveMode('agent'));
+            }}
+            title="Ask agent about this spectrum"
+          >
+            Explain this spectrum →
+          </button>
+        )}
+        <Group gap={2} style={{ flexShrink: 0 }}>
           <ActionIcon variant="subtle" color="gray" size="sm" onClick={() => setIsSettingsOpen((value) => !value)} aria-label={isSettingsOpen ? 'Close settings' : 'Open settings'}>
             <IconSettings size={13} />
           </ActionIcon>

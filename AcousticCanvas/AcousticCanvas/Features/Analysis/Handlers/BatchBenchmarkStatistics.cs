@@ -25,16 +25,16 @@ public static class BatchBenchmarkStatistics
 
         foreach (var metricKey in MetricKeys)
         {
-            var rankedRows = rows.Select(row => new
-                {
-                    Row = row,
-                    Value = GetMetricValue(row, metricKey),
-                })
+            var withValues = rows.Select(row => (Row: row, Value: GetMetricValue(row, metricKey)))
                 .Where(item => item.Value.HasValue)
+                .ToArray();
+
+            var sorted = withValues
                 .OrderByDescending(item => item.Value!.Value)
                 .ThenBy(item => item.Row.FileName, StringComparer.OrdinalIgnoreCase)
-                .Select(item => item.Row.FileId)
                 .ToArray();
+
+            var rankedRows = sorted.Select(item => item.Row.FileId).ToArray();
 
             rankings.Add(
                 new BatchBenchmarkRanking(
@@ -62,14 +62,11 @@ public static class BatchBenchmarkStatistics
 
         foreach (var metricKey in MetricKeys)
         {
-            var values = rows.Select(row => new
-                {
-                    Row = row,
-                    Value = GetMetricValue(row, metricKey),
-                })
+            var withValues = rows.Select(row => (Row: row, Value: GetMetricValue(row, metricKey)))
                 .Where(item => item.Value.HasValue)
-                .OrderBy(item => item.Value!.Value)
                 .ToArray();
+
+            var values = withValues.OrderBy(item => item.Value!.Value).ToArray();
 
             if (values.Length < MinimumOutlierSampleCount)
             {
@@ -213,11 +210,14 @@ public static class BatchBenchmarkStatistics
         IReadOnlyList<Finding> findings
     )
     {
-        return findings
+        var sorted = findings
             .OrderBy(finding => SeverityRank(finding.Severity))
             .ThenBy(finding => finding.StartSeconds ?? double.MaxValue)
-            .Take(3)
-            .Select(finding => new BatchBenchmarkFindingSummary(
+            .ToArray();
+
+        var top = sorted.Take(3);
+
+        return top.Select(finding => new BatchBenchmarkFindingSummary(
                 FindingId: finding.FindingId,
                 Type: finding.Type,
                 Severity: finding.Severity,

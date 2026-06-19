@@ -117,7 +117,8 @@ public static class AgentResultBuilder
         foreach (var planBlock in visualizationPlan.Blocks)
         {
             if (
-                planBlock.BlockType is not (
+                planBlock.BlockType
+                is not (
                     VisualizationBlockTypes.SpectrumOverlay
                     or VisualizationBlockTypes.SoundQualityComparison
                 )
@@ -141,8 +142,11 @@ public static class AgentResultBuilder
                 coveredEvidenceIds.Add(evidenceId);
 
                 if (
-                    AgentEvidenceLookup.TryFindEvidence(evidencePackage, evidenceId, out var evidence)
-                    && AgentEvidenceLookup.TryGetResultId(evidence, out var resultId)
+                    AgentEvidenceLookup.TryFindEvidence(
+                        evidencePackage,
+                        evidenceId,
+                        out var evidence
+                    ) && AgentEvidenceLookup.TryGetResultId(evidence, out var resultId)
                 )
                 {
                     coveredResultIds.Add(resultId);
@@ -158,7 +162,14 @@ public static class AgentResultBuilder
         var filteredBlocks = new List<JsonElement>();
         foreach (var block in finalAnswerBlocks)
         {
-            if (ShouldSuppressBlockCoveredByCombinedVisual(block, coveredEvidenceIds, coveredResultIds, hasSpectrumOverlay))
+            if (
+                ShouldSuppressBlockCoveredByCombinedVisual(
+                    block,
+                    coveredEvidenceIds,
+                    coveredResultIds,
+                    hasSpectrumOverlay
+                )
+            )
             {
                 continue;
             }
@@ -221,8 +232,11 @@ public static class AgentResultBuilder
             }
 
             if (
-                !AgentEvidenceLookup.TryFindEvidence(evidencePackage, planBlock.SourceEvidenceId, out var evidence)
-                || !AgentEvidenceLookup.TryGetResultId(evidence, out var resultId)
+                !AgentEvidenceLookup.TryFindEvidence(
+                    evidencePackage,
+                    planBlock.SourceEvidenceId,
+                    out var evidence
+                ) || !AgentEvidenceLookup.TryGetResultId(evidence, out var resultId)
             )
             {
                 continue;

@@ -70,7 +70,15 @@ public class RunBatchBenchmarkEndpoint(AudioFileRepository audioFileRepository)
             ).ExecuteAsync(cancellationToken);
 
             var findingsTasks = filePaths
-                .Select((path, i) => (Index: i, Task: new RunFindingsCommand(FilePath: path).ExecuteAsync(cancellationToken)))
+                .Select(
+                    (path, i) =>
+                        (
+                            Index: i,
+                            Task: new RunFindingsCommand(FilePath: path).ExecuteAsync(
+                                cancellationToken
+                            )
+                        )
+                )
                 .ToList();
 
             var findingsResults = new FindingsResult[fileCount];
@@ -90,18 +98,27 @@ public class RunBatchBenchmarkEndpoint(AudioFileRepository audioFileRepository)
 
                 var fileName = Path.GetFileNameWithoutExtension(filePaths[entry.Index]);
                 await WriteLineAsync(
-                    new { type = "progress", completed = completedCount, total = fileCount, fileName },
+                    new
+                    {
+                        type = "progress",
+                        completed = completedCount,
+                        total = fileCount,
+                        fileName,
+                    },
                     cancellationToken
                 );
             }
 
             var compareResult = await compareTask;
             var sources = filePaths
-                .Select((_, index) => new BatchBenchmarkSource(
-                    compareResult.Files[index],
-                    findingsResults[index].Findings,
-                    request.FileIds[index]
-                ))
+                .Select(
+                    (_, index) =>
+                        new BatchBenchmarkSource(
+                            compareResult.Files[index],
+                            findingsResults[index].Findings,
+                            request.FileIds[index]
+                        )
+                )
                 .ToList();
 
             var benchmarkResult = BatchBenchmarkBuilder.Build(sources, DateTimeOffset.UtcNow);
@@ -115,12 +132,19 @@ public class RunBatchBenchmarkEndpoint(AudioFileRepository audioFileRepository)
                 benchmarkResult = benchmarkResult with { Limitations = limitations };
             }
 
-            await WriteLineAsync(new { type = "result", data = benchmarkResult }, cancellationToken);
+            await WriteLineAsync(
+                new { type = "result", data = benchmarkResult },
+                cancellationToken
+            );
         }
         catch (Exception ex)
         {
             await WriteLineAsync(
-                new { type = "error", message = $"Batch benchmark error: {ex.GetType().Name}: {ex.Message}" },
+                new
+                {
+                    type = "error",
+                    message = $"Batch benchmark error: {ex.GetType().Name}: {ex.Message}",
+                },
                 cancellationToken
             );
         }

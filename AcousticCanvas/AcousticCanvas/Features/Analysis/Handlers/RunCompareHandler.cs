@@ -15,7 +15,10 @@ public class RunCompareHandler(
     private const double DefaultOverlap = 0.5;
     private const int MaxConcurrentFileSummaries = 16;
 
-    private readonly SemaphoreSlim _summarySemaphore = new(MaxConcurrentFileSummaries, MaxConcurrentFileSummaries);
+    private readonly SemaphoreSlim _summarySemaphore = new(
+        MaxConcurrentFileSummaries,
+        MaxConcurrentFileSummaries
+    );
 
     public override async Task<CompareResult> ExecuteAsync(
         RunCompareCommand command,
@@ -45,7 +48,12 @@ public class RunCompareHandler(
                 await _summarySemaphore.WaitAsync(ct);
                 try
                 {
-                    return await BuildFileSummaryAsync(filePath, command.StartSeconds, command.EndSeconds, ct);
+                    return await BuildFileSummaryAsync(
+                        filePath,
+                        command.StartSeconds,
+                        command.EndSeconds,
+                        ct
+                    );
                 }
                 finally
                 {

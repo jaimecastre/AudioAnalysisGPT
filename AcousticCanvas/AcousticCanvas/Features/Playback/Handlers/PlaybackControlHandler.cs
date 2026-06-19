@@ -26,12 +26,7 @@ public class PlaybackControlHandler(PlaybackStateStore stateStore)
         }
         else if (command.Action == "seek")
         {
-            double clampedTime = command.TimeSeconds;
-            if (clampedTime < 0)
-                clampedTime = 0;
-            if (clampedTime > state.DurationSeconds)
-                clampedTime = state.DurationSeconds;
-            state.CurrentTimeSeconds = clampedTime;
+            state.CurrentTimeSeconds = Math.Clamp(command.TimeSeconds, 0, state.DurationSeconds);
         }
         else if (command.Action == "stop")
         {

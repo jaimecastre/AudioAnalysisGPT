@@ -39,7 +39,9 @@ builder.Services.AddSingleton<PythonSoundQualityPool>(sp =>
     var config = sp.GetRequiredService<IConfiguration>();
     return new PythonSoundQualityPool(config, poolSize: 2);
 });
-builder.Services.AddSingleton<ISoundQualityClient>(sp => sp.GetRequiredService<PythonSoundQualityPool>());
+builder.Services.AddSingleton<ISoundQualityClient>(sp =>
+    sp.GetRequiredService<PythonSoundQualityPool>()
+);
 builder.Services.AddSingleton<SoundQualityCacheStore>();
 builder.Services.AddSingleton<SoundQualityAnalysisService>();
 builder.Services.AddSingleton<RunSoundQualityHandler>();
@@ -94,6 +96,7 @@ catch (Exception ex)
     Console.WriteLine($"Warning: Failed to initialize Python sound quality pool: {ex.Message}");
     Console.WriteLine("Sound quality analysis will use fallback single-process mode.");
 }
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

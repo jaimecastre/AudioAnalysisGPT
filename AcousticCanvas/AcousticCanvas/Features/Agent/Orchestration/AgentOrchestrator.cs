@@ -170,11 +170,11 @@ public sealed class AgentOrchestrator(
         CancellationToken cancellationToken
     )
     {
-        var toolRequests = BuildDeterministicVisualToolRequests(visualPlan, command.SelectedFileIds);
-        var toolExecutionOutputs = await ExecuteToolRequestsAsync(
-            toolRequests,
-            cancellationToken
+        var toolRequests = BuildDeterministicVisualToolRequests(
+            visualPlan,
+            command.SelectedFileIds
         );
+        var toolExecutionOutputs = await ExecuteToolRequestsAsync(toolRequests, cancellationToken);
         var evidencePackage = BuildEvidencePackage(command, toolExecutionOutputs);
 
         var finalAnswer = await agentPlanner.GenerateFinalAnswerAsync(
@@ -284,7 +284,9 @@ public sealed class AgentOrchestrator(
     )
     {
         var visualizationPlan = ExpertVisualizationPlanner.Plan(evidencePackage);
-        var toolExecutionRecords = AgentResultBuilder.BuildToolExecutionRecords(toolExecutionOutputs);
+        var toolExecutionRecords = AgentResultBuilder.BuildToolExecutionRecords(
+            toolExecutionOutputs
+        );
         var toolResultsData = AgentResultBuilder.BuildToolResultsData(toolExecutionOutputs);
         var answer = finalAnswer.Answer;
 
@@ -316,10 +318,11 @@ public sealed class AgentOrchestrator(
             visualizationPlan,
             evidencePackage
         );
-        var soundQualityComparisonBlocks = AgentVisualizationBlockBuilder.BuildSoundQualityComparisonBlocks(
-            visualizationPlan,
-            evidencePackage
-        );
+        var soundQualityComparisonBlocks =
+            AgentVisualizationBlockBuilder.BuildSoundQualityComparisonBlocks(
+                visualizationPlan,
+                evidencePackage
+            );
         var responseBlocks = AgentResultBuilder.SuppressBlocksCoveredByCombinedVisuals(
             finalAnswer.Blocks,
             visualizationPlan,
@@ -350,7 +353,9 @@ public sealed class AgentOrchestrator(
             PlotHintsMap: plotHintsLookup.Count > 0 ? plotHintsLookup : null,
             OverlayBlocks: overlayBlocks.Count > 0 ? overlayBlocks : null,
             InvestigationBlocks: investigationBlocks.Count > 0 ? investigationBlocks : null,
-            SoundQualityComparisonBlocks: soundQualityComparisonBlocks.Count > 0 ? soundQualityComparisonBlocks : null
+            SoundQualityComparisonBlocks: soundQualityComparisonBlocks.Count > 0
+                ? soundQualityComparisonBlocks
+                : null
         );
     }
 

@@ -62,7 +62,8 @@ public sealed class PythonSoundQualityPool : ISoundQualityClient, IDisposable
 
     public async Task<SoundQualityAnalysis> AnalyzeAsync(
         RunSoundQualityQuery query,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         EnsureInitialized();
 
@@ -99,7 +100,8 @@ public sealed class PythonSoundQualityPool : ISoundQualityClient, IDisposable
     private async Task<SoundQualityAnalysis> ExecuteWithProcessAsync(
         PoolProcess poolProcess,
         RunSoundQualityQuery query,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var request = new
         {
@@ -143,7 +145,9 @@ public sealed class PythonSoundQualityPool : ISoundQualityClient, IDisposable
 
         if (root.TryGetProperty("error", out var errorElement))
         {
-            throw BuildUnavailableException(errorElement.GetString() ?? "Unknown error from Python worker.");
+            throw BuildUnavailableException(
+                errorElement.GetString() ?? "Unknown error from Python worker."
+            );
         }
 
         var analysis = JsonSerializer.Deserialize<SoundQualityAnalysis>(responseJson, JsonOptions);
@@ -212,7 +216,9 @@ public sealed class PythonSoundQualityPool : ISoundQualityClient, IDisposable
             if (!readyDoc.RootElement.TryGetProperty("ready", out _))
             {
                 process.Kill(entireProcessTree: true);
-                throw BuildUnavailableException($"Python pool worker sent unexpected ready signal: {readyLine}");
+                throw BuildUnavailableException(
+                    $"Python pool worker sent unexpected ready signal: {readyLine}"
+                );
             }
         }
         catch (OperationCanceledException)
@@ -233,7 +239,8 @@ public sealed class PythonSoundQualityPool : ISoundQualityClient, IDisposable
 
     private void DisposeProcess(PoolProcess? poolProcess)
     {
-        if (poolProcess == null) return;
+        if (poolProcess == null)
+            return;
 
         try
         {
@@ -287,7 +294,13 @@ public sealed class PythonSoundQualityPool : ISoundQualityClient, IDisposable
         var candidatePaths = new[]
         {
             Path.Combine(Directory.GetCurrentDirectory(), "..", ".venv", "bin", "python"),
-            Path.Combine(Directory.GetCurrentDirectory(), "AcousticCanvas", ".venv", "bin", "python"),
+            Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "AcousticCanvas",
+                ".venv",
+                "bin",
+                "python"
+            ),
         };
 
         foreach (var candidatePath in candidatePaths)
@@ -302,7 +315,10 @@ public sealed class PythonSoundQualityPool : ISoundQualityClient, IDisposable
         return "python3";
     }
 
-    private static void WriteFontconfigFileIfMissing(string fontconfigFilePath, string fontconfigCacheDirectory)
+    private static void WriteFontconfigFileIfMissing(
+        string fontconfigFilePath,
+        string fontconfigCacheDirectory
+    )
     {
         if (File.Exists(fontconfigFilePath))
         {
@@ -323,14 +339,13 @@ public sealed class PythonSoundQualityPool : ISoundQualityClient, IDisposable
 
     private static InvalidOperationException BuildUnavailableException(string detail)
     {
-        return new InvalidOperationException(
-            "Python sound-quality pool unavailable. " + detail
-        );
+        return new InvalidOperationException("Python sound-quality pool unavailable. " + detail);
     }
 
     public void Dispose()
     {
-        if (_isDisposed) return;
+        if (_isDisposed)
+            return;
         _isDisposed = true;
 
         _processSemaphore.Dispose();

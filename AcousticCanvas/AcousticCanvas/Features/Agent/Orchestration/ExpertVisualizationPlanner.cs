@@ -76,7 +76,8 @@ public static class ExpertVisualizationPlanner
         foreach (var block in blocks)
         {
             if (
-                block.BlockType is not (
+                block.BlockType
+                is not (
                     VisualizationBlockTypes.SpectrumOverlay
                     or VisualizationBlockTypes.SoundQualityComparison
                 )
@@ -104,8 +105,10 @@ public static class ExpertVisualizationPlanner
         List<VisualizationPlanBlock> blocks
     )
     {
-        var viewableItems = evidencePackage.KeyEvidence
-            .Where(item => MapEvidenceTypeToViewType(item.Type) is not null && HasResultId(item))
+        var viewableItems = evidencePackage
+            .KeyEvidence.Where(item =>
+                MapEvidenceTypeToViewType(item.Type) is not null && HasResultId(item)
+            )
             .ToList();
 
         var distinctViewTypes = viewableItems
@@ -137,8 +140,8 @@ public static class ExpertVisualizationPlanner
         List<VisualizationPlanBlock> blocks
     )
     {
-        var soundQualityItems = evidencePackage.KeyEvidence
-            .Where(item => item.Type == EvidenceTypes.SoundQuality)
+        var soundQualityItems = evidencePackage
+            .KeyEvidence.Where(item => item.Type == EvidenceTypes.SoundQuality)
             .ToList();
 
         if (soundQualityItems.Count < 2)
@@ -165,8 +168,8 @@ public static class ExpertVisualizationPlanner
         List<VisualizationPlanBlock> blocks
     )
     {
-        var spectrumItems = evidencePackage.KeyEvidence
-            .Where(item => item.Type == EvidenceTypes.Spectrum && HasResultId(item))
+        var spectrumItems = evidencePackage
+            .KeyEvidence.Where(item => item.Type == EvidenceTypes.Spectrum && HasResultId(item))
             .ToList();
 
         if (spectrumItems.Count < 2)
@@ -256,7 +259,8 @@ public static class ExpertVisualizationPlanner
         return evidencePackage.KeyEvidence[0].Type;
     }
 
-    public static string? MapViewType(string evidenceType) => MapEvidenceTypeToViewType(evidenceType);
+    public static string? MapViewType(string evidenceType) =>
+        MapEvidenceTypeToViewType(evidenceType);
 
     private static string? MapEvidenceTypeToViewType(string evidenceType)
     {

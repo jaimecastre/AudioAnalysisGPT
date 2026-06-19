@@ -19,8 +19,10 @@ public static class AgentToolRegistry
             {
                 Name = AgentToolNames.GetMetadata,
                 Description = "Return file metadata: duration, sample rate, channels, bit depth.",
-                PromptDescription = "Return file metadata: duration, sample rate, channels, bit depth.",
-                ArgumentsPrompt = "{ \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
+                PromptDescription =
+                    "Return file metadata: duration, sample rate, channels, bit depth.",
+                ArgumentsPrompt =
+                    "{ \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
                 MaxFileCount = 10,
                 MaxFileDurationSeconds = double.MaxValue,
             },
@@ -52,7 +54,8 @@ public static class AgentToolRegistry
                 Name = AgentToolNames.RunSpectrogram,
                 Description = "Compute full-file spectrogram time-frequency summary.",
                 PromptDescription = "Compute full-file spectrogram time-frequency summary.",
-                ArgumentsPrompt = "{ \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
+                ArgumentsPrompt =
+                    "{ \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
@@ -62,7 +65,8 @@ public static class AgentToolRegistry
                 Description =
                     "Compute octave or 1/3-octave constant-percentage-bandwidth band levels.",
                 PromptDescription = "Compute octave or 1/3-octave band levels.",
-                ArgumentsPrompt = "{ \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
+                ArgumentsPrompt =
+                    "{ \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
@@ -71,9 +75,9 @@ public static class AgentToolRegistry
                 Name = AgentToolNames.RunSoundQualityMetrics,
                 Description =
                     "Compute MoSQITo psychoacoustic loudness, sharpness, and roughness metrics.",
-                PromptDescription =
-                    "Compute MoSQITo loudness, sharpness, and roughness.",
-                ArgumentsPrompt = "{ \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
+                PromptDescription = "Compute MoSQITo loudness, sharpness, and roughness.",
+                ArgumentsPrompt =
+                    "{ \"fileIds\": [\"<id1>\", \"<id2>\"] }  ← fileIds MUST be a JSON array of strings",
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },
@@ -83,7 +87,8 @@ public static class AgentToolRegistry
                 Description =
                     "Detect audio events: clipping, silence gaps, loudest region, or transient onsets.",
                 PromptDescription = "Detect audio events: clipping, silence, loudest, transient.",
-                ArgumentsPrompt = "{ \"fileId\": \"<id>\", \"kind\": \"clipping\" }  ← fileId is a single string, kind is one of: clipping, silence, loudest, transient",
+                ArgumentsPrompt =
+                    "{ \"fileId\": \"<id>\", \"kind\": \"clipping\" }  ← fileId is a single string, kind is one of: clipping, silence, loudest, transient",
                 MaxFileCount = 4,
                 MaxFileDurationSeconds = 300.0,
             },

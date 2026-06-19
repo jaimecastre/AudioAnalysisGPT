@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 type ToolPanelType = 'spectrogram' | 'spectrum' | 'cpb' | 'soundQuality';
 type ToolPanelSpan = 'normal' | 'wide';
@@ -25,8 +25,17 @@ interface IUseToolPanelsReturn {
   handleToolPanelClose: (panelId: string) => void;
 }
 
-export const useToolPanels = (): IUseToolPanelsReturn => {
+export const useToolPanels = (selectedSignalId: string | null): IUseToolPanelsReturn => {
   const [toolPanels, setToolPanels] = useState<IToolPanel[]>([]);
+  const prevSelectedSignalIdRef = useRef<string | null>(selectedSignalId);
+
+  useEffect(() => {
+    const prevId = prevSelectedSignalIdRef.current;
+    prevSelectedSignalIdRef.current = selectedSignalId;
+    if (prevId !== null && selectedSignalId !== null && prevId !== selectedSignalId) {
+      setToolPanels((panels) => panels.map((p) => p.fileId === prevId ? { ...p, fileId: selectedSignalId } : p));
+    }
+  }, [selectedSignalId]);
 
   const hasSpectrogramPanel = toolPanels.some((panel) => panel.type === 'spectrogram');
   const hasSpectrumPanel = toolPanels.some((panel) => panel.type === 'spectrum');

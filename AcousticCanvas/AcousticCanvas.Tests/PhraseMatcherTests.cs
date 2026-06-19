@@ -7,7 +7,10 @@ public sealed class PhraseMatcherTests
     [Fact]
     public void ContainsAnyWordOrPhraseDoesNotMatchWordInsideAnotherWord()
     {
-        var matches = PhraseMatcher.ContainsAnyWordOrPhrase("compare the spectrograms", ["spectrum"]);
+        var matches = PhraseMatcher.ContainsAnyWordOrPhrase(
+            "compare the spectrograms",
+            ["spectrum"]
+        );
 
         Assert.False(matches);
     }
