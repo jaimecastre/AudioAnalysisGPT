@@ -1,8 +1,9 @@
 import type { JSX } from 'react';
-import { IconAlertTriangle, IconChartBar, IconVolume, IconWaveSine, IconBug, IconArrowRight } from '@tabler/icons-react';
+import { IconAlertTriangle, IconChartBar, IconVolume, IconWaveSine, IconBug, IconArrowRight, IconZoomScan } from '@tabler/icons-react';
 import { ActionIcon, Badge, Button, Group, Paper, Stack, Text, Tooltip } from '@mantine/core';
 import type { AnalysisResult } from '../../analysis/types/analysisTypes';
 import type { SpectrumPointsResponse } from '../../analysis/types/spectrumTypes';
+import type { FindingsStatus } from '../../findings/store/findingsSlice';
 import styles from './KeyFindingsSummary.module.scss';
 
 type FindingSeverity = 'low' | 'medium' | 'high';
@@ -21,6 +22,7 @@ interface IKeyFindingsSummaryProps {
   analysisResult: AnalysisResult | null;
   spectrumResult: SpectrumPointsResponse | null;
   findings: Finding[];
+  findingsStatus: FindingsStatus;
   onViewFindings: () => void;
   onAnalyzeLoudestRegion: () => void;
   onInspectSpectrum: () => void;
@@ -31,6 +33,7 @@ export function KeyFindingsSummary({
   analysisResult,
   spectrumResult,
   findings,
+  findingsStatus,
   onViewFindings,
   onAnalyzeLoudestRegion,
   onInspectSpectrum,
@@ -42,6 +45,8 @@ export function KeyFindingsSummary({
   const highSeverityCount = findings.filter((f) => f.severity === 'high').length;
   const mediumSeverityCount = findings.filter((f) => f.severity === 'medium').length;
   const totalIssues = findings.length;
+
+  const findingsHaveBeenRun = findingsStatus === 'complete' || findingsStatus === 'error';
 
   const getFindingType = (finding: Finding): string => finding.findingType ?? finding.type ?? '';
   const hasClipping = findings.some((f) => getFindingType(f) === 'clipping');
@@ -55,11 +60,13 @@ export function KeyFindingsSummary({
 
   const hasHighCrestFactor = crestFactorDb !== null && crestFactorDb !== undefined && crestFactorDb > 15;
 
-  const issueSummary = totalIssues > 0
-    ? `${totalIssues} issue${totalIssues !== 1 ? 's' : ''} found`
-    : 'No issues detected';
+  const issueSummary = !findingsHaveBeenRun
+    ? 'Run findings to detect issues'
+    : totalIssues > 0
+      ? `${totalIssues} issue${totalIssues !== 1 ? 's' : ''} found`
+      : 'No issues detected';
 
-  const severityBadge = totalIssues > 0 ? (
+  const severityBadge = !findingsHaveBeenRun ? null : totalIssues > 0 ? (
     <Group gap={4}>
       {highSeverityCount > 0 && (
         <Badge color="red" size="sm" variant="filled">
@@ -91,7 +98,7 @@ export function KeyFindingsSummary({
           <Group gap="lg" align="center">
             {/* Issue summary */}
             <Group gap="xs" align="center">
-              <IconAlertTriangle size={20} className={totalIssues > 0 ? styles.warningIcon : styles.successIcon} />
+              <IconAlertTriangle size={20} className={!findingsHaveBeenRun ? styles.metricIcon : totalIssues > 0 ? styles.warningIcon : styles.successIcon} />
               <Text fw={600} size="sm">
                 {issueSummary}
               </Text>
@@ -144,7 +151,18 @@ export function KeyFindingsSummary({
 
           {/* Primary actions */}
           <Group gap="xs">
-            {totalIssues > 0 && (
+            {!findingsHaveBeenRun && (
+              <Button
+                size="xs"
+                variant="light"
+                color="orange"
+                leftSection={<IconZoomScan size={14} />}
+                onClick={onViewFindings}
+              >
+                Run Findings
+              </Button>
+            )}
+            {findingsHaveBeenRun && totalIssues > 0 && (
               <Button
                 size="xs"
                 variant="light"
@@ -155,7 +173,7 @@ export function KeyFindingsSummary({
                 View Findings
               </Button>
             )}
-            {rmsDb !== null && rmsDb !== undefined && (
+            {findingsHaveBeenRun && rmsDb !== null && rmsDb !== undefined && (
               <Button
                 size="xs"
                 variant="light"
@@ -185,22 +203,22 @@ export function KeyFindingsSummary({
             </Text>
             <Group gap="xs" wrap="wrap">
               {hasClipping && (
-                <Button size="xs" variant="subtle" color="red" leftSection={<IconAlertTriangle size={14} />}>
+                <Button size="xs" variant="subtle" color="red" leftSection={<IconAlertTriangle size={14} />} onClick={onViewFindings}>
                   Inspect Clipping
                 </Button>
               )}
               {hasTonalPeak && (
-                <Button size="xs" variant="subtle" color="blue" leftSection={<IconWaveSine size={14} />}>
+                <Button size="xs" variant="subtle" color="blue" leftSection={<IconWaveSine size={14} />} onClick={onInspectSpectrum}>
                   Analyze Tonal Peak
                 </Button>
               )}
               {hasSilence && (
-                <Button size="xs" variant="subtle" color="gray" leftSection={<IconVolume size={14} />}>
+                <Button size="xs" variant="subtle" color="gray" leftSection={<IconVolume size={14} />} onClick={onViewFindings}>
                   Check Silence Gaps
                 </Button>
               )}
               {hasHighCrestFactor && (
-                <Button size="xs" variant="subtle" color="orange" leftSection={<IconChartBar size={14} />}>
+                <Button size="xs" variant="subtle" color="orange" leftSection={<IconChartBar size={14} />} onClick={onViewFindings}>
                   Check Dynamic Range
                 </Button>
               )}

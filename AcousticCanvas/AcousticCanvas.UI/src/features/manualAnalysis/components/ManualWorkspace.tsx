@@ -31,7 +31,7 @@ import { ActiveSignalCard } from './ActiveSignalCard';
 import { ChatPanel } from '../../agentAnalysis/components/ChatPanel';
 import { analysisResultSelector, analysisStatusSelector, analysisErrorSelector } from '../../analysis/store/analysisSlice';
 import { spectrumResultSelector } from '../../analysis/store/spectrumSlice';
-import { findingsResultSelector as findingsSelector } from '../../findings/store/findingsSlice';
+import { findingsResultSelector as findingsSelector, findingsStatusSelector } from '../../findings/store/findingsSlice';
 import { useManualPlayback } from '../../shell/hooks/useManualPlayback';
 import { useToolPanels } from '../../shell/hooks/useToolPanels';
 import { useResizablePanel } from '../../shell/hooks/useResizablePanel';
@@ -50,6 +50,7 @@ export const ManualWorkspace = (): JSX.Element => {
   const spectrumResult = useAppSelector(spectrumResultSelector);
   const findingsResult = useAppSelector(findingsSelector);
   const findings = findingsResult?.findings ?? [];
+  const findingsStatus = useAppSelector(findingsStatusSelector);
 
   const { isUploading, uploadFiles } = useAudioUpload();
   const { panelWidth: leftPanelWidth, handleDragHandleMouseDown } = useResizablePanel(220);
@@ -66,7 +67,7 @@ export const ManualWorkspace = (): JSX.Element => {
     handleToolPanelFileSelect,
     handleToolPanelToggleSpan,
     handleToolPanelClose,
-  } = useToolPanels();
+  } = useToolPanels(selectedSignalId);
   const {
     waveSurferRef,
     isPlaying,
@@ -446,6 +447,7 @@ export const ManualWorkspace = (): JSX.Element => {
                       analysisResult={analysisResult}
                       spectrumResult={spectrumResult}
                       findings={findings}
+                      findingsStatus={findingsStatus}
                       onPromptOpenFindings={handleOpenFindingsPanel}
                       onPromptAddSpectrum={handleAddSpectrumPanelForActiveFile}
                       onPromptAddSoundQuality={handleAddSoundQualityPanelForActiveFile}
