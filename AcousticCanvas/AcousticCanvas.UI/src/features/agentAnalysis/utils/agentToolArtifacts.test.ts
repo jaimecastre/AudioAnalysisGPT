@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createToolResultArtifactDrafts } from './agentToolArtifacts';
+import { createReportArtifactDraft, createToolResultArtifactDrafts } from './agentToolArtifacts';
 
 describe('createToolResultArtifactDrafts', () => {
   it('splits multi-file spectrogram output into one artifact draft per file', () => {
@@ -184,5 +184,24 @@ describe('createToolResultArtifactDrafts', () => {
         { label: 'roughness', value: '0.040 asper' },
       ],
     });
+  });
+});
+
+describe('createReportArtifactDraft', () => {
+  it('converts generate_report output into a report artifact draft', () => {
+    const draft = createReportArtifactDraft({
+      title: 'Acoustic QA Report',
+      markdownContent: '# Acoustic QA Report\n\nMeasured values only.',
+    });
+
+    expect(draft).toEqual({
+      title: 'Acoustic QA Report',
+      markdownContent: '# Acoustic QA Report\n\nMeasured values only.',
+    });
+  });
+
+  it('returns null when report content is missing', () => {
+    expect(createReportArtifactDraft({ title: 'Acoustic QA Report' })).toBeNull();
+    expect(createReportArtifactDraft(null)).toBeNull();
   });
 });

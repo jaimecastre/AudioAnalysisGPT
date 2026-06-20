@@ -103,6 +103,18 @@ public static class AgentToolRegistry
                 MaxFileCount = 1,
                 MaxFileDurationSeconds = 300.0,
             },
+            [AgentToolNames.GenerateReport] = new AgentToolDefinition
+            {
+                Name = AgentToolNames.GenerateReport,
+                Description =
+                    "Generate a deterministic Markdown QA/investigation report for the loaded files from backend evidence.",
+                PromptDescription =
+                    "Generate a Markdown QA/investigation report from deterministic backend evidence.",
+                ArgumentsPrompt =
+                    "{ \"fileIds\": [\"<id1>\", \"<id2>\"], \"title\": \"Acoustic QA Report\" }  ← fileIds required; title optional",
+                MaxFileCount = 10,
+                MaxFileDurationSeconds = 300.0,
+            },
         };
 
     public static bool IsToolAllowed(string toolName)

@@ -84,6 +84,10 @@ public sealed class ToolExecutionService(
                     toolRequest.Arguments,
                     cancellationToken
                 ),
+                AgentToolNames.GenerateReport => await ExecuteGenerateReportAsync(
+                    toolRequest.Arguments,
+                    cancellationToken
+                ),
                 _ => ToolOutputBuilder.BuildFailureOutput(
                     toolName,
                     "TOOL_NOT_IMPLEMENTED",
@@ -850,6 +854,127 @@ public sealed class ToolExecutionService(
             "findings_" + Guid.NewGuid().ToString("N")[..8],
             resultData
         );
+    }
+
+    private async Task<ToolExecutionOutput> ExecuteGenerateReportAsync(
+        Dictionary<string, object?> arguments,
+        CancellationToken cancellationToken
+    )
+    {
+        var fileIds = ToolArgumentParser.ExtractFileIds(arguments);
+        if (fileIds.Count == 0)
+        {
+            return ToolOutputBuilder.BuildFailureOutput(
+                AgentToolNames.GenerateReport,
+                "MISSING_FILE_IDS",
+                "fileIds argument is required and must not be empty."
+            );
+        }
+
+        var title =
+            ToolArgumentParser.ExtractStringArgument(arguments, "title") ?? "Acoustic QA Report";
+        var evidenceToolOutputs = await ExecuteReportEvidenceToolsAsync(
+            fileIds,
+            cancellationToken
+        );
+        var selectedFileNames = ResolveFileNames(fileIds);
+        var evidencePackage = EvidencePackageBuilder.Build(
+            title,
+            fileIds,
+            selectedFileNames,
+            evidenceToolOutputs
+        );
+
+        var sourceToolResultRefs = new List<string>();
+        foreach (var output in evidenceToolOutputs)
+        {
+            if (output.Status == "completed" && !string.IsNullOrWhiteSpace(output.ResultRef))
+            {
+                sourceToolResultRefs.Add(output.ResultRef);
+            }
+        }
+
+        var report = AgentReportBuilder.Build(title, evidencePackage, sourceToolResultRefs);
+        var resultData = new
+        {
+            title = report.Title,
+            markdownContent = report.MarkdownContent,
+            generatedAtUtc = report.GeneratedAtUtc,
+            sourceToolResultRefs = report.SourceToolResultRefs,
+        };
+
+        return ToolOutputBuilder.BuildSuccessOutput(
+            AgentToolNames.GenerateReport,
+            "report_" + Guid.NewGuid().ToString("N")[..8],
+            resultData
+        );
+    }
+
+    private async Task<List<ToolExecutionOutput>> ExecuteReportEvidenceToolsAsync(
+        IReadOnlyList<string> fileIds,
+        CancellationToken cancellationToken
+    )
+    {
+        var toolOutputs = new List<ToolExecutionOutput>();
+        var multiFileArguments = new Dictionary<string, object?> { ["fileIds"] = fileIds };
+        var multiFileToolNames = new[]
+        {
+            AgentToolNames.GetMetadata,
+            AgentToolNames.RunBasicMetrics,
+            AgentToolNames.RunSpectrum,
+            AgentToolNames.RunCpb,
+            AgentToolNames.RunSoundQualityMetrics,
+        };
+
+        foreach (var toolName in multiFileToolNames)
+        {
+            toolOutputs.Add(
+                await ExecuteToolAsync(
+                    new PlannerToolRequest { Name = toolName, Arguments = multiFileArguments },
+                    cancellationToken
+                )
+            );
+        }
+
+        foreach (var fileId in fileIds)
+        {
+            toolOutputs.Add(
+                await ExecuteToolAsync(
+                    new PlannerToolRequest
+                    {
+                        Name = AgentToolNames.RunFindings,
+                        Arguments = new Dictionary<string, object?> { ["fileId"] = fileId },
+                    },
+                    cancellationToken
+                )
+            );
+        }
+
+        return toolOutputs;
+    }
+
+    private IReadOnlyList<string> ResolveFileNames(IReadOnlyList<string> fileIds)
+    {
+        var fileNames = new List<string>();
+
+        foreach (var fileId in fileIds)
+        {
+            var filePath = audioFileRepository.GetFilePath(fileId);
+            if (string.IsNullOrEmpty(filePath))
+            {
+                fileNames.Add(fileId);
+                continue;
+            }
+
+            var storedName = Path.GetFileName(filePath);
+            var prefix = fileId + "_";
+            var originalName = storedName.StartsWith(prefix, StringComparison.Ordinal)
+                ? storedName[prefix.Length..]
+                : storedName;
+            fileNames.Add(originalName);
+        }
+
+        return fileNames;
     }
 
     private static ChannelLevelAnalysis? GetPrimaryChannel(LevelAnalysis level)

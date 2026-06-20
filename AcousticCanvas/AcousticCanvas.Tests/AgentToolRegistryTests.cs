@@ -20,4 +20,17 @@ public sealed class AgentToolRegistryTests
             Assert.Contains($"  Arguments: {definition.ArgumentsPrompt}", promptSummary);
         }
     }
+
+    [Fact]
+    public void ReportToolIsAvailableToThePlanner()
+    {
+        var promptSummary = AgentToolRegistry.BuildToolListSummaryForPrompt();
+        var definition = AgentToolRegistry.GetToolDefinition(AgentToolNames.GenerateReport);
+
+        Assert.NotNull(definition);
+        Assert.Contains("Markdown QA/investigation report", definition!.Description);
+        Assert.Contains("fileIds", definition.ArgumentsPrompt);
+        Assert.Contains("title", definition.ArgumentsPrompt);
+        Assert.Contains($"- {AgentToolNames.GenerateReport}:", promptSummary);
+    }
 }

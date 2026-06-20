@@ -10,4 +10,5 @@ public static class AgentToolNames
     public const string RunSoundQualityMetrics = "run_sound_quality_metrics";
     public const string RunEventDetection = "run_event_detection";
     public const string RunFindings = "run_findings";
+    public const string GenerateReport = "generate_report";
 }

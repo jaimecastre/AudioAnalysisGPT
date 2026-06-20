@@ -21,7 +21,7 @@ import {
   IconExternalLink,
   IconChartBar,
 } from '@tabler/icons-react';
-import type { AnalysisViewBlock as AnalysisViewBlockType, CompactSummary, PlotHints } from '../services/agentAskService';
+import type { AnalysisPreview, AnalysisViewBlock as AnalysisViewBlockType, CompactSummary, PlotHints } from '../services/agentAskService';
 import { useAnalysisResult } from '../../analysis/hooks/useAnalysisResult';
 import { SpectrumViewer } from '../../analysis/components/viewers/SpectrumViewer';
 import { SpectrogramViewer } from '../../analysis/components/viewers/SpectrogramViewer';
@@ -56,14 +56,25 @@ function CompactAnalysisPreview({
   viewType,
   summary,
   resultId,
+  preview,
   plotHints,
 }: {
   viewType: AnalysisViewBlockType['viewType'];
   summary: CompactSummary;
   resultId: string;
+  preview?: AnalysisPreview;
   plotHints?: PlotHints | null;
 }): JSX.Element | null {
   const { result, isLoading, error } = useAnalysisResult(resultId);
+
+  const spectrumPreviewFrequencies = preview?.frequenciesHz;
+  const spectrumPreviewMagnitudes = preview?.magnitudesDb;
+  const hasSpectrumPreview =
+    viewType === 'spectrum'
+    && spectrumPreviewFrequencies
+    && spectrumPreviewMagnitudes
+    && spectrumPreviewFrequencies.length > 0
+    && spectrumPreviewFrequencies.length === spectrumPreviewMagnitudes.length;
 
   if (isLoading) {
     return (
@@ -72,6 +83,33 @@ function CompactAnalysisPreview({
           <Loader size="xs" color="blue" />
           <Text size="xs" c="dimmed">Loading preview...</Text>
         </Group>
+      </div>
+    );
+  }
+
+  if (hasSpectrumPreview) {
+    const points = spectrumPreviewFrequencies.map((frequencyHz, index) => [
+      frequencyHz,
+      spectrumPreviewMagnitudes[index],
+    ]);
+
+    return (
+      <div data-preview-type="spectrum" style={previewFrameStyle}>
+        <div style={{ height: 180, width: '100%' }}>
+          <SpectrumCanvas
+            channels={[{
+              channelId: 'preview',
+              channelName: 'Preview',
+              points,
+              yUnit: 'dB',
+              originalIndex: 0,
+            }]}
+            minFrequencyHz={plotHints?.frequencyRangeMinHz}
+            maxFrequencyHz={plotHints?.frequencyRangeMaxHz}
+            annotationFrequencyHz={plotHints?.focusFrequencyHz}
+            annotationLabel={plotHints?.annotationLabel}
+          />
+        </div>
       </div>
     );
   }
@@ -304,7 +342,13 @@ export function AnalysisViewBlock({ block }: IAnalysisViewBlockProps): JSX.Eleme
         )}
 
         {/* Mini Chart Preview */}
-        <CompactAnalysisPreview viewType={block.viewType} summary={summary} resultId={block.resultId} plotHints={block.plotHints} />
+        <CompactAnalysisPreview
+          viewType={block.viewType}
+          summary={summary}
+          resultId={block.resultId}
+          preview={block.preview}
+          plotHints={block.plotHints}
+        />
 
         {/* Mini Hint */}
         <Text size="xs" c="dimmed" mt="sm" style={{ textAlign: 'center' }}>

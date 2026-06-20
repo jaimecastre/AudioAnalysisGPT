@@ -1,4 +1,4 @@
-import type { ToolResultRow } from '../store/agentWorkspaceSlice';
+import type { AgentArtifactReport, ToolResultRow } from '../store/agentWorkspaceSlice';
 import { extractAgentToolRows } from './agentToolRows';
 
 export type ToolResultArtifactDraft = {
@@ -6,6 +6,8 @@ export type ToolResultArtifactDraft = {
   fileId?: string;
   rows: ToolResultRow[];
 };
+
+export type ReportArtifactDraft = Pick<AgentArtifactReport, 'title' | 'markdownContent'>;
 
 function getResults(raw: unknown): Array<Record<string, unknown>> | null {
   if (typeof raw !== 'object' || raw === null) return null;
@@ -49,4 +51,24 @@ export function createToolResultArtifactDrafts(
   const rows = extractAgentToolRows(toolName, raw);
   if (rows === null) return [];
   return [{ toolName, rows }];
+}
+
+export function createReportArtifactDraft(raw: unknown): ReportArtifactDraft | null {
+  if (typeof raw !== 'object' || raw === null) {
+    return null;
+  }
+
+  const data = raw as Record<string, unknown>;
+  if (typeof data['markdownContent'] !== 'string' || data['markdownContent'].trim().length === 0) {
+    return null;
+  }
+
+  const title = typeof data['title'] === 'string' && data['title'].trim().length > 0
+    ? data['title']
+    : 'Acoustic QA Report';
+
+  return {
+    title,
+    markdownContent: data['markdownContent'],
+  };
 }

@@ -138,6 +138,24 @@ public sealed class AgentOrchestrator(
         // Step 6: Build the evidence package from tool outputs.
         var evidencePackage = BuildEvidencePackage(command, toolExecutionOutputs);
 
+        if (DeterministicReportAnswerWriter.CanWrite(toolExecutionOutputs))
+        {
+            var deterministicReportAnswer = DeterministicReportAnswerWriter.Write();
+
+            return BuildEvidenceBackedAgentAskResult(
+                conversationId,
+                InvestigationPath.LlmPlanned,
+                evidencePackage,
+                deterministicReportAnswer,
+                validatedToolRequests,
+                toolExecutionOutputs,
+                plannedToolNames,
+                plannerReason,
+                validationWarning: false,
+                mergeEvidenceLimitations: true
+            );
+        }
+
         // Step 7: Generate the final grounded answer from the evidence package.
         var finalAnswer = await agentPlanner.GenerateFinalAnswerAsync(
             command.Question,

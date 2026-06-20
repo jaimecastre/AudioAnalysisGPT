@@ -51,4 +51,18 @@ public sealed class AgentPlannerPromptTests
         Assert.Contains("spectrogram, cpb, soundQuality, findings", prompt);
         Assert.Contains("Do not add frequenciesHz or magnitudesDb", prompt);
     }
+
+    [Fact]
+    public void PlannerSystemPromptRoutesReportRequestsToGenerateReport()
+    {
+        var prompt = AgentPromptBuilder.BuildPlannerSystemPrompt(
+            AgentToolRegistry.BuildToolListSummaryForPrompt(),
+            ["file-a"],
+            ["product.wav"]
+        );
+
+        Assert.Contains("generate_report", prompt);
+        Assert.Contains("QA report", prompt, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("make a report", prompt, StringComparison.OrdinalIgnoreCase);
+    }
 }

@@ -24,9 +24,9 @@ import {
   agentAskErrorSelector,
 } from '../store/agentAskSlice';
 import { chatSelectedModelSelector } from '../store/chatSlice';
-import { findingsArtifactAdded, toolResultArtifactAdded } from '../store/agentWorkspaceSlice';
+import { findingsArtifactAdded, reportArtifactAdded, toolResultArtifactAdded } from '../store/agentWorkspaceSlice';
 import type { FindingItem } from '../store/agentWorkspaceSlice';
-import { createToolResultArtifactDrafts } from '../utils/agentToolArtifacts';
+import { createReportArtifactDraft, createToolResultArtifactDrafts } from '../utils/agentToolArtifacts';
 import {
   backendRuntimeObserved,
   recordAdded,
@@ -72,6 +72,7 @@ const TOOL_TITLES: Record<string, string> = {
   run_spectrogram: 'Spectrogram',
   run_cpb: 'CPB Analysis',
   run_sound_quality_metrics: 'Sound Quality',
+  generate_report: 'Report',
 };
 
 export function useAgentAsk() {
@@ -190,6 +191,22 @@ export function useAgentAsk() {
             findings: data.findings,
           }));
           artifactTokens.push(`[findings_result:${artifactId}]`);
+          continue;
+        }
+
+        if (exec.toolName === 'generate_report') {
+          const reportDraft = createReportArtifactDraft(raw);
+          if (reportDraft !== null) {
+            const artifactId = crypto.randomUUID();
+            dispatch(reportArtifactAdded({
+              type: 'report',
+              id: artifactId,
+              timestamp: new Date().toISOString(),
+              title: reportDraft.title,
+              markdownContent: reportDraft.markdownContent,
+            }));
+            artifactTokens.push(`[report:${artifactId}]`);
+          }
           continue;
         }
 
