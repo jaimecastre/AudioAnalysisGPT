@@ -205,7 +205,7 @@ export function useChatInput(isThinking: boolean): UseChatInputReturn {
     const targetFileIds = mentionedFileIds.length > 0
       ? mentionedFileIds
       : allLoadedFileIds.length > 0 ? allLoadedFileIds : (selectedSignalId !== null ? [selectedSignalId] : []);
-    submitQuestion(finalContent, targetFileIds, conversationContext);
+    submitQuestion(finalContent, targetFileIds, conversationContext, activeSelection);
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {

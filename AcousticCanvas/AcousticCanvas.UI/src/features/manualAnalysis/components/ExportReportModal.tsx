@@ -46,7 +46,13 @@ export const ExportReportModal = ({ opened, files, activeSelection, onClose }: E
 
   const handleDownload = (): void => {
     if (!markdownContent || !generatedAtUtc) return;
-    const download = buildReportMarkdownDownload({ title, markdownContent, timestamp: generatedAtUtc });
+    const download = buildReportMarkdownDownload({
+      title,
+      markdownContent,
+      timestamp: generatedAtUtc,
+      regionStartSeconds: activeSelection?.startSeconds,
+      regionEndSeconds: activeSelection?.endSeconds,
+    });
     const blob = new Blob([download.content], { type: download.mimeType });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

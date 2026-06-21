@@ -19,7 +19,9 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         IReadOnlyList<string> selectedFileNames,
         IReadOnlyList<AgentConversationTurn> conversationContext,
         CancellationToken cancellationToken,
-        string? modelOverride = null
+        string? modelOverride = null,
+        double? activeSelectionStartSeconds = null,
+        double? activeSelectionEndSeconds = null
     )
     {
         var availableToolsSummary = AgentToolRegistry.BuildToolListSummaryForPrompt();
@@ -32,7 +34,9 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
         var userMessageContent = BuildPlannerUserMessage(
             userQuestion,
             selectedFileIds,
-            conversationContext
+            conversationContext,
+            activeSelectionStartSeconds,
+            activeSelectionEndSeconds
         );
 
         var plannerRequest = new ChatCompletionRequest
@@ -184,7 +188,9 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
     public static string BuildPlannerUserMessage(
         string userQuestion,
         IReadOnlyList<string> selectedFileIds,
-        IReadOnlyList<AgentConversationTurn> conversationContext
+        IReadOnlyList<AgentConversationTurn> conversationContext,
+        double? activeSelectionStartSeconds = null,
+        double? activeSelectionEndSeconds = null
     )
     {
         var fileIdsText = selectedFileIds.Count > 0 ? string.Join(", ", selectedFileIds) : "none";
@@ -205,6 +211,17 @@ public sealed class AgentPlanner(OpenAiChatService openAiChatService)
                 }
                 contextBuilder.AppendLine($"{role}: {content}");
             }
+            contextBuilder.AppendLine();
+        }
+
+        var hasValidSelection = activeSelectionStartSeconds.HasValue
+            && activeSelectionEndSeconds.HasValue
+            && activeSelectionEndSeconds.Value > activeSelectionStartSeconds.Value;
+        if (hasValidSelection)
+        {
+            contextBuilder.AppendLine(
+                $"Active waveform selection: {activeSelectionStartSeconds!.Value.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)}s – {activeSelectionEndSeconds!.Value.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)}s. When running analysis tools or generate_report, include \"startSeconds\": {activeSelectionStartSeconds.Value.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)}, \"endSeconds\": {activeSelectionEndSeconds.Value.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)} in the arguments unless the user explicitly asks for the full file."
+            );
             contextBuilder.AppendLine();
         }
 

@@ -8,11 +8,17 @@ export type ReportMarkdownDownloadInput = {
   title: string;
   markdownContent: string;
   timestamp: string;
+  regionStartSeconds?: number;
+  regionEndSeconds?: number;
 };
 
 export function buildReportMarkdownDownload(input: ReportMarkdownDownloadInput): ReportMarkdownDownload {
+  const regionSuffix =
+    input.regionStartSeconds !== undefined && input.regionEndSeconds !== undefined
+      ? `_${input.regionStartSeconds.toFixed(3)}s-${input.regionEndSeconds.toFixed(3)}s`
+      : '';
   return {
-    filename: `${buildReportFilenameBase(input.title)}-${formatDateForFilename(input.timestamp)}.md`,
+    filename: `${buildReportFilenameBase(input.title)}${regionSuffix}-${formatDateForFilename(input.timestamp)}.md`,
     mimeType: 'text/markdown;charset=utf-8',
     content: input.markdownContent,
   };

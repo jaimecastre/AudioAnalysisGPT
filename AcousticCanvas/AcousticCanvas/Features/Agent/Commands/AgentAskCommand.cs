@@ -10,5 +10,7 @@ public record AgentAskCommand(
     IReadOnlyList<AgentConversationTurn> ConversationContext,
     string? ProjectId,
     string? Mode,
-    string? ModelOverride
+    string? ModelOverride,
+    double? ActiveSelectionStartSeconds = null,
+    double? ActiveSelectionEndSeconds = null
 ) : ICommand<AgentAskResult>;

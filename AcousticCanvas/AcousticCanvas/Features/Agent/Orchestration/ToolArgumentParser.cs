@@ -101,6 +101,10 @@ public static class ToolArgumentParser
             return intValue;
         }
 
+        if (rawValue is int i) return i;
+        if (rawValue is long l && l >= int.MinValue && l <= int.MaxValue) return (int)l;
+        if (rawValue is double d && d == Math.Floor(d)) return (int)d;
+
         return null;
     }
 

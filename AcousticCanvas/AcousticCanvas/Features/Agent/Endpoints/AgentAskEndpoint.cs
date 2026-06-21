@@ -11,6 +11,8 @@ public sealed class AgentAskRequest
     public string? ProjectId { get; set; }
     public string? Mode { get; set; }
     public string? ModelOverride { get; set; }
+    public double? ActiveSelectionStartSeconds { get; set; }
+    public double? ActiveSelectionEndSeconds { get; set; }
 }
 
 public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
@@ -49,7 +51,9 @@ public sealed class AgentAskEndpoint : Endpoint<AgentAskRequest, AgentAskResult>
             ConversationContext: request.ConversationContext,
             ProjectId: request.ProjectId,
             Mode: request.Mode,
-            ModelOverride: request.ModelOverride
+            ModelOverride: request.ModelOverride,
+            ActiveSelectionStartSeconds: request.ActiveSelectionStartSeconds,
+            ActiveSelectionEndSeconds: request.ActiveSelectionEndSeconds
         );
 
         try

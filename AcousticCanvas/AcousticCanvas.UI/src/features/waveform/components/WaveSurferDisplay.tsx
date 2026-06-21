@@ -14,7 +14,6 @@ const FONT_SIZE = 10;
 const FONT_FAMILY = "'JetBrains Mono', ui-monospace, Consolas, monospace";
 
 // App color tokens
-const BACKGROUND_COLOR = '#ffffff';
 const AXIS_LINE_COLOR = 'rgba(0,0,0,0.15)';
 const LABEL_COLOR = 'rgba(0,0,0,0.5)';
 const UNIT_LABEL_COLOR = 'rgba(0,0,0,0.3)';
@@ -48,6 +47,7 @@ function drawPaYAxis(
   canvasHeight: number,
   globalMaxPa: number,
   globalMinPa: number,
+  backgroundColor: string,
 ): void {
   const context = canvas.getContext('2d');
   if (!context) {
@@ -57,7 +57,7 @@ function drawPaYAxis(
   const canvasWidth = Y_AXIS_WIDTH;
   context.clearRect(0, 0, canvasWidth, canvasHeight);
 
-  context.fillStyle = BACKGROUND_COLOR;
+  context.fillStyle = backgroundColor;
   context.fillRect(0, 0, canvasWidth, canvasHeight);
 
   context.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
@@ -259,7 +259,9 @@ export const WaveSurferDisplay = ({
     }
     canvas.width = Y_AXIS_WIDTH;
     canvas.height = containerHeight;
-    drawPaYAxis(canvas, containerHeight, waveformData.globalMaxPa, waveformData.globalMinPa);
+    const backgroundColor = getComputedStyle(canvas.parentElement ?? canvas)
+      .getPropertyValue('background-color') || '#ffffff';
+    drawPaYAxis(canvas, containerHeight, waveformData.globalMaxPa, waveformData.globalMinPa, backgroundColor);
   }, [containerHeight, waveformData]);
 
   // Update displayRef with imperative region methods when regions are ready
@@ -327,7 +329,7 @@ export const WaveSurferDisplay = ({
             minWidth: 0,
             height: '100%',
             overflow: 'hidden',
-            backgroundColor: BACKGROUND_COLOR,
+            backgroundColor: 'var(--mantine-color-body)',
             position: 'relative',
           }}
         >

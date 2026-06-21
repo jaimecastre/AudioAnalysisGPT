@@ -100,6 +100,7 @@ export function useAgentAsk() {
     question: string,
     selectedFileIds: string[],
     conversationContext: AgentConversationTurn[] = [],
+    activeSelection?: { startSeconds: number; endSeconds: number } | null,
   ) {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -131,6 +132,8 @@ export function useAgentAsk() {
           conversationContext,
           mode: 'investigate',
           modelOverride: selectedModel,
+          activeSelectionStartSeconds: activeSelection?.startSeconds,
+          activeSelectionEndSeconds: activeSelection?.endSeconds,
         },
         abortController.signal,
       );

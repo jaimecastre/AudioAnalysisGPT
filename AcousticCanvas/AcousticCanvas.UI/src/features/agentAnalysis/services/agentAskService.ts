@@ -231,6 +231,8 @@ export type AgentAskRequest = {
   projectId?: string;
   mode?: string;
   modelOverride?: string;
+  activeSelectionStartSeconds?: number;
+  activeSelectionEndSeconds?: number;
 };
 
 export async function callAgentAskEndpoint(

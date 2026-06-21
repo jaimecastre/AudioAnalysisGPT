@@ -102,7 +102,9 @@ public sealed class AgentOrchestrator(
             selectedFileNames,
             command.ConversationContext,
             cancellationToken,
-            command.ModelOverride
+            command.ModelOverride,
+            command.ActiveSelectionStartSeconds,
+            command.ActiveSelectionEndSeconds
         );
 
         // Step 3: Handle non-tool actions.

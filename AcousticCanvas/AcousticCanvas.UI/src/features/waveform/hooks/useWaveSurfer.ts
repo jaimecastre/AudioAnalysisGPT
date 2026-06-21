@@ -148,13 +148,17 @@ export const useWaveSurfer = ({
 
         const localX = Math.max(0, Math.min(bounds.width, clientX - bounds.left));
         const scrollLeft = wavesurfer.getScroll();
-        const visibleWidth = wavesurfer.getWidth();
-        const renderedWidth = Math.max(visibleWidth, scrollLeft + bounds.width);
+
+        // Read actual rendered canvas width from WaveSurfer's shadow DOM scroll container.
+        // This is accurate at any zoom level; the estimation via getWidth() drifts when zoomed.
+        const shadowRoot = (wavesurfer as unknown as { renderer?: { scrollContainer?: HTMLElement } }).renderer?.scrollContainer;
+        const renderedWidth = shadowRoot?.scrollWidth ?? (scrollLeft + bounds.width);
+
         const timeFraction = Math.max(0, Math.min(1, (localX + scrollLeft) / renderedWidth));
         return timeFraction * duration;
       },
-      clearSelection: () => {},
-      setSelection: () => {},
+      clearSelection: () => { /* patched by WaveSurferDisplay once regions are ready */ },
+      setSelection: () => { /* patched by WaveSurferDisplay once regions are ready */ },
       zoomToSelection: (startSeconds: number, endSeconds: number) => {
         const container = containerRef.current;
         const wavesurfer = wavesurferRef.current;
