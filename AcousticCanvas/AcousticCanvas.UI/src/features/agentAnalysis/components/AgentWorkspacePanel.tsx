@@ -22,6 +22,7 @@ import { useReportDownload } from '../hooks/useReportDownload';
 import { useReportPrint } from '../hooks/useReportPrint';
 import { ArtifactActionMenu } from './ArtifactActionMenu';
 import type { ArtifactActionMenuItem } from './ArtifactActionMenu';
+import { MarkdownBlock } from './MarkdownBlock';
 import styles from './AgentWorkspacePanel.module.scss';
 
 const WorkspaceContextCard = (): JSX.Element => {
@@ -337,7 +338,9 @@ const ReportCard = ({ artifact }: { artifact: AgentArtifactReport }): JSX.Elemen
       </div>
       <div className={styles.cardBody}>
         <div className={styles.reportTitle}>{artifact.title}</div>
-        <pre className={styles.reportPreview}>{artifact.markdownContent}</pre>
+        <div className={styles.reportPreview}>
+          <MarkdownBlock content={artifact.markdownContent} />
+        </div>
         <div className={styles.reportActions}>
           <button
             type="button"

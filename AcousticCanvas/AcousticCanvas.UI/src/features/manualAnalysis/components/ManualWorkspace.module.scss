@@ -78,21 +78,21 @@
 }
 
 .signalCardInactiveName {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .signalCardInactiveDetail {
-  font-size: 0.65rem;
-  color: var(--text-muted);
+  font-size: 0.68rem;
+  color: var(--text-secondary);
 }
 
 .signalCardInactiveHint {
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   color: var(--text-muted);
   flex-shrink: 0;
   font-style: italic;

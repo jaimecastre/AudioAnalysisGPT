@@ -26,6 +26,12 @@ const loudnessBarColor = '#00b8a9';
 const sharpnessBarColor = '#f59f00';
 const roughnessBarColor = '#845ef7';
 
+const METRIC_TOOLTIPS: Record<string, string> = {
+  Loudness: 'Psychoacoustic loudness (Zwicker). Measures perceived volume accounting for frequency sensitivity. Unit: sone. Higher = louder.',
+  Sharpness: 'Spectral sharpness (von Bismarck). Measures how much high-frequency content contributes to harshness. Unit: acum. Higher = brighter/harsher.',
+  Roughness: 'Amplitude modulation roughness (Daniel & Weber). Measures fast fluctuations (15–300 Hz AM) that create an unpleasant grating sensation. Unit: asper. Higher = rougher.',
+};
+
 interface ISoundQualityPanelProps {
   panelId: string;
   availableFiles: Array<{ id: string; name: string; durationSeconds: number }>;
@@ -128,7 +134,7 @@ export const SoundQualityPanel = ({
   return (
     <div className={styles.panel}>
       <div className={styles.panelHeader}>
-        <Group gap="xs" style={{ flex: 1, minWidth: 0 }}>
+        <Group gap="xs" style={{ flex: 1, minWidth: 120 }}>
           <IconSparkles size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <Text size="xs" fw={600} tt="uppercase" ff="var(--font-mono)" c="dimmed" style={{ letterSpacing: '0.06em' }}>
             Sound Quality
@@ -140,8 +146,9 @@ export const SoundQualityPanel = ({
               data={availableFiles.map((file) => ({ value: file.id, label: file.name }))}
               value={effectiveFileId}
               onChange={(value) => onFileSelect(panelId, value)}
-              style={{ flex: 1, minWidth: 0, maxWidth: 220 }}
+              style={{ flex: 1, minWidth: 100, maxWidth: 220 }}
               styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+              comboboxProps={{ withinPortal: true, width: 240 }}
             />
           ) : (
             <Text size="xs" ff="var(--font-mono)" truncate style={{ maxWidth: 220 }}>
@@ -195,10 +202,18 @@ export const SoundQualityPanel = ({
             <div className={barStyles.barChart}>
               {metricBars.map((metricBar) => (
                 <div key={metricBar.label} className={barStyles.barRow}>
-                  <span className={barStyles.barRowLabel}>
-                    <span className={barStyles.barRowSwatch} style={{ backgroundColor: metricBar.fillColor }} />
-                    {metricBar.label}
-                  </span>
+                  <Tooltip
+                    label={METRIC_TOOLTIPS[metricBar.label] ?? metricBar.label}
+                    withArrow
+                    position="right"
+                    multiline
+                    w={240}
+                  >
+                    <span className={barStyles.barRowLabel}>
+                      <span className={barStyles.barRowSwatch} style={{ backgroundColor: metricBar.fillColor }} />
+                      {metricBar.label}
+                    </span>
+                  </Tooltip>
                   <Tooltip
                     label={`${metricBar.value.toFixed(2)} ${metricBar.unit} (scale 0 - ${metricBar.displayCeiling} ${metricBar.unit})`}
                     withArrow

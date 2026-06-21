@@ -157,16 +157,22 @@
   gap: 8px;
   width: 100%;
   min-height: 36px;
-  padding: 2px 4px;
+  padding: 2px 6px 2px 4px;
   border: 0;
+  border-left: 2px solid transparent;
   border-radius: var(--radius-sm);
   background: transparent;
   cursor: pointer;
   text-align: left;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 
   &:hover:not(:disabled) {
     background-color: var(--bg-overlay);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(0, 184, 169, 0.6);
+    outline-offset: 1px;
   }
 
   &:disabled {
@@ -197,6 +203,11 @@
   background-color: rgba(240, 140, 0, 0.12);
 }
 
+.toolRowTeal .toolRowIcon {
+  color: #00b8a9;
+  background-color: rgba(0, 184, 169, 0.12);
+}
+
 .toolRowLabel {
   flex: 1;
   color: var(--text-secondary);
@@ -206,19 +217,41 @@
 
 .toolRowActive {
   background-color: var(--bg-overlay);
+  border-left-color: #00b8a9;
 
   .toolRowLabel {
     color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .toolRowIcon {
+    background-color: rgba(0, 184, 169, 0.2);
+  }
+}
+
+.toolRowBlue.toolRowActive {
+  border-left-color: #1c7ed6;
+
+  .toolRowIcon {
+    background-color: rgba(28, 126, 214, 0.2);
+  }
+}
+
+.toolRowOrange.toolRowActive {
+  border-left-color: #f08c00;
+
+  .toolRowIcon {
+    background-color: rgba(240, 140, 0, 0.22);
   }
 }
 
 .toolRowBadge {
-  font-size: 0.62rem;
-  font-weight: 600;
-  padding: 1px 5px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
   border-radius: 8px;
-  background-color: rgba(0, 184, 169, 0.15);
-  color: #00b8a9;
+  background-color: rgba(0, 184, 169, 0.18);
+  color: #00897b;
   flex-shrink: 0;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
 }

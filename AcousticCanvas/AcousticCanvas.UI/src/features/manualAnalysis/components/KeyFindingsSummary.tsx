@@ -24,8 +24,7 @@ interface IKeyFindingsSummaryProps {
   findings: Finding[];
   findingsStatus: FindingsStatus;
   onViewFindings: () => void;
-  onAnalyzeLoudestRegion: () => void;
-  onInspectSpectrum: () => void;
+  onRunSpectrum: () => void;
 }
 
 export function KeyFindingsSummary({
@@ -35,10 +34,15 @@ export function KeyFindingsSummary({
   findings,
   findingsStatus,
   onViewFindings,
-  onAnalyzeLoudestRegion,
-  onInspectSpectrum,
+  onRunSpectrum,
 }: IKeyFindingsSummaryProps): JSX.Element | null {
   if (!activeFile) {
+    return null;
+  }
+
+  const hasAnalysisData = analysisResult !== null;
+  const hasFindingsData = findingsStatus === 'complete' || findingsStatus === 'error';
+  if (!hasAnalysisData && !hasFindingsData) {
     return null;
   }
 
@@ -58,7 +62,7 @@ export function KeyFindingsSummary({
   const crestFactorDb = analysisResult?.level?.channels[0]?.crestFactorDb;
   const peakFrequencyHz = spectrumResult?.channels[0]?.peakFrequencyHz;
 
-  const hasHighCrestFactor = crestFactorDb !== null && crestFactorDb !== undefined && crestFactorDb > 15;
+  const hasHighCrestFactor = findingsHaveBeenRun && crestFactorDb !== null && crestFactorDb !== undefined && crestFactorDb > 15;
 
   const issueSummary = !findingsHaveBeenRun
     ? 'Run findings to detect issues'
@@ -173,22 +177,12 @@ export function KeyFindingsSummary({
                 View Findings
               </Button>
             )}
-            {findingsHaveBeenRun && rmsDb !== null && rmsDb !== undefined && (
-              <Button
-                size="xs"
-                variant="light"
-                leftSection={<IconVolume size={14} />}
-                onClick={onAnalyzeLoudestRegion}
-              >
-                Analyze Loudest
-              </Button>
-            )}
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
-              onClick={onInspectSpectrum}
-              aria-label="Inspect spectrum"
+              onClick={onRunSpectrum}
+              aria-label="Open spectrum panel"
             >
               <IconArrowRight size={16} />
             </ActionIcon>
@@ -208,7 +202,7 @@ export function KeyFindingsSummary({
                 </Button>
               )}
               {hasTonalPeak && (
-                <Button size="xs" variant="subtle" color="blue" leftSection={<IconWaveSine size={14} />} onClick={onInspectSpectrum}>
+                <Button size="xs" variant="subtle" color="blue" leftSection={<IconWaveSine size={14} />} onClick={onRunSpectrum}>
                   Analyze Tonal Peak
                 </Button>
               )}

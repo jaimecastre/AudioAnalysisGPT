@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { Select, ActionIcon, Text, Group, Loader, Box, Checkbox, Badge, TextInput } from '@mantine/core';
-import { IconArrowsMaximize, IconArrowsMinimize, IconChevronDown, IconChevronRight, IconX, IconChartLine, IconSettings } from '@tabler/icons-react';
+import { Select, ActionIcon, Text, Group, Loader, Box, Checkbox, Badge, TextInput, Tooltip } from '@mantine/core';
+import { IconArrowsMaximize, IconArrowsMinimize, IconChevronDown, IconChevronRight, IconX, IconChartLine, IconSettings, IconInfoCircle } from '@tabler/icons-react';
 import { useAppSelector, useAppDispatch } from '../../../store/reduxHooks';
 import { useRunSpectrum } from '../hooks/useRunSpectrum';
 import {
@@ -51,6 +51,7 @@ export const SpectrumPanel = ({
   const [hiddenChannelIds, setHiddenChannelIds] = useState<Set<string>>(new Set());
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isInfoCollapsed, setIsInfoCollapsed] = useState(true);
   const [panelHeight, setPanelHeight] = useState(200);
   const effectiveFileId = selectedFileId ?? availableFiles[0]?.id ?? null;
   const selectedFile = availableFiles.find((file) => file.id === effectiveFileId);
@@ -159,7 +160,7 @@ export const SpectrumPanel = ({
   return (
     <div className={styles.panel}>
       <div className={styles.panelHeader}>
-        <Group gap="xs" style={{ flex: 1, minWidth: 0 }}>
+        <Group gap="xs" style={{ flex: 1, minWidth: 120 }}>
           <IconChartLine size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <Text size="xs" fw={600} tt="uppercase" ff="var(--font-mono)" c="dimmed" style={{ letterSpacing: '0.06em' }}>
             Spectrum
@@ -171,8 +172,9 @@ export const SpectrumPanel = ({
               data={fileSelectOptions}
               value={effectiveFileId}
               onChange={(value) => onFileSelect(panelId, value)}
-              style={{ flex: 1, minWidth: 0, maxWidth: 220 }}
+              style={{ flex: 1, minWidth: 100, maxWidth: 220 }}
               styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+              comboboxProps={{ withinPortal: true, width: 240 }}
             />
           ) : (
             <Text size="xs" ff="var(--font-mono)" truncate style={{ maxWidth: 220 }}>
@@ -225,7 +227,9 @@ export const SpectrumPanel = ({
         <div className={styles.settingsDrawer}>
           <Group gap="md" p="sm" align="flex-start">
             <div>
-              <Text size="xs" c="dimmed" mb={4}>FFT size</Text>
+              <Tooltip label="Number of samples per FFT block. Larger = finer frequency resolution but coarser time resolution. 4096–16384 suits most audio." multiline w={240} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>FFT size</Text>
+              </Tooltip>
               <Select
                 size="xs"
                 value={String(spectrumUserParameters.fftSize)}
@@ -233,10 +237,13 @@ export const SpectrumPanel = ({
                 onChange={(val) => val && dispatch(spectrumSetParameters({ fftSize: Number(val) }))}
                 style={{ width: 90 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                comboboxProps={{ withinPortal: true }}
               />
             </div>
             <div>
-              <Text size="xs" c="dimmed" mb={4}>Window</Text>
+              <Tooltip label="Hann: standard choice — minimises spectral leakage. Rectangular: no windowing, good for periodic signals that exactly fit the block length." multiline w={240} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>Window</Text>
+              </Tooltip>
               <Select
                 size="xs"
                 value={spectrumUserParameters.windowType}
@@ -247,10 +254,13 @@ export const SpectrumPanel = ({
                 onChange={(val) => val && dispatch(spectrumSetParameters({ windowType: val as 'hann' | 'rectangular' }))}
                 style={{ width: 110 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                comboboxProps={{ withinPortal: true }}
               />
             </div>
             <div>
-              <Text size="xs" c="dimmed" mb={4}>Overlap</Text>
+              <Tooltip label="Fraction of consecutive FFT blocks that overlap. Higher overlap = more blocks averaged = smoother spectrum. 50–75% is a good default." multiline w={240} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>Overlap</Text>
+              </Tooltip>
               <Select
                 size="xs"
                 value={String(spectrumUserParameters.overlap)}
@@ -265,10 +275,13 @@ export const SpectrumPanel = ({
                 onChange={(val) => val && dispatch(spectrumSetParameters({ overlap: Number(val) }))}
                 style={{ width: 80 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                comboboxProps={{ withinPortal: true }}
               />
             </div>
             <div>
-              <Text size="xs" c="dimmed" mb={4}>Min Hz</Text>
+              <Tooltip label="Zoom the frequency axis: set the lower bound in Hz. Leave blank to show from DC (0 Hz)." multiline w={200} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>Min Hz</Text>
+              </Tooltip>
               <TextInput
                 size="xs"
                 placeholder="Min Hz"
@@ -285,7 +298,9 @@ export const SpectrumPanel = ({
               />
             </div>
             <div>
-              <Text size="xs" c="dimmed" mb={4}>Max Hz</Text>
+              <Tooltip label="Zoom the frequency axis: set the upper bound in Hz. Leave blank to show up to Nyquist (half the sample rate)." multiline w={210} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>Max Hz</Text>
+              </Tooltip>
               <TextInput
                 size="xs"
                 placeholder="Max Hz"
@@ -350,6 +365,42 @@ export const SpectrumPanel = ({
         )}
         {visibleChannels.length > 0 && (
           <div className={styles.resizeHandle} onPointerDown={handleResizePointerDown} />
+        )}
+        {visibleChannels.length > 0 && (
+          <div className={styles.summaryHeader}>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              onClick={() => setIsInfoCollapsed((value) => !value)}
+              aria-label={isInfoCollapsed ? 'Show analysis details' : 'Hide analysis details'}
+            >
+              <IconInfoCircle size={13} />
+            </ActionIcon>
+          </div>
+        )}
+        {visibleChannels.length > 0 && !isInfoCollapsed && (
+          <div className={styles.summary}>
+            {spectrumResult?.channels[0]?.peakFrequencyHz != null && (
+              <span>
+                Peak <span className={styles.summaryValue}>{spectrumResult.channels[0].peakFrequencyHz.toFixed(1)} Hz</span>
+              </span>
+            )}
+            {spectrumResult?.channels[0]?.maxMagnitudeDb != null && (
+              <span>
+                Level <span className={styles.summaryValue}>{spectrumResult.channels[0].maxMagnitudeDb.toFixed(1)} {visibleChannels[0].yUnit}</span>
+              </span>
+            )}
+            <span>
+              FFT <span className={styles.summaryValue}>{spectrumUserParameters.fftSize}</span>
+            </span>
+            <span>
+              Window <span className={styles.summaryValue}>{spectrumUserParameters.windowType}</span>
+            </span>
+            <span>
+              Overlap <span className={styles.summaryValue}>{Math.round(spectrumUserParameters.overlap * 100)}%</span>
+            </span>
+          </div>
         )}
       </div>}
     </div>

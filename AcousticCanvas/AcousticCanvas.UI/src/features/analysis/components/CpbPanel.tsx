@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { ActionIcon, Badge, Group, Loader, Select, Text } from '@mantine/core';
+import { ActionIcon, Badge, Group, Loader, Select, Text, Tooltip } from '@mantine/core';
 import { IconArrowsMaximize, IconArrowsMinimize, IconChartBar, IconChevronDown, IconChevronRight, IconInfoCircle, IconSettings, IconX } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
 import { activeSelectionSelector } from '../../waveform/store/waveformSelectionSlice';
@@ -134,7 +134,7 @@ export const CpbPanel = ({
   return (
     <div className={styles.panel}>
       <div className={styles.panelHeader}>
-        <Group gap="xs" style={{ flex: 1, minWidth: 0 }}>
+        <Group gap="xs" style={{ flex: 1, minWidth: 120 }}>
           <IconChartBar size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <Text size="xs" fw={600} tt="uppercase" ff="var(--font-mono)" c="dimmed" style={{ letterSpacing: '0.06em' }}>
             CPB
@@ -146,8 +146,9 @@ export const CpbPanel = ({
               data={fileSelectOptions}
               value={effectiveFileId}
               onChange={(value) => onFileSelect(panelId, value)}
-              style={{ flex: 1, minWidth: 0, maxWidth: 220 }}
+              style={{ flex: 1, minWidth: 100, maxWidth: 220 }}
               styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+              comboboxProps={{ withinPortal: true, width: 240 }}
             />
           ) : (
             <Text size="xs" ff="var(--font-mono)" truncate style={{ maxWidth: 220 }}>
@@ -181,7 +182,9 @@ export const CpbPanel = ({
         <div className={styles.settingsDrawer}>
           <Group gap="md" p="sm">
             <div>
-              <Text size="xs" c="dimmed" mb={4}>Band Mode</Text>
+              <Tooltip label="1/1 octave: broad bands for overview. 1/3 octave: standard for detailed frequency analysis per ISO 266." multiline w={220} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>Band Mode</Text>
+              </Tooltip>
               <Select
                 size="xs"
                 data={CPB_BAND_MODE_OPTIONS}
@@ -190,10 +193,13 @@ export const CpbPanel = ({
                 aria-label="CPB band mode"
                 style={{ width: 120 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                comboboxProps={{ withinPortal: true }}
               />
             </div>
             <div>
-              <Text size="xs" c="dimmed" mb={4}>Weighting</Text>
+              <Tooltip label="Z: flat (unweighted). A: mimics human hearing sensitivity — attenuates low/high freqs. C: similar to A but retains more low-frequency content." multiline w={240} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>Weighting</Text>
+              </Tooltip>
               <Select
                 size="xs"
                 data={CPB_WEIGHTING_OPTIONS}
@@ -202,10 +208,13 @@ export const CpbPanel = ({
                 aria-label="CPB weighting"
                 style={{ width: 80 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                comboboxProps={{ withinPortal: true }}
               />
             </div>
             <div>
-              <Text size="xs" c="dimmed" mb={4}>Method</Text>
+              <Tooltip label="FFT: fast, good for stationary signals. Filter: more accurate for transients; matches analog octave filter banks per IEC 61260." multiline w={240} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>Method</Text>
+              </Tooltip>
               <Select
                 size="xs"
                 data={CPB_METHOD_OPTIONS}
@@ -214,10 +223,13 @@ export const CpbPanel = ({
                 aria-label="CPB method"
                 style={{ width: 100 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                comboboxProps={{ withinPortal: true }}
               />
             </div>
             <div>
-              <Text size="xs" c="dimmed" mb={4}>FFT Size</Text>
+              <Tooltip label="Larger FFT = finer frequency resolution but slower. Used only with FFT method. 4096–16384 is a good balance for most signals." multiline w={240} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>FFT Size</Text>
+              </Tooltip>
               <Select
                 size="xs"
                 data={CPB_FFT_SIZE_OPTIONS}
@@ -226,6 +238,7 @@ export const CpbPanel = ({
                 aria-label="CPB FFT size"
                 style={{ width: 100 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                comboboxProps={{ withinPortal: true }}
               />
             </div>
             {cpbResult && cpbResult.channels.length > 1 && (
@@ -239,6 +252,7 @@ export const CpbPanel = ({
                   aria-label="CPB channel"
                   style={{ width: 120 }}
                   styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                  comboboxProps={{ withinPortal: true }}
                 />
               </div>
             )}

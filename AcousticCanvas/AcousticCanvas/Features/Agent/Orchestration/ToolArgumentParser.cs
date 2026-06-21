@@ -120,6 +120,11 @@ public static class ToolArgumentParser
             return doubleValue;
         }
 
+        if (rawValue is double d) return d;
+        if (rawValue is float f) return f;
+        if (rawValue is int i) return i;
+        if (rawValue is long l) return l;
+
         return null;
     }
 

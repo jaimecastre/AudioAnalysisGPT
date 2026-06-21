@@ -15,6 +15,7 @@ import {
   IconBug,
   IconSparkles,
   IconTable,
+  IconFileText,
 } from '@tabler/icons-react';
 import type { AudioFile } from '../../../store/projectState';
 import styles from './FileListPanel.module.scss';
@@ -36,6 +37,7 @@ interface IFileListPanelProps {
   onRunCompare: () => void;
   onRunBenchmark: () => void;
   onOpenFindings: () => void;
+  onExportReport: () => void;
   hasSpectrogramPanel: boolean;
   hasSpectrumPanel: boolean;
   hasCpbPanel: boolean;
@@ -60,6 +62,7 @@ export const FileListPanel = ({
   onRunCompare,
   onRunBenchmark,
   onOpenFindings,
+  onExportReport,
   hasSpectrogramPanel,
   hasSpectrumPanel,
   hasCpbPanel,
@@ -182,52 +185,48 @@ export const FileListPanel = ({
       <div style={{ marginTop: 24 }}>
         <Text fw={600} size="sm" mb="sm" c="dimmed">TOOLS</Text>
         <Stack gap={6}>
-          <Tooltip label={hasSpectrogramPanel ? 'Spectrogram panel already open' : 'Add spectrogram'} withArrow position="right">
+          <Tooltip label={hasSpectrogramPanel ? 'Spectrogram open — visible in workspace' : 'Open spectrogram'} withArrow position="right">
             <button
               type="button"
               className={`${styles.toolRow} ${hasSpectrogramPanel ? styles.toolRowActive : ''}`}
               onClick={onAddSpectrogram}
-              disabled={hasSpectrogramPanel}
-              aria-label="Add spectrogram panel"
+              aria-label={hasSpectrogramPanel ? 'Spectrogram panel is open' : 'Add spectrogram panel'}
             >
               <span className={styles.toolRowIcon}><IconWaveSine size={18} /></span>
               <Text size="xs" className={styles.toolRowLabel}>Spectrogram</Text>
               {hasSpectrogramPanel && <span className={styles.toolRowBadge}>Open</span>}
             </button>
           </Tooltip>
-          <Tooltip label={hasSpectrumPanel ? 'Spectrum panel already open' : 'Add spectrum'} withArrow position="right">
+          <Tooltip label={hasSpectrumPanel ? 'Spectrum open — visible in workspace' : 'Open spectrum'} withArrow position="right">
             <button
               type="button"
               className={`${styles.toolRow} ${hasSpectrumPanel ? styles.toolRowActive : ''}`}
               onClick={onAddSpectrum}
-              disabled={hasSpectrumPanel}
-              aria-label="Add spectrum panel"
+              aria-label={hasSpectrumPanel ? 'Spectrum panel is open' : 'Add spectrum panel'}
             >
               <span className={styles.toolRowIcon}><IconChartLine size={18} /></span>
               <Text size="xs" className={styles.toolRowLabel}>Spectrum</Text>
               {hasSpectrumPanel && <span className={styles.toolRowBadge}>Open</span>}
             </button>
           </Tooltip>
-          <Tooltip label={hasCpbPanel ? 'CPB panel already open' : 'Add CPB analysis'} withArrow position="right">
+          <Tooltip label={hasCpbPanel ? 'CPB open — visible in workspace' : 'Open CPB analysis'} withArrow position="right">
             <button
               type="button"
               className={`${styles.toolRow} ${hasCpbPanel ? styles.toolRowActive : ''}`}
               onClick={onAddCpb}
-              disabled={hasCpbPanel}
-              aria-label="Add CPB panel"
+              aria-label={hasCpbPanel ? 'CPB panel is open' : 'Add CPB panel'}
             >
               <span className={styles.toolRowIcon}><IconChartBar size={18} /></span>
               <Text size="xs" className={styles.toolRowLabel}>CPB (1/3 octave)</Text>
               {hasCpbPanel && <span className={styles.toolRowBadge}>Open</span>}
             </button>
           </Tooltip>
-          <Tooltip label={hasSoundQualityPanel ? 'Sound-quality panel already open' : 'Add sound-quality metrics'} withArrow position="right">
+          <Tooltip label={hasSoundQualityPanel ? 'Sound quality open — visible in workspace' : 'Open sound-quality metrics'} withArrow position="right">
             <button
               type="button"
               className={`${styles.toolRow} ${hasSoundQualityPanel ? styles.toolRowActive : ''}`}
               onClick={onAddSoundQuality}
-              disabled={hasSoundQualityPanel}
-              aria-label="Add sound-quality panel"
+              aria-label={hasSoundQualityPanel ? 'Sound quality panel is open' : 'Add sound-quality panel'}
             >
               <span className={styles.toolRowIcon}><IconSparkles size={18} /></span>
               <Text size="xs" className={styles.toolRowLabel}>Sound quality</Text>
@@ -253,7 +252,7 @@ export const FileListPanel = ({
             </button>
           </Tooltip>
           <Tooltip
-            label={files.length < 2 ? 'Need at least 2 files to benchmark' : hasBenchmarkPanel ? 'Benchmark already open' : 'Run benchmark'}
+            label={files.length < 2 ? 'Need at least 2 files to benchmark' : hasBenchmarkPanel ? 'Benchmark open — visible in workspace' : 'Run benchmark'}
             withArrow
             position="right"
           >
@@ -261,8 +260,8 @@ export const FileListPanel = ({
               type="button"
               className={`${styles.toolRow} ${styles.toolRowBlue} ${hasBenchmarkPanel ? styles.toolRowActive : ''}`}
               onClick={onRunBenchmark}
-              disabled={files.length < 2 || hasBenchmarkPanel || isBenchmarkLoading}
-              aria-label="Run batch benchmark"
+              disabled={files.length < 2 || isBenchmarkLoading}
+              aria-label={hasBenchmarkPanel ? 'Benchmark panel is open' : 'Run batch benchmark'}
             >
               <span className={styles.toolRowIcon}>
                 {isBenchmarkLoading ? <IconLoader2 size={18} className={styles.spinIcon} /> : <IconTable size={18} />}
@@ -272,7 +271,7 @@ export const FileListPanel = ({
             </button>
           </Tooltip>
           <Tooltip
-            label={isFindingsPanelOpen ? 'Findings panel already open' : 'Analyse findings'}
+            label={isFindingsPanelOpen ? 'Findings open — visible in workspace' : 'Detect findings'}
             withArrow
             position="right"
           >
@@ -280,12 +279,27 @@ export const FileListPanel = ({
               type="button"
               className={`${styles.toolRow} ${styles.toolRowOrange} ${isFindingsPanelOpen ? styles.toolRowActive : ''}`}
               onClick={onOpenFindings}
-              disabled={isFindingsPanelOpen}
-              aria-label="Open findings panel"
+              aria-label={isFindingsPanelOpen ? 'Findings panel is open' : 'Open findings panel'}
             >
               <span className={styles.toolRowIcon}><IconBug size={18} /></span>
               <Text size="xs" className={styles.toolRowLabel}>Findings</Text>
               {isFindingsPanelOpen && <span className={styles.toolRowBadge}>Open</span>}
+            </button>
+          </Tooltip>
+          <Tooltip
+            label={files.length === 0 ? 'Load a file to export a report' : 'Export session report as Markdown'}
+            withArrow
+            position="right"
+          >
+            <button
+              type="button"
+              className={`${styles.toolRow} ${styles.toolRowTeal}`}
+              onClick={onExportReport}
+              disabled={files.length === 0}
+              aria-label="Export session report"
+            >
+              <span className={styles.toolRowIcon}><IconFileText size={18} /></span>
+              <Text size="xs" className={styles.toolRowLabel}>Export Report</Text>
             </button>
           </Tooltip>
         </Stack>

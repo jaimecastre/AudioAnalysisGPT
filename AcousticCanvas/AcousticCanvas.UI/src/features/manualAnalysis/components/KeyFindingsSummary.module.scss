@@ -18,12 +18,12 @@
 
 .metric {
   padding: 4px 8px;
-  background: var(--mantine-color-gray-0);
+  background: var(--bg-elevated);
   border-radius: var(--mantine-radius-sm);
   transition: background 0.15s ease;
 
   &:hover {
-    background: var(--mantine-color-gray-1);
+    background: var(--bg-base);
   }
 }
 
@@ -32,6 +32,6 @@
 }
 
 .suggestions {
-  background: var(--mantine-color-blue-0);
-  border: 1px solid var(--mantine-color-blue-2);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
 }

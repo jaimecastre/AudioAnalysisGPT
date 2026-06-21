@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
     RUN_BATCH_BENCHMARK: 'api/analysis/batch-benchmark',
     RUN_FIND: 'api/analysis/find',
     RUN_FINDINGS: 'api/analysis/findings',
+    GENERATE_REPORT: 'api/analysis/report',
   },
 } as const;
 

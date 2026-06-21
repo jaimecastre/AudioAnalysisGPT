@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { Select, ActionIcon, Text, Group, Loader, Badge, Alert } from '@mantine/core';
-import { IconArrowsMaximize, IconArrowsMinimize, IconChevronDown, IconChevronRight, IconX, IconWaveSine, IconAlertTriangle, IconSettings } from '@tabler/icons-react';
+import { Select, ActionIcon, Text, Group, Loader, Badge, Alert, Tooltip } from '@mantine/core';
+import { IconArrowsMaximize, IconArrowsMinimize, IconChevronDown, IconChevronRight, IconX, IconWaveSine, IconAlertTriangle, IconSettings, IconInfoCircle } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
 import { useRunSpectrogram } from '../hooks/useRunSpectrogram';
 import {
@@ -64,6 +64,7 @@ export const SpectrogramPanel = ({
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isInfoCollapsed, setIsInfoCollapsed] = useState(true);
   const [canvasHeight, setCanvasHeight] = useState(DEFAULT_CANVAS_HEIGHT);
   const effectiveFileId = selectedFileId ?? availableFiles[0]?.id ?? null;
   const selectedFile = availableFiles.find((file) => file.id === effectiveFileId);
@@ -149,7 +150,7 @@ export const SpectrogramPanel = ({
   return (
     <div className={styles.panel}>
       <div className={styles.panelHeader}>
-        <Group gap="xs" style={{ flex: 1, minWidth: 0 }}>
+        <Group gap="xs" style={{ flex: 1, minWidth: 120 }}>
           <IconWaveSine size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <Text size="xs" fw={600} tt="uppercase" ff="var(--font-mono)" c="dimmed" style={{ letterSpacing: '0.06em' }}>
             Spectrogram
@@ -161,8 +162,9 @@ export const SpectrogramPanel = ({
               data={fileSelectOptions}
               value={effectiveFileId}
               onChange={(value) => onFileSelect(panelId, value)}
-              style={{ flex: 1, minWidth: 0, maxWidth: 220 }}
+              style={{ flex: 1, minWidth: 100, maxWidth: 220 }}
               styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+              comboboxProps={{ withinPortal: true, width: 240 }}
             />
           ) : (
             <Text size="xs" ff="var(--font-mono)" truncate style={{ maxWidth: 220 }}>
@@ -196,7 +198,9 @@ export const SpectrogramPanel = ({
         <div className={styles.settingsDrawer}>
           <Group gap="md" p="sm">
             <div>
-              <Text size="xs" c="dimmed" mb={4}>Scale</Text>
+              <Tooltip label="Mel: perceptually uniform — matches how humans hear pitch. Log: useful for wide-range signals. Linear: true Hz axis, good for precise frequency measurement." multiline w={250} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>Scale</Text>
+              </Tooltip>
               <Select
                 size="xs"
                 data={SPECTROGRAM_SCALE_OPTIONS}
@@ -205,10 +209,13 @@ export const SpectrogramPanel = ({
                 aria-label="Spectrogram frequency scale"
                 style={{ width: 120 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                comboboxProps={{ withinPortal: true }}
               />
             </div>
             <div>
-              <Text size="xs" c="dimmed" mb={4}>FFT Size</Text>
+              <Tooltip label="Number of FFT lines (frequency bins). More lines = sharper frequency resolution but coarser time resolution. 1024–4096 lines suits most audio." multiline w={240} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>FFT Size</Text>
+              </Tooltip>
               <Select
                 size="xs"
                 data={SPECTROGRAM_FFT_SIZE_OPTIONS}
@@ -218,10 +225,13 @@ export const SpectrogramPanel = ({
                 title="FFT lines — higher = more frequency resolution, lower = more time resolution"
                 style={{ width: 120 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                comboboxProps={{ withinPortal: true }}
               />
             </div>
             <div>
-              <Text size="xs" c="dimmed" mb={4}>Range (dB)</Text>
+              <Tooltip label="Dynamic range displayed on the colour scale. Narrower range (60 dB) shows fine detail in quiet signals; wider range (100 dB) reveals very quiet content." multiline w={250} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>Range (dB)</Text>
+              </Tooltip>
               <Select
                 size="xs"
                 data={SPECTROGRAM_RANGE_OPTIONS}
@@ -230,10 +240,13 @@ export const SpectrogramPanel = ({
                 aria-label="Spectrogram dynamic range"
                 style={{ width: 100 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                comboboxProps={{ withinPortal: true }}
               />
             </div>
             <div>
-              <Text size="xs" c="dimmed" mb={4}>Gain (dB)</Text>
+              <Tooltip label="Shifts the entire colour scale up or down. Increase to reveal quiet detail; decrease if the image is oversaturated (too much red/yellow)." multiline w={240} withArrow position="top">
+                <Text size="xs" c="dimmed" mb={4} style={{ cursor: 'help', display: 'inline-block' }}>Gain (dB)</Text>
+              </Tooltip>
               <Select
                 size="xs"
                 data={SPECTROGRAM_GAIN_OPTIONS}
@@ -242,6 +255,7 @@ export const SpectrogramPanel = ({
                 aria-label="Spectrogram gain"
                 style={{ width: 100 }}
                 styles={{ input: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' } }}
+                comboboxProps={{ withinPortal: true }}
               />
             </div>
           </Group>
@@ -304,6 +318,38 @@ export const SpectrogramPanel = ({
         )}
         {effectiveFileId && spectrogramStatus !== 'error' && (
           <div className={styles.resizeHandle} onPointerDown={handleResizePointerDown} />
+        )}
+        {spectrogramResult && (
+          <div className={styles.summaryHeader}>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              onClick={() => setIsInfoCollapsed((value) => !value)}
+              aria-label={isInfoCollapsed ? 'Show analysis details' : 'Hide analysis details'}
+            >
+              <IconInfoCircle size={13} />
+            </ActionIcon>
+          </div>
+        )}
+        {spectrogramResult && !isInfoCollapsed && (
+          <div className={styles.summary}>
+            <span>
+              Scale <span className={styles.summaryValue}>{spectrogramResult.parameters.scale}</span>
+            </span>
+            <span>
+              FFT <span className={styles.summaryValue}>{spectrogramResult.parameters.fftSize}</span>
+            </span>
+            <span>
+              Gain <span className={styles.summaryValue}>{spectrogramResult.parameters.gainDb > 0 ? '+' : ''}{spectrogramResult.parameters.gainDb} dB</span>
+            </span>
+            <span>
+              Range <span className={styles.summaryValue}>{spectrogramResult.parameters.rangeDb} dB</span>
+            </span>
+            <span>
+              Region <span className={styles.summaryValue}>{spectrogramResult.region.startSeconds.toFixed(2)}s – {spectrogramResult.region.endSeconds.toFixed(2)}s</span>
+            </span>
+          </div>
         )}
       </div>
     </div>

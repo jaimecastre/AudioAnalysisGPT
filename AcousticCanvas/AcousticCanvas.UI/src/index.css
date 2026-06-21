@@ -13,7 +13,11 @@
   /* Text */
   --text-primary:   #212529;
   --text-secondary: #495057;
-  --text-muted:     #868e96;
+  --text-muted:     #6c757d;
+  --text-label:     #5c6370;
+
+  /* Font size floor — nothing visible should go below this */
+  --font-size-min:  0.65rem;
 
   /* Accent — cyan/teal for waveform/analysis highlights */
   --accent:         #00b8a9;
@@ -85,7 +89,7 @@
 }
 
 html {
-  font-size: 14px;
+  font-size: 87.5%;
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;

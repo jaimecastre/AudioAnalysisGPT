@@ -27,6 +27,7 @@ import {
 } from '../../batchBenchmark';
 import { RightSidebar } from './RightSidebar';
 import { FileListPanel } from './FileListPanel';
+import { ExportReportModal } from './ExportReportModal';
 import { ActiveSignalCard } from './ActiveSignalCard';
 import { ChatPanel } from '../../agentAnalysis/components/ChatPanel';
 import { analysisResultSelector, analysisStatusSelector, analysisErrorSelector } from '../../analysis/store/analysisSlice';
@@ -98,6 +99,7 @@ export const ManualWorkspace = (): JSX.Element => {
   const manualBenchmarkError = useAppSelector(benchmarkErrorSelector);
   const isBenchmarkPanelOpen = useAppSelector(benchmarkIsPanelOpenSelector);
   const [isFindingsPanelOpen, setIsFindingsPanelOpen] = useState(false);
+  const [isExportReportModalOpen, setIsExportReportModalOpen] = useState(false);
   const { runBenchmark } = useBatchBenchmark();
 
   const getInitialCompareSelection = useCallback((): Set<string> => {
@@ -337,6 +339,14 @@ export const ManualWorkspace = (): JSX.Element => {
     setIsFindingsPanelOpen(false);
   };
 
+  const handleOpenExportReportModal = (): void => {
+    setIsExportReportModalOpen(true);
+  };
+
+  const handleCloseExportReportModal = (): void => {
+    setIsExportReportModalOpen(false);
+  };
+
   return (
     <div className={styles.workspaceWithFileList}>
       {files.length === 0 && (
@@ -367,6 +377,7 @@ export const ManualWorkspace = (): JSX.Element => {
             onRunBenchmark={handleOpenBenchmarkModal}
             isFindingsPanelOpen={isFindingsPanelOpen}
             onOpenFindings={handleOpenFindingsPanel}
+            onExportReport={handleOpenExportReportModal}
             width={leftPanelWidth}
           />
           <div
@@ -450,7 +461,8 @@ export const ManualWorkspace = (): JSX.Element => {
                         toolPanels.length === 0 &&
                         !isFindingsPanelOpen &&
                         !isBenchmarkPanelOpen &&
-                        manualCompareResult === null
+                        manualCompareResult === null &&
+                        analysisResult === null
                       }
                       analysisResult={analysisResult}
                       spectrumResult={spectrumResult}
@@ -569,6 +581,12 @@ export const ManualWorkspace = (): JSX.Element => {
             initialSelectedIds={getInitialBenchmarkSelection()}
             onConfirm={handleRunManualBenchmark}
             isLoading={manualBenchmarkStatus === 'loading'}
+          />
+          <ExportReportModal
+            opened={isExportReportModalOpen}
+            files={files}
+            activeSelection={activeSelection}
+            onClose={handleCloseExportReportModal}
           />
         </>
       )}

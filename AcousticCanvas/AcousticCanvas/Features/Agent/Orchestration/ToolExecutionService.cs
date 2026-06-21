@@ -873,13 +873,20 @@ public sealed class ToolExecutionService(
 
         var title =
             ToolArgumentParser.ExtractStringArgument(arguments, "title") ?? "Acoustic QA Report";
+        var startSeconds = ToolArgumentParser.ExtractDoubleArgument(arguments, "startSeconds");
+        var endSeconds = ToolArgumentParser.ExtractDoubleArgument(arguments, "endSeconds");
         var evidenceToolOutputs = await ExecuteReportEvidenceToolsAsync(
             fileIds,
+            startSeconds,
+            endSeconds,
             cancellationToken
         );
         var selectedFileNames = ResolveFileNames(fileIds);
+        var regionLabel = (startSeconds.HasValue || endSeconds.HasValue)
+            ? $"region:{startSeconds?.ToString("F3", System.Globalization.CultureInfo.InvariantCulture) ?? "0.000"}-{endSeconds?.ToString("F3", System.Globalization.CultureInfo.InvariantCulture) ?? "end"}"
+            : null;
         var evidencePackage = EvidencePackageBuilder.Build(
-            title,
+            regionLabel ?? title,
             fileIds,
             selectedFileNames,
             evidenceToolOutputs
@@ -912,11 +919,15 @@ public sealed class ToolExecutionService(
 
     private async Task<List<ToolExecutionOutput>> ExecuteReportEvidenceToolsAsync(
         IReadOnlyList<string> fileIds,
+        double? startSeconds,
+        double? endSeconds,
         CancellationToken cancellationToken
     )
     {
         var toolOutputs = new List<ToolExecutionOutput>();
         var multiFileArguments = new Dictionary<string, object?> { ["fileIds"] = fileIds };
+        if (startSeconds.HasValue) multiFileArguments["startSeconds"] = startSeconds.Value;
+        if (endSeconds.HasValue) multiFileArguments["endSeconds"] = endSeconds.Value;
         var multiFileToolNames = new[]
         {
             AgentToolNames.GetMetadata,

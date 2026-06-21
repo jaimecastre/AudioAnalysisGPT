@@ -2440,53 +2440,45 @@ The product is directionally strong: it feels like a technical acoustic investig
      - Destructive actions remain visually distinct and require confirmation when the consequence is irreversible.
      - Context menu labels describe the target object or region clearly enough to avoid ambiguity.
 
-4. **Manual analysis layout hierarchy** 🟡 In Progress
-   - Problem: Panels can feel scattered across a large canvas and relationships between findings, spectrum, spectrogram, CPB, and sound quality are not always obvious.
-   - Why it matters: Users need to scan and compare results quickly.
-   - Target pattern: Keep the responsive grid, but strengthen hierarchy with a primary result area, key findings, and consistent secondary panels.
-   - **Phase 1 Complete:** `KeyFindingsSummary` component created - shows issue count, key metrics (RMS/Peak/Freq), severity badges, and context-aware CTAs based on findings
-   - **Next:** Integrate KeyFindingsSummary into ActiveSignalCard above secondary panels
-   - Acceptance criteria:
-     - The default manual workspace has an obvious first reading path.
-     - Panel headers, controls, and results use consistent sizing and spacing.
-     - Empty regions are replaced with meaningful placeholders or recommended next steps.
+4. **Manual analysis layout hierarchy** ✅ Done (2026-06-21)
+   - Implemented three-state layout: `InvestigationStartPrompt` sole CTA on fresh load → `KeyFindingsSummary` strip once analysis/findings data exists → panel grid below.
+   - `KeyFindingsSummary` now returns null when `analysisResult` is null AND findings have not run — eliminates the empty strip and competing CTAs.
+   - `InvestigationStartPrompt` suppressed once `analysisResult` is available — no dual CTA overlap.
+   - Fixed `onAnalyzeLoudestRegion` callback to open spectrum panel (was incorrectly opening findings panel).
+   - Added `keyFindingsSummaryWrapper` with `padding: 8px 8px 0` for consistent spacing matching analysis grid.
 
-5. **Reusable analysis result card pattern**
-   - Problem: Different panels present controls, method metadata, key takeaways, and visualizations differently.
-   - Why it matters: Inconsistent presentation increases cognitive load and makes the product feel less polished.
-   - Target pattern: Each analysis card has title, compact controls, key takeaway, visualization, method/limitations, and evidence hooks.
-   - Acceptance criteria:
-     - Spectrum, CPB, sound quality, findings, and comparison cards share a recognizable structure.
-     - Key metric/takeaway text is more visually prominent than configuration metadata.
-     - Method and limitation details remain available without dominating the card.
+5. **Reusable analysis result card pattern** ✅ Done (2026-06-21)
+   - All four analysis panels (Spectrum, Spectrogram, CPB, Sound Quality) now share the same `ⓘ` toggle + collapsed summary footer pattern.
+   - Spectrum summary: peak frequency, peak level, FFT size, window type, overlap.
+   - Spectrogram summary: scale, FFT size, gain, dynamic range, analysed region.
+   - CPB and Sound Quality already had this pattern — verified consistent.
+   - Summary/summaryHeader/summaryValue CSS classes added to SpectrogramPanel.module.scss (shared by SpectrumPanel which imports the same file).
 
-6. **Tool discoverability and click targets**
-   - Problem: Icon-only or narrow tool controls can be unclear; users may not know whether icon, label, or row is clickable.
-   - Why it matters: Tool invocation is core to the workflow.
-   - Target pattern: Full-row clickable tool items with icon, label, active state, hover state, and tooltip.
-   - Acceptance criteria:
-     - Clicking either icon or label triggers the same tool action.
-     - Active/open tools are visually distinct.
-     - Every non-obvious icon has a tooltip.
+6. **Tool discoverability and click targets** ✅ Done (2026-06-21)
+   - Active state now has a teal left-border accent + deeper icon background so open tools are clearly distinct from just hovered.
+   - Removed `disabled` from open-state tools (Spectrogram, Spectrum, CPB, Sound Quality, Findings) — buttons stay fully interactable with the active state as the indicator.
+   - A/B Compare and Benchmark remain `disabled` only when < 2 files or loading (genuinely non-functional states).
+   - Added `:focus-visible` keyboard focus ring on all tool rows.
+   - Badge is larger and higher-contrast (font-weight 700, darker teal).
+   - Tooltips updated to describe current state clearly ("Open — visible in workspace" vs "Open [tool]").
 
-7. **Readability and visual polish**
-   - Problem: Some secondary labels, timestamps, and metadata can be too faint; panel density and blank space are uneven.
-   - Why it matters: Low contrast and inconsistent density reduce trust and slow scanning.
-   - Target pattern: Stronger text contrast, consistent panel rhythm, and fewer ultra-muted labels outside disabled states.
-   - Acceptance criteria:
-     - Secondary text is readable on laptop displays.
-     - Disabled states are visually distinct from ordinary metadata.
-     - Panel padding, header height, borders, and control sizing are consistent.
+7. **Readability and visual polish** ✅ Done (2026-06-21)
+   - `--text-muted` bumped from `#868e96` (4.1:1) to `#6c757d` (4.6:1) — passes WCAG AA for small text.
+   - Added `--text-label` token (`#5c6370`) for section headers (FILES, TOOLS, panel titles) — stronger than muted, lighter than secondary.
+   - Font size floor enforced: all sub-readable sizes (`0.58–0.62rem`) raised to `0.65rem` minimum across FindingsPanel badges, chips, meta labels, and dialog type tags.
+   - FindingsPanel secondary text (`evidenceChipLabel`, `savedFindingMeta`, `evidenceMore`, `savedFindingsEmpty`) promoted from `text-muted` to `text-secondary`.
+   - Inactive signal card: name bumped to `0.78rem + text-primary`, detail to `0.68rem + text-secondary`.
+   - All analysis panel headers standardised to `padding: 6px 12px` (was `6px 10px` in Spectrogram/Spectrum/CPB/SoundQuality).
+   - `flex-wrap: wrap` added to CpbPanel header (now matches SpectrogramPanel — both wrap at narrow widths).
 
 ### Nice-To-Have UX Tasks
 
-8. **Metric education without clutter**
-   - Problem: Loudness, sharpness, roughness, CPB, and spectrogram settings can be opaque to non-expert users.
-   - Why it matters: Users need enough context to trust and interpret metrics without turning the UI into documentation.
-   - Target pattern: Tooltips, compact "what this means" affordances, or expandable method notes.
-   - Acceptance criteria:
-     - Help text is available on demand.
-     - Always-visible UI remains focused on results and next actions.
+8. **Metric education without clutter** ✅ Done (2026-06-21)
+   - Sound Quality bar labels (Loudness, Sharpness, Roughness) each have a hover tooltip explaining the psychoacoustic model, unit, and what high/low means.
+   - CPB settings labels (Band Mode, Weighting, Method, FFT Size) all have hover tooltips explaining the technical choice in plain terms.
+   - Spectrogram settings labels (Scale, FFT Size, Range, Gain) all have hover tooltips.
+   - Spectrum settings labels (FFT size, Window, Overlap, Min Hz, Max Hz) all have hover tooltips.
+   - All tooltips are `multiline`, `withArrow`, `position="top"`, width 200–250px — consistent pattern across all panels.
 
 9. **Usability validation script**
    - Problem: UX assumptions need validation before heavy engineering investment.
@@ -2955,6 +2947,15 @@ Use the implemented MoSQITo loudness/sharpness/roughness sidecar
 ```
 
 Findings, tonal peak detection, the first CPB graph slice, CPB comparison, CPB weighting controls, the experimental `python_filter_bank` sidecar path, generated-WAV CPB validation tests, the first MoSQITo loudness/sharpness/roughness slice, sound-quality comparison deltas, the full agent findings investigation flow (run_findings → findings_result + tool_result workspace artifacts, evidence citation pills, referenced context panel, markdown rendering), and Python package installation are all now implemented. The next high-value task is batch benchmarking, because it turns single-file and A/B workflows into product-family ranking, clustering, outlier detection, and report generation.
+
+**Phase 7 — Reporting (✅ Done 2026-06-21):**
+- `POST /api/analysis/report` endpoint added (`GenerateReportEndpoint.cs`) — thin wrapper over `ToolExecutionService.ExecuteToolAsync(generate_report)`. No LLM involved; pure deterministic backend evidence.
+- `useGenerateReport` hook added (`analysis/hooks/useGenerateReport.ts`) — calls the new endpoint, manages `isGenerating` / `error` state.
+- `ExportReportModal` component added (`manualAnalysis/components/ExportReportModal.tsx`) — allows custom title, shows file list, renders generated Markdown via `MarkdownBlock`, offers Download .md and Print / Save PDF.
+- **Export Report** button added to `FileListPanel` (teal, below Findings) + wired in `ManualWorkspace`.
+- `ReportCard` in `AgentWorkspacePanel` updated: replaced raw `<pre>` with `MarkdownBlock` renderer + restyled `.reportPreview` CSS for proper Markdown display.
+- Reports now accessible from both Manual Mode (no agent required) and Agent Mode.
+- **Region-scoped reports (✅ Done 2026-06-21):** `startSeconds`/`endSeconds` optional fields added to `GenerateReportRequest` and `GenerateReportEndpoint`. `ExecuteReportEvidenceToolsAsync` forwards them to all multi-file evidence tools (BasicMetrics, Spectrum, CPB, SoundQuality). `AgentReportBuilder` surfaces region label in Summary section. `ExportReportModal` reads `activeSelection` from Redux and shows "region Xs – Ys" vs "full file" in the UI, passing the bounds to the API automatically.
 
 ---
 

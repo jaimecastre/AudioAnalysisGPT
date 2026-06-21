@@ -129,6 +129,12 @@ public static class AgentReportBuilder
         markdown.AppendLine(
             "- Files analyzed: " + fileReports.Count.ToString(CultureInfo.InvariantCulture)
         );
+        if (!string.IsNullOrWhiteSpace(evidencePackage.UserQuestion)
+            && evidencePackage.UserQuestion.StartsWith("region:", StringComparison.OrdinalIgnoreCase))
+        {
+            var range = evidencePackage.UserQuestion.Substring("region:".Length).Replace("-", " – ");
+            markdown.AppendLine("- Region analysed: " + range);
+        }
         markdown.AppendLine("- Evidence source: deterministic backend analysis outputs.");
         markdown.AppendLine(
             "- Calibration note: reported levels are relative/digital unless calibration metadata supports physical acoustic units."

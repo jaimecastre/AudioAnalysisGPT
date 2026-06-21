@@ -62,6 +62,10 @@
   min-height: 200px;
 }
 
+.keyFindingsSummaryWrapper {
+  padding: 8px 8px 0;
+}
+
 // Responsive tile grid for analysis panels below the pinned waveform.
 // Dynamically adjusts columns based on available space.
 .analysisGrid {

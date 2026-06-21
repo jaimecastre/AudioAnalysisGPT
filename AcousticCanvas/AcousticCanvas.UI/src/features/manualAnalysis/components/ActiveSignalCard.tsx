@@ -296,16 +296,17 @@ export const ActiveSignalCard = ({
         />
       </div>
 
-      <KeyFindingsSummary
-        activeFile={file}
-        analysisResult={analysisResult}
-        spectrumResult={spectrumResult}
-        findings={findings}
-        findingsStatus={findingsStatus}
-        onViewFindings={onPromptOpenFindings}
-        onAnalyzeLoudestRegion={onPromptOpenFindings}
-        onInspectSpectrum={onPromptAddSpectrum}
-      />
+      <div className={styles.keyFindingsSummaryWrapper}>
+        <KeyFindingsSummary
+          activeFile={file}
+          analysisResult={analysisResult}
+          spectrumResult={spectrumResult}
+          findings={findings}
+          findingsStatus={findingsStatus}
+          onViewFindings={onPromptOpenFindings}
+          onRunSpectrum={onPromptAddSpectrum}
+        />
+      </div>
 
       <div className={styles.analysisGrid}>
       {showInvestigationPrompt && (

@@ -18,11 +18,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 10px;
+  flex-wrap: wrap;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--border);
   background-color: var(--bg-elevated);
   flex-shrink: 0;
-  gap: 8px;
+  gap: 4px 8px;
 }
 
 .askAgentButton {
@@ -269,4 +270,32 @@
   padding: 8px 12px;
   border-bottom: 1px solid var(--border);
   background-color: var(--bg-elevated);
+}
+
+.summaryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 4px 8px;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-surface);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--border);
+  background-color: var(--bg-surface);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  flex-wrap: wrap;
+}
+
+.summaryValue {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
