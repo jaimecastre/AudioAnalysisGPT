@@ -54,6 +54,7 @@ const BLOCK_TYPE_LABELS: Record<string, string> = {
   spectrumChart: 'spectrum',
   ranking: 'ranking',
   suggestedActions: 'next steps',
+  workflow: 'workflow',
   analysisView: 'analysis view',
 };
 

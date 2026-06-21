@@ -70,8 +70,8 @@ public static class AgentReportBuilder
             }
             else if (evidence.Type == EvidenceTypes.BasicMetrics)
             {
-                report.RmsDbFs = GetDouble(evidence.Data, "rmsDbFs");
-                report.PeakDbFs = GetDouble(evidence.Data, "peakDbFs");
+                report.RmsDbFs = GetDouble(evidence.Data, "rmsDb") ?? GetDouble(evidence.Data, "rmsDbFs");
+                report.PeakDbFs = GetDouble(evidence.Data, "peakDb") ?? GetDouble(evidence.Data, "peakDbFs");
                 report.CrestFactorDb = GetDouble(evidence.Data, "crestFactorDb");
                 report.LevelDbUnit = GetString(evidence.Data, "levelDbUnit") ?? "dBFS";
             }

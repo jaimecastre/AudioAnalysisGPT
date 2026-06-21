@@ -251,8 +251,8 @@ public sealed class ToolExecutionService(
                         : (object?)null,
                     metrics = new
                     {
-                        rmsDbFs = primaryChannel.RmsDb,
-                        peakDbFs = primaryChannel.PeakDb,
+                        rmsDb = primaryChannel.RmsDb,
+                        peakDb = primaryChannel.PeakDb,
                         crestFactorDb = primaryChannel.CrestFactorDb,
                         dcOffsetLinear = primaryChannel.DcOffset,
                         dbUnit = primaryChannel.DbUnit,
@@ -424,6 +424,7 @@ public sealed class ToolExecutionService(
                     {
                         peakFrequencyHz = primaryChannel.PeakFrequencyHz,
                         maxMagnitudeDb = primaryChannel.MaxMagnitudeDb,
+                        dbUnit = primaryChannel.DbUnit,
                         dominantPeaks = topPeaks,
                     },
                     parameters = new

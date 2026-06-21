@@ -90,6 +90,7 @@ public sealed class AgentSpectrumToolTests
                         {
                             peakFrequencyHz = 257.0,
                             maxMagnitudeDb = -12.5,
+                            dbUnit = "dB SPL",
                             dominantPeaks = new[]
                             {
                                 new
@@ -120,6 +121,7 @@ public sealed class AgentSpectrumToolTests
         Assert.Equal("test_file.wav", evidence.Data["fileName"]);
         Assert.Equal(257.0, evidence.Data["peakFrequencyHz"]);
         Assert.Equal(-12.5, evidence.Data["maxMagnitudeDb"]);
+        Assert.Equal("dB SPL", evidence.Data["spectrumDbUnit"]);
         Assert.Equal("spectrum_abcdef12", evidence.Data["dataRef"]);
         Assert.True(evidence.Data.ContainsKey("dominantPeaks"));
     }

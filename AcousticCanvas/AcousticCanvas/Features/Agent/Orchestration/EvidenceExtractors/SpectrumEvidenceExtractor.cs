@@ -47,6 +47,11 @@ public static class SpectrumEvidenceExtractor
                 evidenceData["maxMagnitudeDb"] = maxMagEl.GetDouble();
             }
 
+            if (summaryElement.TryGetProperty("dbUnit", out var dbUnitEl))
+            {
+                evidenceData["spectrumDbUnit"] = dbUnitEl.GetString();
+            }
+
             if (summaryElement.TryGetProperty("dominantPeaks", out var peaksArray))
             {
                 evidenceData["dominantPeaks"] = ExtractDominantPeaks(peaksArray);

@@ -139,6 +139,100 @@ public class AgentResponseBlockSerializationTests
     }
 
     [Fact]
+    public void WorkflowBlock_Serializes_OrderedSteps()
+    {
+        var block = new WorkflowBlock
+        {
+            Title = "Generated analysis workflow",
+            Question = "Investigate this recording.",
+            Steps =
+            [
+                new WorkflowStep
+                {
+                    StepNumber = 1,
+                    ToolName = "get_metadata",
+                    EvidenceType = "metadata",
+                    FileId = "file-1",
+                    FileName = "fan.wav",
+                    ResultId = null,
+                    Description = "Check file duration, sample rate, and channel metadata.",
+                },
+                new WorkflowStep
+                {
+                    StepNumber = 2,
+                    ToolName = "run_spectrum",
+                    EvidenceType = "spectrum",
+                    FileId = "file-1",
+                    FileName = "fan.wav",
+                    ResultId = "spectrum_abc",
+                    Description = "Inspect frequency content and dominant peaks.",
+                },
+            ],
+        };
+
+        var json = JsonSerializer.Serialize(block, JsonOptions);
+        var document = JsonDocument.Parse(json);
+
+        Assert.Equal("workflow", document.RootElement.GetProperty("blockType").GetString());
+        Assert.Equal(
+            "Generated analysis workflow",
+            document.RootElement.GetProperty("title").GetString()
+        );
+        var steps = document.RootElement.GetProperty("steps");
+        Assert.Equal(2, steps.GetArrayLength());
+        Assert.Equal(1, steps[0].GetProperty("stepNumber").GetInt32());
+        Assert.Equal("get_metadata", steps[0].GetProperty("toolName").GetString());
+        Assert.Equal("metadata", steps[0].GetProperty("evidenceType").GetString());
+        Assert.Equal(JsonValueKind.Null, steps[0].GetProperty("resultId").ValueKind);
+        Assert.Equal(2, steps[1].GetProperty("stepNumber").GetInt32());
+        Assert.Equal("run_spectrum", steps[1].GetProperty("toolName").GetString());
+        Assert.Equal("spectrum_abc", steps[1].GetProperty("resultId").GetString());
+    }
+
+    [Fact]
+    public void PrependDeterministicBlocksSerializesWorkflowDerivedProperties()
+    {
+        IReadOnlyList<AgentResponseBlock> deterministicBlocks =
+        [
+            new WorkflowBlock
+            {
+                Title = "Generated analysis workflow",
+                Question = "Investigate this recording.",
+                Steps =
+                [
+                    new WorkflowStep
+                    {
+                        StepNumber = 1,
+                        ToolName = "get_metadata",
+                        EvidenceType = "metadata",
+                        FileId = "file-1",
+                        FileName = "fan.wav",
+                        ResultId = null,
+                        Description = "Check file duration, sample rate, and channel metadata.",
+                    },
+                ],
+            },
+        ];
+
+        var blocks = AgentResultBuilder.PrependDeterministicBlocks(
+            deterministicBlocks,
+            existingBlocks: null
+        );
+
+        var block = Assert.Single(blocks!);
+        Assert.Equal("workflow", block.GetProperty("blockType").GetString());
+        Assert.Equal(
+            "Generated analysis workflow",
+            block.GetProperty("title").GetString()
+        );
+        Assert.Equal(1, block.GetProperty("steps").GetArrayLength());
+        Assert.Equal(
+            "get_metadata",
+            block.GetProperty("steps")[0].GetProperty("toolName").GetString()
+        );
+    }
+
+    [Fact]
     public void SuggestedActionsBlock_Serializes_Actions()
     {
         var block = new SuggestedActionsBlock

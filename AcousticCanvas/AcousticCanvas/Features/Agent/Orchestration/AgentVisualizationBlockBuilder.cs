@@ -2,6 +2,44 @@ namespace AcousticCanvas.Features.Agent.Orchestration;
 
 public static class AgentVisualizationBlockBuilder
 {
+    public static IReadOnlyList<WorkflowBlock> BuildWorkflowBlocks(
+        VisualizationPlan visualizationPlan,
+        EvidencePackage evidencePackage
+    )
+    {
+        var workflowBlocks = new List<WorkflowBlock>();
+
+        foreach (var planBlock in visualizationPlan.Blocks)
+        {
+            if (planBlock.BlockType != VisualizationBlockTypes.Workflow)
+            {
+                continue;
+            }
+
+            if (planBlock.SourceEvidenceIds is null || planBlock.SourceEvidenceIds.Count < 3)
+            {
+                continue;
+            }
+
+            var steps = BuildWorkflowSteps(planBlock.SourceEvidenceIds, evidencePackage);
+            if (steps.Count < 3)
+            {
+                continue;
+            }
+
+            workflowBlocks.Add(
+                new WorkflowBlock
+                {
+                    Title = "Generated analysis workflow",
+                    Question = evidencePackage.UserQuestion,
+                    Steps = steps,
+                }
+            );
+        }
+
+        return workflowBlocks;
+    }
+
     public static IReadOnlyList<SpectrumOverlayBlock> BuildSpectrumOverlayBlocks(
         VisualizationPlan visualizationPlan,
         EvidencePackage evidencePackage
@@ -107,6 +145,66 @@ public static class AgentVisualizationBlockBuilder
         }
 
         return investigationBlocks;
+    }
+
+    private static List<WorkflowStep> BuildWorkflowSteps(
+        IReadOnlyList<string> sourceEvidenceIds,
+        EvidencePackage evidencePackage
+    )
+    {
+        var steps = new List<WorkflowStep>();
+
+        foreach (var evidenceId in sourceEvidenceIds)
+        {
+            if (!AgentEvidenceLookup.TryFindEvidence(evidencePackage, evidenceId, out var evidence))
+            {
+                continue;
+            }
+
+            var toolName = ExpertVisualizationPlanner.MapWorkflowToolName(evidence.Type);
+            if (toolName is null)
+            {
+                continue;
+            }
+
+            AgentEvidenceLookup.TryGetResultId(evidence, out var resultId);
+            var fileIdentity = AgentEvidenceLookup.GetEvidenceFileIdentity(
+                evidence,
+                evidenceId,
+                string.IsNullOrWhiteSpace(resultId) ? evidenceId : resultId
+            );
+
+            steps.Add(
+                new WorkflowStep
+                {
+                    StepNumber = steps.Count + 1,
+                    ToolName = toolName,
+                    EvidenceType = evidence.Type,
+                    FileId = fileIdentity.FileId,
+                    FileName = fileIdentity.FileName,
+                    ResultId = string.IsNullOrWhiteSpace(resultId) ? null : resultId,
+                    Description = BuildWorkflowStepDescription(evidence.Type),
+                }
+            );
+        }
+
+        return steps;
+    }
+
+    private static string BuildWorkflowStepDescription(string evidenceType)
+    {
+        return evidenceType switch
+        {
+            EvidenceTypes.Metadata => "Check file duration, sample rate, channels, and format metadata.",
+            EvidenceTypes.BasicMetrics => "Measure peak, RMS, crest factor, and related level facts.",
+            EvidenceTypes.EventDetection => "Detect clipping, silence, transients, or loudest regions.",
+            EvidenceTypes.Spectrum => "Inspect frequency content, tonal peaks, and spectral balance.",
+            EvidenceTypes.Spectrogram => "Inspect time-frequency structure across the recording.",
+            EvidenceTypes.Cpb => "Summarize octave or third-octave band balance.",
+            EvidenceTypes.SoundQuality => "Measure loudness, sharpness, and roughness.",
+            EvidenceTypes.Findings => "Collect deterministic findings and severity-coded issues.",
+            _ => "Collect structured evidence for the investigation.",
+        };
     }
 
     private static List<OverlaySignal> BuildSpectrumOverlaySignals(

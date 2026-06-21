@@ -44,9 +44,9 @@ export function extractAgentToolRows(toolName: string, raw: unknown): ToolResult
       if (!metrics) continue;
       const prefix = results.length > 1 ? `${String(result['fileId']).slice(-4)} ` : '';
       const unit = metrics['dbUnit'] ?? 'dB SPL';
-      rows.push({ label: `${prefix}RMS`, value: fmtDb(metrics['rmsDbFs'], unit) });
-      rows.push({ label: `${prefix}peak`, value: fmtDb(metrics['peakDbFs'], unit) });
-      rows.push({ label: `${prefix}crest factor`, value: fmtDb(metrics['crestFactorDb']) });
+      rows.push({ label: `${prefix}RMS`, value: fmtDb(metrics['rmsDb'] ?? metrics['rmsDbFs'], unit) });
+      rows.push({ label: `${prefix}peak`, value: fmtDb(metrics['peakDb'] ?? metrics['peakDbFs'], unit) });
+      rows.push({ label: `${prefix}crest factor`, value: fmtDb(metrics['crestFactorDb'], 'dB') });
     }
     return rows.length ? rows : null;
   }
@@ -77,7 +77,7 @@ export function extractAgentToolRows(toolName: string, raw: unknown): ToolResult
       if (!summary) continue;
       const prefix = results.length > 1 ? `${String(result['fileId']).slice(-4)} ` : '';
       rows.push({ label: `${prefix}peak frequency`, value: fmtHz(summary['peakFrequencyHz']) });
-      rows.push({ label: `${prefix}max magnitude`, value: fmtDb(summary['maxMagnitudeDb']) });
+      rows.push({ label: `${prefix}max magnitude`, value: fmtDb(summary['maxMagnitudeDb'], summary['dbUnit'] ?? 'dB SPL') });
     }
     return rows.length ? rows : null;
   }

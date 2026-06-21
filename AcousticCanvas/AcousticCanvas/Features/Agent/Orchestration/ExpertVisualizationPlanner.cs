@@ -16,6 +16,7 @@ public static class ExpertVisualizationPlanner
             },
         };
 
+        AddWorkflowBlockWhenUseful(evidencePackage, blocks);
         AddSoundQualityComparisonBlockWhenUseful(evidencePackage, blocks);
         AddSpectrumOverlayBlockWhenUseful(evidencePackage, blocks);
         AddInvestigationBlockWhenUseful(evidencePackage, blocks);
@@ -25,6 +26,53 @@ public static class ExpertVisualizationPlanner
         var primaryEvidenceType = DeterminePrimaryEvidenceType(evidencePackage);
 
         return new VisualizationPlan { PrimaryEvidenceType = primaryEvidenceType, Blocks = blocks };
+    }
+
+    private static void AddWorkflowBlockWhenUseful(
+        EvidencePackage evidencePackage,
+        List<VisualizationPlanBlock> blocks
+    )
+    {
+        if (!QuestionAsksForGeneratedWorkflow(evidencePackage.UserQuestion))
+        {
+            return;
+        }
+
+        var workflowEvidenceIds = evidencePackage
+            .KeyEvidence.Where(item => MapEvidenceTypeToWorkflowToolName(item.Type) is not null)
+            .Select(item => item.EvidenceId)
+            .ToList();
+
+        if (workflowEvidenceIds.Count < 3)
+        {
+            return;
+        }
+
+        blocks.Add(
+            new VisualizationPlanBlock
+            {
+                BlockType = VisualizationBlockTypes.Workflow,
+                SourceEvidenceId = workflowEvidenceIds[0],
+                SourceEvidenceIds = workflowEvidenceIds,
+                Reason =
+                    $"Show a generated workflow with {workflowEvidenceIds.Count} deterministic analysis steps so the user can audit how the investigation was assembled.",
+            }
+        );
+    }
+
+    private static bool QuestionAsksForGeneratedWorkflow(string question)
+    {
+        var normalizedQuestion = question.ToLowerInvariant();
+
+        return normalizedQuestion.Contains("investigate", StringComparison.Ordinal)
+            || normalizedQuestion.Contains("diagnose", StringComparison.Ordinal)
+            || normalizedQuestion.Contains("report", StringComparison.Ordinal)
+            || normalizedQuestion.Contains("summarize", StringComparison.Ordinal)
+            || normalizedQuestion.Contains("summarise", StringComparison.Ordinal)
+            || normalizedQuestion.Contains("compare", StringComparison.Ordinal)
+            || normalizedQuestion.Contains("benchmark", StringComparison.Ordinal)
+            || normalizedQuestion.Contains("why", StringComparison.Ordinal)
+            || normalizedQuestion.Contains("which", StringComparison.Ordinal);
     }
 
     private static void AddEvidenceViewBlocks(
@@ -271,6 +319,25 @@ public static class ExpertVisualizationPlanner
             EvidenceTypes.Cpb => EvidenceTypes.Cpb,
             EvidenceTypes.SoundQuality => "soundQuality",
             EvidenceTypes.Findings => EvidenceTypes.Findings,
+            _ => null,
+        };
+    }
+
+    public static string? MapWorkflowToolName(string evidenceType) =>
+        MapEvidenceTypeToWorkflowToolName(evidenceType);
+
+    private static string? MapEvidenceTypeToWorkflowToolName(string evidenceType)
+    {
+        return evidenceType switch
+        {
+            EvidenceTypes.Metadata => "get_metadata",
+            EvidenceTypes.BasicMetrics => "run_basic_metrics",
+            EvidenceTypes.EventDetection => "run_event_detection",
+            EvidenceTypes.Spectrum => "run_spectrum",
+            EvidenceTypes.Spectrogram => "run_spectrogram",
+            EvidenceTypes.Cpb => "run_cpb",
+            EvidenceTypes.SoundQuality => "run_sound_quality_metrics",
+            EvidenceTypes.Findings => "run_findings",
             _ => null,
         };
     }

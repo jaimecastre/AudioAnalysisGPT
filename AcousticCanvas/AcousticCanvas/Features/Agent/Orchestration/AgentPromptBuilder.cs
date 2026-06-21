@@ -284,7 +284,8 @@ public static class AgentPromptBuilder
             - For spectrum analysisView preview only: Include frequenciesHz and magnitudesDb arrays (downsampled to ~100 points max) to show a mini spectrum chart inline. Copy these from spectrum evidence.
             - For non-spectrum analysisView blocks (spectrogram, cpb, soundQuality, findings): use resultId and summary metadata only. Do not add frequenciesHz or magnitudesDb because those fields render as a spectrum preview.
             - For spectrumChart: copy frequenciesHz and magnitudesDb arrays from the spectrum evidence.
-            - For statistics: use exact values from basic_metrics evidence.
+            - For statistics: use exact values from basic_metrics evidence. Level evidence uses neutral keys `peakDb` and `rmsDb` plus `levelDbUnit`; use that unit verbatim in both prose and rows. Do not label positive SPL values as dBFS. Only use dBFS when `levelDbUnit` is exactly `dBFS`.
+            - For spectrum max magnitude: use `maxMagnitudeDb` with `spectrumDbUnit` when available. Do not label positive SPL spectrum magnitudes as dBFS.
             - For ranking: use actual measured scores from sound_quality or basic_metrics.
             - When resultId is available in evidence, PREFER analysisView over spectrumChart for better UX.
 

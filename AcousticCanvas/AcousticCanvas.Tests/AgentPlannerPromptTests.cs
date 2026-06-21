@@ -53,6 +53,17 @@ public sealed class AgentPlannerPromptTests
     }
 
     [Fact]
+    public void FinalAnswerPromptRequiresLevelUnitsFromEvidence()
+    {
+        var prompt = AgentPromptBuilder.BuildFinalAnswerSystemPromptWithBlocks();
+
+        Assert.Contains("levelDbUnit", prompt);
+        Assert.Contains("Do not label positive SPL values as dBFS", prompt);
+        Assert.Contains("peakDb", prompt);
+        Assert.Contains("rmsDb", prompt);
+    }
+
+    [Fact]
     public void PlannerSystemPromptRoutesReportRequestsToGenerateReport()
     {
         var prompt = AgentPromptBuilder.BuildPlannerSystemPrompt(
@@ -64,5 +75,39 @@ public sealed class AgentPlannerPromptTests
         Assert.Contains("generate_report", prompt);
         Assert.Contains("QA report", prompt, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("make a report", prompt, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void PlannerUserMessageIncludesActiveSelectionWhenSelectionIsValid()
+    {
+        var userMessage = AgentPlanner.BuildPlannerUserMessage(
+            "analyze this region",
+            ["file-a"],
+            [],
+            activeSelectionStartSeconds: 0.5,
+            activeSelectionEndSeconds: 2.25
+        );
+
+        Assert.Contains("Active waveform selection: 0.500s", userMessage);
+        Assert.Contains("2.250s", userMessage);
+        Assert.Contains("\"startSeconds\": 0.500", userMessage);
+        Assert.Contains("\"endSeconds\": 2.250", userMessage);
+        Assert.Contains("unless the user explicitly asks for the full file", userMessage);
+    }
+
+    [Fact]
+    public void PlannerUserMessageOmitsActiveSelectionWhenSelectionIsInvalid()
+    {
+        var userMessage = AgentPlanner.BuildPlannerUserMessage(
+            "analyze this",
+            ["file-a"],
+            [],
+            activeSelectionStartSeconds: 3.0,
+            activeSelectionEndSeconds: 3.0
+        );
+
+        Assert.DoesNotContain("Active waveform selection", userMessage);
+        Assert.DoesNotContain("\"startSeconds\"", userMessage);
+        Assert.DoesNotContain("\"endSeconds\"", userMessage);
     }
 }

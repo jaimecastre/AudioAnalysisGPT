@@ -8,6 +8,7 @@ import { StatisticsBlock } from './StatisticsBlock';
 import { SpectrumChartBlock } from './SpectrumChartBlock';
 import { RankingBlock } from './RankingBlock';
 import { SuggestedActionsBlock } from './SuggestedActionsBlock';
+import { WorkflowBlockView } from './WorkflowBlockView';
 import { AnalysisViewBlock } from './AnalysisViewBlock';
 import { SpectrumOverlayBlockView } from './SpectrumOverlayBlockView';
 import { InvestigationBlockView } from './InvestigationBlockView';
@@ -115,6 +116,9 @@ function renderBlock(
 
     case 'suggestedActions':
       return <SuggestedActionsBlock actions={block.actions} onActionClick={onActionClick} />;
+
+    case 'workflow':
+      return <WorkflowBlockView block={block} />;
 
     case 'analysisView':
       return <AnalysisViewBlock block={block} />;

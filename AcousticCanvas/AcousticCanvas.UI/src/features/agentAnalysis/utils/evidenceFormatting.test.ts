@@ -35,7 +35,7 @@ describe('evidenceFormatting', () => {
 
     expect(rows).toEqual([
       { label: 'peak frequency', value: '1000 Hz' },
-      { label: 'max magnitude', value: '-6.23 dB' },
+      { label: 'max magnitude', value: '-6.23 dB SPL' },
     ]);
   });
 

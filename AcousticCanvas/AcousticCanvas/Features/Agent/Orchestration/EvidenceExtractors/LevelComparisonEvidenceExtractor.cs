@@ -33,12 +33,16 @@ public static class LevelComparisonEvidenceExtractor
                 continue;
             }
 
-            var rms = metricsEl.TryGetProperty("rmsDbFs", out var rmsEl)
+            var rms = metricsEl.TryGetProperty("rmsDb", out var rmsEl)
                 ? rmsEl.GetDouble()
-                : double.NaN;
-            var peak = metricsEl.TryGetProperty("peakDbFs", out var peakEl)
+                : metricsEl.TryGetProperty("rmsDbFs", out var legacyRmsEl)
+                    ? legacyRmsEl.GetDouble()
+                    : double.NaN;
+            var peak = metricsEl.TryGetProperty("peakDb", out var peakEl)
                 ? peakEl.GetDouble()
-                : double.NaN;
+                : metricsEl.TryGetProperty("peakDbFs", out var legacyPeakEl)
+                    ? legacyPeakEl.GetDouble()
+                    : double.NaN;
             var crest = metricsEl.TryGetProperty("crestFactorDb", out var crestEl)
                 ? crestEl.GetDouble()
                 : double.NaN;

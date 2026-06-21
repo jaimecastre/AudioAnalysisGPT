@@ -81,6 +81,34 @@ public sealed record SuggestedActionsBlock : AgentResponseBlock
     public required IReadOnlyList<SuggestedAction> Actions { get; init; }
 }
 
+// ─── Phase 7: Generated Analysis Workflow ────────────────────────────────
+
+/// <summary>
+/// One deterministic step in an agent-generated analysis workflow.
+/// </summary>
+public sealed record WorkflowStep
+{
+    public required int StepNumber { get; init; }
+    public required string ToolName { get; init; }
+    public required string EvidenceType { get; init; }
+    public required string FileId { get; init; }
+    public required string FileName { get; init; }
+    public string? ResultId { get; init; }
+    public required string Description { get; init; }
+}
+
+/// <summary>
+/// Shows how the agent decomposed a broader investigation into deterministic analysis steps.
+/// Built by the backend from tool/evidence metadata — never by arbitrary LLM UI code.
+/// </summary>
+public sealed record WorkflowBlock : AgentResponseBlock
+{
+    public override string BlockType => VisualizationBlockTypes.Workflow;
+    public required string Title { get; init; }
+    public required string Question { get; init; }
+    public required IReadOnlyList<WorkflowStep> Steps { get; init; }
+}
+
 // ─── Phase 2: Analysis View Block ─────────────────────────────────────────
 
 public sealed record AnalysisViewBlock : AgentResponseBlock

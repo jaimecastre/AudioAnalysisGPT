@@ -343,10 +343,18 @@ public sealed class AgentOrchestrator(
                 visualizationPlan,
                 evidencePackage
             );
-        var responseBlocks = AgentResultBuilder.SuppressBlocksCoveredByCombinedVisuals(
+        var workflowBlocks = AgentVisualizationBlockBuilder.BuildWorkflowBlocks(
+            visualizationPlan,
+            evidencePackage
+        );
+        var filteredFinalAnswerBlocks = AgentResultBuilder.SuppressBlocksCoveredByCombinedVisuals(
             finalAnswer.Blocks,
             visualizationPlan,
             evidencePackage
+        );
+        var responseBlocks = AgentResultBuilder.PrependDeterministicBlocks(
+            workflowBlocks,
+            filteredFinalAnswerBlocks
         );
 
         return new AgentAskResult(

@@ -77,6 +77,24 @@ export type SuggestedActionsBlock = {
   actions: SuggestedAction[];
 };
 
+// Phase 7: Generated analysis workflow — deterministic plan/execution summary
+export type WorkflowStep = {
+  stepNumber: number;
+  toolName: string;
+  evidenceType: string;
+  fileId: string;
+  fileName: string;
+  resultId?: string | null;
+  description: string;
+};
+
+export type WorkflowBlock = {
+  blockType: 'workflow';
+  title: string;
+  question: string;
+  steps: WorkflowStep[];
+};
+
 // Phase 2: Unified visualization — references existing Manual mode analysis views
 export type CompactMetric = {
   label: string;
@@ -169,6 +187,7 @@ export type AgentResponseBlock =
   | SpectrumChartBlock
   | RankingBlock
   | SuggestedActionsBlock
+  | WorkflowBlock
   | AnalysisViewBlock
   | SpectrumOverlayBlock
   | InvestigationBlock

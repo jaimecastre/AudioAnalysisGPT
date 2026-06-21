@@ -56,7 +56,7 @@ describe('createToolResultArtifactDrafts', () => {
       rows: [
         { label: 'RMS', value: '-18.25 dB SPL' },
         { label: 'peak', value: '-3.50 dB SPL' },
-        { label: 'crest factor', value: '14.75 dB SPL' },
+        { label: 'crest factor', value: '14.75 dB' },
       ],
     });
   });

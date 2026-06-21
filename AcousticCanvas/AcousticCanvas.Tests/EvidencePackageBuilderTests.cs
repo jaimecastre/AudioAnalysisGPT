@@ -64,6 +64,26 @@ public sealed class EvidencePackageBuilderTests
     }
 
     [Fact]
+    public void CompletedBasicMetricsUsesNeutralDbKeysAndPreservesUnit()
+    {
+        var toolOutput = BuildBasicMetricsOutput("file-1");
+
+        var package = EvidencePackageBuilder.Build(
+            "diagnose this recording",
+            ["file-1"],
+            ["test.wav"],
+            [toolOutput]
+        );
+
+        var metrics = Assert.Single(package.KeyEvidence, e => e.Type == "basic_metrics");
+        Assert.Equal(69.1, metrics.Data["rmsDb"]);
+        Assert.Equal(83.9, metrics.Data["peakDb"]);
+        Assert.Equal("dB SPL", metrics.Data["levelDbUnit"]);
+        Assert.False(metrics.Data.ContainsKey("rmsDbFs"));
+        Assert.False(metrics.Data.ContainsKey("peakDbFs"));
+    }
+
+    [Fact]
     public void CompletedEventDetectionProducesEvidenceItem()
     {
         var toolOutput = BuildEventDetectionOutput("file-1");
@@ -194,10 +214,11 @@ public sealed class EvidencePackageBuilderTests
                     fileId,
                     metrics = new
                     {
-                        rmsDbFs = -18.4,
-                        peakDbFs = -1.2,
+                        rmsDb = 69.1,
+                        peakDb = 83.9,
                         crestFactorDb = 17.2,
                         dcOffsetLinear = 0.001,
+                        dbUnit = "dB SPL",
                     },
                 },
             },

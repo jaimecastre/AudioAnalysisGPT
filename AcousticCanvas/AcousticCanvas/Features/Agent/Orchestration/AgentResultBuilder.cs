@@ -5,6 +5,11 @@ namespace AcousticCanvas.Features.Agent.Orchestration;
 
 public static class AgentResultBuilder
 {
+    private static readonly JsonSerializerOptions BlockJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     public static AgentAskResult BuildClarificationResult(string conversationId, string question)
     {
         return new AgentAskResult(
@@ -80,16 +85,23 @@ public static class AgentResultBuilder
         FinalAnswerResponse finalAnswer
     )
     {
-        if (finalAnswer.Blocks is null || finalAnswer.Blocks.Count == 0)
+        return BuildResponseBlocks(finalAnswer.Blocks);
+    }
+
+    public static IReadOnlyList<AgentResponseBlock>? BuildResponseBlocks(
+        IReadOnlyList<JsonElement>? finalAnswerBlocks
+    )
+    {
+        if (finalAnswerBlocks is null || finalAnswerBlocks.Count == 0)
         {
             return null;
         }
 
         var blocks = new List<AgentResponseBlock>();
 
-        for (int i = 0; i < finalAnswer.Blocks.Count; i++)
+        for (int i = 0; i < finalAnswerBlocks.Count; i++)
         {
-            var block = AgentResponseBlockParser.Parse(finalAnswer.Blocks[i]);
+            var block = AgentResponseBlockParser.Parse(finalAnswerBlocks[i]);
             if (block is not null)
             {
                 blocks.Add(block);
@@ -97,6 +109,39 @@ public static class AgentResultBuilder
         }
 
         return blocks.Count > 0 ? blocks : null;
+    }
+
+    public static List<JsonElement>? PrependDeterministicBlocks(
+        IReadOnlyList<AgentResponseBlock> deterministicBlocks,
+        List<JsonElement>? existingBlocks
+    )
+    {
+        if (deterministicBlocks.Count == 0)
+        {
+            return existingBlocks;
+        }
+
+        var blocks = new List<JsonElement>();
+        foreach (var deterministicBlock in deterministicBlocks)
+        {
+            blocks.Add(
+                JsonSerializer.SerializeToElement(
+                    deterministicBlock,
+                    deterministicBlock.GetType(),
+                    BlockJsonOptions
+                )
+            );
+        }
+
+        if (existingBlocks is not null)
+        {
+            foreach (var existingBlock in existingBlocks)
+            {
+                blocks.Add(existingBlock);
+            }
+        }
+
+        return blocks;
     }
 
     public static List<JsonElement>? SuppressBlocksCoveredByCombinedVisuals(

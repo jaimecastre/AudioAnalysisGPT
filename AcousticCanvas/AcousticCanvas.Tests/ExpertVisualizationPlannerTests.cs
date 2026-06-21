@@ -876,6 +876,135 @@ public sealed class ExpertVisualizationPlannerTests
         Assert.Equal(15.0, blocks[0].Signals[1].LoudnessSone);
     }
 
+    [Fact]
+    public void PlanForBroadMultiToolInvestigationIncludesWorkflowBlock()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Investigate this fan recording and generate a report.",
+            analysesRun: ["get_metadata", "run_findings", "run_spectrum", "run_cpb"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_metadata_file1",
+                    Type = "metadata",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "fan.wav",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_findings_file1",
+                    Type = "findings",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "fan.wav",
+                        ["resultId"] = "findings_abc",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_file1",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "fan.wav",
+                        ["resultId"] = "spectrum_abc",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_cpb_file1",
+                    Type = "cpb",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "fan.wav",
+                        ["resultId"] = "cpb_abc",
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        Assert.Contains(
+            plan.Blocks,
+            block =>
+                block.BlockType == "workflow"
+                && block.SourceEvidenceIds is not null
+                && block.SourceEvidenceIds.Count == 4
+                && block.Reason.Contains("workflow", StringComparison.OrdinalIgnoreCase)
+        );
+    }
+
+    [Fact]
+    public void BuildWorkflowBlocksCreatesOrderedStepsFromEvidence()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Diagnose this fan recording.",
+            analysesRun: ["get_metadata", "run_findings", "run_spectrum"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_metadata_file1",
+                    Type = "metadata",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "fan.wav",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_findings_file1",
+                    Type = "findings",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "fan.wav",
+                        ["resultId"] = "findings_abc",
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrum_file1",
+                    Type = "spectrum",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "fan.wav",
+                        ["resultId"] = "spectrum_abc",
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+        var blocks = AgentVisualizationBlockBuilder.BuildWorkflowBlocks(plan, evidencePackage);
+
+        var block = Assert.Single(blocks);
+        Assert.Equal("Generated analysis workflow", block.Title);
+        Assert.Equal("Diagnose this fan recording.", block.Question);
+        Assert.Equal(3, block.Steps.Count);
+        Assert.Equal(1, block.Steps[0].StepNumber);
+        Assert.Equal("get_metadata", block.Steps[0].ToolName);
+        Assert.Equal("metadata", block.Steps[0].EvidenceType);
+        Assert.Equal("fan.wav", block.Steps[0].FileName);
+        Assert.Null(block.Steps[0].ResultId);
+        Assert.Equal(2, block.Steps[1].StepNumber);
+        Assert.Equal("run_findings", block.Steps[1].ToolName);
+        Assert.Equal("findings_abc", block.Steps[1].ResultId);
+        Assert.Equal(3, block.Steps[2].StepNumber);
+        Assert.Equal("run_spectrum", block.Steps[2].ToolName);
+        Assert.Equal("spectrum_abc", block.Steps[2].ResultId);
+    }
+
     private static EvidencePackage BuildEvidencePackage(
         string question,
         IReadOnlyList<string>? selectedFileIds = null,

@@ -35,4 +35,16 @@ describe('buildReportMarkdownDownload', () => {
 
     expect(download.filename).toBe('acoustic-qa-report-2026-06-20.md');
   });
+
+  it('adds the selected region to the filename when region bounds are present', () => {
+    const download = buildReportMarkdownDownload({
+      title: 'Region Report',
+      markdownContent: 'content',
+      timestamp: '2026-06-20T20:28:22.000Z',
+      regionStartSeconds: 0.5,
+      regionEndSeconds: 2,
+    });
+
+    expect(download.filename).toBe('region-report_0.500s-2.000s-2026-06-20.md');
+  });
 });

@@ -127,9 +127,9 @@ public static class DeterministicAnswerWriter
         switch (field)
         {
             case "peak":
-                return FormatDb(data, "peakDbFs", "Peak level");
+                return FormatDb(data, "peakDb", "peakDbFs", "Peak level");
             case "rms":
-                return FormatDb(data, "rmsDbFs", "RMS level");
+                return FormatDb(data, "rmsDb", "rmsDbFs", "RMS level");
             case "crest":
                 return FormatCrest(data);
             case "dcOffset":
@@ -149,14 +149,20 @@ public static class DeterministicAnswerWriter
         }
     }
 
-    private static string? FormatDb(Dictionary<string, object?> data, string key, string label)
+    private static string? FormatDb(
+        Dictionary<string, object?> data,
+        string key,
+        string legacyKey,
+        string label
+    )
     {
-        var value = ReadDouble(data, key);
+        var value = ReadDouble(data, key) ?? ReadDouble(data, legacyKey);
         if (value is null)
         {
             return null;
         }
-        return $"{label}: {value.Value.ToString("0.00", CultureInfo.InvariantCulture)} dB SPL.";
+        var unit = ReadString(data, "levelDbUnit") ?? "dB SPL";
+        return $"{label}: {value.Value.ToString("0.00", CultureInfo.InvariantCulture)} {unit}.";
     }
 
     private static string? FormatCrest(Dictionary<string, object?> data)

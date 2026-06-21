@@ -27,6 +27,8 @@ const KNOWN_ROW_ORDER = [
   'fileName',
   'fileNameA',
   'fileNameB',
+  'peakDb',
+  'rmsDb',
   'peakDbFs',
   'rmsDbFs',
   'crestFactorDb',
@@ -90,6 +92,7 @@ const HIDDEN_KEYS = new Set([
   'dominantPeaks',
   'dominantPeaksA',
   'dominantPeaksB',
+  'spectrumDbUnit',
   'highestBands',
   'findings',
   'firstEvents',
@@ -100,6 +103,8 @@ const LABELS: Record<string, string> = {
   fileName: 'file',
   fileNameA: 'file A',
   fileNameB: 'file B',
+  peakDb: 'peak',
+  rmsDb: 'RMS',
   peakDbFs: 'peak',
   rmsDbFs: 'RMS',
   crestFactorDb: 'crest factor',
@@ -195,8 +200,13 @@ function formatEvidenceValue(key: string, value: unknown, data: Record<string, u
     return String(value);
   }
 
-  if (key.endsWith('DbFs')) {
+  if (key === 'peakDb' || key === 'rmsDb' || key.endsWith('DbFs')) {
     const unit = typeof data['levelDbUnit'] === 'string' ? data['levelDbUnit'] : 'dB SPL';
+    return `${value.toFixed(2)} ${unit}`;
+  }
+
+  if (key === 'maxMagnitudeDb') {
+    const unit = typeof data['spectrumDbUnit'] === 'string' ? data['spectrumDbUnit'] : 'dB SPL';
     return `${value.toFixed(2)} ${unit}`;
   }
 

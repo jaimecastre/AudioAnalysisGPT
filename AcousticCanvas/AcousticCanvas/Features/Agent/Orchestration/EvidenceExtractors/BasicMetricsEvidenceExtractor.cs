@@ -37,14 +37,22 @@ public static class BasicMetricsEvidenceExtractor
                 ["type"] = EvidenceTypes.BasicMetrics,
             };
 
-            if (metricsElement.TryGetProperty("rmsDbFs", out var rmsElement))
+            if (metricsElement.TryGetProperty("rmsDb", out var rmsElement))
             {
-                evidenceData["rmsDbFs"] = rmsElement.GetDouble();
+                evidenceData["rmsDb"] = rmsElement.GetDouble();
+            }
+            else if (metricsElement.TryGetProperty("rmsDbFs", out var legacyRmsElement))
+            {
+                evidenceData["rmsDb"] = legacyRmsElement.GetDouble();
             }
 
-            if (metricsElement.TryGetProperty("peakDbFs", out var peakElement))
+            if (metricsElement.TryGetProperty("peakDb", out var peakElement))
             {
-                evidenceData["peakDbFs"] = peakElement.GetDouble();
+                evidenceData["peakDb"] = peakElement.GetDouble();
+            }
+            else if (metricsElement.TryGetProperty("peakDbFs", out var legacyPeakElement))
+            {
+                evidenceData["peakDb"] = legacyPeakElement.GetDouble();
             }
 
             if (metricsElement.TryGetProperty("crestFactorDb", out var crestElement))
