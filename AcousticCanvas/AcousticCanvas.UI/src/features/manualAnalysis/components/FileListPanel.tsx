@@ -1,5 +1,5 @@
-import type { JSX } from 'react';
-import { useState } from 'react';
+import type { JSX, MouseEvent } from 'react';
+import { useState, useCallback } from 'react';
 import { Text, Stack, ActionIcon, Tooltip } from '@mantine/core';
 import {
   IconFileMusic,
@@ -18,6 +18,10 @@ import {
 } from '@tabler/icons-react';
 import type { AudioFile } from '../../../store/projectState';
 import styles from './FileListPanel.module.scss';
+import { useContextMenu } from '../../../shared/hooks/useContextMenu';
+import { ContextMenu } from '../../../shared/components/ContextMenu';
+import { buildFileListContextMenuItems } from './FileListContextMenu';
+import { FileMetadataModal } from './FileMetadataModal';
 
 interface IFileListPanelProps {
   files: AudioFile[];
@@ -43,7 +47,7 @@ interface IFileListPanelProps {
   width: number;
 }
 
-export function FileListPanel({
+export const FileListPanel = ({
   files,
   selectedSignalId,
   onSelectFile,
@@ -65,10 +69,14 @@ export function FileListPanel({
   isBenchmarkLoading,
   isFindingsPanelOpen,
   width,
-}: IFileListPanelProps): JSX.Element {
+}: IFileListPanelProps): JSX.Element => {
   const [expandedFileIds, setExpandedFileIds] = useState<Set<string>>(new Set());
+  const [contextMenuFileId, setContextMenuFileId] = useState<string | null>(null);
+  const [showFileMetadataModal, setShowFileMetadataModal] = useState(false);
 
-  function handleToggleExpanded(fileId: string): void {
+  const { contextMenu, openContextMenu, closeContextMenu } = useContextMenu();
+
+  const handleToggleExpanded = useCallback((fileId: string): void => {
     setExpandedFileIds((previousSet) => {
       const nextSet = new Set(previousSet);
       if (nextSet.has(fileId)) {
@@ -78,7 +86,37 @@ export function FileListPanel({
       }
       return nextSet;
     });
-  }
+  }, []);
+
+  const handleFileContextMenu = useCallback((event: MouseEvent, fileId: string): void => {
+    event.stopPropagation();
+    setContextMenuFileId(fileId);
+    openContextMenu(event);
+  }, [openContextMenu]);
+
+  const handleSelectFileFromMenu = useCallback((): void => {
+    if (contextMenuFileId) {
+      onSelectFile(contextMenuFileId);
+    }
+    closeContextMenu();
+  }, [contextMenuFileId, onSelectFile, closeContextMenu]);
+
+  const handleCompareWithFromMenu = useCallback((): void => {
+    onRunCompare();
+    closeContextMenu();
+  }, [onRunCompare, closeContextMenu]);
+
+  const handleShowFileInfoFromMenu = useCallback((): void => {
+    setShowFileMetadataModal(true);
+    closeContextMenu();
+  }, [closeContextMenu]);
+
+  const handleRemoveFileFromMenu = useCallback((): void => {
+    if (contextMenuFileId) {
+      onRemoveFile(contextMenuFileId);
+    }
+    closeContextMenu();
+  }, [contextMenuFileId, onRemoveFile, closeContextMenu]);
 
   return (
     <div className={styles.fileListPanel} style={{ width }}>
@@ -91,6 +129,7 @@ export function FileListPanel({
             key={file.id}
             className={`${styles.fileTreeNode} ${isActive ? styles.fileTreeNodeActive : ''}`}
             onClick={() => onSelectFile(file.id)}
+            onContextMenu={(e) => handleFileContextMenu(e, file.id)}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelectFile(file.id); }}
@@ -251,6 +290,27 @@ export function FileListPanel({
           </Tooltip>
         </Stack>
       </div>
+      {contextMenuFileId && (
+        <ContextMenu
+          opened={contextMenu !== null}
+          position={contextMenu}
+          items={buildFileListContextMenuItems({
+            fileId: contextMenuFileId,
+            isSelected: contextMenuFileId === selectedSignalId,
+            canCompare: files.length >= 2,
+            onSelectFile: handleSelectFileFromMenu,
+            onCompareWith: handleCompareWithFromMenu,
+            onShowFileInfo: handleShowFileInfoFromMenu,
+            onRemoveFile: handleRemoveFileFromMenu,
+          })}
+          onClose={closeContextMenu}
+        />
+      )}
+      <FileMetadataModal
+        file={files.find((f) => f.id === contextMenuFileId) ?? null}
+        opened={showFileMetadataModal}
+        onClose={() => setShowFileMetadataModal(false)}
+      />
     </div>
   );
-}
+};

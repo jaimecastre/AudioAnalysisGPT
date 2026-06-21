@@ -23,8 +23,11 @@ export interface WaveSurferDisplayRef {
   play: () => void;
   pause: () => void;
   seek: (timeSeconds: number) => void;
+  getTimeForClientX: (clientX: number) => number | null;
   clearSelection: () => void;
   setSelection: (startSeconds: number, endSeconds: number) => void;
+  zoomToSelection: (startSeconds: number, endSeconds: number) => void;
+  resetZoom: () => void;
 }
 
 interface IWaveSurferDisplayProps {
@@ -35,6 +38,7 @@ interface IWaveSurferDisplayProps {
   onFinish?: () => void;
   onUserSelectionChange?: (startSeconds: number, endSeconds: number) => void;
   displayRef?: React.MutableRefObject<WaveSurferDisplayRef | null>;
+  onContextMenu?: (event: React.MouseEvent) => void;
 }
 
 // Draws the Pa y-axis: ticks align with actual waveform peak positions.
@@ -133,6 +137,7 @@ export const WaveSurferDisplay = ({
   onFinish,
   onUserSelectionChange,
   displayRef,
+  onContextMenu,
 }: IWaveSurferDisplayProps): JSX.Element => {
   const waveContainerRef = useRef<HTMLDivElement>(null);
   const axisCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -162,6 +167,12 @@ export const WaveSurferDisplay = ({
     const bounds = event.currentTarget.getBoundingClientRect();
     const fraction = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
     dispatch(cursorTimeHovered(fraction * durationSeconds));
+  };
+
+  const handleWaveformContextMenu = (event: React.MouseEvent<HTMLDivElement>): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    onContextMenu?.(event);
   };
 
   // Measure container height on mount and resize
@@ -258,6 +269,24 @@ export const WaveSurferDisplay = ({
     displayRef.current.setSelection = setSelectionInWaveSurfer;
   }, [displayRef, clearSelection, setSelectionInWaveSurfer]);
 
+  // Add native context menu listener to override WaveSurfer's default behavior
+  useEffect(() => {
+    const container = waveContainerRef.current;
+    if (!container || !onContextMenu) return;
+
+    const handleContextMenu = (event: MouseEvent): void => {
+      event.preventDefault();
+      event.stopPropagation();
+      onContextMenu(event as unknown as React.MouseEvent);
+    };
+
+    container.addEventListener('contextmenu', handleContextMenu, true);
+
+    return () => {
+      container.removeEventListener('contextmenu', handleContextMenu, true);
+    };
+  }, [onContextMenu]);
+
   useEffect(() => {
     redrawAxis();
   }, [redrawAxis]);
@@ -292,6 +321,7 @@ export const WaveSurferDisplay = ({
           ref={waveContainerRef}
           onMouseMove={handleWaveformMouseMove}
           onMouseLeave={() => dispatch(cursorTimeCleared())}
+          onContextMenu={handleWaveformContextMenu}
           style={{
             flex: 1,
             minWidth: 0,

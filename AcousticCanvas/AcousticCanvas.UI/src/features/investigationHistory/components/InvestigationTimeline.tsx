@@ -17,7 +17,7 @@ const CONFIDENCE_LABELS: Record<string, string> = {
   low: 'Low',
 };
 
-function formatTimestamp(value: string): string {
+const formatTimestamp = (value: string): string => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return value;
@@ -29,11 +29,11 @@ function formatTimestamp(value: string): string {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
+};
 
-function getToolLabel(toolName: string): string {
+const getToolLabel = (toolName: string): string => {
   return toolName.replace(/^run_/, '').replace(/^get_/, '').replace(/_/g, ' ');
-}
+};
 
 const TimelineRecord = ({
   record,
@@ -125,23 +125,11 @@ export const InvestigationTimeline = (): JSX.Element => {
   const dispatch = useAppDispatch();
   const records = useAppSelector(investigationRecordsSelector);
   const focusedRecordId = useAppSelector(focusedInvestigationRecordIdSelector);
-  const [isOpen, setIsOpen] = useState(records.length > 0);
+  const [openPreference, setOpenPreference] = useState<'auto' | 'open' | 'closed'>('auto');
   const [expandedRecordIds, setExpandedRecordIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (records.length > 0) {
-      setIsOpen(true);
-    }
-  }, [records.length]);
-
-  useEffect(() => {
-    if (!focusedRecordId) {
-      return;
-    }
-
-    setIsOpen(true);
-    setExpandedRecordIds((previous) => new Set(previous).add(focusedRecordId));
-  }, [focusedRecordId]);
+  const isOpen = focusedRecordId !== null
+    || openPreference === 'open'
+    || (openPreference === 'auto' && records.length > 0);
 
   const handleRecordToggle = (recordId: string): void => {
     dispatch(recordFocused(recordId));
@@ -156,12 +144,16 @@ export const InvestigationTimeline = (): JSX.Element => {
     });
   };
 
+  const handleTimelineToggle = (): void => {
+    setOpenPreference(isOpen ? 'closed' : 'open');
+  };
+
   return (
     <section className={styles.timelinePanel}>
       <button
         type="button"
         className={styles.timelineHeader}
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={handleTimelineToggle}
         aria-expanded={isOpen}
       >
         {isOpen ? <IconChevronDown size={12} /> : <IconChevronRight size={12} />}
@@ -178,7 +170,7 @@ export const InvestigationTimeline = (): JSX.Element => {
               <TimelineRecord
                 key={record.id}
                 record={record}
-                expanded={expandedRecordIds.has(record.id)}
+                expanded={expandedRecordIds.has(record.id) || focusedRecordId === record.id}
                 focused={focusedRecordId === record.id}
                 onToggle={() => handleRecordToggle(record.id)}
               />

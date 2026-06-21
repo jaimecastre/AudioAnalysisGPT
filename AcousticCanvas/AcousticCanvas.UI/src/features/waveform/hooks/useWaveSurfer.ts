@@ -37,6 +37,7 @@ const buildWaveSurferConfig = (
   peaks: [waveformData.peaks],
   duration: waveformData.durationSeconds,
   url: audioUrl,
+  interact: true,
 });
 
 
@@ -132,14 +133,56 @@ export const useWaveSurfer = ({
           wavesurferRef.current?.seekTo(timeSeconds / duration);
         }
       },
+      getTimeForClientX: (clientX: number) => {
+        const container = containerRef.current;
+        const wavesurfer = wavesurferRef.current;
+        const duration = wavesurfer?.getDuration() ?? 0;
+        if (!container || !wavesurfer || duration <= 0) {
+          return null;
+        }
+
+        const bounds = container.getBoundingClientRect();
+        if (bounds.width <= 0) {
+          return null;
+        }
+
+        const localX = Math.max(0, Math.min(bounds.width, clientX - bounds.left));
+        const scrollLeft = wavesurfer.getScroll();
+        const visibleWidth = wavesurfer.getWidth();
+        const renderedWidth = Math.max(visibleWidth, scrollLeft + bounds.width);
+        const timeFraction = Math.max(0, Math.min(1, (localX + scrollLeft) / renderedWidth));
+        return timeFraction * duration;
+      },
       clearSelection: () => {},
       setSelection: () => {},
+      zoomToSelection: (startSeconds: number, endSeconds: number) => {
+        const container = containerRef.current;
+        const wavesurfer = wavesurferRef.current;
+        const duration = wavesurfer?.getDuration() ?? 0;
+        const selectionDuration = endSeconds - startSeconds;
+        if (!container || !wavesurfer || duration <= 0 || selectionDuration <= 0) {
+          return;
+        }
+
+        const targetVisibleSeconds = Math.min(duration, selectionDuration * 1.15);
+        const minPxPerSec = Math.max(container.clientWidth / targetVisibleSeconds, container.clientWidth / duration);
+        wavesurfer.zoom(minPxPerSec);
+        wavesurfer.setScrollTime(Math.max(0, startSeconds - selectionDuration * 0.075));
+      },
+      resetZoom: () => {
+        const wavesurfer = wavesurferRef.current;
+        if (!wavesurfer) {
+          return;
+        }
+        wavesurfer.zoom(0);
+        wavesurfer.setScroll(0);
+      },
     };
 
     return () => {
       displayRef.current = null;
     };
-  }, [displayRef]);
+  }, [containerRef, displayRef]);
 
   return { wavesurferRef, isReady };
 };

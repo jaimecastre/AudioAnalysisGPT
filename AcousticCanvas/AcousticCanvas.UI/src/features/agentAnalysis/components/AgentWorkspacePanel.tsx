@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import { ComparisonView } from '../../comparison/components/ComparisonView';
-import { IconArrowRight, IconFileMusic, IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { IconArrowRight, IconFileMusic, IconChevronDown, IconChevronRight, IconCopy, IconDownload, IconPrinter } from '@tabler/icons-react';
 import { useAppDispatch } from '../../../store/reduxHooks';
 import type {
   AgentArtifact,
@@ -18,9 +18,13 @@ import { useWorkspaceContext } from '../hooks/useWorkspaceContext';
 import { useArtifactFeed, useArtifactExpanded } from '../hooks/useArtifactFeed';
 import { useRawDataDrawer } from '../hooks/useRawDataDrawer';
 import { useReportCopy } from '../hooks/useReportCopy';
+import { useReportDownload } from '../hooks/useReportDownload';
+import { useReportPrint } from '../hooks/useReportPrint';
+import { ArtifactActionMenu } from './ArtifactActionMenu';
+import type { ArtifactActionMenuItem } from './ArtifactActionMenu';
 import styles from './AgentWorkspacePanel.module.scss';
 
-function WorkspaceContextCard(): JSX.Element {
+const WorkspaceContextCard = (): JSX.Element => {
   const { files, activeFile } = useWorkspaceContext();
 
   return (
@@ -45,13 +49,13 @@ function WorkspaceContextCard(): JSX.Element {
       ))}
     </div>
   );
-}
+};
 
-function formatTimestamp(isoString: string): string {
+const formatTimestamp = (isoString: string): string => {
   return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-}
+};
 
-function RawDataDrawer({ data }: { data: unknown }): JSX.Element {
+const RawDataDrawer = ({ data }: { data: unknown }): JSX.Element => {
   const { isExpanded, toggle } = useRawDataDrawer();
   const rawJson = JSON.stringify(data, null, 2);
 
@@ -71,9 +75,9 @@ function RawDataDrawer({ data }: { data: unknown }): JSX.Element {
       )}
     </div>
   );
-}
+};
 
-function AnalysisCard({ artifact }: { artifact: AgentArtifactAnalysis }): JSX.Element {
+const AnalysisCard = ({ artifact }: { artifact: AgentArtifactAnalysis }): JSX.Element => {
   const dispatch = useAppDispatch();
   const result = artifact.result;
 
@@ -142,9 +146,9 @@ function AnalysisCard({ artifact }: { artifact: AgentArtifactAnalysis }): JSX.El
       </div>
     </div>
   );
-}
+};
 
-function CompareCard({ artifact }: { artifact: AgentArtifactCompare }): JSX.Element {
+const CompareCard = ({ artifact }: { artifact: AgentArtifactCompare }): JSX.Element => {
   const result = artifact.result;
 
   return (
@@ -159,9 +163,9 @@ function CompareCard({ artifact }: { artifact: AgentArtifactCompare }): JSX.Elem
       <RawDataDrawer data={result} />
     </div>
   );
-}
+};
 
-function MarkerCard({ artifact }: { artifact: AgentArtifactMarker }): JSX.Element {
+const MarkerCard = ({ artifact }: { artifact: AgentArtifactMarker }): JSX.Element => {
   return (
     <div className={`${styles.card} ${styles.cardMarker}`}>
       <div className={styles.cardHeader}>
@@ -182,9 +186,9 @@ function MarkerCard({ artifact }: { artifact: AgentArtifactMarker }): JSX.Elemen
       </div>
     </div>
   );
-}
+};
 
-function SelectionCard({ artifact }: { artifact: AgentArtifactSelection }): JSX.Element {
+const SelectionCard = ({ artifact }: { artifact: AgentArtifactSelection }): JSX.Element => {
   const durationSeconds = artifact.endSeconds - artifact.startSeconds;
   return (
     <div className={`${styles.card} ${styles.cardSelection}`}>
@@ -210,15 +214,15 @@ function SelectionCard({ artifact }: { artifact: AgentArtifactSelection }): JSX.
       </div>
     </div>
   );
-}
+};
 
-function getSeverityClass(severity: string): string {
+const getSeverityClass = (severity: string): string => {
   if (severity === 'high') return styles.severityHigh;
   if (severity === 'medium') return styles.severityMedium;
   return styles.severityLow;
-}
+};
 
-function FindingsCard({ artifact }: { artifact: AgentArtifactFindings }): JSX.Element {
+const FindingsCard = ({ artifact }: { artifact: AgentArtifactFindings }): JSX.Element => {
   const isExpanded = useArtifactExpanded(artifact.id);
 
   return (
@@ -252,9 +256,9 @@ function FindingsCard({ artifact }: { artifact: AgentArtifactFindings }): JSX.El
       </div>
     </div>
   );
-}
+};
 
-function FindCard({ artifact }: { artifact: AgentArtifactFind }): JSX.Element {
+const FindCard = ({ artifact }: { artifact: AgentArtifactFind }): JSX.Element => {
   const result = artifact.result;
   const kindLabel = result.kind
     .split('_')
@@ -296,10 +300,34 @@ function FindCard({ artifact }: { artifact: AgentArtifactFind }): JSX.Element {
       <RawDataDrawer data={result} />
     </div>
   );
-}
+};
 
-function ReportCard({ artifact }: { artifact: AgentArtifactReport }): JSX.Element {
+const ReportCard = ({ artifact }: { artifact: AgentArtifactReport }): JSX.Element => {
   const { copied, handleCopy } = useReportCopy(artifact.markdownContent);
+  const { handleDownload } = useReportDownload({
+    title: artifact.title,
+    markdownContent: artifact.markdownContent,
+    timestamp: artifact.timestamp,
+  });
+  const { handlePrint } = useReportPrint({
+    title: artifact.title,
+    markdownContent: artifact.markdownContent,
+    timestamp: artifact.timestamp,
+  });
+  const reportActions: ArtifactActionMenuItem[] = [
+    {
+      id: 'copy-markdown',
+      label: copied ? 'Copied!' : 'Copy Markdown',
+      icon: <IconCopy size={14} />,
+      onSelect: handleCopy,
+    },
+    {
+      id: 'print-save-pdf',
+      label: 'Print / Save PDF',
+      icon: <IconPrinter size={14} />,
+      onSelect: handlePrint,
+    },
+  ];
 
   return (
     <div className={`${styles.card} ${styles.cardReport}`}>
@@ -310,19 +338,24 @@ function ReportCard({ artifact }: { artifact: AgentArtifactReport }): JSX.Elemen
       <div className={styles.cardBody}>
         <div className={styles.reportTitle}>{artifact.title}</div>
         <pre className={styles.reportPreview}>{artifact.markdownContent}</pre>
-        <button
-          type="button"
-          className={styles.reportCopyButton}
-          onClick={handleCopy}
-        >
-          {copied ? 'Copied!' : 'Copy Markdown'}
-        </button>
+        <div className={styles.reportActions}>
+          <button
+            type="button"
+            className={styles.reportActionButton}
+            onClick={handleDownload}
+            title="Download report as Markdown"
+          >
+            <IconDownload size={12} />
+            Download Markdown
+          </button>
+          <ArtifactActionMenu label="Report actions" actions={reportActions} />
+        </div>
       </div>
     </div>
   );
-}
+};
 
-function ArtifactCard({ artifact }: { artifact: AgentArtifact }): JSX.Element {
+const ArtifactCard = ({ artifact }: { artifact: AgentArtifact }): JSX.Element => {
   if (artifact.type === 'analysis_result') {
     return <AnalysisCard artifact={artifact} />;
   }
@@ -348,9 +381,9 @@ function ArtifactCard({ artifact }: { artifact: AgentArtifact }): JSX.Element {
     return <ReportCard artifact={artifact} />;
   }
   return <></>;
-}
+};
 
-export function AgentWorkspacePanel(): JSX.Element {
+export const AgentWorkspacePanel = (): JSX.Element => {
   const { artifacts, focusedArtifactId, feedRef, artifactRefs } = useArtifactFeed();
   const hasArtifacts = artifacts.length > 0;
 
@@ -381,4 +414,4 @@ export function AgentWorkspacePanel(): JSX.Element {
       <InvestigationTimeline />
     </div>
   );
-}
+};

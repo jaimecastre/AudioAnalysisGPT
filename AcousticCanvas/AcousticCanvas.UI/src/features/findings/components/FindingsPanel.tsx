@@ -1,5 +1,5 @@
-import type { JSX, KeyboardEvent } from 'react';
-import { useEffect, useState } from 'react';
+import type { JSX, KeyboardEvent, MouseEvent } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Loader, Modal, Text } from '@mantine/core';
 import {
   IconAlertTriangle,
@@ -26,11 +26,17 @@ import {
 import type { Finding, FindingSeverity, SavedFinding } from '../types/findingsTypes';
 import { agentPromptPrefillSet, setActiveMode } from '../../navigation/store/navigationSlice';
 import { projectFilesSelector } from '../../project/store/projectSlice';
+import { setActiveSelection } from '../../waveform/store/waveformSelectionSlice';
 import styles from './FindingsPanel.module.scss';
+import { useContextMenu } from '../../../shared/hooks/useContextMenu';
+import { ContextMenu } from '../../../shared/components/ContextMenu';
+import { buildFindingCardContextMenuItems } from './FindingCardContextMenu';
 
 interface IFindingsPanelProps {
   fileId: string | null;
   onClose: () => void;
+  onSeekToTime?: (timeSeconds: number) => void;
+  onAnalyzeRegion?: () => void;
 }
 
 function SeverityIcon({ severity }: { severity: FindingSeverity }): JSX.Element {
@@ -103,11 +109,13 @@ function FindingCard({
   isPinned,
   onOpen,
   onPin,
+  onContextMenu,
 }: {
   finding: Finding;
   isPinned: boolean;
   onOpen: (finding: Finding) => void;
   onPin: (finding: Finding) => void;
+  onContextMenu: (event: MouseEvent, finding: Finding) => void;
 }): JSX.Element {
   const evidenceEntries = Object.entries(finding.evidence);
   const previewEvidence = evidenceEntries.slice(0, 3);
@@ -124,6 +132,7 @@ function FindingCard({
       tabIndex={0}
       className={`${styles.findingCard} ${styles[`findingCard_${finding.severity}`]}`}
       onClick={() => onOpen(finding)}
+      onContextMenu={(e) => onContextMenu(e, finding)}
       onKeyDown={handleKeyDown}
       aria-label={`Open finding details for ${finding.title}`}
     >
@@ -301,7 +310,7 @@ function FindingDetailDialog({
   );
 }
 
-export const FindingsPanel = ({ fileId, onClose }: IFindingsPanelProps): JSX.Element => {
+export const FindingsPanel = ({ fileId, onClose, onSeekToTime, onAnalyzeRegion }: IFindingsPanelProps): JSX.Element => {
   const dispatch = useAppDispatch();
   const findingsResult = useAppSelector(findingsResultSelector);
   const findingsStatus = useAppSelector(findingsStatusSelector);
@@ -310,6 +319,9 @@ export const FindingsPanel = ({ fileId, onClose }: IFindingsPanelProps): JSX.Ele
   const projectFiles = useAppSelector(projectFilesSelector);
   const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null);
   const [lastSeenFileId, setLastSeenFileId] = useState(fileId);
+  const [contextMenuFinding, setContextMenuFinding] = useState<Finding | null>(null);
+
+  const { contextMenu, openContextMenu, closeContextMenu } = useContextMenu();
 
   if (lastSeenFileId !== fileId) {
     setLastSeenFileId(fileId);
@@ -321,6 +333,8 @@ export const FindingsPanel = ({ fileId, onClose }: IFindingsPanelProps): JSX.Ele
       dispatch(runFindingsAnalysis(fileId));
     }
     return () => {
+      // Don't clear showPanel to allow panel to persist across navigation
+      // Only clear the analysis result and status
       dispatch(findingsClear());
     };
   }, [dispatch, fileId]);
@@ -330,15 +344,77 @@ export const FindingsPanel = ({ fileId, onClose }: IFindingsPanelProps): JSX.Ele
   const hasNoFindings = hasResult && findingsResult!.findingCount === 0;
   const hasFindings = hasResult && findingsResult!.findingCount > 0;
   const currentFileName = projectFiles.find((file) => file.id === fileId)?.name ?? fileId ?? 'Unknown file';
-  const savedFindingIds = new Set(savedFindings.map((finding) => finding.findingId));
+  const savedFindingIds = useMemo(() => new Set(savedFindings.map((finding) => finding.findingId)), [savedFindings]);
 
-  const handlePinFinding = (finding: Finding): void => {
+  const handlePinFinding = useCallback((finding: Finding): void => {
     if (savedFindingIds.has(finding.findingId)) {
       return;
     }
 
     dispatch(findingPinned({ finding, fileName: currentFileName }));
-  };
+  }, [dispatch, savedFindingIds, currentFileName]);
+
+  const handleFindingContextMenu = useCallback((event: MouseEvent, finding: Finding): void => {
+    event.stopPropagation();
+    setContextMenuFinding(finding);
+    openContextMenu(event);
+  }, [openContextMenu]);
+
+  const handleJumpToLocation = useCallback((): void => {
+    if (contextMenuFinding && contextMenuFinding.startSeconds !== null) {
+      onSeekToTime?.(contextMenuFinding.startSeconds);
+    }
+    closeContextMenu();
+  }, [contextMenuFinding, onSeekToTime, closeContextMenu]);
+
+  const handleAnalyzeRegion = useCallback((): void => {
+    if (
+      contextMenuFinding &&
+      contextMenuFinding.startSeconds !== null &&
+      contextMenuFinding.endSeconds !== null &&
+      contextMenuFinding.endSeconds > contextMenuFinding.startSeconds
+    ) {
+      dispatch(setActiveSelection({
+        id: `finding-${contextMenuFinding.findingId}`,
+        startSeconds: contextMenuFinding.startSeconds,
+        endSeconds: contextMenuFinding.endSeconds,
+      }));
+      onAnalyzeRegion?.();
+    }
+    closeContextMenu();
+  }, [contextMenuFinding, dispatch, onAnalyzeRegion, closeContextMenu]);
+
+  const handleAskAgent = useCallback((): void => {
+    if (contextMenuFinding) {
+      dispatch(agentPromptPrefillSet(`Explain this finding: ${contextMenuFinding.title}. What does it mean and what should I do?`));
+      dispatch(setActiveMode('agent'));
+    }
+    closeContextMenu();
+  }, [contextMenuFinding, dispatch, closeContextMenu]);
+
+  const handleCopyEvidence = useCallback((): void => {
+    if (contextMenuFinding) {
+      const evidenceText = Object.entries(contextMenuFinding.evidence)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join('\n');
+      void navigator.clipboard.writeText(evidenceText);
+    }
+    closeContextMenu();
+  }, [contextMenuFinding, closeContextMenu]);
+
+  const handlePinFromMenu = useCallback((): void => {
+    if (contextMenuFinding) {
+      handlePinFinding(contextMenuFinding);
+    }
+    closeContextMenu();
+  }, [contextMenuFinding, handlePinFinding, closeContextMenu]);
+
+  const handleUnpinFromMenu = useCallback((): void => {
+    if (contextMenuFinding) {
+      dispatch(findingUnpinned(contextMenuFinding.findingId));
+    }
+    closeContextMenu();
+  }, [contextMenuFinding, dispatch, closeContextMenu]);
 
   return (
     <div className={styles.findingsPanel}>
@@ -402,6 +478,7 @@ export const FindingsPanel = ({ fileId, onClose }: IFindingsPanelProps): JSX.Ele
                 isPinned={savedFindingIds.has(finding.findingId)}
                 onOpen={setSelectedFinding}
                 onPin={handlePinFinding}
+                onContextMenu={handleFindingContextMenu}
               />
             ))}
           </div>
@@ -419,6 +496,23 @@ export const FindingsPanel = ({ fileId, onClose }: IFindingsPanelProps): JSX.Ele
         opened={selectedFinding !== null}
         onClose={() => setSelectedFinding(null)}
       />
+      {contextMenuFinding && (
+        <ContextMenu
+          opened={contextMenu !== null}
+          position={contextMenu}
+          items={buildFindingCardContextMenuItems({
+            findingId: contextMenuFinding.findingId,
+            isPinned: savedFindingIds.has(contextMenuFinding.findingId),
+            onJumpToLocation: handleJumpToLocation,
+            onAnalyzeRegion: handleAnalyzeRegion,
+            onAskAgent: handleAskAgent,
+            onCopyEvidence: handleCopyEvidence,
+            onPin: handlePinFromMenu,
+            onUnpin: handleUnpinFromMenu,
+          })}
+          onClose={closeContextMenu}
+        />
+      )}
     </div>
   );
 };

@@ -193,6 +193,14 @@ export const ManualWorkspace = (): JSX.Element => {
     waveSurferRef.current?.clearSelection();
   };
 
+  const handleZoomToSelection = (startSeconds: number, endSeconds: number): void => {
+    waveSurferRef.current?.zoomToSelection(startSeconds, endSeconds);
+  };
+
+  const handleResetWaveformZoom = (): void => {
+    waveSurferRef.current?.resetZoom();
+  };
+
   const handleSelectWholeFile = (): void => {
     if (duration <= 0) {
       return;
@@ -450,6 +458,7 @@ export const ManualWorkspace = (): JSX.Element => {
                       findingsStatus={findingsStatus}
                       onPromptOpenFindings={handleOpenFindingsPanel}
                       onPromptAddSpectrum={handleAddSpectrumPanelForActiveFile}
+                      onPromptAddCpb={handleAddCpbPanelForActiveFile}
                       onPromptAddSoundQuality={handleAddSoundQualityPanelForActiveFile}
                       onWaveSurferReady={handleWaveSurferReady}
                       onWaveSurferTimeUpdate={handleWaveSurferTimeUpdate}
@@ -460,6 +469,9 @@ export const ManualWorkspace = (): JSX.Element => {
                       onRerunBenchmark={handleOpenBenchmarkModal}
                       onCloseBenchmarkPanel={handleCloseBenchmarkPanel}
                       onCloseFindingsPanel={handleCloseFindingsPanel}
+                      onClearWaveformSelection={handleClearSelection}
+                      onZoomToSelection={handleZoomToSelection}
+                      onResetWaveformZoom={handleResetWaveformZoom}
                       onToolPanelFileSelect={handleToolPanelFileSelect}
                       onToolPanelToggleSpan={handleToolPanelToggleSpan}
                       onToolPanelClose={handleToolPanelClose}

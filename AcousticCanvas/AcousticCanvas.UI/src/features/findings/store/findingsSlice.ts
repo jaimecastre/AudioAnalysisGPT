@@ -73,7 +73,7 @@ const findingsSlice = createSlice({
       state.result = null;
       state.status = 'idle';
       state.error = null;
-      state.showPanel = false;
+      // Don't clear showPanel to allow panel to persist across navigation
     },
     findingsPanelOpened: (state) => {
       state.showPanel = true;

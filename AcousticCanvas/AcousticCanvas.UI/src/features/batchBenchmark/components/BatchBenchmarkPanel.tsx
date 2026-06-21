@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
 import { ActionIcon, Progress, Tooltip } from '@mantine/core';
-import { IconChevronDown, IconChevronRight, IconFileText, IconRobot, IconRotateClockwise2, IconX, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronRight, IconFileText, IconRobot, IconRotateClockwise2, IconX, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand, IconLoader2 } from '@tabler/icons-react';
 import { useAppDispatch, useAppSelector } from '../../../store/reduxHooks';
 import { agentPromptPrefillSet, setActiveMode } from '../../navigation/store/navigationSlice';
 import type { BatchBenchmarkFileRow, BatchBenchmarkResult } from '../types/batchBenchmarkTypes';
@@ -179,7 +179,18 @@ export const BatchBenchmarkPanel = ({
       </div>
 
       {status === 'loading' && (
-        <div className={styles.progressStrip}>
+        <div className={styles.progressStrip} role="status" aria-live="polite">
+          <div className={styles.loadingStatusHeader}>
+            <span className={styles.loadingStatusIcon}>
+              <IconLoader2 size={18} />
+            </span>
+            <span className={styles.loadingStatusText}>
+              <span className={styles.loadingStatusTitle}>Benchmarking files</span>
+              <span className={styles.loadingStatusDescription}>
+                Ranking files, detecting outliers, and preparing benchmark metrics.
+              </span>
+            </span>
+          </div>
           <Progress
             value={progress !== null ? Math.round((progress.completed / progress.total) * 100) : 0}
             size="xs"

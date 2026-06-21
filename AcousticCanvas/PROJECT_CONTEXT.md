@@ -212,7 +212,7 @@ The COMSOL analogy is an architectural and product pattern reference only. Acous
 
 ---
 
-# 2. Current State of the Application (Last updated: 2026-06-14)
+# 2. Current State of the Application (Last updated: 2026-06-21)
 
 ## Stack
 
@@ -357,7 +357,9 @@ SignalChannel {
 | Resizable panels | ✅ Done | Drag handles, collapsible |
 | Keyboard shortcuts | ✅ Done | Arrow seek, space play/pause |
 | Guided investigation prompt | ✅ Done | Post-upload CTA tiles (Findings / Spectrum / Sound quality) + sidebar active-state badges |
+| Context menus | ✅ Done | Right-click accelerators for waveform selections, file rows, and finding cards; primary workflows remain visible in the main UI |
 | Report generation UI | ✅ Done | AI-generated batch benchmark reports with `useBenchmarkReport` hook — rankings, outliers, findings interpreted by agent and displayed in workspace |
+| Manual workflow loading feedback | ✅ Done | A/B Compare shows a prominent full-width loading panel; Benchmark shows explicit loading copy inside its result panel above the progress strip, so progress is visible where results will appear |
 | Task progress panel | 🟡 Placeholder | Empty state only |
 | Calibration UI | 🟡 Referenced in types | Not implemented |
 | CPB / octave band visualization | ✅ Done | Collapsible CPB panel with octave / 1⁄3 octave modes |
@@ -2423,7 +2425,22 @@ The product is directionally strong: it feels like a technical acoustic investig
 
 ### Important UX Tasks
 
-3. **Manual analysis layout hierarchy** 🟡 In Progress
+3. **Context menu policy and object-local shortcuts** ✅ First slice done (2026-06-21)
+   - Product rule: Context menus are accelerators for expert users, not the only path to important analysis workflows.
+   - Use context menus for actions that are clearly tied to the object under the pointer:
+     - Waveform: analyze selection, find events in selection, set loop region, copy time range, clear selection, add marker at cursor, zoom to selection, reset zoom.
+     - Finding cards: jump to location, analyze region, ask agent about this finding, copy evidence, pin/unpin.
+     - File list rows: set active file, compare with, show file info, remove file.
+   - Do not hide core workflow entry points only in context menus: add Spectrum/Spectrogram/CPB/Sound Quality, run Benchmark, run A/B Compare, open Findings, and primary Agent actions must stay visible.
+   - Future candidates:
+     - Analysis panels: explain with agent, copy measured values, export panel image/data, pin to report, open wide view.
+     - Markers: rename marker, seek to marker, create selection around marker, delete marker.
+   - Acceptance criteria:
+     - Every context-menu action has a visible or discoverable equivalent when it is part of the primary workflow.
+     - Destructive actions remain visually distinct and require confirmation when the consequence is irreversible.
+     - Context menu labels describe the target object or region clearly enough to avoid ambiguity.
+
+4. **Manual analysis layout hierarchy** 🟡 In Progress
    - Problem: Panels can feel scattered across a large canvas and relationships between findings, spectrum, spectrogram, CPB, and sound quality are not always obvious.
    - Why it matters: Users need to scan and compare results quickly.
    - Target pattern: Keep the responsive grid, but strengthen hierarchy with a primary result area, key findings, and consistent secondary panels.
@@ -2434,7 +2451,7 @@ The product is directionally strong: it feels like a technical acoustic investig
      - Panel headers, controls, and results use consistent sizing and spacing.
      - Empty regions are replaced with meaningful placeholders or recommended next steps.
 
-4. **Reusable analysis result card pattern**
+5. **Reusable analysis result card pattern**
    - Problem: Different panels present controls, method metadata, key takeaways, and visualizations differently.
    - Why it matters: Inconsistent presentation increases cognitive load and makes the product feel less polished.
    - Target pattern: Each analysis card has title, compact controls, key takeaway, visualization, method/limitations, and evidence hooks.
@@ -2443,7 +2460,7 @@ The product is directionally strong: it feels like a technical acoustic investig
      - Key metric/takeaway text is more visually prominent than configuration metadata.
      - Method and limitation details remain available without dominating the card.
 
-5. **Tool discoverability and click targets**
+6. **Tool discoverability and click targets**
    - Problem: Icon-only or narrow tool controls can be unclear; users may not know whether icon, label, or row is clickable.
    - Why it matters: Tool invocation is core to the workflow.
    - Target pattern: Full-row clickable tool items with icon, label, active state, hover state, and tooltip.
@@ -2452,7 +2469,7 @@ The product is directionally strong: it feels like a technical acoustic investig
      - Active/open tools are visually distinct.
      - Every non-obvious icon has a tooltip.
 
-6. **Readability and visual polish**
+7. **Readability and visual polish**
    - Problem: Some secondary labels, timestamps, and metadata can be too faint; panel density and blank space are uneven.
    - Why it matters: Low contrast and inconsistent density reduce trust and slow scanning.
    - Target pattern: Stronger text contrast, consistent panel rhythm, and fewer ultra-muted labels outside disabled states.
@@ -2463,7 +2480,7 @@ The product is directionally strong: it feels like a technical acoustic investig
 
 ### Nice-To-Have UX Tasks
 
-7. **Metric education without clutter**
+8. **Metric education without clutter**
    - Problem: Loudness, sharpness, roughness, CPB, and spectrogram settings can be opaque to non-expert users.
    - Why it matters: Users need enough context to trust and interpret metrics without turning the UI into documentation.
    - Target pattern: Tooltips, compact "what this means" affordances, or expandable method notes.
@@ -2471,7 +2488,7 @@ The product is directionally strong: it feels like a technical acoustic investig
      - Help text is available on demand.
      - Always-visible UI remains focused on results and next actions.
 
-8. **Usability validation script**
+9. **Usability validation script**
    - Problem: UX assumptions need validation before heavy engineering investment.
    - Why it matters: The product direction is specialized; real user behavior matters.
    - Validation tasks:

@@ -1,8 +1,25 @@
-import type { JSX, RefObject } from 'react';
+import type { JSX, MouseEvent, RefObject } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Text, Group, ActionIcon } from '@mantine/core';
-import { IconX, IconGitCompare } from '@tabler/icons-react';
+import {
+  IconChartLine,
+  IconSearch,
+  IconRepeat,
+  IconX,
+  IconMapPin,
+  IconZoomIn,
+  IconZoomOut,
+  IconClipboard,
+  IconGitCompare,
+} from '@tabler/icons-react';
 import { WaveSurferDisplay } from '../../waveform/components/WaveSurferDisplay';
 import type { WaveSurferDisplayRef } from '../../waveform/components/WaveSurferDisplay';
+import type { ContextMenuItem } from '../../../shared/components/ContextMenu';
+import { ContextMenu } from '../../../shared/components/ContextMenu';
+import { useContextMenu } from '../../../shared/hooks/useContextMenu';
+import { useAppDispatch } from '../../../store/reduxHooks';
+import { addMarker } from '../../project/store/projectSlice';
+import { setLoopEnabled } from '../../waveform/store/waveformSelectionSlice';
 import { InvestigationStartPrompt } from './InvestigationStartPrompt';
 import { ComparisonView } from '../../comparison/components/ComparisonView';
 import { BatchBenchmarkPanel } from '../../batchBenchmark';
@@ -20,6 +37,7 @@ import type { AudioFile } from '../../../store/projectState';
 import type { WaveformSelection } from '../../waveform/store/waveformSelectionSlice';
 import type { Finding } from '../../findings/types/findingsTypes';
 import type { FindingsStatus } from '../../findings/store/findingsSlice';
+import { ManualWorkflowLoadingPanel } from './ManualWorkflowLoadingPanel';
 import styles from './ActiveSignalCard.module.scss';
 
 interface IToolPanel {
@@ -54,9 +72,13 @@ interface IActiveSignalCardProps {
   onRerunBenchmark: () => void;
   onCloseBenchmarkPanel: () => void;
   onCloseFindingsPanel: () => void;
+  onClearWaveformSelection: () => void;
+  onZoomToSelection: (startSeconds: number, endSeconds: number) => void;
+  onResetWaveformZoom: () => void;
   showInvestigationPrompt: boolean;
   onPromptOpenFindings: () => void;
   onPromptAddSpectrum: () => void;
+  onPromptAddCpb: () => void;
   onPromptAddSoundQuality: () => void;
   onToolPanelFileSelect: (panelId: string, fileId: string | null) => void;
   onToolPanelToggleSpan: (panelId: string) => void;
@@ -68,7 +90,7 @@ interface IActiveSignalCardProps {
   findingsStatus: FindingsStatus;
 }
 
-export function ActiveSignalCard({
+export const ActiveSignalCard = ({
   file,
   audioUrl,
   waveSurferRef,
@@ -93,6 +115,9 @@ export function ActiveSignalCard({
   onRerunBenchmark,
   onCloseBenchmarkPanel,
   onCloseFindingsPanel,
+  onClearWaveformSelection,
+  onZoomToSelection,
+  onResetWaveformZoom,
   showInvestigationPrompt,
   analysisResult,
   spectrumResult,
@@ -100,12 +125,153 @@ export function ActiveSignalCard({
   findingsStatus,
   onPromptOpenFindings,
   onPromptAddSpectrum,
+  onPromptAddCpb,
   onPromptAddSoundQuality,
   onToolPanelFileSelect,
   onToolPanelToggleSpan,
   onToolPanelClose,
   onSeek,
-}: IActiveSignalCardProps): JSX.Element {
+}: IActiveSignalCardProps): JSX.Element => {
+  const dispatch = useAppDispatch();
+  const [contextMenuTimeSeconds, setContextMenuTimeSeconds] = useState<number | null>(null);
+  const { contextMenu, openContextMenu, closeContextMenu } = useContextMenu();
+  const hasSelection = activeSelection !== null && activeSelection.endSeconds > activeSelection.startSeconds;
+
+  const handleWaveformContextMenu = useCallback((event: MouseEvent): void => {
+    const rightClickTimeSeconds = waveSurferRef.current?.getTimeForClientX(event.clientX) ?? currentTime ?? null;
+    setContextMenuTimeSeconds(rightClickTimeSeconds);
+    openContextMenu(event);
+  }, [currentTime, openContextMenu, waveSurferRef]);
+
+  const handleAnalyzeSelection = useCallback((): void => {
+    onPromptAddSpectrum();
+    onPromptAddCpb();
+    onPromptAddSoundQuality();
+  }, [onPromptAddCpb, onPromptAddSoundQuality, onPromptAddSpectrum]);
+
+  const handleFindEventsInSelection = useCallback((): void => {
+    onPromptOpenFindings();
+  }, [onPromptOpenFindings]);
+
+  const handleSetLoopRegion = useCallback((): void => {
+    dispatch(setLoopEnabled(true));
+  }, [dispatch]);
+
+  const handleClearSelection = useCallback((): void => {
+    onClearWaveformSelection();
+  }, [onClearWaveformSelection]);
+
+  const handleCopyTimeRange = useCallback((): void => {
+    if (!activeSelection) {
+      return;
+    }
+    const timeRange = `${activeSelection.startSeconds.toFixed(3)}s - ${activeSelection.endSeconds.toFixed(3)}s`;
+    void navigator.clipboard.writeText(timeRange);
+  }, [activeSelection]);
+
+  const handleAddMarker = useCallback((): void => {
+    const markerTimeSeconds = contextMenuTimeSeconds ?? currentTime ?? 0;
+    const markerId = `marker-${Date.now()}`;
+    dispatch(addMarker({
+      id: markerId,
+      fileId: file.id,
+      timeSeconds: markerTimeSeconds,
+      label: `Marker ${markerTimeSeconds.toFixed(3)}s`,
+      source: 'manual',
+    }));
+  }, [contextMenuTimeSeconds, currentTime, dispatch, file.id]);
+
+  const handleZoomToSelection = useCallback((): void => {
+    if (!activeSelection) {
+      return;
+    }
+    onZoomToSelection(activeSelection.startSeconds, activeSelection.endSeconds);
+  }, [activeSelection, onZoomToSelection]);
+
+  const handleResetZoom = useCallback((): void => {
+    onResetWaveformZoom();
+  }, [onResetWaveformZoom]);
+
+  const waveformContextMenuItems = useMemo((): ContextMenuItem[] => {
+    const items: ContextMenuItem[] = [];
+
+    if (hasSelection) {
+      items.push(
+        {
+          id: 'analyze-selection',
+          label: 'Analyze selection',
+          icon: <IconChartLine size={16} />,
+          onSelect: handleAnalyzeSelection,
+        },
+        {
+          id: 'find-events',
+          label: 'Find events in selection',
+          icon: <IconSearch size={16} />,
+          onSelect: handleFindEventsInSelection,
+        },
+        {
+          id: 'set-loop',
+          label: 'Set loop region',
+          icon: <IconRepeat size={16} />,
+          onSelect: handleSetLoopRegion,
+        },
+        {
+          id: 'copy-time-range',
+          label: 'Copy time range',
+          icon: <IconClipboard size={16} />,
+          onSelect: handleCopyTimeRange,
+        },
+        {
+          id: 'clear-selection',
+          label: 'Clear selection',
+          icon: <IconX size={16} />,
+          onSelect: handleClearSelection,
+        },
+        {
+          id: 'selection-divider',
+          label: '',
+          divider: true,
+          onSelect: () => {},
+        },
+      );
+    }
+
+    items.push({
+      id: 'add-marker',
+      label: 'Add marker at cursor',
+      icon: <IconMapPin size={16} />,
+      onSelect: handleAddMarker,
+    });
+
+    if (hasSelection) {
+      items.push({
+        id: 'zoom-to-selection',
+        label: 'Zoom to selection',
+        icon: <IconZoomIn size={16} />,
+        onSelect: handleZoomToSelection,
+      });
+    }
+
+    items.push({
+      id: 'reset-zoom',
+      label: 'Reset zoom',
+      icon: <IconZoomOut size={16} />,
+      onSelect: handleResetZoom,
+    });
+
+    return items;
+  }, [
+    hasSelection,
+    handleAnalyzeSelection,
+    handleFindEventsInSelection,
+    handleSetLoopRegion,
+    handleClearSelection,
+    handleCopyTimeRange,
+    handleAddMarker,
+    handleZoomToSelection,
+    handleResetZoom,
+  ]);
+
   return (
     <div className={`${styles.signalCard} ${styles.signalCardSelected}`}>
       <div className={styles.signalCardHeader}>
@@ -120,6 +286,13 @@ export function ActiveSignalCard({
           onFinish={onWaveSurferFinish}
           onUserSelectionChange={onWaveSurferUserSelectionChange}
           displayRef={waveSurferRef}
+          onContextMenu={handleWaveformContextMenu}
+        />
+        <ContextMenu
+          opened={contextMenu !== null}
+          position={contextMenu}
+          items={waveformContextMenuItems}
+          onClose={closeContextMenu}
         />
       </div>
 
@@ -142,6 +315,14 @@ export function ActiveSignalCard({
           onAddSoundQuality={onPromptAddSoundQuality}
         />
       )}
+      {manualCompareStatus === 'loading' && (
+        <ManualWorkflowLoadingPanel
+          className={styles.gridSpanFull}
+          title="Comparing files"
+          description="Building A/B spectrum, band energy, and sound-quality deltas."
+        />
+      )}
+
       {manualCompareResult !== null && (
         <div className={`${styles.comparisonPanel} ${styles.gridSpanFull}`}>
           <div className={styles.comparisonPanelHeader}>
@@ -192,6 +373,8 @@ export function ActiveSignalCard({
           <FindingsPanel
             fileId={file.id}
             onClose={onCloseFindingsPanel}
+            onSeekToTime={onSeek}
+            onAnalyzeRegion={handleAnalyzeSelection}
           />
         </div>
       )}
@@ -276,4 +459,4 @@ export function ActiveSignalCard({
       )}
     </div>
   );
-}
+};

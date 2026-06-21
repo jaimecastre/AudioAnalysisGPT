@@ -1,0 +1,20 @@
+.trigger {
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    color: #00b8a9;
+    border-color: rgba(0, 184, 169, 0.28);
+    background-color: rgba(0, 184, 169, 0.08);
+  }
+}
+
+.dropdown {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
