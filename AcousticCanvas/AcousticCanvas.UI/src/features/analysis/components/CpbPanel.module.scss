@@ -83,10 +83,17 @@
 .summaryHeader {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 4px 8px;
   border-top: 1px solid var(--border);
   background-color: var(--bg-surface);
+}
+
+.summaryTakeaway {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .settingsDrawer {

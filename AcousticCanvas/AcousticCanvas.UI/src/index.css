@@ -19,6 +19,9 @@
   /* Font size floor — nothing visible should go below this */
   --font-size-min:  0.65rem;
 
+  /* Mantine override — keep dimmed text consistent with --text-muted */
+  --mantine-color-dimmed: #6c757d;
+
   /* Accent — cyan/teal for waveform/analysis highlights */
   --accent:         #00b8a9;
   --accent-dim:     rgba(0, 184, 169, 0.15);

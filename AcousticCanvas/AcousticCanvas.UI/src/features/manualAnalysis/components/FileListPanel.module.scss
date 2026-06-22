@@ -217,7 +217,12 @@
 
 .toolRowActive {
   background-color: var(--bg-overlay);
-  border-left-color: #00b8a9;
+  box-shadow: inset 2px 0 0 rgba(0, 184, 169, 0.55);
+
+  &:disabled {
+    opacity: 1;
+    cursor: default;
+  }
 
   .toolRowLabel {
     color: var(--text-primary);
@@ -230,18 +235,20 @@
 }
 
 .toolRowBlue.toolRowActive {
-  border-left-color: #1c7ed6;
+  box-shadow: inset 2px 0 0 rgba(28, 126, 214, 0.55);
 
   .toolRowIcon {
-    background-color: rgba(28, 126, 214, 0.2);
+    background-color: rgba(28, 126, 214, 0.18);
+    color: #1c7ed6;
   }
 }
 
 .toolRowOrange.toolRowActive {
-  border-left-color: #f08c00;
+  box-shadow: inset 2px 0 0 rgba(240, 140, 0, 0.55);
 
   .toolRowIcon {
-    background-color: rgba(240, 140, 0, 0.22);
+    background-color: rgba(240, 140, 0, 0.18);
+    color: #f08c00;
   }
 }
 

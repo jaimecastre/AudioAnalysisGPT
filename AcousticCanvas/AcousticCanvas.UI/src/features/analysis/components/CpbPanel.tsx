@@ -294,6 +294,11 @@ export const CpbPanel = ({
               )}
             </div>
             <div className={styles.summaryHeader}>
+              {topBand && (
+                <span className={styles.summaryTakeaway}>
+                  Peak: {topBand.label} Hz — {(topBand.levelDb as number).toFixed(1)} {selectedChannel.dbUnit ?? 'dB'}
+                </span>
+              )}
               <ActionIcon
                 variant="subtle"
                 color="gray"
@@ -312,11 +317,6 @@ export const CpbPanel = ({
                 <span>
                   Bands <span className={styles.summaryValue}>{selectedChannel.bands.length}</span>
                 </span>
-                {topBand && (
-                  <span>
-                    Max <span className={styles.summaryValue}>{topBand.label} Hz / {(topBand.levelDb as number).toFixed(1)} {selectedChannel.dbUnit ?? 'dB'}</span>
-                  </span>
-                )}
                 <span>
                   Method <span className={styles.summaryValue}>{cpbResult?.parameters.method}</span>
                 </span>

@@ -142,6 +142,9 @@ export const SpectrumPanel = ({
     : [];
 
   const hasMultipleChannels = spectrumResult && spectrumResult.channels.length > 1;
+  const peakSummaryFrequencyHz = spectrumResult?.channels?.[0]?.peakFrequencyHz ?? null;
+  const peakSummaryMagnitudeDb = spectrumResult?.channels?.[0]?.maxMagnitudeDb ?? null;
+  const peakSummaryUnit = spectrumResult?.channels?.[0]?.yUnit ?? 'dB';
 
   const handleResizePointerDown = (event: React.PointerEvent<HTMLDivElement>): void => {
     const startY = event.clientY;
@@ -362,6 +365,13 @@ export const SpectrumPanel = ({
               maxFrequencyHz={spectrumUserParameters.maxFrequencyHz}
             />
           </Box>
+        )}
+        {peakSummaryFrequencyHz !== null && (
+          <div className={styles.summaryBar}>
+            <span className={styles.summaryTakeaway}>
+              Peak: {peakSummaryFrequencyHz.toFixed(1)} Hz{peakSummaryMagnitudeDb !== null ? ` — ${peakSummaryMagnitudeDb.toFixed(1)} ${peakSummaryUnit}` : ''}
+            </span>
+          </div>
         )}
         {visibleChannels.length > 0 && (
           <div className={styles.resizeHandle} onPointerDown={handleResizePointerDown} />
