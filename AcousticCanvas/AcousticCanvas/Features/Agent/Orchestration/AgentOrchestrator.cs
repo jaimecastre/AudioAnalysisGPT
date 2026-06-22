@@ -343,6 +343,10 @@ public sealed class AgentOrchestrator(
                 visualizationPlan,
                 evidencePackage
             );
+        var radarChartBlocks = AgentVisualizationBlockBuilder.BuildRadarChartBlocks(
+            visualizationPlan,
+            evidencePackage
+        );
         var workflowBlocks = AgentVisualizationBlockBuilder.BuildWorkflowBlocks(
             visualizationPlan,
             evidencePackage
@@ -383,6 +387,9 @@ public sealed class AgentOrchestrator(
             InvestigationBlocks: investigationBlocks.Count > 0 ? investigationBlocks : null,
             SoundQualityComparisonBlocks: soundQualityComparisonBlocks.Count > 0
                 ? soundQualityComparisonBlocks
+                : null,
+            RadarChartBlocks: radarChartBlocks.Count > 0
+                ? radarChartBlocks
                 : null
         );
     }

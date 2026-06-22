@@ -763,6 +763,35 @@ button.evidenceCitationPill {
   }
 }
 
+.exportButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 7px;
+  padding: 2px 6px;
+  border: 1px solid rgba(99, 115, 132, 0.18);
+  border-radius: 4px;
+  background: rgba(99, 115, 132, 0.04);
+  color: rgba(99, 115, 132, 0.75);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    background: rgba(99, 115, 132, 0.09);
+    border-color: rgba(99, 115, 132, 0.32);
+    color: var(--text-secondary);
+  }
+}
+    border-color: rgba(0, 184, 169, 0.32);
+    color: #00b8a9;
+  }
+}
+
 // ─── Selection chip ───────────────────────────────────────
 
 .selectionChipBar {

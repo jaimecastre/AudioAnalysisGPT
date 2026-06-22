@@ -1,7 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 import { DEFAULT_MODEL_ID } from '../utils/agentModels';
-import type { AgentResponseBlock, InvestigationBlock, SoundQualityComparisonBlock, SpectrumOverlayBlock, VisualizationPlanTrace } from '../services/agentAskService';
+import type { AgentResponseBlock, InvestigationBlock, RadarChartBlock, SoundQualityComparisonBlock, SpectrumOverlayBlock, VisualizationPlanTrace } from '../services/agentAskService';
 
 export type ChatRole = 'user' | 'assistant' | 'tool_call' | 'plan';
 
@@ -41,6 +41,7 @@ export type ChatMessage = {
   overlayBlocks?: SpectrumOverlayBlock[] | null;
   investigationBlocks?: InvestigationBlock[] | null;
   soundQualityComparisonBlocks?: SoundQualityComparisonBlock[] | null;
+  radarChartBlocks?: RadarChartBlock[] | null;
   activityLabel?: AgentActivityLabel;
   visualizationPlanTrace?: VisualizationPlanTrace | null;
   investigationRecordId?: string | null;
@@ -85,6 +86,7 @@ const chatSlice = createSlice({
       overlayBlocks?: SpectrumOverlayBlock[] | null;
       investigationBlocks?: InvestigationBlock[] | null;
       soundQualityComparisonBlocks?: SoundQualityComparisonBlock[] | null;
+      radarChartBlocks?: RadarChartBlock[] | null;
       visualizationPlanTrace?: VisualizationPlanTrace | null;
       investigationRecordId?: string | null;
     }>) => {
@@ -104,6 +106,7 @@ const chatSlice = createSlice({
         existingMessage.overlayBlocks = action.payload.overlayBlocks;
         existingMessage.investigationBlocks = action.payload.investigationBlocks;
         existingMessage.soundQualityComparisonBlocks = action.payload.soundQualityComparisonBlocks;
+        existingMessage.radarChartBlocks = action.payload.radarChartBlocks;
         existingMessage.visualizationPlanTrace = action.payload.visualizationPlanTrace;
         existingMessage.investigationRecordId = action.payload.investigationRecordId;
       } else {
@@ -123,6 +126,7 @@ const chatSlice = createSlice({
           overlayBlocks: action.payload.overlayBlocks,
           investigationBlocks: action.payload.investigationBlocks,
           soundQualityComparisonBlocks: action.payload.soundQualityComparisonBlocks,
+          radarChartBlocks: action.payload.radarChartBlocks,
           visualizationPlanTrace: action.payload.visualizationPlanTrace,
           investigationRecordId: action.payload.investigationRecordId,
         });

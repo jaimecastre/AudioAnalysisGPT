@@ -45,6 +45,45 @@ public sealed class ExpertVisualizationPlannerTests
     }
 
     [Fact]
+    public void PlanForSpectrogramEvidencePrefersAnalysisView()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Show me the spectrogram for this file.",
+            analysesRun: ["run_spectrogram"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_spectrogram_file1",
+                    Type = "spectrogram",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "fan.wav",
+                        ["resultId"] = "spectrogram_0123456789abcdef0123456789abcdef",
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        Assert.Contains(
+            plan.Blocks,
+            block =>
+                block.BlockType == "analysisView"
+                && block.SourceEvidenceId == "ev_spectrogram_file1"
+                && block.ViewType == "spectrogram"
+        );
+        Assert.Contains(
+            plan.Blocks,
+            block =>
+                block.BlockType == "markdown"
+                && block.Reason.Contains("summarize", StringComparison.OrdinalIgnoreCase)
+        );
+    }
+
+    [Fact]
     public void PlanForMultiFileSoundQualityComparisonIncludesRanking()
     {
         var evidencePackage = BuildEvidencePackage(
@@ -867,6 +906,135 @@ public sealed class ExpertVisualizationPlannerTests
 
         Assert.Single(blocks);
         Assert.Equal("Sound Quality Comparison", blocks[0].Title);
+        Assert.Equal(2, blocks[0].Signals.Count);
+        Assert.Equal("a.wav", blocks[0].Signals[0].FileName);
+        Assert.Equal(20.0, blocks[0].Signals[0].LoudnessSone);
+        Assert.Equal(1.5, blocks[0].Signals[0].SharpnessAcum);
+        Assert.Equal(0.02, blocks[0].Signals[0].RoughnessAsper);
+        Assert.Equal("b.wav", blocks[0].Signals[1].FileName);
+        Assert.Equal(15.0, blocks[0].Signals[1].LoudnessSone);
+    }
+
+    [Fact]
+    public void TwoSoundQualityEvidenceItemsProduceRadarChartPlanBlock()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Show me the psychoacoustic profile of all files.",
+            selectedFileIds: ["fileA", "fileB"],
+            analysesRun: ["run_sound_quality_metrics"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_fileA",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "fileA",
+                        ["fileName"] = "a.wav",
+                        ["loudnessSone"] = 20.0,
+                        ["sharpnessAcum"] = 1.5,
+                        ["roughnessAsper"] = 0.02,
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_fileB",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "fileB",
+                        ["fileName"] = "b.wav",
+                        ["loudnessSone"] = 15.0,
+                        ["sharpnessAcum"] = 1.7,
+                        ["roughnessAsper"] = 0.03,
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        var radarBlock = plan.Blocks.FirstOrDefault(b => b.BlockType == "radarChart");
+        Assert.NotNull(radarBlock);
+        Assert.NotNull(radarBlock.SourceEvidenceIds);
+        Assert.Equal(2, radarBlock.SourceEvidenceIds.Count);
+        Assert.Contains("ev_sq_fileA", radarBlock.SourceEvidenceIds);
+        Assert.Contains("ev_sq_fileB", radarBlock.SourceEvidenceIds);
+    }
+
+    [Fact]
+    public void SingleSoundQualityEvidenceItemDoesNotProduceRadarChartPlanBlock()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "What is the loudness of this file?",
+            analysesRun: ["run_sound_quality_metrics"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_file1",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "file1",
+                        ["fileName"] = "a.wav",
+                        ["loudnessSone"] = 20.0,
+                        ["sharpnessAcum"] = 1.5,
+                        ["roughnessAsper"] = 0.02,
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+
+        Assert.DoesNotContain(plan.Blocks, b => b.BlockType == "radarChart");
+    }
+
+    [Fact]
+    public void BuildRadarChartBlocksEmbedsMetricValues()
+    {
+        var evidencePackage = BuildEvidencePackage(
+            question: "Compare the psychoacoustic profiles.",
+            selectedFileIds: ["fileA", "fileB"],
+            analysesRun: ["run_sound_quality_metrics"],
+            evidenceItems:
+            [
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_fileA",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "fileA",
+                        ["fileName"] = "a.wav",
+                        ["loudnessSone"] = 20.0,
+                        ["sharpnessAcum"] = 1.5,
+                        ["roughnessAsper"] = 0.02,
+                    },
+                },
+                new EvidenceItem
+                {
+                    EvidenceId = "ev_sq_fileB",
+                    Type = "sound_quality",
+                    Data = new Dictionary<string, object?>
+                    {
+                        ["fileId"] = "fileB",
+                        ["fileName"] = "b.wav",
+                        ["loudnessSone"] = 15.0,
+                        ["sharpnessAcum"] = 1.7,
+                        ["roughnessAsper"] = 0.03,
+                    },
+                },
+            ]
+        );
+
+        var plan = ExpertVisualizationPlanner.Plan(evidencePackage);
+        var blocks = AgentVisualizationBlockBuilder.BuildRadarChartBlocks(plan, evidencePackage);
+
+        Assert.Single(blocks);
+        Assert.Equal("Psychoacoustic Profile", blocks[0].Title);
         Assert.Equal(2, blocks[0].Signals.Count);
         Assert.Equal("a.wav", blocks[0].Signals[0].FileName);
         Assert.Equal(20.0, blocks[0].Signals[0].LoudnessSone);

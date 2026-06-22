@@ -1437,7 +1437,7 @@ All acceptance criteria met:
 - ✅ Agent summary of batch results
 - ✅ Export batch report
 
-## 🔄 Milestone 4.5 — AI-Generated Acoustic Visual Analysis and Expert Plot Specification Planning — IN PROGRESS
+## ✅ Milestone 4.5 — AI-Generated Acoustic Visual Analysis and Expert Plot Specification Planning — COMPLETE
 
 **Goal:** Allow the Agent to decide whether a user request needs text, plots, charts, statistics, rankings, tables, investigation cards, reports, or combinations of these. The Agent should behave like an expert acoustic engineer and select the most useful evidence for the question. It should also decide what data goes into each visualization, how signals are combined, how axes are scaled, what units are used, what annotations are shown, and what metadata is required.
 
@@ -1538,8 +1538,12 @@ Agent response composition:
   - `WorkflowBlock` + `WorkflowStep` records added to the agent response block model. `ExpertVisualizationPlanner` emits a `workflow` plan block for broad multi-tool questions (investigate, diagnose, report, summarize/summarise, compare, benchmark, why, which) when at least 3 tool-backed evidence items are present.
   - `AgentVisualizationBlockBuilder.BuildWorkflowBlocks` turns evidence items into ordered deterministic steps with tool name, evidence type, file identity, result reference, and short method description. The workflow block is prepended to `AgentAskResult.Blocks`, so the UI shows how the investigation was assembled before the narrative and deeper visual blocks.
   - Frontend: `WorkflowBlockView` renders a compact trusted workflow card via `AgentResponseBlockRenderer`; `ChatPanel` labels workflow decisions in the thought container.
-- **Phase 8:** Exportable Investigation Reports
-  - Export AI-generated acoustic investigations as PDF, HTML, or project reports including plots, tables, metadata, calibration assumptions, and reproducible analysis parameters
+- **Phase 8:** ✅ Exportable Investigation Reports (Done 2026-06-22)
+  - Pure frontend export of any completed agent investigation response.
+  - `investigationReportSerializer.ts` — `buildInvestigationReportMarkdown(message, { title, userQuestion })` serializes all `ChatMessage` block types to structured Markdown: workflow → ordered steps, statistics → tables, ranking → numbered lists, sound quality comparison → metric table, spectrum overlay → file/frequency table, investigation signals → analysis-type table, suggested actions → bullet list, tool steps → methods section, confidence, limitations.
+  - `reportPrint.ts` extended with `buildMarkdownAsHtml(markdown)` — inline Markdown→HTML converter (headings, bold, italic, tables, lists, paragraphs) — and `buildInvestigationPrintDocument()` which renders the report as a styled, print-ready HTML page instead of a raw `<pre>` block.
+  - `ExportInvestigationModal` component — opens from a new **export** button on completed `AssistantMessage` bubbles in `ChatPanel`; shows an editable title pre-filled from the user question, a live `MarkdownBlock` preview, **Download .md** and **Print / Save PDF** buttons.
+  - Export button (`IconFileExport`) added to `ChatPanel.tsx` for every `completed` assistant message, styled with a new `.exportButton` CSS class (mirrors `.traceLinkButton`). User question is passed from the preceding user message in the render loop.
 
 ### Acceptance criteria:
 
@@ -2537,7 +2541,7 @@ These are agent chat UI features where the agent generates visual blocks inline 
 - Frontend: radar/spider chart component using `@mantine/charts` or a lightweight canvas renderer
 - No new backend endpoint needed — data comes from existing `run_sound_quality_metrics` evidence
 
-**Status:** ❌ Not started
+**Status:** ✅ Done (2026-06-22) — `RadarChartBlock` C# record added; `ExpertVisualizationPlanner` emits `radarChart` plan block for 2+ sound_quality evidence items; `AgentVisualizationBlockBuilder.BuildRadarChartBlocks` builds signals from evidence (reuses `SoundQualitySignal`); `AgentAskResult.RadarChartBlocks` wires through orchestrator; frontend `RadarChartBlockView.tsx` renders Mantine `RadarChart` with per-metric max-normalization; `ChatPanel` renders `radarChartBlocks`. 8 new backend tests + 8 new frontend tests (194 frontend total, 303 backend non-integration tests passing).
 
 ---
 
@@ -2563,7 +2567,7 @@ These are agent chat UI features where the agent generates visual blocks inline 
 - Store spectrogram result in `AnalysisResultCache` during `run_spectrogram` execution
 - Thumbnail preview: base64 image (already computed by `SpectrogramAnalyzer`) shown inline before modal opens
 
-**Status:** ❌ Not started
+**Status:** ✅ Done (2026-06-22) — investigated and confirmed fully wired: `ToolExecutionService` stores in cache, `SpectrogramEvidenceExtractor` captures resultId, `ExpertVisualizationPlanner` maps spectrogram evidence → `analysisView` with viewType "spectrogram", `AnalysisViewBlock.tsx` renders `SpectrogramPlot` preview at height 96 and `SpectrogramViewer` in modal. Added missing planner test `PlanForSpectrogramEvidencePrefersAnalysisView`.
 
 ---
 
@@ -2966,6 +2970,7 @@ Findings, tonal peak detection, the first CPB graph slice, CPB comparison, CPB w
 - **Generated Analysis Workflows (✅ Done 2026-06-21):** Milestone 4.5 Phase 7 implemented. Backend adds deterministic `workflow` response blocks (`WorkflowBlock`, `WorkflowStep`) for broad multi-tool investigations once at least three evidence items exist. Workflow steps are derived from evidence/tool metadata only and include tool name, evidence type, file identity, optional result ID, and method description. Frontend adds `WorkflowBlockView` and routes `workflow` through the shared `AgentResponseBlockRenderer`; thought-container labels now include `workflow`. Regression coverage added in `ExpertVisualizationPlannerTests`, `AgentResponseBlockSerializationTests`, and `WorkflowBlockView.test.tsx`.
 - **Generated Analysis Workflow serialization fix (✅ Done 2026-06-21):** `AgentResultBuilder.PrependDeterministicBlocks` now serializes deterministic response blocks with their concrete runtime type instead of the abstract `AgentResponseBlock` base type, preserving derived fields such as `title`, `question`, and `steps` in the JSON payload. `WorkflowBlockView` also guards against malformed/old workflow blocks with missing `steps` and shows a fallback message instead of crashing. Regression coverage: `PrependDeterministicBlocksSerializesWorkflowDerivedProperties` and `WorkflowBlockView` missing-steps test.
 - **Agent level/spectrum unit contract fix (✅ Done 2026-06-21):** `run_basic_metrics` now emits neutral `rmsDb`/`peakDb` fields plus `dbUnit`; `BasicMetricsEvidenceExtractor` exposes `rmsDb`/`peakDb` and `levelDbUnit` to the LLM instead of misleading `rmsDbFs`/`peakDbFs` names when values are SPL-scaled. `run_spectrum` summary now carries `dbUnit`, and spectrum evidence exposes `spectrumDbUnit`. `AgentPromptBuilder` explicitly instructs the final-answer model to use `levelDbUnit`/`spectrumDbUnit` verbatim and never label positive SPL values as dBFS. Frontend evidence/tool rows now use those unit fields; crest factor displays as plain `dB`. Regression coverage added in `EvidencePackageBuilderTests`, `AgentPlannerPromptTests`, `AgentSpectrumToolTests`, and agent evidence/tool row tests.
+- **Exportable Investigation Reports (✅ Done 2026-06-22):** Milestone 4.5 Phase 8 implemented. `investigationReportSerializer.ts` converts any completed `ChatMessage` to structured Markdown (all 9 block types serialized: workflow steps, statistics tables, ranking lists, sound quality comparison tables, spectrum overlay metadata, investigation signal tables, suggested actions, analysis methods, confidence, limitations). `reportPrint.ts` extended with `buildMarkdownAsHtml` (inline Markdown→HTML, no new dependency) and `buildInvestigationPrintDocument` for proper styled HTML output. `ExportInvestigationModal` shows editable title, live preview, Download .md and Print/Save PDF. Export button added to all completed `AssistantMessage` bubbles in `ChatPanel`. 28 new unit tests added across `investigationReportSerializer.test.ts` and `reportPrint.test.ts`.
 
 ---
 

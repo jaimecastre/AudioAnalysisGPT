@@ -151,6 +151,13 @@ export type SoundQualityComparisonBlock = {
   signals: SoundQualitySignal[];
 };
 
+// 12b: Psychoacoustic radar / spider chart — multi-file psychoacoustic profile comparison
+export type RadarChartBlock = {
+  blockType: 'radarChart';
+  title: string;
+  signals: SoundQualitySignal[];
+};
+
 // Phase 5: Spectrum overlay — multi-file comparison in one chart
 export type OverlaySignal = {
   resultId: string;
@@ -191,7 +198,8 @@ export type AgentResponseBlock =
   | AnalysisViewBlock
   | SpectrumOverlayBlock
   | InvestigationBlock
-  | SoundQualityComparisonBlock;
+  | SoundQualityComparisonBlock
+  | RadarChartBlock;
 
 export type VisualizationPlanBlockTrace = {
   blockType: string;
@@ -236,6 +244,7 @@ export type AgentAskResponse = {
   overlayBlocks?: SpectrumOverlayBlock[] | null;
   investigationBlocks?: InvestigationBlock[] | null;
   soundQualityComparisonBlocks?: SoundQualityComparisonBlock[] | null;
+  radarChartBlocks?: RadarChartBlock[] | null;
 };
 
 export type AgentConversationTurn = {

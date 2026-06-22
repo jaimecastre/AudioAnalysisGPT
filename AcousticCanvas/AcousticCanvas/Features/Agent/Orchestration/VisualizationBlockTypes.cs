@@ -12,4 +12,5 @@ public static class VisualizationBlockTypes
     public const string Investigation = "investigation";
     public const string SpectrumOverlay = "spectrumOverlay";
     public const string SoundQualityComparison = "soundQualityComparison";
+    public const string RadarChart = "radarChart";
 }

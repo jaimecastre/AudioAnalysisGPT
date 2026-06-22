@@ -281,6 +281,22 @@ public sealed record SoundQualityComparisonBlock : AgentResponseBlock
 }
 
 /// <summary>
+/// Deterministic multi-file radar / spider chart block — built by ExpertVisualizationPlanner,
+/// never by the LLM. Renders loudness, sharpness, and roughness as overlapping radar polygons
+/// so psychoacoustic profiles can be compared at a glance.
+/// </summary>
+public sealed record RadarChartBlock : AgentResponseBlock
+{
+    public override string BlockType => VisualizationBlockTypes.RadarChart;
+
+    /// <summary>Title shown above the chart</summary>
+    public required string Title { get; init; }
+
+    /// <summary>Ordered list of files with their metric values</summary>
+    public required IReadOnlyList<SoundQualitySignal> Signals { get; init; }
+}
+
+/// <summary>
 /// Preview data for inline mini-chart in AnalysisViewBlock
 /// </summary>
 public sealed record AnalysisPreview

@@ -18,6 +18,7 @@ public static class ExpertVisualizationPlanner
 
         AddWorkflowBlockWhenUseful(evidencePackage, blocks);
         AddSoundQualityComparisonBlockWhenUseful(evidencePackage, blocks);
+        AddRadarChartBlockWhenUseful(evidencePackage, blocks);
         AddSpectrumOverlayBlockWhenUseful(evidencePackage, blocks);
         AddInvestigationBlockWhenUseful(evidencePackage, blocks);
         AddEvidenceViewBlocks(evidencePackage, blocks, BuildCoveredComparisonEvidenceIds(blocks));
@@ -128,6 +129,7 @@ public static class ExpertVisualizationPlanner
                 is not (
                     VisualizationBlockTypes.SpectrumOverlay
                     or VisualizationBlockTypes.SoundQualityComparison
+                    or VisualizationBlockTypes.RadarChart
                 )
             )
             {
@@ -207,6 +209,34 @@ public static class ExpertVisualizationPlanner
                 SourceEvidenceIds = sourceIds,
                 Reason =
                     $"Show loudness, sharpness, and roughness bars for {soundQualityItems.Count} files side-by-side so perceptual differences are immediately visible.",
+            }
+        );
+    }
+
+    private static void AddRadarChartBlockWhenUseful(
+        EvidencePackage evidencePackage,
+        List<VisualizationPlanBlock> blocks
+    )
+    {
+        var soundQualityItems = evidencePackage
+            .KeyEvidence.Where(item => item.Type == EvidenceTypes.SoundQuality)
+            .ToList();
+
+        if (soundQualityItems.Count < 2)
+        {
+            return;
+        }
+
+        var sourceIds = soundQualityItems.Select(item => item.EvidenceId).ToList();
+
+        blocks.Add(
+            new VisualizationPlanBlock
+            {
+                BlockType = VisualizationBlockTypes.RadarChart,
+                SourceEvidenceId = sourceIds[0],
+                SourceEvidenceIds = sourceIds,
+                Reason =
+                    $"Show loudness, sharpness, and roughness as overlapping radar polygons for {soundQualityItems.Count} files so psychoacoustic profiles can be compared at a glance.",
             }
         );
     }

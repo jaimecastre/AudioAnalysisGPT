@@ -27,7 +27,8 @@ public record AgentAskResult(
     IReadOnlyDictionary<string, PlotHints>? PlotHintsMap = null,
     IReadOnlyList<SpectrumOverlayBlock>? OverlayBlocks = null,
     IReadOnlyList<InvestigationBlock>? InvestigationBlocks = null,
-    IReadOnlyList<SoundQualityComparisonBlock>? SoundQualityComparisonBlocks = null
+    IReadOnlyList<SoundQualityComparisonBlock>? SoundQualityComparisonBlocks = null,
+    IReadOnlyList<RadarChartBlock>? RadarChartBlocks = null
 )
 {
     public string BackendRuntimeId { get; init; } = BackendRuntimeIdentity.Id;

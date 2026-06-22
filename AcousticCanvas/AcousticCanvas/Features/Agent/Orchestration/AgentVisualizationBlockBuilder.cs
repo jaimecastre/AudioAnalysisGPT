@@ -110,6 +110,43 @@ public static class AgentVisualizationBlockBuilder
         return comparisonBlocks;
     }
 
+    public static IReadOnlyList<RadarChartBlock> BuildRadarChartBlocks(
+        VisualizationPlan visualizationPlan,
+        EvidencePackage evidencePackage
+    )
+    {
+        var radarBlocks = new List<RadarChartBlock>();
+
+        foreach (var planBlock in visualizationPlan.Blocks)
+        {
+            if (planBlock.BlockType != VisualizationBlockTypes.RadarChart)
+            {
+                continue;
+            }
+
+            if (planBlock.SourceEvidenceIds is null || planBlock.SourceEvidenceIds.Count < 2)
+            {
+                continue;
+            }
+
+            var signals = BuildSoundQualitySignals(planBlock.SourceEvidenceIds, evidencePackage);
+            if (signals.Count < 2)
+            {
+                continue;
+            }
+
+            radarBlocks.Add(
+                new RadarChartBlock
+                {
+                    Title = "Psychoacoustic Profile",
+                    Signals = signals,
+                }
+            );
+        }
+
+        return radarBlocks;
+    }
+
     public static IReadOnlyList<InvestigationBlock> BuildInvestigationBlocks(
         VisualizationPlan visualizationPlan,
         EvidencePackage evidencePackage

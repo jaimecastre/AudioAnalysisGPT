@@ -1,11 +1,13 @@
 import type { JSX } from 'react';
+import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   IconArrowUp, IconEraser, IconRobot, IconTool, IconCheck, IconX,
   IconAlignBoxLeftMiddle, IconPaperclip, IconFileMusic, IconFileText,
   IconPlayerStop, IconUser, IconWaveSquare, IconChartBar, IconFileSearch,
-  IconVolume, IconBrain, IconHistory,
+  IconVolume, IconBrain, IconHistory, IconFileExport,
 } from '@tabler/icons-react';
+import { ExportInvestigationModal } from './ExportInvestigationModal';
 import type { ToolStep } from '../store/chatSlice';
 import type { ChatMessage } from '../store/chatSlice';
 import { AGENT_MODELS } from '../utils/agentModels';
@@ -14,6 +16,7 @@ import { AgentResponseBlockRenderer } from './AgentResponseBlockRenderer';
 import { SpectrumOverlayBlockView } from './SpectrumOverlayBlockView';
 import { InvestigationBlockView } from './InvestigationBlockView';
 import { SoundQualityComparisonBlockView } from './SoundQualityComparisonBlockView';
+import { RadarChartBlockView } from './RadarChartBlockView';
 import { ATTACH_ACCEPT } from '../utils/chatAttachments';
 import { AgentAnswerPanel } from './AgentAnswerPanel';
 import type { MentionCandidate } from '../hooks/useChatInput';
@@ -86,8 +89,9 @@ function ThoughtContainer({ message }: { message: ChatMessage }): JSX.Element | 
   );
 }
 
-function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
+function AssistantMessage({ message, userQuestion }: { message: ChatMessage; userQuestion?: string }): JSX.Element {
   const dispatch = useAppDispatch();
+  const [exportOpened, setExportOpened] = useState(false);
   const parsedText = message.content;
   const isThinkingMessage = message.status === 'thinking';
   const isFailedMessage = message.status === 'failed';
@@ -95,7 +99,9 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
   const hasOverlayBlocks = message.overlayBlocks && message.overlayBlocks.length > 0;
   const hasInvestigationBlocks = message.investigationBlocks && message.investigationBlocks.length > 0;
   const hasSoundQualityComparisonBlocks = (message.soundQualityComparisonBlocks?.length ?? 0) > 0;
+  const hasRadarChartBlocks = (message.radarChartBlocks?.length ?? 0) > 0;
   const hasTraceLink = message.status === 'completed' && !!message.investigationRecordId;
+  const isExportable = message.status === 'completed';
 
   const handleTraceClick = (): void => {
     if (!message.investigationRecordId) {
@@ -131,6 +137,9 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
             {hasSoundQualityComparisonBlocks && message.soundQualityComparisonBlocks?.map((sqBlock, index) => (
               <SoundQualityComparisonBlockView key={index} block={sqBlock} />
             ))}
+            {hasRadarChartBlocks && message.radarChartBlocks?.map((rcBlock, index) => (
+              <RadarChartBlockView key={index} block={rcBlock} />
+            ))}
             {message.toolSteps && message.toolSteps.length > 0 && (
               <AnalysisSteps steps={message.toolSteps} confidence={message.confidence} />
             )}
@@ -145,7 +154,26 @@ function AssistantMessage({ message }: { message: ChatMessage }): JSX.Element {
                 trace
               </button>
             )}
+            {isExportable && (
+              <button
+                type="button"
+                className={styles.exportButton}
+                onClick={() => setExportOpened(true)}
+                title="Export investigation report"
+              >
+                <IconFileExport size={11} />
+                export
+              </button>
+            )}
           </>
+        )}
+        {!isThinkingMessage && isExportable && (
+          <ExportInvestigationModal
+            opened={exportOpened}
+            message={message}
+            userQuestion={userQuestion}
+            onClose={() => setExportOpened(false)}
+          />
         )}
         {!isThinkingMessage && (
           <span className={styles.messageTime}>{formatTimestamp(message.timestamp)}</span>
@@ -394,7 +422,9 @@ export function ChatPanel(): JSX.Element {
               if (message.role === 'tool_call') return <ToolCallMessage key={message.id} message={message} />;
               if (message.role === 'plan') return <PlanMessage key={message.id} message={message} />;
               if (message.status === 'thinking' && hasPlanInProgress) return null;
-              return <AssistantMessage key={message.id} message={message} />;
+              const msgIndex = messages.indexOf(message);
+              const prevUserMessage = messages.slice(0, msgIndex).reverse().find((m) => m.role === 'user');
+              return <AssistantMessage key={message.id} message={message} userQuestion={prevUserMessage?.content} />;
             });
           })()}
           <AgentAnswerPanel

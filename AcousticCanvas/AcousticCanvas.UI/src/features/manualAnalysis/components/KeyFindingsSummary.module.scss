@@ -2,6 +2,7 @@
   background: var(--mantine-color-body);
   border: 1px solid var(--mantine-color-gray-3);
   transition: all 0.2s ease;
+  margin-bottom: var(--mantine-spacing-md);
 
   &:hover {
     border-color: var(--mantine-color-gray-4);

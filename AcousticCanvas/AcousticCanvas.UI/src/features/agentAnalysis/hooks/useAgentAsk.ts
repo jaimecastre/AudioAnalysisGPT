@@ -249,6 +249,7 @@ export function useAgentAsk() {
         overlayBlocks: agentResponse.overlayBlocks ?? null,
         investigationBlocks: agentResponse.investigationBlocks ?? null,
         soundQualityComparisonBlocks: agentResponse.soundQualityComparisonBlocks ?? null,
+        radarChartBlocks: agentResponse.radarChartBlocks ?? null,
         visualizationPlanTrace: agentResponse.investigationTrace?.visualizationPlan ?? null,
         investigationRecordId,
       }));
